@@ -49,7 +49,16 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
         double cMax = 3.0 * System.Math.Max(section.WidthMm, section.HeightMm);
         double c = 5.0 + depthIndex * (cMax - 5.0) / (neutralAxisSamples - 1);
         double maxProjection = ProjectExtreme(section, nx, ny);
+        double hTheta = 2.0 * maxProjection;
         double neutralAxisProjection = maxProjection - c;
+        
+        // EC2 Pivot C logic for sections entirely in compression (c > hTheta)
+        // xC is the distance from the extreme compression fiber to Pivot C
+        double xC = hTheta * (1.0 - EpsilonC2 / EpsilonCu2);
+        double epsilonTop = c <= hTheta 
+            ? EpsilonCu2 
+            : (c * EpsilonC2) / (c - xC);
+
         double fcd = AlphaCc * concrete.FcMpa / GammaC;
         double fyd = steel.FyMpa / GammaS;
 
@@ -68,7 +77,8 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
 
         foreach (var fiber in fibers)
         {
-            double strain = EpsilonCu2 * ((fiber.XMm * nx + fiber.YMm * ny) - neutralAxisProjection) / c;
+            double distFromCompFace = maxProjection - (fiber.XMm * nx + fiber.YMm * ny);
+            double strain = epsilonTop * (c - distFromCompFace) / c;
             maxConcreteStrain = System.Math.Max(maxConcreteStrain, strain);
             minConcreteStrain = System.Math.Min(minConcreteStrain, strain);
             double stress = ConcreteStress(strain, fcd);
@@ -86,7 +96,8 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
 
         foreach (var bar in section.RebarLayout.Bars)
         {
-            double strain = EpsilonCu2 * ((bar.XMm * nx + bar.YMm * ny) - neutralAxisProjection) / c;
+            double distFromCompFace = maxProjection - (bar.XMm * nx + bar.YMm * ny);
+            double strain = epsilonTop * (c - distFromCompFace) / c;
             maxSteelStrain = System.Math.Max(maxSteelStrain, strain);
             minSteelStrain = System.Math.Min(minSteelStrain, strain);
             if (strain < 0.0)

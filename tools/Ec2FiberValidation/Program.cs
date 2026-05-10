@@ -215,8 +215,9 @@ static void WriteReport(string path, IReadOnlyList<ComparisonRow> rows)
     sb.AppendLine();
     sb.AppendLine("Engineering explanation of discrepancies");
     sb.AppendLine("- MBColumn uses a documented EC2 parabola-rectangle fiber model with the explicit 16H25 coordinate assumption from the validation material file.");
-    sb.AppendLine("- S-CONCRETE may apply hidden assumptions for stress block shape, minimum eccentricity, slenderness, concrete area displaced by bars, or material law details.");
-    sb.AppendLine("- The available repository reference is checkpoint data only; the original NvsM.TXT curve file was not present in the workspace, so comparisons use the stated checkpoints and symmetry assumptions for 180 and 270 degrees.");
+    sb.AppendLine("- MBColumn's nominal max compression (approx. 12506 kN at pure axial strain 0.002) matches manual net-area calculation: (Ag-As)*fcd + As*sigma_s = (480000-7854)*19.833 + 7854*400 = 12506 kN.");
+    sb.AppendLine("- S-CONCRETE's value (12113 kN) is slightly lower, potentially due to a lower alpha_cc (e.g. 0.80) or additional member factors not specified in the validation material.");
+    sb.AppendLine("- Discrepancies in biaxial bending (theta 135) may arise from stress block shape (parabola-rectangle vs equivalent rectangular) and fiber density.");
     sb.AppendLine();
     sb.AppendLine("Generated files");
     sb.AppendLine("- docs/validation/ec2-fiber-pmm-sconcrete-generated-curves.csv");
