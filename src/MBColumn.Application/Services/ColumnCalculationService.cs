@@ -113,6 +113,7 @@ public sealed class ColumnCalculationService(
 
         return new CalculationResultDto(
             input.UnitSystem,
+            input.DesignCode,
             govRatio.Ratio,
             govRatio.Status,
             units.ForceFromN(govDemand.PuN, input.ForceUnit),

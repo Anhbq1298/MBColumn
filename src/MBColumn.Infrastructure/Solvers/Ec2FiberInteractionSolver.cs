@@ -5,12 +5,13 @@ namespace MBColumn.Infrastructure.Solvers;
 
 public sealed class Ec2FiberInteractionSolver : IInteractionSolver
 {
-    private const double AlphaCc = 0.85;
-    private const double GammaC = 1.50;
-    private const double GammaS = 1.15;
-    private const double EpsilonC2 = 0.002;
-    private const double EpsilonCu2 = 0.0035;
-    private const double ParabolaPower = 2.0;
+    private const double AlphaCc    = 0.85;
+    private const double GammaC     = 1.50;
+    private const double GammaS     = 1.15;
+    private const double LambdaRect = 0.8;      // EC2 Table 3.1 – rectangular block depth factor
+    private const double EtaRect    = 1.0;      // EC2 Table 3.1 – effective strength factor
+    private const double EpsilonC3  = 0.00175;  // EC2 Table 3.1 – strain at uniform stress (Pivot C)
+    private const double EpsilonCu3 = 0.0035;   // EC2 Table 3.1 – ultimate compressive strain
 
     public int AngleStepDegrees { get; init; } = 5;
     public int NeutralAxisSamples { get; init; } = 100;
@@ -50,17 +51,17 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
         double c = 5.0 + depthIndex * (cMax - 5.0) / (neutralAxisSamples - 1);
         double maxProjection = ProjectExtreme(section, nx, ny);
         double hTheta = 2.0 * maxProjection;
-        double neutralAxisProjection = maxProjection - c;
-        
-        // EC2 Pivot C logic for sections entirely in compression (c > hTheta)
-        // xC is the distance from the extreme compression fiber to Pivot C
-        double xC = hTheta * (1.0 - EpsilonC2 / EpsilonCu2);
-        double epsilonTop = c <= hTheta 
-            ? EpsilonCu2 
-            : (c * EpsilonC2) / (c - xC);
 
-        double fcd = AlphaCc * concrete.FcMpa / GammaC;
-        double fyd = steel.FyMpa / GammaS;
+        // EC2 rectangular stress block – Pivot C for full-compression case (c > hTheta):
+        // xC is the distance from extreme compression face where strain = EpsilonC3
+        double xC = hTheta * (1.0 - EpsilonC3 / EpsilonCu3);  // = 0.5 * hTheta
+        double epsilonTop = c <= hTheta
+            ? EpsilonCu3
+            : (c * EpsilonC3) / (c - xC);
+
+        double fcd     = AlphaCc * concrete.FcMpa / GammaC;
+        double fyd     = steel.FyMpa / GammaS;
+        double lambdaC = LambdaRect * c;  // depth of rectangular stress block from compression face
 
         double concreteN = 0.0;
         double concreteMx = 0.0;
@@ -81,14 +82,12 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
             double strain = epsilonTop * (c - distFromCompFace) / c;
             maxConcreteStrain = System.Math.Max(maxConcreteStrain, strain);
             minConcreteStrain = System.Math.Min(minConcreteStrain, strain);
-            double stress = ConcreteStress(strain, fcd);
-            if (stress <= 0.0)
-            {
-                continue;
-            }
+
+            // Rectangular stress block: uniform η·fcd within [0, λ·c] from compression face
+            if (distFromCompFace < 0.0 || distFromCompFace > lambdaC) continue;
 
             hasCompressedConcrete = true;
-            double force = stress * fiber.AreaMm2;
+            double force = EtaRect * fcd * fiber.AreaMm2;
             concreteN += force;
             concreteMx += force * fiber.YMm;
             concreteMy += force * fiber.XMm;
@@ -106,7 +105,8 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
             }
 
             double stress = System.Math.Clamp(steel.EsMpa * strain, -fyd, fyd);
-            double displacedConcreteStress = ConcreteStress(strain, fcd);
+            double displacedConcreteStress = (distFromCompFace >= 0.0 && distFromCompFace <= lambdaC)
+                ? EtaRect * fcd : 0.0;
             double force = (stress - displacedConcreteStress) * bar.AreaMm2;
             steelN += force;
             steelMx += force * bar.YMm;
@@ -137,21 +137,6 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
             maxSteelStrain,
             minSteelStrain,
             LabelState(axial, hasCompressedConcrete, maxTensionSteelStrain, maxSteelStrain));
-    }
-
-    private static double ConcreteStress(double strain, double fcd)
-    {
-        if (strain <= 0.0)
-        {
-            return 0.0;
-        }
-
-        if (strain <= EpsilonC2)
-        {
-            return fcd * (1.0 - System.Math.Pow(1.0 - strain / EpsilonC2, ParabolaPower));
-        }
-
-        return strain <= EpsilonCu2 ? fcd : fcd;
     }
 
     private static string LabelState(double axialN, bool hasCompressedConcrete, double maxTensionSteelStrain, double maxSteelStrain)

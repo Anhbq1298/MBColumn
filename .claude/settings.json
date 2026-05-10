@@ -6,7 +6,10 @@
       "Bash(cat)",
       "Bash(dotnet script *)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\" -Filter \"Program.cs\" -Recurse)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\\\\src\" -Recurse -Include \"*Ec2*\", \"*ec2*\", \"*fiber*\", \"*Fiber*\", \"*pmm*\", \"*Pmm*\")",
+      "Bash(dotnet test *)",
+      "Bash(git stash *)"
     ]
   }
 }

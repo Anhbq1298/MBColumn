@@ -117,6 +117,8 @@ public sealed class ResultViewModel : ViewModelBase
         set
         {
             Set(ref result, value);
+            showPmaxPmin = value?.DesignCode != DesignCodeType.Ec2;
+            Raise(nameof(ShowPmaxPmin));
             MM.Load(value);
             PM3D.Load(value);
             MM3D.Load(value);

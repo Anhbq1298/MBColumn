@@ -5,6 +5,7 @@ namespace MBColumn.Application.DTOs;
 
 public sealed record CalculationResultDto(
     UnitSystem UnitSystem,
+    DesignCodeType DesignCode,
     double Ratio,
     CapacityStatus Status,
     double PuDisplay,
