@@ -1,4 +1,4 @@
-﻿# MBColumn
+# MBColumn
 
 MBColumn is a clean-room .NET 8 WPF desktop application for reinforced-concrete rectangular column PMM interaction checks.
 
@@ -31,7 +31,7 @@ Build artifacts are redirected to the `built/` directory. The final binaries can
 docs/        Engineering assumptions, architecture contracts, UI notes, and validation workflow.
 src/         Application source code.
 tests/       Unit tests.
-_ref/        Reference materials (spColumn binaries and source).
+_ref/        Reference materials (offline binaries and source).
 built/       Build artifacts (bin and obj).
 AGENTS.md   Coding-agent instruction router.
 CLAUDE.md   Claude Code workflow notes.
