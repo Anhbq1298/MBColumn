@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `spColumn.exe` folder contains a decompiled export of the StructurePoint `spColumn.exe` .NET desktop application. It was used as a behavioral reference during development of MBColumn to understand general user-facing workflow expectations and diagram behavior. The MBColumn implementation in `src/` is independently written using public structural engineering theory.
+The `_ref/spColumn_Source` folder contains a decompiled export of the StructurePoint `spColumn.exe` .NET desktop application. The `_ref/spColumn_App` folder contains the original application binaries for reference. These were used as behavioral references during development of MBColumn to understand general user-facing workflow expectations and diagram behavior. The MBColumn implementation in `src/` is independently written using public structural engineering theory.
 
 The decompiled source is not buildable. The project metadata has been inspected and the startup object identified, but source-level syntax damage from obfuscated identifiers prevents compilation.
 
@@ -60,7 +60,7 @@ Declared project references include:
 - Product/local assemblies: `spGUI.Assets`, `spLocalizer`, `VMDetector`, `ETABSv1`.
 - Native/runtime files present in the adjacent binary folder include `lsapiw32.dll`, `lsapiw64.dll`, and other transitive DLLs.
 
-All declared HintPath references currently resolve to the neighboring `..\spColumn` folder.
+All declared HintPath references in the decompiled source originally resolved to a neighboring `spColumn` folder (now available locally in `_ref/spColumn_App`).
 
 ## Data/UI/service flow
 
