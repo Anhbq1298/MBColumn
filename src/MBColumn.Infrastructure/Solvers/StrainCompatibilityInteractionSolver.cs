@@ -54,8 +54,8 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
         
         double concreteForce = code.ConcreteStressBlockFactor * concrete.FcMpa * props.Area;
         double axialN = concreteForce;
-        double mxNmm = concreteForce * props.CentroidY;
-        double myNmm = concreteForce * props.CentroidX;
+        double mxNmm = -concreteForce * props.CentroidY;
+        double myNmm =  concreteForce * props.CentroidX;
         double maxTensionStrain = 0.0;
 
         foreach (var bar in section.RebarLayout.Bars)
@@ -75,7 +75,7 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
                 : 0.0;
             double force = (stress - displacedConcrete) * bar.AreaMm2;
             axialN += force;
-            mxNmm += force * bar.YMm;
+            mxNmm -= force * bar.YMm;
             myNmm += force * bar.XMm;
         }
 

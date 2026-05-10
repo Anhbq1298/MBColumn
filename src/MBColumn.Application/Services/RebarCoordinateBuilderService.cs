@@ -38,14 +38,14 @@ public sealed class RebarCoordinateBuilderService(
         ValidateSideCounts(sideCounts, layout.LayoutType);
         ValidateSpacing(sideCounts.Top, 2.0 * x, bar.DiameterMm, "Top");
         ValidateSpacing(sideCounts.Bottom, 2.0 * x, bar.DiameterMm, "Bottom");
-        ValidateSpacing(sideCounts.Left, 2.0 * y, bar.DiameterMm, "Left");
-        ValidateSpacing(sideCounts.Right, 2.0 * y, bar.DiameterMm, "Right");
+        ValidateSpacing(sideCounts.Left + 2, 2.0 * y, bar.DiameterMm, "Left");
+        ValidateSpacing(sideCounts.Right + 2, 2.0 * y, bar.DiameterMm, "Right");
 
         var bars = new List<RebarCoordinateDto>();
         AddSide(bars, "Top", sideCounts.Top, -x, y, x, y, bar);
         AddSide(bars, "Bottom", sideCounts.Bottom, -x, -y, x, -y, bar);
-        AddSide(bars, "Left", sideCounts.Left, -x, -y, -x, y, bar);
-        AddSide(bars, "Right", sideCounts.Right, x, -y, x, y, bar);
+        AddIntermediateBars(bars, "Left", sideCounts.Left, -x, -y, -x, y, bar);
+        AddIntermediateBars(bars, "Right", sideCounts.Right, x, -y, x, y, bar);
 
         if (bars.Count == 0)
         {
@@ -119,6 +119,27 @@ public sealed class RebarCoordinateBuilderService(
         for (int i = 0; i < count; i++)
         {
             double t = count == 1 ? 0.5 : (double)i / (count - 1);
+            double x = x0 + (x1 - x0) * t;
+            double y = y0 + (y1 - y0) * t;
+            AddUnique(bars, x, y, bar, side);
+        }
+    }
+
+    private static void AddIntermediateBars(
+        List<RebarCoordinateDto> bars,
+        string side,
+        int count,
+        double x0,
+        double y0,
+        double x1,
+        double y1,
+        RebarDefinition bar)
+    {
+        if (count <= 0) return;
+        // The endpoints are corners. We want 'count' bars strictly between them.
+        for (int i = 1; i <= count; i++)
+        {
+            double t = (double)i / (count + 1);
             double x = x0 + (x1 - x0) * t;
             double y = y0 + (y1 - y0) * t;
             AddUnique(bars, x, y, bar, side);
