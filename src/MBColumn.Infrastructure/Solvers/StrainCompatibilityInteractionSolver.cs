@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Entities;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Infrastructure.Solvers;
@@ -55,7 +55,7 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
             double force = code.ConcreteStressBlockFactor * concrete.FcMpa * fiber.AreaMm2;
             axialN += force;
             mxNmm += force * fiber.YMm;
-            myNmm += -force * fiber.XMm;
+            myNmm += force * fiber.XMm;
         }
 
         foreach (var bar in section.RebarLayout.Bars)
@@ -76,7 +76,7 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
             double force = (stress - displacedConcrete) * bar.AreaMm2;
             axialN += force;
             mxNmm += force * bar.YMm;
-            myNmm += -force * bar.XMm;
+            myNmm += force * bar.XMm;
         }
 
         double phi = code.Phi(maxTensionStrain, steel.FyMpa, steel.EsMpa);

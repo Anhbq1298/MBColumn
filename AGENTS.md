@@ -1,4 +1,4 @@
-﻿# AGENTS.md
+# AGENTS.md
 
 Repository-level instructions for AI coding agents working on MBColumn.
 
@@ -43,8 +43,8 @@ Do not load unrelated source files unless required.
 - Convert display units only at the application boundary.
 - Axial compression is positive; axial tension is negative.
 - Moment convention is about section centroid:
-  - `Mx = force * y`
-  - `My = -force * x`
+  - `Mx = force * y` (Positive Mx causes compression at +Y/Top)
+  - `My = force * x` (Positive My causes compression at +X/Right)
 - Concrete tension stress is ignored.
 - Steel may carry compression and tension according to the selected material model.
 - Do not silently change ACI-style assumptions.
