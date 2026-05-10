@@ -3,5 +3,14 @@
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)built</ArtifactsPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="_ref\**;built\**;$(ArtifactsPath)\**" />
+    <EmbeddedResource Remove="_ref\**;built\**;$(ArtifactsPath)\**" />
+    <None Remove="_ref\**;built\**;$(ArtifactsPath)\**" />
+    <Page Remove="_ref\**;built\**;$(ArtifactsPath)\**" />
+  </ItemGroup>
+
 </Project>
+
 
