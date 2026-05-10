@@ -243,7 +243,27 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
     }
 
     private static InteractionPoint Lerp(InteractionPoint a, InteractionPoint b, double t)
-        => new(a.DepthIndex, a.AngleIndex, Linear(a.ThetaDegrees, b.ThetaDegrees, t), Linear(a.NeutralAxisDepthMm, b.NeutralAxisDepthMm, t), Linear(a.Pn, b.Pn, t), Linear(a.Mnx, b.Mnx, t), Linear(a.Mny, b.Mny, t), Linear(a.Phi, b.Phi, t), Linear(a.MaxTensionSteelStrain, b.MaxTensionSteelStrain, t));
+        => new(
+            a.DepthIndex,
+            a.AngleIndex,
+            Linear(a.ThetaDegrees, b.ThetaDegrees, t),
+            Linear(a.NeutralAxisDepthMm, b.NeutralAxisDepthMm, t),
+            Linear(a.Pn, b.Pn, t),
+            Linear(a.Mnx, b.Mnx, t),
+            Linear(a.Mny, b.Mny, t),
+            Linear(a.Phi, b.Phi, t),
+            Linear(a.MaxTensionSteelStrain, b.MaxTensionSteelStrain, t),
+            Linear(a.ConcretePn, b.ConcretePn, t),
+            Linear(a.SteelPn, b.SteelPn, t),
+            Linear(a.ConcreteMnx, b.ConcreteMnx, t),
+            Linear(a.ConcreteMny, b.ConcreteMny, t),
+            Linear(a.SteelMnx, b.SteelMnx, t),
+            Linear(a.SteelMny, b.SteelMny, t),
+            Linear(a.MaxConcreteStrain, b.MaxConcreteStrain, t),
+            Linear(a.MinConcreteStrain, b.MinConcreteStrain, t),
+            Linear(a.MaxSteelStrain, b.MaxSteelStrain, t),
+            Linear(a.MinSteelStrain, b.MinSteelStrain, t),
+            string.IsNullOrWhiteSpace(a.StateLabel) ? b.StateLabel : a.StateLabel);
 
     private static double Linear(double a, double b, double t) => a + (b - a) * t;
 
