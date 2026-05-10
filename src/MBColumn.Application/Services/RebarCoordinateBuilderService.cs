@@ -38,14 +38,14 @@ public sealed class RebarCoordinateBuilderService(
         ValidateSideCounts(sideCounts, layout.LayoutType);
         ValidateSpacing(sideCounts.Top, 2.0 * x, bar.DiameterMm, "Top");
         ValidateSpacing(sideCounts.Bottom, 2.0 * x, bar.DiameterMm, "Bottom");
-        ValidateSpacing(sideCounts.Left + 2, 2.0 * y, bar.DiameterMm, "Left");
-        ValidateSpacing(sideCounts.Right + 2, 2.0 * y, bar.DiameterMm, "Right");
+        ValidateSpacing(sideCounts.LeftInterm + 2, 2.0 * y, bar.DiameterMm, "Left");
+        ValidateSpacing(sideCounts.RightInterm + 2, 2.0 * y, bar.DiameterMm, "Right");
 
         var bars = new List<RebarCoordinateDto>();
         AddSide(bars, "Top", sideCounts.Top, -x, y, x, y, bar);
         AddSide(bars, "Bottom", sideCounts.Bottom, -x, -y, x, -y, bar);
-        AddIntermediateBars(bars, "Left", sideCounts.Left, -x, -y, -x, y, bar);
-        AddIntermediateBars(bars, "Right", sideCounts.Right, x, -y, x, y, bar);
+        AddIntermediateBars(bars, "Left", sideCounts.LeftInterm, -x, -y, -x, y, bar);
+        AddIntermediateBars(bars, "Right", sideCounts.RightInterm, x, -y, x, y, bar);
 
         if (bars.Count == 0)
         {
@@ -55,7 +55,7 @@ public sealed class RebarCoordinateBuilderService(
         return bars;
     }
 
-    private static (int Top, int Bottom, int Left, int Right) GetSideCounts(RebarLayoutInputDto layout)
+    private static (int Top, int Bottom, int LeftInterm, int RightInterm) GetSideCounts(RebarLayoutInputDto layout)
     {
         if (layout.LayoutType == RebarLayoutType.AllSidesEqual)
         {
@@ -71,7 +71,7 @@ public sealed class RebarCoordinateBuilderService(
 
             int n = (layout.TotalBars - 4) / 4;
             int perSide = n + 2;
-            return (perSide, perSide, perSide, perSide);
+            return (perSide, perSide, n, n);
         }
 
         return (
@@ -81,15 +81,15 @@ public sealed class RebarCoordinateBuilderService(
             layout.Right.BarCount);
     }
 
-    private static void ValidateSideCounts((int Top, int Bottom, int Left, int Right) sideCounts, RebarLayoutType layoutType)
+    private static void ValidateSideCounts((int Top, int Bottom, int LeftInterm, int RightInterm) sideCounts, RebarLayoutType layoutType)
     {
-        if (sideCounts.Top < 0 || sideCounts.Bottom < 0 || sideCounts.Left < 0 || sideCounts.Right < 0)
+        if (sideCounts.Top < 0 || sideCounts.Bottom < 0 || sideCounts.LeftInterm < 0 || sideCounts.RightInterm < 0)
         {
             throw new InvalidOperationException("Side bar counts must be non-negative.");
         }
 
         if (layoutType == RebarLayoutType.SidesDifferent &&
-            sideCounts.Top + sideCounts.Bottom + sideCounts.Left + sideCounts.Right == 0)
+            sideCounts.Top + sideCounts.Bottom + sideCounts.LeftInterm + sideCounts.RightInterm == 0)
         {
             throw new InvalidOperationException("At least one side must contain bars.");
         }

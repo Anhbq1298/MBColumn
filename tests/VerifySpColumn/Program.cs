@@ -22,15 +22,15 @@ var validation = new InputValidationService();
 IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
 var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
 
-// spColumn reference test case 3: 1200Ã—400 mm, fc=32, fy=500, 16-T20 asymmetric (Sides Different), cover=55, ACI 318-19 biaxial tied
+// spColumn reference test case 2: 900Ã—400 mm, fc=32, fy=500, 16-T20 (314mm2), cover=55, ACI 318-19 biaxial tied
 var input = new ColumnInputDto(
     UnitSystem: UnitSystem.Metric,
-    Width: 1200,
+    Width: 900,
     Height: 400,
     Cover: 55,
     BarSize: "T20",
     BarCount: 16,
-    RebarLayoutPreset: "Sides Different",
+    RebarLayoutPreset: "All Sides Equal",
     Fc: 32,
     Fy: 500,
     Es: 200000,
@@ -45,11 +45,7 @@ var input = new ColumnInputDto(
     SelectedAxialLoad: 0)
 {
     DesignCode = DesignCodeType.Aci318Style,
-    RebarLayoutType = RebarLayoutType.SidesDifferent,
-    TopRebarSide = new RebarSideInputDto(8, "T20", 55),
-    BottomRebarSide = new RebarSideInputDto(6, "T20", 55),
-    LeftRebarSide = new RebarSideInputDto(2, "T20", 55),
-    RightRebarSide = new RebarSideInputDto(0, "T20", 55)
+    RebarLayoutType = RebarLayoutType.AllSidesEqual
 };
 
 var result = calculation.Calculate(input);
@@ -58,26 +54,26 @@ var table  = result.ControlPointTable!;
 // Reference (spColumn) â€” Axis X bends about X-axis (depth=400), reports Mx
 var refX = new (string Label, double P, double M, double C, double Eps, double Phi)[]
 {
-    ("Max compression", 10030.4,   -26.05, 2010, -0.00250, 0.65000),
-    ("Allowable comp.",  8024.3,   280.17,  414, -0.00057, 0.65000),
-    ("fs = 0.0",         6459.9,   443.14,  335,  0.00000, 0.65000),
-    ("fs = 0.5 fy",      4227.1,   548.25,  236,  0.00125, 0.65000),
-    ("Balanced point",   2771.5,   569.56,  183,  0.00250, 0.65000),
-    ("Tension control",  1928.5,   643.02,  118,  0.00550, 0.90000),
-    ("Pure bending",        0.0,   402.18,   61,  0.01339, 0.90000),
-    ("Max tension",     -2260.8,    38.15,    0,  9.99999, 0.90000),
+    ("Max compression",  7908.8,    0.00, 2010, -0.00250, 0.65000),
+    ("Allowable comp.",  6327.0,  221.11,  415, -0.00058, 0.65000),
+    ("fs = 0.0",         5088.6,  344.20,  335,  0.00000, 0.65000),
+    ("fs = 0.5 fy",      3341.0,  417.22,  236,  0.00125, 0.65000),
+    ("Balanced point",   2154.2,  427.78,  183,  0.00250, 0.65000),
+    ("Tension control",  1209.5,  481.15,  118,  0.00550, 0.90000),
+    ("Pure bending",        0.0,  349.18,   77,  0.01007, 0.90000),
+    ("Max tension",     -2260.8,    0.00,    0,  9.99999, 0.90000),
 };
-// Axis Y bends about Y-axis (depth=1200), reports My
+// Axis Y bends about Y-axis (depth=900), reports My
 var refY = new (string Label, double P, double M, double C, double Eps, double Phi)[]
 {
-    ("Max compression", 10030.4,  -103.25, 6810, -0.00250, 0.65000),
-    ("Allowable comp.",  8024.3,   793.99, 1246, -0.00027, 0.65000),
-    ("fs = 0.0",         7285.7,  1061.64, 1135,  0.00000, 0.65000),
-    ("fs = 0.5 fy",      4903.1,  1565.89,  801,  0.00125, 0.65000),
-    ("Balanced point",   3381.5,  1684.02,  619,  0.00250, 0.65000),
-    ("Tension control",  2275.0,  2034.74,  401,  0.00550, 0.90000),
-    ("Pure bending",        0.0,  1302.78,  196,  0.01433, 0.90000),
-    ("Max tension",     -2260.8,   151.19,    0,  9.99999, 0.90000),
+    ("Max compression",  7908.8,    0.00, 5010, -0.00250, 0.65000),
+    ("Allowable comp.",  6327.0,  538.65,  938, -0.00033, 0.65000),
+    ("fs = 0.0",         5618.0,  731.60,  835,  0.00000, 0.65000),
+    ("fs = 0.5 fy",      3788.4, 1025.04,  589,  0.00125, 0.65000),
+    ("Balanced point",   2604.5, 1114.74,  455,  0.00250, 0.65000),
+    ("Tension control",  1857.8, 1351.95,  295,  0.00550, 0.90000),
+    ("Pure bending",        0.0,  877.90,  141,  0.01473, 0.90000),
+    ("Max tension",     -2260.8,    0.00,    0,  9.99999, 0.90000),
 };
 
 var rowsX = table.Rows.Where(r => r.Axis == "X").ToList();
@@ -105,7 +101,7 @@ int Verify(string axis, IReadOnlyList<ControlPointTableRowDto> calc, (string Lab
         if (status != "FAIL") passed++;
 
         Console.WriteLine(
-            $"{rRef.Label,-18} | {rCalc.P,10:F2} | {rRef.P,10:F2} | {dP,6:F2} | {rCalc.Mx,10:F2} | {rCalc.Mny,10:F2} | {rRef.M,10:F2} | {dM,6:F2} | {status}");
+            $"{rRef.Label,-18} | {rCalc.P,10:F2} | {rRef.P,10:F2} | {dP,6:F2} | {rCalc.Mx,10:F2} | {rCalc.My,10:F2} | {rRef.M,10:F2} | {dM,6:F2} | {status}");
     }
     Console.WriteLine();
     return passed;

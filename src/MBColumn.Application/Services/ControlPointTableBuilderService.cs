@@ -17,9 +17,9 @@ public static class ControlPointTableBuilderService
     // theta=0  â†’ compression in +x â†’ bending about Y axis â†’ Mny moment (spColumn "Y")
     private static readonly (string Axis, double AngleDeg)[] Axes =
     [
-        ("X",   90.0),
+        ("X",  270.0),
         ("Y",    0.0),
-        ("-X", 270.0),
+        ("-X",  90.0),
         ("-Y", 180.0),
     ];
 
