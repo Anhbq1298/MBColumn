@@ -82,6 +82,7 @@ Read all of these before editing Eurocode behavior:
 - `docs/engineering/eurocode/ec2-strain-limits.md`
 - `docs/engineering/eurocode/ec2-stress-block.md`
 - `docs/engineering/eurocode/ec2-pmm-ratio.md`
+- `docs/engineering/eurocode/eurocode-chart-reuse-contract.md`
 - `docs/engineering/eurocode/worked-example.md`
 
 ### UI / chart / rendering tasks
