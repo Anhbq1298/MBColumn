@@ -1,13 +1,13 @@
-using ColumnDesigner.Application.DTOs;
-using ColumnDesigner.Application.Services;
-using ColumnDesigner.Domain.Enums;
-using ColumnDesigner.Domain.Interfaces;
-using ColumnDesigner.Infrastructure.DesignCodes;
-using ColumnDesigner.Infrastructure.Math;
-using ColumnDesigner.Infrastructure.Rebar;
-using ColumnDesigner.Infrastructure.Solvers;
+﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.Services;
+using MBColumn.Domain.Enums;
+using MBColumn.Domain.Interfaces;
+using MBColumn.Infrastructure.DesignCodes;
+using MBColumn.Infrastructure.Math;
+using MBColumn.Infrastructure.Rebar;
+using MBColumn.Infrastructure.Solvers;
 
-// Composition root — mirror MainWindow.xaml.cs
+// Composition root â€” mirror MainWindow.xaml.cs
 IDesignCodeService aciCode = new Aci318DesignCodeService();
 IDesignCodeService ec2Code = new Ec2DesignCodeService();
 IDesignCodeServiceFactory codeFactory = new DesignCodeServiceFactory(aciCode, ec2Code);
@@ -22,14 +22,14 @@ var validation = new InputValidationService();
 IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
 var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
 
-// spColumn v10.10 reference test case: 700×300 mm, fc=28, fy=420, 28-T25, cover=55, ACI 318-19 tied
+// spColumn v10.10 reference test case: 700Ã—300 mm, fc=28, fy=420, 28-T25, cover=55, ACI 318-19 tied
 var input = new ColumnInputDto(
     UnitSystem: UnitSystem.Metric,
     Width: 700,
     Height: 300,
     Cover: 55,
     BarSize: "T25",
-    // NOTE: BarCount=32 → 8 per side; corner dedup → 28 unique bars matching spColumn's "28-bar perimeter".
+    // NOTE: BarCount=32 â†’ 8 per side; corner dedup â†’ 28 unique bars matching spColumn's "28-bar perimeter".
     // The AllSidesEqual preset double-counts corners; BarCount=28 would give only 24 unique bars.
     BarCount: 32,
     RebarLayoutPreset: "All Sides Equal",
@@ -53,7 +53,7 @@ var input = new ColumnInputDto(
 var result = calculation.Calculate(input);
 var table  = result.ControlPointTable!;
 
-// Reference (spColumn v10.10) — Axis X bends about X-axis (depth=300), reports Mx
+// Reference (spColumn v10.10) â€” Axis X bends about X-axis (depth=300), reports Mx
 // Order: MaxComp, AllowComp, fs=0, fs=0.5fy, Balanced, PureBending, TensionCtrl, MaxTension
 var refX = new (string Label, double P, double M, double C, double Eps, double Phi)[]
 {
@@ -88,7 +88,7 @@ Console.WriteLine();
 int Verify(string axis, IReadOnlyList<ControlPointTableRowDto> calc, (string Label, double P, double M, double C, double Eps, double Phi)[] refs)
 {
     Console.WriteLine($"[AXIS {axis}]");
-    Console.WriteLine($"{"Control Point",-18} | {"P_calc",10} | {"P_ref",10} | {"ΔP%",6} | {"M_calc",10} | {"M_ref",10} | {"ΔM%",6} | {"c_calc",7} | {"c_ref",7} | {"εt_calc",10} | {"φ_calc",7} | STATUS");
+    Console.WriteLine($"{"Control Point",-18} | {"P_calc",10} | {"P_ref",10} | {"Î”P%",6} | {"M_calc",10} | {"M_ref",10} | {"Î”M%",6} | {"c_calc",7} | {"c_ref",7} | {"Îµt_calc",10} | {"Ï†_calc",7} | STATUS");
     int passed = 0;
     foreach (var rRef in refs)
     {
@@ -115,3 +115,4 @@ Console.WriteLine("SUMMARY");
 Console.WriteLine($"  Axis X: {passX}/{refX.Length} PASSED");
 Console.WriteLine($"  Axis Y: {passY}/{refY.Length} PASSED");
 Console.WriteLine($"  Overall: {(passX == refX.Length && passY == refY.Length ? "PASS" : "FAIL")}");
+

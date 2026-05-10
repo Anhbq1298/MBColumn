@@ -1,0 +1,391 @@
+﻿<UserControl x:Class="MBColumn.Presentation.Wpf.Views.ResultTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
+             xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels">
+    <UserControl.Resources>
+        <Style x:Key="MetricLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
+            <Setter Property="Margin" Value="0,0,0,5" />
+        </Style>
+
+        <Style x:Key="MetricValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="Margin" Value="8,0,0,5" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource LightBackgroundBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400" MinWidth="370" />
+            <ColumnDefinition Width="10" />
+            <ColumnDefinition Width="*" MinWidth="560" />
+        </Grid.ColumnDefinitions>
+
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <Border Style="{StaticResource SidebarCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Diagram Viewports" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding ViewportDropdownText}" Style="{StaticResource HelperTextStyle}" Margin="0,0,0,8" />
+                        <ItemsControl ItemsSource="{Binding ViewportOptions}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding DisplayName}"
+                                              IsChecked="{Binding IsSelected}"
+                                              MinWidth="92"
+                                              Margin="0,2,10,4" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SidebarCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Navigation" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,10" />
+                        <Grid Margin="0,0,0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="92" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Angle theta (Mx, My)" Style="{StaticResource FieldLabelTextStyle}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SelectedSliceAngleDegrees, UpdateSourceTrigger=PropertyChanged, StringFormat=F1}"
+                                     HorizontalContentAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="deg" Style="{StaticResource UnitTextStyle}" Margin="6,0,0,10" />
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="92" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Axial load" Style="{StaticResource FieldLabelTextStyle}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SelectedAxialLoad, UpdateSourceTrigger=PropertyChanged, StringFormat=F1}"
+                                     HorizontalContentAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="{Binding ForceUnitLabel}" Style="{StaticResource UnitTextStyle}" Margin="6,0,0,10" />
+                        </Grid>
+                        <TextBlock Text="{Binding PmSliceLabel}" Style="{StaticResource HelperTextStyle}" />
+                        <TextBlock Text="{Binding MxMySliceLabel}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SidebarCardStyle}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right"
+                                    Content="Control points"
+                                    Style="{StaticResource CompactButtonStyle}"
+                                    Command="{Binding ShowControlPointsCommand}" />
+                            <TextBlock Text="Results Summary"
+                                       Style="{StaticResource SectionTitleTextStyle}"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" MinWidth="110" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Overall" Style="{StaticResource MetricLabelStyle}" />
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource AccentBlueSoftBrush}"
+                                    BorderBrush="{DynamicResource BorderGreyBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="10,2"
+                                    HorizontalAlignment="Right"
+                                    Margin="8,0,0,5">
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            </Border>
+                            <TextBlock Grid.Row="1" Text="Max Utilization" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MaxUtilization, StringFormat={}{0:F3}}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Text="Critical Load Case" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CriticalLoadCaseName}" Style="{StaticResource MetricValueStyle}" />
+                        </Grid>
+
+                        <DataGrid ItemsSource="{Binding LoadCaseRows}"
+                                  SelectedItem="{Binding SelectedLoadCaseRow}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserResizeRows="False"
+                                  CanUserSortColumns="False"
+                                  IsReadOnly="True"
+                                  MinHeight="126"
+                                  MaxHeight="240">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCritical}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsFailing}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="108" ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="76" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="76" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="76" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Angle" Binding="{Binding AngleDisplay}" Width="66" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Util." Binding="{Binding UtilizationDisplay}" Width="62" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="70" ElementStyle="{StaticResource LeftAlignText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SidebarCardStyle}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button DockPanel.Dock="Right"
+                                    Content="Clear"
+                                    Style="{StaticResource CompactButtonStyle}"
+                                    Command="{Binding ClearSelectedChartPointCommand}" />
+                            <TextBlock Text="Selected Point" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" MinWidth="130" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Type" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedPointTypeDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="1" Text="P" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedPointPDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Text="Mx" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedPointMxDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="3" Text="My" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedPointMyDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="4" Text="Theta" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedPointThetaDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="5" Text="Neutral axis depth" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedPointNeutralAxisDepthDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="6" Text="DCR / Ratio" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedPointDcrDisplay}" Style="{StaticResource MetricValueStyle}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SidebarCardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="3D Diagrams" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,6" />
+                        <WrapPanel>
+                            <CheckBox Content="Surface" IsChecked="{Binding ShowSurface3D}" />
+                            <CheckBox Content="Wireframe" IsChecked="{Binding ShowWireframe3D}" />
+                            <CheckBox Content="PM slice" IsChecked="{Binding PM3D.ShowSlicePlane}" />
+                            <CheckBox Content="Axial slice" IsChecked="{Binding PM3D.ShowAxialLoadSlice}" />
+                            <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" />
+                            <CheckBox Content="Labels" IsChecked="{Binding ShowLabels}" />
+                            <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <GridSplitter Grid.Column="1"
+                      Width="10"
+                      HorizontalAlignment="Stretch"
+                      Background="{DynamicResource LightBackgroundBrush}" />
+
+        <UniformGrid Grid.Column="2"
+                     Margin="8,0,0,0"
+                     Columns="{Binding LayoutColumns}"
+                     Rows="{Binding LayoutRows}">
+            <Border Style="{StaticResource ChartCardStyle}"
+                    Visibility="{Binding ShowPM, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8" MinHeight="28">
+                        <Button DockPanel.Dock="Right"
+                                Content="x"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Close viewport"
+                                Command="{Binding CloseViewportCommand}"
+                                CommandParameter="{x:Static vm:DiagramViewportType.PM2D}" />
+                        <TextBlock Text="{Binding PM.DiagramTitle}"
+                                   Style="{StaticResource SectionTitleTextStyle}"
+                                   VerticalAlignment="Center"
+                                   ToolTip="{Binding PM.DiagramTitle}" />
+                    </DockPanel>
+                    <controls:DiagramCanvas2D Grid.Row="1"
+                                              MinHeight="220"
+                                              Points="{Binding PmAnglePoints}"
+                                              ReferenceLines="{Binding PmReferenceLines}"
+                                              XAxisLabel="{Binding PM.XAxisLabel}"
+                                              YAxisLabel="{Binding PM.YAxisLabel}"
+                                              ShowGrid="{Binding ShowGrid}"
+                                              ShowLabels="{Binding ShowLabels}"
+                                              ShowLegend="{Binding ShowLegend}"
+                                              ShowDemandPoint="{Binding ShowDemandPoint}"
+                                              ShowReferenceLines="{Binding ShowPmaxPmin}"
+                                              ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              BoundsOverride="{Binding SharedPmBounds}"
+                                              InsetFigure="{Binding PmChartInset}"
+                                              SelectedPoint="{Binding SelectedChartPoint}"
+                                              Ratio="{Binding PM.Ratio}"
+                                              ResetVersion="{Binding PM.ResetVersion}" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource ChartCardStyle}"
+                    Visibility="{Binding ShowPMx, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8" MinHeight="28">
+                        <Button DockPanel.Dock="Right"
+                                Content="x"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Close viewport"
+                                Command="{Binding CloseViewportCommand}"
+                                CommandParameter="{x:Static vm:DiagramViewportType.PMx2D}" />
+                        <TextBlock Text="{Binding PMx.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <controls:DiagramCanvas2D Grid.Row="1"
+                                              MinHeight="220"
+                                              Points="{Binding PmXPoints}"
+                                              ReferenceLines="{Binding PmXReferenceLines}"
+                                              XAxisLabel="{Binding PMx.XAxisLabel}"
+                                              YAxisLabel="{Binding PMx.YAxisLabel}"
+                                              ShowGrid="{Binding ShowGrid}"
+                                              ShowLabels="{Binding ShowLabels}"
+                                              ShowLegend="{Binding ShowLegend}"
+                                              ShowDemandPoint="{Binding ShowDemandPoint}"
+                                              ShowReferenceLines="{Binding ShowPmaxPmin}"
+                                              ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              ShowCapacityControlPoints="False"
+                                              SelectedPoint="{Binding SelectedChartPoint}"
+                                              Ratio="{Binding PMx.Ratio}"
+                                              ResetVersion="{Binding PMx.ResetVersion}" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource ChartCardStyle}"
+                    Visibility="{Binding ShowPMy, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8" MinHeight="28">
+                        <Button DockPanel.Dock="Right"
+                                Content="x"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Close viewport"
+                                Command="{Binding CloseViewportCommand}"
+                                CommandParameter="{x:Static vm:DiagramViewportType.PMy2D}" />
+                        <TextBlock Text="{Binding PMy.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <controls:DiagramCanvas2D Grid.Row="1"
+                                              MinHeight="220"
+                                              Points="{Binding PmYPoints}"
+                                              ReferenceLines="{Binding PmYReferenceLines}"
+                                              XAxisLabel="{Binding PMy.XAxisLabel}"
+                                              YAxisLabel="{Binding PMy.YAxisLabel}"
+                                              ShowGrid="{Binding ShowGrid}"
+                                              ShowLabels="{Binding ShowLabels}"
+                                              ShowLegend="{Binding ShowLegend}"
+                                              ShowDemandPoint="{Binding ShowDemandPoint}"
+                                              ShowReferenceLines="{Binding ShowPmaxPmin}"
+                                              ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              ShowCapacityControlPoints="False"
+                                              SelectedPoint="{Binding SelectedChartPoint}"
+                                              Ratio="{Binding PMy.Ratio}"
+                                              ResetVersion="{Binding PMy.ResetVersion}" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource ChartCardStyle}"
+                    Visibility="{Binding ShowPmm3D, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8" MinHeight="28">
+                        <Button DockPanel.Dock="Right"
+                                Content="x"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Close viewport"
+                                Command="{Binding CloseViewportCommand}"
+                                CommandParameter="{x:Static vm:DiagramViewportType.Pmm3D}" />
+                        <TextBlock Text="3D PMM View" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <controls:InteractionViewport3D Grid.Row="1"
+                                                    MinHeight="220"
+                                                    Points="{Binding PM3D.SurfacePoints}"
+                                                    DemandPoint="{Binding PM3D.DemandPoint}"
+                                                    DemandPoints="{Binding PM3D.DemandPoints}"
+                                                    ShowGrid="{Binding ShowGrid}"
+                                                    ShowWireframe="{Binding ShowWireframe3D}"
+                                                    ShowSurface="{Binding ShowSurface3D}"
+                                                    ShowLabels="{Binding ShowLabels}"
+                                                    ShowDemandPoint="{Binding ShowDemandPoint}"
+                                                    UnitLabels="{Binding PM3D.UnitLabels}"
+                                                    SelectedPmAngle="{Binding PM3D.SelectedPmAngle}"
+                                                    SelectedAxialLoad="{Binding PM3D.SelectedAxialLoad}"
+                                                    ShowSlicePlane="{Binding PM3D.ShowSlicePlane}"
+                                                    ShowAxialLoadSlice="{Binding PM3D.ShowAxialLoadSlice}"
+                                                    ResetVersion="{Binding PM3D.ResetVersion}" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource ChartCardStyle}"
+                    Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8" MinHeight="28">
+                        <Button DockPanel.Dock="Right"
+                                Content="x"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Close viewport"
+                                Command="{Binding CloseViewportCommand}"
+                                CommandParameter="{x:Static vm:DiagramViewportType.MxMy2D}" />
+                        <TextBlock Text="Mx-My Diagram" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <controls:DiagramCanvas2D Grid.Row="1"
+                                              MinHeight="220"
+                                              Points="{Binding MxMyPoints}"
+                                              XAxisLabel="{Binding MM.XAxisLabel}"
+                                              YAxisLabel="{Binding MM.YAxisLabel}"
+                                              ShowGrid="{Binding ShowGrid}"
+                                              ShowLabels="{Binding ShowLabels}"
+                                              ShowLegend="{Binding ShowLegend}"
+                                              ShowDemandPoint="{Binding ShowDemandPoint}"
+                                              ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              UseEqualAspect="{Binding UseEqualAspectForMM}"
+                                              InsetFigure="{Binding PmChartInset}"
+                                              SelectedPoint="{Binding SelectedChartPoint}"
+                                              Ratio="{Binding MM.Ratio}"
+                                              ResetVersion="{Binding MM.ResetVersion}" />
+                </Grid>
+            </Border>
+        </UniformGrid>
+    </Grid>
+</UserControl>
+
