@@ -11,10 +11,23 @@ Maintain a stable, independently implemented reinforced-concrete PMM application
 Always read in this order:
 
 1. `AGENTS.md`
-2. `developing-skills/_skills/00_ProjectTruth.md`
-3. Relevant validation skill files
+2. `README.md`
+3. `BUILD_NOTES.md`
 4. Relevant engineering/rendering docs
 5. Only the required source files
+
+## Workflow Expectations
+
+```text
+Read AGENTS.md
+-> read the minimum required docs
+-> inspect the minimum required source files
+-> implement incrementally
+-> build
+-> run tests
+-> validate engineering assumptions
+-> summarize impact and risks
+```
 
 ## Important Constraints
 
@@ -26,6 +39,7 @@ Always read in this order:
 - Invent structural-engineering equations or code clauses.
 - Copy proprietary code from any decompiled reference.
 - Refactor unrelated files without strong justification.
+- Mutate ACI PMM logic directly to implement Eurocode behavior.
 
 ### Always
 
@@ -35,6 +49,8 @@ Always read in this order:
 - Preserve backward-compatible engineering assumptions unless explicitly requested.
 - State assumptions clearly.
 - Keep PMM surface generation numerically stable.
+- Prefer modular design-code services.
+- Compile after changes.
 
 ## PMM Expectations
 
@@ -47,6 +63,17 @@ The PMM implementation should preserve:
 - stable interpolation
 - smooth interaction surfaces
 - correct directional capacity search behavior
+
+## Eurocode Expectations
+
+Eurocode implementation should:
+
+- remain separated from ACI design-code behavior
+- preserve the same core solver architecture when possible
+- use independent material/stress-block assumptions
+- support future EC2/EC8 expansion
+- support future second-order effects without major refactor
+- clearly separate nominal and design capacities
 
 ## Rendering Expectations
 
@@ -76,17 +103,13 @@ Protect against:
 - invalid neutral-axis sweeps
 - tension/compression sign inversion
 
-## Recommended Workflow
+## UI Expectations
 
-```text
-Read truth files
--> read relevant skill files
--> inspect minimal source set
--> implement
--> run tests
--> validate engineering assumptions
--> summarize impact
-```
+- Use Segoe UI.
+- Prevent overlapping controls.
+- Prefer modern clean dashboard-style layouts.
+- Keep engineering readability higher priority than visual effects.
+- Maintain current primary color identity unless explicitly changed.
 
 ## Required Final Summary
 
