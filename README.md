@@ -1,4 +1,4 @@
-# MBColumn
+﻿# MBColumn
 
 MBColumn is a clean-room .NET 8 WPF desktop application for reinforced-concrete rectangular column PMM interaction checks.
 
@@ -19,9 +19,11 @@ It is designed for learning, validation, and preliminary engineering review work
 
 ```powershell
 dotnet build MBColumn.sln
-dotnet run --project src\ColumnDesigner.Presentation.Wpf\ColumnDesigner.Presentation.Wpf.csproj
-dotnet test tests\ColumnDesigner.Tests\ColumnDesigner.Tests.csproj
+dotnet run --project src\MBColumn.Presentation.Wpf\MBColumn.Presentation.Wpf.csproj
+dotnet test tests\MBColumn.Tests\MBColumn.Tests.csproj
 ```
+
+Build artifacts are redirected to the `built/` directory. The final binaries can be found in `built/bin/`.
 
 ## Repository Guide
 
@@ -29,6 +31,8 @@ dotnet test tests\ColumnDesigner.Tests\ColumnDesigner.Tests.csproj
 docs/        Engineering assumptions, architecture contracts, UI notes, and validation workflow.
 src/         Application source code.
 tests/       Unit tests.
+_ref/        Reference materials (spColumn binaries and source).
+built/       Build artifacts (bin and obj).
 AGENTS.md   Coding-agent instruction router.
 CLAUDE.md   Claude Code workflow notes.
 ```
@@ -146,7 +150,7 @@ See:
 Run tests after changes:
 
 ```powershell
-dotnet test tests\ColumnDesigner.Tests\ColumnDesigner.Tests.csproj
+dotnet test tests\MBColumn.Tests\MBColumn.Tests.csproj
 ```
 
 Recommended validation documents:
@@ -168,3 +172,4 @@ All engineering outputs must be independently verified by a qualified structural
 ## Disclaimer
 
 MBColumn is for study, validation, and preliminary checking only. It must not be used as the sole basis for engineering design or construction decisions.
+

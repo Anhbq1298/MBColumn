@@ -1,4 +1,4 @@
-# Control Point Pipeline
+﻿# Control Point Pipeline
 
 `ControlPointBuilderService` builds the diagram-ready points from `InteractionSurface`, `LoadDemand`, selected PM angle, selected axial load, unit system, and `RatioResult`.
 
@@ -22,7 +22,7 @@ Observed behavior reflected in the new clean-room implementation:
 - Pmax and Pmin reference points are inserted into PM output.
 - Demand and governing points are explicitly inserted.
 - Display load filtering uses small tolerances and avoids unstable duplicate points.
-- The active PM render DTO maps `X = Mθ` and `Y = P`, where `Mθ = Mx cosθ + My sinθ`; Mx-My render DTOs map `X = Mx` and `Y = My`.
+- The active PM render DTO maps `X = MÎ¸` and `Y = P`, where `MÎ¸ = Mx cosÎ¸ + My sinÎ¸`; Mx-My render DTOs map `X = Mx` and `Y = My`.
 - Chart DTO generation removes NaN/Infinity values and duplicate display points before rendering.
 
 ## Reference PM Curve Logic Review
@@ -85,7 +85,7 @@ New implementation:
 
 - PMx control points: factored positive/negative P-Mx branches, Pmax, Pmin, demand, governing point.
 - PMy control points: factored positive/negative P-My branches, Pmax, Pmin, demand, governing point.
-- PM angle control points: factored and nominal P-Mθ branches at the selected navigation angle, Pmax, Pmin, demand, governing point.
+- PM angle control points: factored and nominal P-MÎ¸ branches at the selected navigation angle, Pmax, Pmin, demand, governing point.
 - Mx-My control points: factored Mx-My boundary at selected Pu, demand, governing point.
 - 3D PMM surface points: factored P-Mx-My grid plus demand and governing point.
 - 3D MM slice points: selected-Pu Mx-My slice plus demand and governing point.
@@ -103,21 +103,21 @@ Each interaction point stores both **nominal** (unfactored) and **design** (fact
 | Nominal Axial | Raw axial capacity | Pn | `InteractionPoint.Pn` |
 | Nominal Moment X | Raw Mx capacity | Mnx | `InteractionPoint.Mnx` |
 | Nominal Moment Y | Raw My capacity | Mny | `InteractionPoint.Mny` |
-| Design Axial | Factored axial capacity | φPn | `InteractionPoint.PhiPn` (= Pn × φ) |
-| Design Moment X | Factored Mx capacity | φMnx | `InteractionPoint.PhiMnx` (= Mnx × φ) |
-| Design Moment Y | Factored My capacity | φMny | `InteractionPoint.PhiMny` (= Mny × φ) |
+| Design Axial | Factored axial capacity | Ï†Pn | `InteractionPoint.PhiPn` (= Pn Ã— Ï†) |
+| Design Moment X | Factored Mx capacity | Ï†Mnx | `InteractionPoint.PhiMnx` (= Mnx Ã— Ï†) |
+| Design Moment Y | Factored My capacity | Ï†Mny | `InteractionPoint.PhiMny` (= Mny Ã— Ï†) |
 
-The **phi factor** (φ) is depth-dependent and varies from 0.65 (compression-controlled) to 0.90 (tension-controlled) per ACI 318.
+The **phi factor** (Ï†) is depth-dependent and varies from 0.65 (compression-controlled) to 0.90 (tension-controlled) per ACI 318.
 
 ### Data Flow
 
 1. `ControlPointBuilderService.ToControl()` computes both sets of unit-converted display values for every interaction point:
-   - `DisplayP` / `DisplayMx` / `DisplayMy` → from `PhiPn` / `PhiMnx` / `PhiMny` (design, φ-applied)
-   - `NominalDisplayP` / `NominalDisplayMx` / `NominalDisplayMy` → from `Pn` / `Mnx` / `Mny` (nominal, no φ)
+   - `DisplayP` / `DisplayMx` / `DisplayMy` â†’ from `PhiPn` / `PhiMnx` / `PhiMny` (design, Ï†-applied)
+   - `NominalDisplayP` / `NominalDisplayMx` / `NominalDisplayMy` â†’ from `Pn` / `Mnx` / `Mny` (nominal, no Ï†)
 
 2. `PmCurveBuilderService.BuildCurve()` runs the ring-intersection algorithm twice:
-   - **Design pass**: uses `DisplayP` / `DisplayMx` / `DisplayMy` → produces branches with GroupKey `"Positive"` / `"Negative"` and `IsNominal = false`.
-   - **Nominal pass**: uses `NominalDisplayP` / `NominalDisplayMx` / `NominalDisplayMy` → produces branches with GroupKey `"NominalPositive"` / `"NominalNegative"` and `IsNominal = true`.
+   - **Design pass**: uses `DisplayP` / `DisplayMx` / `DisplayMy` â†’ produces branches with GroupKey `"Positive"` / `"Negative"` and `IsNominal = false`.
+   - **Nominal pass**: uses `NominalDisplayP` / `NominalDisplayMx` / `NominalDisplayMy` â†’ produces branches with GroupKey `"NominalPositive"` / `"NominalNegative"` and `IsNominal = true`.
 
 3. `DiagramCanvas2D.DrawCapacity()` renders:
    - Design curves: **solid blue** pen (`RGB(0, 75, 133)`, 1.8pt)
@@ -131,7 +131,7 @@ The **phi factor** (φ) is depth-dependent and varies from 0.65 (compression-con
 
 ### PMM Ratio / DCR Check
 
-`RatioCheckService.Check()` uses exclusively **design** (φ-factored) values:
+`RatioCheckService.Check()` uses exclusively **design** (Ï†-factored) values:
 - Interpolation at demand axial load uses `PhiPn`
 - Capacity moment uses `PhiMnx` / `PhiMny`
 - The governing point is selected from the design surface
@@ -147,9 +147,9 @@ The nominal curve visibility is controlled by:
 
 ## Chart Data Flow
 
-The WPF chart layer receives only DTO/control-point data. Display transforms, gridlines, panning, zooming, tooltips, and visual scaling are handled in `ColumnDesigner.Presentation.Wpf.Controls` and do not alter the interaction surface or PMM ratio.
+The WPF chart layer receives only DTO/control-point data. Display transforms, gridlines, panning, zooming, tooltips, and visual scaling are handled in `MBColumn.Presentation.Wpf.Controls` and do not alter the interaction surface or PMM ratio.
 
-## 3D PMM View — Interaction and Performance
+## 3D PMM View â€” Interaction and Performance
 
 ### Coordinate System
 
@@ -171,9 +171,9 @@ The WPF chart layer receives only DTO/control-point data. Display transforms, gr
 
 A green semi-transparent slice plane shows the PM section cut through the 3D PMM surface at the selected PM angle. This plane:
 - Rotates according to `SelectedPmAngle` (bound from `PM3DViewModel`)
-- Is drawn as a vertical quad through the origin along the direction `(cos θ, sin θ)`
+- Is drawn as a vertical quad through the origin along the direction `(cos Î¸, sin Î¸)`
 - Fill: `rgba(60, 200, 90, 0.22)`, Outline: green
-- Labeled: `"PM at θ = xx.x°"`
+- Labeled: `"PM at Î¸ = xx.xÂ°"`
 - Can be toggled via `ShowSlicePlane` checkbox
 
 ### Axial Load Slice Plane
@@ -190,7 +190,7 @@ A blue-grey transparent horizontal slice plane shows the Mx-My cut at the user-s
 
 ### Geometry Caching
 
-**Performance optimization**: All geometry is pre-computed once and cached in `CachedScene`. During mouse interaction (rotate/zoom/pan), only the 2D projection is recomputed — no geometry rebuild.
+**Performance optimization**: All geometry is pre-computed once and cached in `CachedScene`. During mouse interaction (rotate/zoom/pan), only the 2D projection is recomputed â€” no geometry rebuild.
 
 Geometry is rebuilt only when:
 - `Points` data changes (new calculation result)
@@ -210,30 +210,30 @@ Cached data:
 
 WPF resources (pens, brushes) are frozen for performance.
 
-## Internal Blue Segment Bug — Root Cause and Fix (2026-05-09)
+## Internal Blue Segment Bug â€” Root Cause and Fix (2026-05-09)
 
 ### Symptom
-Short horizontal blue line segments appeared near the top (Pmax / compression cap region) of both PMx and PMy diagrams. These were internal to the interaction envelope — not part of the true outer boundary.
+Short horizontal blue line segments appeared near the top (Pmax / compression cap region) of both PMx and PMy diagrams. These were internal to the interaction envelope â€” not part of the true outer boundary.
 
 ### Root Cause (Two-Part)
 
-**Part 1 — Compression cap applied to PMM surface points**
+**Part 1 â€” Compression cap applied to PMM surface points**
 
-`ControlPointBuilderService.ToControl()` clamped `PhiPn` to `compressionLimit = 0.80 × PhiPn_max` for ALL diagram types, including the `Pm3D` surface points that feed `PmCurveBuilderService`. This created a **flat P-plateau** at the top of each theta row: multiple consecutive surface points all had the same `DisplayP = compressionLimit` but different `(DisplayMx, DisplayMy)` moment values reflecting their actual depth-of-interaction row.
+`ControlPointBuilderService.ToControl()` clamped `PhiPn` to `compressionLimit = 0.80 Ã— PhiPn_max` for ALL diagram types, including the `Pm3D` surface points that feed `PmCurveBuilderService`. This created a **flat P-plateau** at the top of each theta row: multiple consecutive surface points all had the same `DisplayP = compressionLimit` but different `(DisplayMx, DisplayMy)` moment values reflecting their actual depth-of-interaction row.
 
-When `BuildRingAtP` sampled at `p = pMax = compressionLimit`, `InterpolateAtP` found and returned one of these plateau points (the first matching pair), carrying its non-zero `(Mx, My)` as a valid ring intersection point. The 36-angle ring therefore had non-zero moment extent at `Pmax`. The positive and negative intersections of this ring produced a moment value, not zero. These became the **first points** of the Positive and Negative PM branches — appearing at `(+M_artifact, Pmax)` and `(-M_artifact, Pmax)` — visible as internal horizontal connector segments near the top of the chart.
+When `BuildRingAtP` sampled at `p = pMax = compressionLimit`, `InterpolateAtP` found and returned one of these plateau points (the first matching pair), carrying its non-zero `(Mx, My)` as a valid ring intersection point. The 36-angle ring therefore had non-zero moment extent at `Pmax`. The positive and negative intersections of this ring produced a moment value, not zero. These became the **first points** of the Positive and Negative PM branches â€” appearing at `(+M_artifact, Pmax)` and `(-M_artifact, Pmax)` â€” visible as internal horizontal connector segments near the top of the chart.
 
-**Part 2 — Interpolation condition matched degenerate same-P pairs**
+**Part 2 â€” Interpolation condition matched degenerate same-P pairs**
 
-`InterpolateAtP` used a condition that matched any segment pair where both endpoints' P values encompassed the target `p` within tolerance — including degenerate pairs where `a.DisplayP ≈ b.DisplayP ≈ p`. This allowed a flat-plateau pair to satisfy the check and return an arbitrary `(Mx, My)` from either endpoint.
+`InterpolateAtP` used a condition that matched any segment pair where both endpoints' P values encompassed the target `p` within tolerance â€” including degenerate pairs where `a.DisplayP â‰ˆ b.DisplayP â‰ˆ p`. This allowed a flat-plateau pair to satisfy the check and return an arbitrary `(Mx, My)` from either endpoint.
 
 ### Fix Applied
 
-1. **`ControlPointBuilderService.BuildSurface`** — Changed to pass `double.MaxValue` as `compressionLimit` for surface (Pm3D) points. This preserves the raw uncapped `PhiPn` for every theta row, ensuring each theta row has a strictly monotone-descending P profile from the compression end to the tension end. The compression cap (`0.80 × Pmax`) is retained only for the traditional PM diagram branch (`BuildPm`), which is its correct domain.
+1. **`ControlPointBuilderService.BuildSurface`** â€” Changed to pass `double.MaxValue` as `compressionLimit` for surface (Pm3D) points. This preserves the raw uncapped `PhiPn` for every theta row, ensuring each theta row has a strictly monotone-descending P profile from the compression end to the tension end. The compression cap (`0.80 Ã— Pmax`) is retained only for the traditional PM diagram branch (`BuildPm`), which is its correct domain.
 
-2. **Current 3D display behavior** — The 3D design PMM surface is intentionally ACI-capped so the rendered design surface matches the PMx/PMy design compression limit. `PmCurveBuilderService.InterpolateAtP` rejects degenerate same-P plateau segments, so the PM curve builder does not turn the capped top plateau into internal curve artifacts.
+2. **Current 3D display behavior** â€” The 3D design PMM surface is intentionally ACI-capped so the rendered design surface matches the PMx/PMy design compression limit. `PmCurveBuilderService.InterpolateAtP` rejects degenerate same-P plateau segments, so the PM curve builder does not turn the capped top plateau into internal curve artifacts.
 
-3. **`PmCurveBuilderService.InterpolateAtP`** — Strengthened the bracket check to require `nonDegenerate = a.DisplayP - b.DisplayP > tolerance`. This explicitly rejects degenerate pairs where both endpoints are at the same P level.
+3. **`PmCurveBuilderService.InterpolateAtP`** â€” Strengthened the bracket check to require `nonDegenerate = a.DisplayP - b.DisplayP > tolerance`. This explicitly rejects degenerate pairs where both endpoints are at the same P level.
 
 ### Result
 - PMx and PMy diagrams show only the true outer interaction envelope.
@@ -245,29 +245,29 @@ When `BuildRingAtP` sampled at `p = pMax = compressionLimit`, `InterpolateAtP` f
 
 ### Definition
 
-Per ACI 318-19 §22.4.2.1, the maximum nominal axial strength used for design of tied columns is limited to:
+Per ACI 318-19 Â§22.4.2.1, the maximum nominal axial strength used for design of tied columns is limited to:
 
-    Pn,max = 0.80 × P0
+    Pn,max = 0.80 Ã— P0
 
-where P0 = 0.85 × f'c × (Ag - Ast) + fy × Ast (pure compression strength).
+where P0 = 0.85 Ã— f'c Ã— (Ag - Ast) + fy Ã— Ast (pure compression strength).
 
 The **design** maximum is:
 
-    φPn,max = φ × 0.80 × P0 = 0.80 × max(φPn)
+    Ï†Pn,max = Ï† Ã— 0.80 Ã— P0 = 0.80 Ã— max(Ï†Pn)
 
-This creates a horizontal trim line at the top of the design capacity curve. Above this level, the design curve does not exist. Below this level, the section still has non-zero moment capacity, so the trim line connects the min/max design moment envelope points at `P = φPn,max`.
+This creates a horizontal trim line at the top of the design capacity curve. Above this level, the design curve does not exist. Below this level, the section still has non-zero moment capacity, so the trim line connects the min/max design moment envelope points at `P = Ï†Pn,max`.
 
 ### Implementation
 
-1. `ControlPointBuilderService.Build()` computes `compressionLimit = 0.80 × max(φPn)` and converts it to display units as `compressionLimitDisplay`.
+1. `ControlPointBuilderService.Build()` computes `compressionLimit = 0.80 Ã— max(Ï†Pn)` and converts it to display units as `compressionLimitDisplay`.
 
 2. `DiagramControlPointSet` carries `DesignCompressionLimitDisplay` to downstream services.
 
 3. `PmCurveBuilderService.BuildCurve()` uses this limit:
-   - **Design curve**: `designPMax = min(rawPMax, designCompressionLimitDisplay)` — the top of the 70-level scan is at the ACI limit, not at the raw maximum.
-   - **Nominal curve**: `nomPMax = max(NominalDisplayP)` — no cap, uses the true Pn maximum.
+   - **Design curve**: `designPMax = min(rawPMax, designCompressionLimitDisplay)` â€” the top of the 70-level scan is at the ACI limit, not at the raw maximum.
+   - **Nominal curve**: `nomPMax = max(NominalDisplayP)` â€” no cap, uses the true Pn maximum.
 
-4. At `designPMax`, the ring-intersection algorithm produces non-zero moment extent → the top points of the positive and negative branches form the horizontal cap.
+4. At `designPMax`, the ring-intersection algorithm produces non-zero moment extent â†’ the top points of the positive and negative branches form the horizontal cap.
 
 5. The merged envelope loop architecture naturally draws this cap: the positive branch's topmost point connects to the negative branch's topmost point when the loop transitions at Pmax.
 
@@ -275,7 +275,7 @@ This creates a horizontal trim line at the top of the design capacity curve. Abo
 
 | Attribute | Valid ACI trim cap | Invalid internal segment |
 |-----------|-------------------|------------------------|
-| P level | Exactly at `0.80 × max(φPn)` | Below or variable |
+| P level | Exactly at `0.80 Ã— max(Ï†Pn)` | Below or variable |
 | Endpoints | Min/max moment at that P | Arbitrary surface points |
 | Curve | Part of design capacity (solid blue) | Connects interior points |
 | Source | Ring interpolation at capped Pmax | Plateau artifact |
@@ -283,8 +283,8 @@ This creates a horizontal trim line at the top of the design capacity curve. Abo
 ### spColumn.exe Reference
 
 Files inspected in the decompiled reference:
-- `#gMe/#tPe.cs` — `#3Oe()`: Builds 70 axial-load rows. The design curve uses `PhiPn` values that are already capped at `0.80 × P0_phi`.
-- `#gMe/#tPe.cs` — `#2Oe()` / `#pPe()`: At the top ring (pMax), the BiCurve boundary has non-zero moment extent → the horizontal cap line is drawn as a natural part of the envelope.
+- `#gMe/#tPe.cs` â€” `#3Oe()`: Builds 70 axial-load rows. The design curve uses `PhiPn` values that are already capped at `0.80 Ã— P0_phi`.
+- `#gMe/#tPe.cs` â€” `#2Oe()` / `#pPe()`: At the top ring (pMax), the BiCurve boundary has non-zero moment extent â†’ the horizontal cap line is drawn as a natural part of the envelope.
 - The reference does NOT draw the cap as a separate explicit segment; it emerges from the ring intersection at the capped Pmax level, matching our approach.
 
 ## PM Curve Merged Envelope Loop
@@ -295,7 +295,7 @@ The PM curve is now built as a **single closed polyline loop** per curve type, n
 
 1. Build 70 axial-level rings from Pmin to Pmax
 2. At each ring, find max moment (positive) and min moment (negative) intersections
-3. Merge into loop: **positive ascending** (Pmin→Pmax) → **negative descending** (Pmax→Pmin)
+3. Merge into loop: **positive ascending** (Pminâ†’Pmax) â†’ **negative descending** (Pmaxâ†’Pmin)
 4. The renderer closes the loop (`LineTo` back to first point)
 
 This eliminates the need for separate top/bottom cap segments because:
@@ -303,8 +303,8 @@ This eliminates the need for separate top/bottom cap segments because:
 - **Bottom connection**: Last negative point at Pmin connects back to first positive point at Pmin (loop close)
 
 GroupKey values:
-- `"DesignCapacity"` — single closed loop for the design (φ-factored, ACI-capped) curve
-- `"NominalCapacity"` — single closed loop for the nominal (unfactored, uncapped) curve
+- `"DesignCapacity"` â€” single closed loop for the design (Ï†-factored, ACI-capped) curve
+- `"NominalCapacity"` â€” single closed loop for the nominal (unfactored, uncapped) curve
 ## Task 13: ACI Trim Segment Recheck Against CoreAssets
 
 ### Files Inspected
@@ -373,3 +373,4 @@ Observed after correction:
 - `theta = 90 deg`: trim cap endpoints are `Mtheta = +/-574.644 kN-m` at `P = 8894.472 kN`.
 
 Only two design capacity points sit at the cap level, and they are consecutive in the design curve. The dashed Pmax reference line remains a separate reference item.
+

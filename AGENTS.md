@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 Repository-level instructions for AI coding agents working on MBColumn.
 
@@ -128,7 +128,8 @@ Use:
 
 ```powershell
 dotnet build MBColumn.sln
-dotnet test tests\ColumnDesigner.Tests\ColumnDesigner.Tests.csproj
+dotnet test tests\MBColumn.Tests\MBColumn.Tests.csproj
 ```
 
 If tests cannot be run, state why.
+
