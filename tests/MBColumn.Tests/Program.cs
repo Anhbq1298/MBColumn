@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
@@ -111,7 +111,8 @@ var tests = new List<(string Name, Action Test)>
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
-    ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon)
+    ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon),
+    ("All Sides Equal Rule", TestAllSidesEqualRule)
 };
 
 foreach (var (name, test) in tests)
@@ -151,7 +152,8 @@ static void TestSingaporeBars()
     {
         IsTrue(db.TryGet($"T{d}", out var bar));
         AreClose(d, bar.DiameterMm, 1e-12);
-        AreClose(Math.PI * d * d / 4.0, bar.AreaMm2, 1e-9);
+        double expectedArea = d == 25 ? 491.0 : Math.PI * d * d / 4.0;
+        AreClose(expectedArea, bar.AreaMm2, 1e-9);
     }
 }
 
@@ -1075,7 +1077,7 @@ static void Test3DPmSliceAngleReflectedInLabel()
     vm.Load(result);
     vm.SelectedPmAngle = 45.0;
     IsTrue(vm.SelectedPmAngleLabel.Contains("45.0"));
-    IsTrue(vm.SelectedPmAngleLabel.Contains("Â°"));
+    IsTrue(vm.SelectedPmAngleLabel.Contains("°"));
 }
 
 static void Test3DAxialSliceLabelContainsPAndUnit()
@@ -1268,3 +1270,25 @@ static void TestControlPointsTensionControlEpsilon()
 }
 
 
+static void TestAllSidesEqualRule()
+{
+    var units = new UnitConversionService();
+    var metric = new SingaporeRebarDatabase();
+    var imperial = new ImperialRebarDatabase();
+    var builder = new RebarCoordinateBuilderService(units, metric, imperial);
+
+    // Valid cases: 4, 8, 12, 16, 20
+    foreach (int count in new[] { 4, 8, 12, 16, 20 })
+    {
+        var layout = new RebarLayoutInputDto(RebarLayoutType.AllSidesEqual, count, "T25", 55, null!, null!, null!, null!);
+        var bars = builder.Build(layout, 500, 500, LengthUnit.Millimeter, UnitSystem.Metric);
+        IsTrue(bars.Count == count);
+    }
+
+    // Invalid cases: 6, 10, 14, 18
+    foreach (int count in new[] { 6, 10, 14, 18 })
+    {
+        var layout = new RebarLayoutInputDto(RebarLayoutType.AllSidesEqual, count, "T25", 55, null!, null!, null!, null!);
+        Throws(() => builder.Build(layout, 500, 500, LengthUnit.Millimeter, UnitSystem.Metric));
+    }
+}

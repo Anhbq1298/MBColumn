@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using System.Windows;
 
 namespace MBColumn.Presentation.Wpf;
@@ -28,7 +28,7 @@ public partial class ControlPointsWindow : Window
             if (r.Axis != lastAxis)
             {
                 // Axis-group header separator row
-                rows.Add(new ControlPointRow(true, $"â”€â”€ {r.Axis}-Axis â”€â”€", "", "", "", "", "", "", ""));
+                rows.Add(new ControlPointRow(true, $"── {r.Axis}-Axis ──", "", "", "", "", "", "", ""));
                 lastAxis = r.Axis;
             }
 

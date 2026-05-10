@@ -1,4 +1,4 @@
-﻿<Window x:Class="MBColumn.Presentation.Wpf.ControlPointsWindow"
+<Window x:Class="MBColumn.Presentation.Wpf.ControlPointsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Control Points"
@@ -45,7 +45,7 @@
                 </Style>
             </DataGrid.RowStyle>
             <DataGrid.Columns>
-                <DataGridTextColumn x:Name="ColAboutPoint" Header="About Point"
+                <DataGridTextColumn x:Name="ColAboutPoint" Header="Point Label"
                                     Binding="{Binding AboutPoint}" Width="130" />
                 <DataGridTextColumn x:Name="ColP"          Header="P"
                                     Binding="{Binding P}" Width="90" ElementStyle="{StaticResource RightAlignText}" />
@@ -57,9 +57,9 @@
                                     Binding="{Binding NaDepth}" Width="90" ElementStyle="{StaticResource RightAlignText}" />
                 <DataGridTextColumn x:Name="ColDtDepth"    Header="dt Depth"
                                     Binding="{Binding DtDepth}" Width="90" ElementStyle="{StaticResource RightAlignText}" />
-                <DataGridTextColumn x:Name="ColEpsilonT"   Header="Îµt"
+                <DataGridTextColumn x:Name="ColEpsilonT"   Header="εt"
                                     Binding="{Binding EpsilonT}" Width="80" ElementStyle="{StaticResource RightAlignText}" />
-                <DataGridTextColumn x:Name="ColPhi"        Header="Ï†"
+                <DataGridTextColumn x:Name="ColPhi"        Header="φ"
                                     Binding="{Binding Phi}" Width="60" ElementStyle="{StaticResource RightAlignText}" />
             </DataGrid.Columns>
         </DataGrid>

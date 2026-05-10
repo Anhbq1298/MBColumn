@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
@@ -273,7 +273,15 @@ public sealed class InputViewModel : ViewModelBase
 
     private void SeedSideCountsFromTotalBars()
     {
-        int perSide = BarCount >= 4 && BarCount % 4 == 0 ? BarCount / 4 : Math.Max(0, BarCount / 4);
+        int perSide;
+        if (SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual)
+        {
+            perSide = (BarCount >= 4 && (BarCount - 4) % 4 == 0) ? (BarCount - 4) / 4 + 2 : 0;
+        }
+        else
+        {
+            perSide = Math.Max(0, BarCount / 4);
+        }
         RebarLayout.Top.SetBarCountSilently(perSide);
         RebarLayout.Bottom.SetBarCountSilently(perSide);
         RebarLayout.Left.SetBarCountSilently(perSide);

@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 
@@ -64,12 +64,13 @@ public sealed class RebarCoordinateBuilderService(
                 throw new InvalidOperationException("Total bars must be at least 4.");
             }
 
-            if (layout.TotalBars % 4 != 0)
+            if ((layout.TotalBars - 4) % 4 != 0)
             {
-                throw new InvalidOperationException("Total bars must be divisible by 4 for All Sides Equal layout.");
+                throw new InvalidOperationException("For All Sides Equal layout, total bars must satisfy: totalBars = 4 + 4n. Examples: 8, 12, 16, 20, 24.");
             }
 
-            int perSide = layout.TotalBars / 4;
+            int n = (layout.TotalBars - 4) / 4;
+            int perSide = n + 2;
             return (perSide, perSide, perSide, perSide);
         }
 

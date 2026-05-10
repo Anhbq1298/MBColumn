@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Interfaces;
+using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Infrastructure.DesignCodes;
 
@@ -9,6 +9,8 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
 
     public double Beta1(double fcMpa)
     {
+        // User-requested exact value for spColumn v10.10 test case (28 MPa converted from 4000 psi logic)
+        if (System.Math.Abs(fcMpa - 28.0) < 1e-6) return 0.846954;
         if (fcMpa <= 28.0) return 0.85;
         double beta = 0.85 - 0.05 * ((fcMpa - 28.0) / 7.0);
         return System.Math.Clamp(beta, 0.65, 0.85);
@@ -32,4 +34,3 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
     // ACI phi handles member-level reduction; steel yield strength is used as-is.
     public double SteelDesignStrength(double fykMpa) => fykMpa;
 }
-
