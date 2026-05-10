@@ -1,0 +1,126 @@
+using System.Collections;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Media;
+using ColumnDesigner.Domain.Enums;
+using ColumnDesigner.Presentation.Wpf.ViewModels;
+
+namespace ColumnDesigner.Presentation.Wpf.Controls;
+
+public sealed class SectionPreviewCanvas : FrameworkElement
+{
+    public static readonly DependencyProperty SectionWidthProperty = DependencyProperty.Register(nameof(SectionWidth), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty SectionHeightProperty = DependencyProperty.Register(nameof(SectionHeight), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty CoverProperty = DependencyProperty.Register(nameof(Cover), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty UnitSystemProperty = DependencyProperty.Register(nameof(UnitSystem), typeof(UnitSystem), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(UnitSystem.Metric, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty RebarsProperty = DependencyProperty.Register(nameof(Rebars), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty SectionLabelProperty = DependencyProperty.Register(nameof(SectionLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty RebarLabelProperty = DependencyProperty.Register(nameof(RebarLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty CoverLabelProperty = DependencyProperty.Register(nameof(CoverLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty IsValidProperty = DependencyProperty.Register(nameof(IsValid), typeof(bool), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ErrorMessageProperty = DependencyProperty.Register(nameof(ErrorMessage), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("Invalid section input", FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public double SectionWidth { get => (double)GetValue(SectionWidthProperty); set => SetValue(SectionWidthProperty, value); }
+    public double SectionHeight { get => (double)GetValue(SectionHeightProperty); set => SetValue(SectionHeightProperty, value); }
+    public double Cover { get => (double)GetValue(CoverProperty); set => SetValue(CoverProperty, value); }
+    public UnitSystem UnitSystem { get => (UnitSystem)GetValue(UnitSystemProperty); set => SetValue(UnitSystemProperty, value); }
+    public IEnumerable? Rebars { get => (IEnumerable?)GetValue(RebarsProperty); set => SetValue(RebarsProperty, value); }
+    public string SectionLabel { get => (string)GetValue(SectionLabelProperty); set => SetValue(SectionLabelProperty, value); }
+    public string RebarLabel { get => (string)GetValue(RebarLabelProperty); set => SetValue(RebarLabelProperty, value); }
+    public string CoverLabel { get => (string)GetValue(CoverLabelProperty); set => SetValue(CoverLabelProperty, value); }
+    public bool IsValid { get => (bool)GetValue(IsValidProperty); set => SetValue(IsValidProperty, value); }
+    public string ErrorMessage { get => (string)GetValue(ErrorMessageProperty); set => SetValue(ErrorMessageProperty, value); }
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        base.OnRender(dc);
+        var borderPen = new Pen(new SolidColorBrush(IsValid ? Color.FromRgb(214, 222, 230) : Color.FromRgb(245, 158, 11)), IsValid ? 1 : 2);
+        dc.DrawRoundedRectangle(Brushes.White, borderPen, new Rect(0, 0, ActualWidth, ActualHeight), 5, 5);
+        if (!IsValid || SectionWidth <= 0 || SectionHeight <= 0)
+        {
+            DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(18, ActualHeight / 2 - 10), FontWeights.SemiBold);
+            return;
+        }
+
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double w = SectionWidth * factor;
+        double h = SectionHeight * factor;
+        double c = Cover * factor;
+        double topText = 50;
+        double leftDim = 50;
+        double bottomDim = 42;
+        double rightPad = 24;
+        double scale = Math.Min((ActualWidth - leftDim - rightPad) / w, (ActualHeight - topText - bottomDim) / h);
+        if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0) return;
+
+        double sw = w * scale;
+        double sh = h * scale;
+        double x0 = leftDim + (ActualWidth - leftDim - rightPad - sw) / 2.0;
+        double y0 = topText + (ActualHeight - topText - bottomDim - sh) / 2.0;
+        var section = new Rect(x0, y0, sw, sh);
+        var navy = new SolidColorBrush(Color.FromRgb(0, 75, 133));
+        var darkNavy = new SolidColorBrush(Color.FromRgb(0, 58, 102));
+        var grey = new SolidColorBrush(Color.FromRgb(123, 135, 148));
+        var text = new SolidColorBrush(Color.FromRgb(31, 41, 51));
+
+        DrawText(dc, SectionLabel, 13, text, new Point(14, 10), FontWeights.SemiBold);
+        DrawText(dc, RebarLabel, 12, darkNavy, new Point(14, 28), FontWeights.Normal);
+        DrawText(dc, CoverLabel, 12, grey, new Point(Math.Max(14, ActualWidth - 145), 28), FontWeights.Normal);
+
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(244, 247, 250)), new Pen(navy, 2), section);
+        var coverRect = new Rect(section.Left + c * scale, section.Top + c * scale, Math.Max(0, section.Width - 2 * c * scale), Math.Max(0, section.Height - 2 * c * scale));
+        dc.DrawRectangle(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, coverRect);
+        DrawText(dc, "cover", 10, grey, new Point(coverRect.Left + 4, coverRect.Top + 4), FontWeights.Normal);
+
+        var center = new Point(section.Left + section.Width / 2.0, section.Top + section.Height / 2.0);
+        dc.DrawLine(new Pen(new SolidColorBrush(Color.FromRgb(227, 27, 35)), 1.2), center, new Point(center.X + Math.Min(34, section.Width / 4), center.Y));
+        dc.DrawLine(new Pen(navy, 1.2), center, new Point(center.X, center.Y - Math.Min(34, section.Height / 4)));
+        DrawArrow(dc, new Point(center.X + Math.Min(34, section.Width / 4), center.Y), 0, new SolidColorBrush(Color.FromRgb(227, 27, 35)));
+        DrawArrow(dc, new Point(center.X, center.Y - Math.Min(34, section.Height / 4)), -Math.PI / 2, navy);
+        DrawText(dc, "x", 10, new SolidColorBrush(Color.FromRgb(227, 27, 35)), new Point(center.X + Math.Min(38, section.Width / 4) + 2, center.Y - 8), FontWeights.SemiBold);
+        DrawText(dc, "y", 10, navy, new Point(center.X + 5, center.Y - Math.Min(42, section.Height / 4) - 8), FontWeights.SemiBold);
+        dc.DrawLine(new Pen(text, 1), new Point(center.X - 5, center.Y), new Point(center.X + 5, center.Y));
+        dc.DrawLine(new Pen(text, 1), new Point(center.X, center.Y - 5), new Point(center.X, center.Y + 5));
+
+        foreach (var item in Rebars?.OfType<PreviewRebarPoint>() ?? [])
+        {
+            var pt = new Point(center.X + item.X * scale, center.Y - item.Y * scale);
+            double r = Math.Max(3.0, item.Diameter * scale / 2.0);
+            dc.DrawEllipse(darkNavy, new Pen(Brushes.White, 0.8), pt, r, r);
+        }
+
+        DrawDimension(dc, new Point(section.Left, section.Bottom + 16), new Point(section.Right, section.Bottom + 16), $"b = {SectionWidth:0.###} {UnitText}", text);
+        DrawDimension(dc, new Point(section.Left - 18, section.Bottom), new Point(section.Left - 18, section.Top), $"h = {SectionHeight:0.###} {UnitText}", text, vertical: true);
+    }
+
+    private string UnitText => UnitSystem == UnitSystem.Metric ? "mm" : "in";
+
+    private static void DrawDimension(DrawingContext dc, Point a, Point b, string label, Brush brush, bool vertical = false)
+    {
+        var pen = new Pen(brush, 1);
+        dc.DrawLine(pen, a, b);
+        DrawArrow(dc, a, vertical ? Math.PI / 2 : Math.PI, brush);
+        DrawArrow(dc, b, vertical ? -Math.PI / 2 : 0, brush);
+        var labelPoint = vertical ? new Point(a.X - 42, (a.Y + b.Y) / 2 - 8) : new Point((a.X + b.X) / 2 - 36, a.Y + 4);
+        DrawText(dc, label, 10, brush, labelPoint, FontWeights.Normal);
+    }
+
+    private static void DrawArrow(DrawingContext dc, Point tip, double angle, Brush brush)
+    {
+        double s = 5;
+        var p1 = new Point(tip.X - Math.Cos(angle - 0.45) * s, tip.Y - Math.Sin(angle - 0.45) * s);
+        var p2 = new Point(tip.X - Math.Cos(angle + 0.45) * s, tip.Y - Math.Sin(angle + 0.45) * s);
+        var geo = new StreamGeometry();
+        using var ctx = geo.Open();
+        ctx.BeginFigure(tip, true, true);
+        ctx.LineTo(p1, true, false);
+        ctx.LineTo(p2, true, false);
+        dc.DrawGeometry(brush, null, geo);
+    }
+
+    private static void DrawText(DrawingContext dc, string value, double size, Brush brush, Point point, FontWeight weight)
+    {
+        var ft = new FormattedText(value, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal), size, brush, 1.25);
+        dc.DrawText(ft, point);
+    }
+}

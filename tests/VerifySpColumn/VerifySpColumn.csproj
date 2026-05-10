@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>VerifySpColumn</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ColumnDesigner.Domain\ColumnDesigner.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ColumnDesigner.Application\ColumnDesigner.Application.csproj" />
+    <ProjectReference Include="..\..\src\ColumnDesigner.Infrastructure\ColumnDesigner.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

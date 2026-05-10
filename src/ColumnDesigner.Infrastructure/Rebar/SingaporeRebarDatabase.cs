@@ -1,0 +1,20 @@
+using ColumnDesigner.Domain.Enums;
+using ColumnDesigner.Domain.Interfaces;
+
+namespace ColumnDesigner.Infrastructure.Rebar;
+
+public sealed class SingaporeRebarDatabase : IRebarDatabase
+{
+    private static readonly int[] Diameters = [10, 13, 16, 20, 25, 32, 40];
+    private readonly IReadOnlyList<RebarDefinition> bars = Diameters
+        .Select(d => new RebarDefinition($"T{d}", $"T{d} - {d} mm", d, System.Math.PI * d * d / 4.0, RebarUnitType.SingaporeMetric))
+        .ToList();
+
+    public IReadOnlyList<RebarDefinition> GetBars() => bars;
+
+    public bool TryGet(string name, out RebarDefinition definition)
+    {
+        definition = bars.FirstOrDefault(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase))!;
+        return definition is not null;
+    }
+}

@@ -1,0 +1,31 @@
+﻿using System;
+
+namespace StructurePoint.CoreAssets.GUI.DesktopControls.Interop
+{
+	// Token: 0x02000991 RID: 2449
+	public enum FontPrecision : byte
+	{
+		// Token: 0x04002304 RID: 8964
+		OUT_DEFAULT_PRECIS,
+		// Token: 0x04002305 RID: 8965
+		OUT_STRING_PRECIS,
+		// Token: 0x04002306 RID: 8966
+		OUT_CHARACTER_PRECIS,
+		// Token: 0x04002307 RID: 8967
+		OUT_STROKE_PRECIS,
+		// Token: 0x04002308 RID: 8968
+		OUT_TT_PRECIS,
+		// Token: 0x04002309 RID: 8969
+		OUT_DEVICE_PRECIS,
+		// Token: 0x0400230A RID: 8970
+		OUT_RASTER_PRECIS,
+		// Token: 0x0400230B RID: 8971
+		OUT_TT_ONLY_PRECIS,
+		// Token: 0x0400230C RID: 8972
+		OUT_OUTLINE_PRECIS,
+		// Token: 0x0400230D RID: 8973
+		OUT_SCREEN_OUTLINE_PRECIS,
+		// Token: 0x0400230E RID: 8974
+		OUT_PS_ONLY_PRECIS
+	}
+}

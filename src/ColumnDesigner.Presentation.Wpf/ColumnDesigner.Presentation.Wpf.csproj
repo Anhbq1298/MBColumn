@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ColumnDesigner.Domain\ColumnDesigner.Domain.csproj" />
+    <ProjectReference Include="..\ColumnDesigner.Application\ColumnDesigner.Application.csproj" />
+    <ProjectReference Include="..\ColumnDesigner.Infrastructure\ColumnDesigner.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>MBColumn</AssemblyName>
+    <Product>MBColumn</Product>
+    <Title>MBColumn</Title>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\desktop-icon.png" />
+    <Resource Include="Resources\app.ico" />
+  </ItemGroup>
+
+</Project>

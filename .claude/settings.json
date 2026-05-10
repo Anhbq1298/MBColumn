@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\\\\spColumn.exe\\\\\" -Recurse -Filter \"*.cs\" | Select-Object -First 50 FullName)",
+      "Bash(xargs grep -l \"#dYe\\\\|#Y7e\\\\|MaxTension\\\\|MaxCompression\")",
+      "Bash(cat)",
+      "Bash(dotnet script *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\" -Filter \"Program.cs\" -Recurse)",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}
