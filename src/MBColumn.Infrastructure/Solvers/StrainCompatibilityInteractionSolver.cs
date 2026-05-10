@@ -6,57 +6,56 @@ namespace MBColumn.Infrastructure.Solvers;
 public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code) : IInteractionSolver
 {
     public int AngleStepDegrees { get; init; } = 10;
-    public int NeutralAxisSamples { get; init; } = 70;
-    public int ConcreteGridDivisions { get; init; } = 42;
+    public int NeutralAxisSamples { get; init; } = 150;
+    public int ConcreteGridDivisions { get; init; } = 100;
 
     public InteractionSurface Solve(RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel)
     {
         int angleCount = 360 / AngleStepDegrees;
-        var fibers = BuildConcreteFibers(section).ToList();
         var points = new List<InteractionPoint>(angleCount * NeutralAxisSamples);
+        var boundary = new List<Point>
+        {
+            new Point(-section.WidthMm / 2.0, -section.HeightMm / 2.0),
+            new Point( section.WidthMm / 2.0, -section.HeightMm / 2.0),
+            new Point( section.WidthMm / 2.0,  section.HeightMm / 2.0),
+            new Point(-section.WidthMm / 2.0,  section.HeightMm / 2.0)
+        };
 
-        // The sweep mirrors the reference chart grid convention: depth rows first and 36 angular
-        // columns per row. Compression is positive; concrete tension is ignored.
         for (int d = 0; d < NeutralAxisSamples; d++)
         {
             for (int a = 0; a < angleCount; a++)
             {
-                points.Add(Evaluate(section, concrete, steel, fibers, d, a * AngleStepDegrees, a));
+                points.Add(Evaluate(section, concrete, steel, boundary, d, a * AngleStepDegrees, a));
             }
         }
 
         return new InteractionSurface(NeutralAxisSamples, angleCount, points);
     }
 
-    private InteractionPoint Evaluate(RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel, IReadOnlyList<Fiber> fibers, int depthIndex, double angleDegrees, int angleIndex)
+    private InteractionPoint Evaluate(RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel, IReadOnlyList<Point> boundary, int depthIndex, double angleDegrees, int angleIndex)
     {
         double theta = angleDegrees * System.Math.PI / 180.0;
         double nx = System.Math.Cos(theta);
         double ny = System.Math.Sin(theta);
-        // c_max = 3Ã—max(width,height) ensures the extreme tension bar reaches fy in compression,
-        // matching spColumn's sweep range (e.g. 2100mm for a 700Ã—700 section).
+        
         double cMax = 3.0 * System.Math.Max(section.WidthMm, section.HeightMm);
-        double c = 5.0 + depthIndex * (cMax - 5.0) / (NeutralAxisSamples - 1);
+        double c = 0.1 + depthIndex * (cMax - 0.1) / (NeutralAxisSamples - 1);
         double maxProjection = ProjectExtreme(section, nx, ny);
         double neutralAxisProjection = maxProjection - c;
 
-        double axialN = 0.0;
-        double mxNmm = 0.0;
-        double myNmm = 0.0;
-        double maxTensionStrain = 0.0;
-
-        // Whitney rectangular stress block: depth a = Î²â‚Â·c, uniform stress 0.85Â·fc.
+        // Whitney rectangular stress block: depth a = Î²â‚ Â·c, uniform stress 0.85Â·fc.
         double beta1 = code.Beta1(concrete.FcMpa);
         double stressBlockBoundary = maxProjection - beta1 * c;
 
-        foreach (var fiber in fibers)
-        {
-            if (fiber.XMm * nx + fiber.YMm * ny <= stressBlockBoundary) continue;
-            double force = code.ConcreteStressBlockFactor * concrete.FcMpa * fiber.AreaMm2;
-            axialN += force;
-            mxNmm += force * fiber.YMm;
-            myNmm += force * fiber.XMm;
-        }
+        // Analytical concrete integration using polygon clipping
+        var poly = ClipPolygon(boundary, nx, ny, stressBlockBoundary);
+        var props = CalculatePolygonProperties(poly);
+        
+        double concreteForce = code.ConcreteStressBlockFactor * concrete.FcMpa * props.Area;
+        double axialN = concreteForce;
+        double mxNmm = concreteForce * props.CentroidY;
+        double myNmm = concreteForce * props.CentroidX;
+        double maxTensionStrain = 0.0;
 
         foreach (var bar in section.RebarLayout.Bars)
         {
@@ -83,21 +82,54 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
         return new InteractionPoint(depthIndex, angleIndex, angleDegrees, c, axialN, mxNmm, myNmm, phi, maxTensionStrain);
     }
 
-    private IEnumerable<Fiber> BuildConcreteFibers(RectangularSection section)
+    private static (double Area, double CentroidX, double CentroidY) CalculatePolygonProperties(IReadOnlyList<Point> polygon)
     {
-        double dx = section.WidthMm / ConcreteGridDivisions;
-        double dy = section.HeightMm / ConcreteGridDivisions;
-        double area = dx * dy;
-        double x0 = -section.WidthMm / 2.0 + dx / 2.0;
-        double y0 = -section.HeightMm / 2.0 + dy / 2.0;
-
-        for (int ix = 0; ix < ConcreteGridDivisions; ix++)
+        if (polygon.Count < 3) return (0, 0, 0);
+        double area = 0, mx = 0, my = 0;
+        for (int i = 0; i < polygon.Count; i++)
         {
-            for (int iy = 0; iy < ConcreteGridDivisions; iy++)
-            {
-                yield return new Fiber(x0 + ix * dx, y0 + iy * dy, area);
-            }
+            var p1 = polygon[i];
+            var p2 = polygon[(i + 1) % polygon.Count];
+            double cross = p1.X * p2.Y - p2.X * p1.Y;
+            area += cross;
+            mx += (p1.X + p2.X) * cross;
+            my += (p1.Y + p2.Y) * cross;
         }
+        area /= 2.0;
+        if (System.Math.Abs(area) < 1e-9) return (0, 0, 0);
+        return (System.Math.Abs(area), mx / (6.0 * area), my / (6.0 * area));
+    }
+
+    private static IReadOnlyList<Point> ClipPolygon(IReadOnlyList<Point> subject, double nx, double ny, double projection)
+    {
+        var result = new List<Point>();
+        if (subject.Count == 0) return result;
+        var start = subject[^1];
+        bool startInside = start.X * nx + start.Y * ny >= projection - 1e-9;
+        foreach (var end in subject)
+        {
+            bool endInside = end.X * nx + end.Y * ny >= projection - 1e-9;
+            if (endInside)
+            {
+                if (!startInside) result.Add(Intersect(start, end, nx, ny, projection));
+                result.Add(end);
+            }
+            else if (startInside)
+            {
+                result.Add(Intersect(start, end, nx, ny, projection));
+            }
+            start = end;
+            startInside = endInside;
+        }
+        return result;
+    }
+
+    private static Point Intersect(Point a, Point b, double nx, double ny, double projection)
+    {
+        double da = a.X * nx + a.Y * ny - projection;
+        double db = b.X * nx + b.Y * ny - projection;
+        double t = System.Math.Abs(da - db) < 1e-12 ? 0 : da / (da - db);
+        return new Point(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t);
     }
 
     private static double ProjectExtreme(RectangularSection section, double nx, double ny)
@@ -113,6 +145,6 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
         }.Max();
     }
 
-    private sealed record Fiber(double XMm, double YMm, double AreaMm2);
+    private sealed record Point(double X, double Y);
 }
 

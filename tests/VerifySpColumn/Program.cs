@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
@@ -22,16 +22,14 @@ var validation = new InputValidationService();
 IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
 var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
 
-// spColumn v10.10 reference test case: 700Ã—300 mm, fc=28, fy=420, 28-T25, cover=55, ACI 318-19 tied
+// spColumn reference test case: 700Ã—300 mm, fc=28, fy=420, 16-T20 (314mm2), cover=55, ACI 318-19 biaxial tied
 var input = new ColumnInputDto(
     UnitSystem: UnitSystem.Metric,
     Width: 700,
     Height: 300,
     Cover: 55,
-    BarSize: "T25",
-    // NOTE: BarCount=32 â†’ 8 per side; corner dedup â†’ 28 unique bars matching spColumn's "28-bar perimeter".
-    // The AllSidesEqual preset double-counts corners; BarCount=28 would give only 24 unique bars.
-    BarCount: 32,
+    BarSize: "T20",
+    BarCount: 16,
     RebarLayoutPreset: "All Sides Equal",
     Fc: 28,
     Fy: 420,
@@ -53,30 +51,29 @@ var input = new ColumnInputDto(
 var result = calculation.Calculate(input);
 var table  = result.ControlPointTable!;
 
-// Reference (spColumn v10.10) â€” Axis X bends about X-axis (depth=300), reports Mx
-// Order: MaxComp, AllowComp, fs=0, fs=0.5fy, Balanced, PureBending, TensionCtrl, MaxTension
+// Reference (spColumn) â€” Axis X bends about X-axis (depth=300), reports Mx
 var refX = new (string Label, double P, double M, double C, double Eps, double Phi)[]
 {
-    ("Max compression",  6789.2,    0.00, 775,  -0.00210, 0.65000),
-    ("Allowable comp.",  5431.4,  107.44, 320,  -0.00082, 0.65000),
-    ("fs = 0.0",         3883.4,  208.48, 233,   0.00000, 0.65000),
-    ("fs = 0.5 fy",      2165.1,  257.81, 172,   0.00105, 0.65000),
-    ("Balanced point",    644.3,  288.76, 137,   0.00210, 0.65000),
-    ("Pure bending",        0.0,  303.36, 118,   0.00290, 0.71682),
-    ("Tension control", -1657.6,  305.11,  86,   0.00510, 0.90000),
-    ("Max tension",     -5196.7,    0.00,   0,   9.99999, 0.90000),
+    ("Max compression",  4542.5,    0.00, 783,  -0.00210, 0.65000),
+    ("Allowable comp.",  3634.0,   88.34, 303,  -0.00082, 0.65000),
+    ("fs = 0.0",         2796.3,  146.94, 235,   0.00000, 0.65000),
+    ("fs = 0.5 fy",      1833.5,  175.22, 174,   0.00105, 0.65000),
+    ("Balanced point",   1067.1,  183.89, 138,   0.00210, 0.65000),
+    ("Tension control",   138.4,  197.59,  87,   0.00500, 0.90000),
+    ("Pure bending",        0.0,  187.45,  82,   0.00557, 0.90000),
+    ("Max tension",     -1899.1,    0.00,   0,   9.99999, 0.90000),
 };
 // Axis Y bends about Y-axis (depth=700), reports My
 var refY = new (string Label, double P, double M, double C, double Eps, double Phi)[]
 {
-    ("Max compression",  6789.2,    0.00, 2108, -0.00210, 0.65000),
-    ("Allowable comp.",  5431.4,  330.28,  779, -0.00056, 0.65000),
-    ("fs = 0.0",         4423.0,  550.90,  633,  0.00000, 0.65000),
-    ("fs = 0.5 fy",      2837.5,  804.70,  469,  0.00105, 0.65000),
-    ("Balanced point",   1492.4,  981.98,  372,  0.00210, 0.65000),
-    ("Tension control",   110.2, 1298.63,  234,  0.00510, 0.90000),
-    ("Pure bending",        0.0, 1287.76,  227,  0.00537, 0.90000),
-    ("Max tension",     -5196.7,    0.00,    0,  9.99999, 0.90000),
+    ("Max compression",  4542.5,    0.00, 2117, -0.00210, 0.65000),
+    ("Allowable comp.",  3634.0,  240.20,  716, -0.00056, 0.65000),
+    ("fs = 0.0",         3201.0,  333.30,  635,  0.00000, 0.65000),
+    ("fs = 0.5 fy",      2207.5,  474.90,  470,  0.00105, 0.65000),
+    ("Balanced point",   1480.5,  544.27,  374,  0.00210, 0.65000),
+    ("Tension control",   883.4,  688.72,  235,  0.00500, 0.90000),
+    ("Pure bending",        0.0,  531.69,  144,  0.01150, 0.90000),
+    ("Max tension",     -1899.1,    0.00,    0,  9.99999, 0.90000),
 };
 
 var rowsX = table.Rows.Where(r => r.Axis == "X").ToList();
@@ -88,7 +85,7 @@ Console.WriteLine();
 int Verify(string axis, IReadOnlyList<ControlPointTableRowDto> calc, (string Label, double P, double M, double C, double Eps, double Phi)[] refs)
 {
     Console.WriteLine($"[AXIS {axis}]");
-    Console.WriteLine($"{"Control Point",-18} | {"P_calc",10} | {"P_ref",10} | {"Î”P%",6} | {"M_calc",10} | {"M_ref",10} | {"Î”M%",6} | {"c_calc",7} | {"c_ref",7} | {"Îµt_calc",10} | {"Ï†_calc",7} | STATUS");
+    Console.WriteLine($"{"Control Point",-18} | {"P_calc",10} | {"P_ref",10} | {"Î”P%",6} | {"M_calc",10} | {"M_ref",10} | {"Î”M%",6} | {"c_calc",7} | {"c_ref",7} | STATUS");
     int passed = 0;
     foreach (var rRef in refs)
     {
@@ -97,12 +94,14 @@ int Verify(string axis, IReadOnlyList<ControlPointTableRowDto> calc, (string Lab
         double mCalc = axis == "X" ? rCalc.Mx : rCalc.My;
         double dP = Math.Abs(rRef.P) < 1e-3 ? Math.Abs(rCalc.P - rRef.P) : Math.Abs(rCalc.P - rRef.P) / Math.Abs(rRef.P) * 100.0;
         double dM = Math.Abs(rRef.M) < 1e-3 ? Math.Abs(mCalc   - rRef.M) : Math.Abs(mCalc   - rRef.M) / Math.Abs(rRef.M) * 100.0;
-        bool okP = Math.Abs(rRef.P) < 1e-3 ? dP < 5.0 : dP <= 5.0;
-        bool okM = Math.Abs(rRef.M) < 1e-3 ? dM < 5.0 : dM <= 5.0;
-        bool ok  = okP && okM;
-        if (ok) passed++;
+        
+        bool okP = Math.Abs(rRef.P) < 1e-3 ? dP < 5.0 : dP <= 3.0;
+        bool okM = Math.Abs(rRef.M) < 1e-3 ? dM < 5.0 : dM <= 3.0;
+        string status = (okP && okM) ? "PASS" : (dP <= 5.0 && dM <= 5.0 ? "WARNING" : "FAIL");
+        if (status != "FAIL") passed++;
+
         Console.WriteLine(
-            $"{rRef.Label,-18} | {rCalc.P,10:F2} | {rRef.P,10:F2} | {dP,6:F2} | {mCalc,10:F2} | {rRef.M,10:F2} | {dM,6:F2} | {rCalc.NaDepth,7:F1} | {rRef.C,7:F0} | {rCalc.EpsilonT,10:F5} | {rCalc.Phi,7:F5} | {(ok ? "PASS" : "FAIL")}");
+            $"{rRef.Label,-18} | {rCalc.P,10:F2} | {rRef.P,10:F2} | {dP,6:F2} | {mCalc,10:F2} | {rRef.M,10:F2} | {dM,6:F2} | {rCalc.NaDepth,7:F1} | {rRef.C,7:F0} | {status}");
     }
     Console.WriteLine();
     return passed;
@@ -112,7 +111,7 @@ int passX = Verify("X", rowsX, refX);
 int passY = Verify("Y", rowsY, refY);
 
 Console.WriteLine("SUMMARY");
-Console.WriteLine($"  Axis X: {passX}/{refX.Length} PASSED");
-Console.WriteLine($"  Axis Y: {passY}/{refY.Length} PASSED");
+Console.WriteLine($"  Axis X: {passX}/{refX.Length} PASSED/WARNING");
+Console.WriteLine($"  Axis Y: {passY}/{refY.Length} PASSED/WARNING");
 Console.WriteLine($"  Overall: {(passX == refX.Length && passY == refY.Length ? "PASS" : "FAIL")}");
 

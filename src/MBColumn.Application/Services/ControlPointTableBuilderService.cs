@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
@@ -109,10 +109,15 @@ public static class ControlPointTableBuilderService
                     epsilonT = MaxStrainClamp;
 
                 double analyticalPhi = code.Phi(Math.Max(0.0, epsilonT), fyMpa, esMpa);
-                // Pure bending: P is zero by definition â€” hardcode to eliminate floating-point
-                // residue from the Pn-bracket lerp. Mirrors spColumn's convention where the P=0
-                // row is constructed at the converged neutral-axis depth, not interpolated.
-                double rowAxialN = isPureBending ? 0.0 : analyticalPhi * pt.Pn;
+                // Pure bending: P is zero by definition.
+                // Max tension: Pure steel capacity (sum of As * fy).
+                double rowAxialN;
+                if (isPureBending) 
+                    rowAxialN = 0.0;
+                else if (isMaxTension)
+                    rowAxialN = -analyticalPhi * section.RebarLayout.Bars.Sum(b => b.AreaMm2 * fyMpa);
+                else
+                    rowAxialN = analyticalPhi * pt.Pn;
                 rows.Add(new ControlPointTableRowDto(
                     axisLabel,
                     PointLabels[k],
