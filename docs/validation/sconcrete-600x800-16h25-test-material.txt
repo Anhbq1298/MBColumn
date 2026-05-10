@@ -1,0 +1,181 @@
+S-CONCRETE EC2 PMM VALIDATION TEST MATERIAL
+===========================================
+
+Purpose
+-------
+This file defines one section-level PMM validation case for comparing MBColumn EC2 fiber PMM output against S-CONCRETE N-vs-M results.
+
+This is validation input only. It must not modify or replace the existing ACI/spColumn-style calculation path.
+
+Reference Software Output
+-------------------------
+Software: S-CONCRETE
+Version: 2024.1.0
+Module/output: Rectangular Column - N vs M Diagram - Concrete Section
+Reference file: NvsM.TXT
+Export date: May 10, 2026 5:42 PM
+Units in reference file: kN, kNm
+
+Section Geometry
+----------------
+Shape: Rectangular column
+Width b: 600 mm
+Depth h: 800 mm
+Section centroid: (0, 0)
+Coordinate system:
+- x positive to the right
+- y positive upward
+- left/right faces at x = +/-300 mm
+- top/bottom faces at y = +/-400 mm
+
+Concrete Material
+-----------------
+fck: 35 MPa
+Density Dc: 2400 kg/m3
+Poisson ratio: 0.2
+hagg: 20 mm
+Ec: 34077 MPa
+Gc: 14199 MPa
+
+Reinforcement Material
+----------------------
+Vertical reinforcement yield strength fyk: 500 MPa
+Link reinforcement yield strength fyk_links: 500 MPa
+Steel modulus Es: 200000 MPa
+
+Reinforcement Layout
+--------------------
+Vertical bars: 16H25
+Bar diameter: 25 mm
+Area per bar: 490.873852 mm2
+Total As: 7854 mm2 approximately
+Reported reinforcement ratio: 1.64 percent
+Links: H10 links at 200 mm
+Nominal clear cover to outside of link: 40 mm
+Link diameter: 10 mm
+Assumed main bar centerline cover from concrete face:
+    40 + 10 + 25/2 = 62.5 mm
+
+Important coordinate assumption:
+The main rebar coordinates are assumed to be hidden behind the H10 link layer, so the vertical bar centerline is taken as 62.5 mm from the concrete face.
+
+Derived bar centerline coordinates from section centroid:
+- x_edge_bar = +/- (600/2 - 62.5) = +/-237.5 mm
+- y_edge_bar = +/- (800/2 - 62.5) = +/-337.5 mm
+
+Assumed 16-bar coordinate set
+-----------------------------
+The arrangement follows 5 bars on the top face, 5 bars on the bottom face, and 3 intermediate bars on each vertical side.
+
+BarId, x_mm, y_mm
+B01, -237.5,  337.5
+B02, -118.75, 337.5
+B03,    0.0,  337.5
+B04,  118.75,337.5
+B05,  237.5, 337.5
+B06, -237.5, 168.75
+B07,  237.5, 168.75
+B08, -237.5,   0.0
+B09,  237.5,   0.0
+B10, -237.5,-168.75
+B11,  237.5,-168.75
+B12, -237.5,-337.5
+B13, -118.75,-337.5
+B14,    0.0, -337.5
+B15,  118.75,-337.5
+B16,  237.5,-337.5
+
+If the S-CONCRETE model used a different side-bar spacing, update the coordinates above before comparison.
+
+Eurocode / EC2 Settings To Match In MBColumn
+--------------------------------------------
+Use EC2 design material path only.
+Do not use ACI phi factors.
+Do not use ACI control-point labels.
+Concrete tension stress must be ignored.
+Steel must carry both tension and compression.
+Concrete compression must be based on compressive strain region/fibers, not on the sign of axial force.
+
+Suggested EC2 design defaults if not otherwise specified:
+alpha_cc = 0.85
+gamma_c = 1.50
+gamma_s = 1.15
+fcd = alpha_cc * fck / gamma_c = 19.833333 MPa
+fyd = fyk / gamma_s = 434.782609 MPa
+Es = 200000 MPa
+epsilon_yd = fyd / Es = 0.00217391
+Concrete parabola-rectangle defaults for normal strength concrete:
+epsilon_c2 = 0.002
+epsilon_cu2 = 0.0035
+n = 2.0
+
+S-CONCRETE Reference Summary
+----------------------------
+Reported Nr(max): -12113.26 kN
+Reported Tr(max): 3414.957 kN
+Number of points per theta curve: 100
+
+Reference theta curves available in NvsM.TXT:
+0, 16, 75, 90, 106, 135, 153, 180, 207, 252, 270, 293, 351 degrees
+
+Selected S-CONCRETE checkpoints
+-------------------------------
+Theta_deg, AxialLoad_kN, Moment_kNm, Note
+0,      0.0000,   1142.475, pure bending checkpoint from S-CONCRETE curve
+0,  -3670.6850,   1644.959, approximate peak moment near theta 0
+0, -12113.2600,      0.000, max compression end point from curve
+90,     0.0000,    815.4838, pure bending checkpoint from S-CONCRETE curve
+90, -3670.6850,   1184.984, approximate peak moment near theta 90
+90,-12113.2600,      0.000, max compression end point from curve
+135,    0.0000,    906.3369, pure bending checkpoint from S-CONCRETE curve
+135,-3303.6160,   1164.707, approximate peak moment near theta 135
+135,-12113.2600,     0.000, max compression end point from curve
+
+Note on S-CONCRETE sign convention
+----------------------------------
+The exported S-CONCRETE N-vs-M table reports compression using negative axial load values. MBColumn internal convention uses compression positive. Therefore, convert signs consistently before comparing:
+
+S-CONCRETE axial compression value -12113.26 kN should map to MBColumn compression-positive value +12113.26 kN if MBColumn output follows the repository convention.
+
+Comparison Procedure
+--------------------
+1. Run MBColumn EC2 fiber PMM solver for the section and reinforcement above.
+2. Disable slenderness, second-order effects, and minimum eccentricity if those options exist in the comparison workflow.
+3. Export MBColumn N-M curves at the same theta values listed above.
+4. Convert sign conventions before comparison.
+5. Compare moment capacity at matching axial force levels.
+6. Report absolute and percentage difference.
+
+Tolerance
+---------
+PMM ratio or capacity difference:
+- <= 3 percent: good
+- 3 to 5 percent: acceptable with explanation
+- > 5 percent: investigate
+
+Possible difference sources
+---------------------------
+- S-CONCRETE material law versus MBColumn EC2 material law
+- concrete stress block versus fiber integration
+- concrete fiber mesh density
+- main bar coordinate interpretation behind H10 links
+- sign convention
+- moment direction convention
+- minimum eccentricity settings
+- second-order/slenderness effects
+- hidden commercial software assumptions
+
+Required Output Report
+----------------------
+After implementation, create or update:
+
+docs/validation/ec2-fiber-pmm-sconcrete-verification.txt
+
+The report must state:
+- MBColumn settings used
+- S-CONCRETE settings used
+- whether existing ACI/spColumn-style logic was untouched
+- comparison table for selected checkpoints
+- difference percentage
+- pass/fail conclusion
+- limitations and follow-up checks
