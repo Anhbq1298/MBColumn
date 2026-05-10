@@ -296,7 +296,7 @@ public class DiagramCanvas2D : FrameworkElement
         double y = bounds.Bottom - 35.0;
         DrawText(dc, caption, 7.2, textBrush, new Point(left, y), FontWeights.Normal);
         DrawLegendItem(dc, new Point(left, y + 13.0), compressionFill, "Concrete in compression", textBrush);
-        DrawLegendItem(dc, new Point(left, y + 25.0), tensionFill, "Concrete in tension", textBrush);
+        DrawLegendItem(dc, new Point(left, y + 25.0), tensionFill, "Concrete in tension - ignored", textBrush);
     }
 
     private static void DrawLegendItem(DrawingContext dc, Point origin, Brush fill, string label, Brush textBrush)

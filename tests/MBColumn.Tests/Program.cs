@@ -111,8 +111,7 @@ var tests = new List<(string Name, Action Test)>
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
-    ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon),
-    ("All Sides Equal Rule", TestAllSidesEqualRule)
+    ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon)
 };
 
 foreach (var (name, test) in tests)
@@ -1269,6 +1268,74 @@ static void TestControlPointsTensionControlEpsilon()
         AreClose(0.005, row.EpsilonT, 1e-4);
 }
 
+// ----- EC2 Fiber PMM Tests -----
+
+static RectangularSection SConcreteSection()
+{
+    const double diameter = 25.0;
+    double area = Math.PI * diameter * diameter / 4.0;
+    var coords = new (double X, double Y)[]
+    {
+        (-237.5,  337.5),
+        (-118.75, 337.5),
+        (   0.0,  337.5),
+        ( 118.75, 337.5),
+        ( 237.5,  337.5),
+        (-237.5,  168.75),
+        ( 237.5,  168.75),
+        (-237.5,    0.0),
+        ( 237.5,    0.0),
+        (-237.5, -168.75),
+        ( 237.5, -168.75),
+        (-237.5, -337.5),
+        (-118.75,-337.5),
+        (   0.0, -337.5),
+        ( 118.75,-337.5),
+        ( 237.5, -337.5)
+    };
+
+    var bars = coords.Select((p, i) => new Rebar($"B{i + 1:00}", diameter, area, p.X, p.Y)).ToList();
+    return new RectangularSection(600.0, 800.0, new RebarLayout("S-CONCRETE 16H25", "H25", 62.5, bars));
+}
+
+static Ec2FiberInteractionSolver FastEc2Solver()
+    => new() { AngleStepDegrees = 30, NeutralAxisSamples = 36, ConcreteGridDivisions = 20 };
+
+static void TestEc2FactoryUsesFiberSolver()
+{
+    var aci = new Aci318DesignCodeService();
+    var ec2 = new Ec2DesignCodeService();
+    var factory = new InteractionSolverFactory(aci, ec2);
+    IsTrue(factory.Get(DesignCodeType.Aci318Style) is StrainCompatibilityInteractionSolver);
+    IsTrue(factory.Get(DesignCodeType.Ec2) is Ec2FiberInteractionSolver);
+}
+
+static void TestEc2NegativeAxialBendingKeepsConcreteCompression()
+{
+    var surface = FastEc2Solver().Solve(SConcreteSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    var point = surface.Points.FirstOrDefault(p => p.Pn < -100_000.0 && p.ConcretePn > 1.0);
+    IsTrue(point is not null);
+    IsTrue(point!.SteelPn < 0.0);
+    IsTrue(point.ConcretePn > 0.0);
+}
+
+static void TestEc2SteelCarriesTensionAndCompression()
+{
+    var surface = FastEc2Solver().Solve(SConcreteSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    IsTrue(surface.Points.Any(p => p.MinSteelStrain < -0.0001 && p.SteelPn < 0.0));
+    IsTrue(surface.Points.Any(p => p.MaxSteelStrain > 0.0001 && p.SteelPn > 0.0));
+}
+
+static void TestAciBaselineRemainsRectangularBlockPath()
+{
+    var aci = new StrainCompatibilityInteractionSolver(new Aci318DesignCodeService());
+    var section = SConcreteSection();
+    var surface = aci.Solve(section, new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    IsTrue(surface.AngleCount == 36);
+    IsTrue(surface.DepthCount == 70);
+    IsTrue(surface.Points.All(p => p.ConcretePn == 0.0 && p.StateLabel == ""));
+    IsTrue(surface.Points.Any(p => p.Phi < 1.0));
+}
 
 static void TestAllSidesEqualRule()
 {

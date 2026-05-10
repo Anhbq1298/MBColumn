@@ -226,7 +226,18 @@ public static class ControlPointTableBuilderService
                Lin(a.Mnx,                    b.Mnx,                    t),
                Lin(a.Mny,                    b.Mny,                    t),
                Lin(a.Phi,                    b.Phi,                    t),
-               Lin(a.MaxTensionSteelStrain,  b.MaxTensionSteelStrain,  t));
+               Lin(a.MaxTensionSteelStrain,  b.MaxTensionSteelStrain,  t),
+               Lin(a.ConcretePn,             b.ConcretePn,             t),
+               Lin(a.SteelPn,                b.SteelPn,                t),
+               Lin(a.ConcreteMnx,            b.ConcreteMnx,            t),
+               Lin(a.ConcreteMny,            b.ConcreteMny,            t),
+               Lin(a.SteelMnx,               b.SteelMnx,               t),
+               Lin(a.SteelMny,               b.SteelMny,               t),
+               Lin(a.MaxConcreteStrain,      b.MaxConcreteStrain,      t),
+               Lin(a.MinConcreteStrain,      b.MinConcreteStrain,      t),
+               Lin(a.MaxSteelStrain,         b.MaxSteelStrain,         t),
+               Lin(a.MinSteelStrain,         b.MinSteelStrain,         t),
+               string.IsNullOrWhiteSpace(a.StateLabel) ? b.StateLabel : a.StateLabel);
 
     private static double Lin(double a, double b, double t) => a + (b - a) * t;
 
