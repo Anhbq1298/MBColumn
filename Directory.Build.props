@@ -1,7 +1,12 @@
 <Project>
   <PropertyGroup>
-    <UseArtifactsOutput>true</UseArtifactsOutput>
-    <ArtifactsPath>$(MSBuildThisFileDirectory)built</ArtifactsPath>
+    <!-- Flattened output directly to built/bin -->
+    <OutputPath>$(MSBuildThisFileDirectory)built\bin\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    
+    <!-- Intermediate files still need to be separate to avoid build conflicts -->
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)built\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
