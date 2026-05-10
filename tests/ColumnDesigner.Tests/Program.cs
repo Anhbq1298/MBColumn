@@ -126,14 +126,16 @@ static UnitConversionService GetUnits() => new();
 
 static ColumnCalculationService Service()
 {
-    IDesignCodeService code = new Aci318DesignCodeService();
+    var aci = new Aci318DesignCodeService();
+    var ec2 = new Ec2DesignCodeService();
+    var codeFactory = new DesignCodeServiceFactory(aci, ec2);
+    var solverFactory = new InteractionSolverFactory(aci, ec2);
     IUnitConversionService units = GetUnits();
     IRebarDatabase metric = new SingaporeRebarDatabase();
     IRebarDatabase imperial = new ImperialRebarDatabase();
-    IInteractionSolver solver = new StrainCompatibilityInteractionSolver(code);
     IRatioCheckService ratio = new RatioCheckService();
     IControlPointBuilder control = new ControlPointBuilderService(units);
-    return new ColumnCalculationService(solver, units, metric, imperial, ratio, control, new DiagramDataService(), new InputValidationService());
+    return new ColumnCalculationService(solverFactory, codeFactory, units, metric, imperial, ratio, control, new DiagramDataService(), new InputValidationService());
 }
 
 static ColumnInputDto MetricInput(double pu = 2500, double mux = 250, double muy = 180)
