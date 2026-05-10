@@ -1,0 +1,28 @@
+﻿Force unit: kN | Moment: kN-m | Length: mm
+
+[AXIS X]
+Control Point      |     P_calc |      P_ref |   ├ÄΓÇ¥P% |     M_calc |      M_ref |   ├ÄΓÇ¥M% |  c_calc |   c_ref | STATUS
+Max compression    |    4542.53 |    4542.50 |   0.00 |       0.00 |       0.00 |   0.00 |  7000.0 |     783 | PASS
+Allowable comp.    |    3634.02 |    3634.00 |   0.00 |      86.01 |      88.34 |   2.63 |   303.1 |     303 | PASS
+fs = 0.0           |    2796.28 |    2796.30 |   0.00 |     146.94 |     146.94 |   0.00 |   235.0 |     235 | PASS
+fs = 0.5 fy        |    1797.36 |    1833.50 |   1.97 |     174.41 |     175.22 |   0.46 |   174.1 |     174 | PASS
+Balanced point     |    1082.05 |    1067.10 |   1.40 |     181.39 |     183.89 |   1.36 |   138.2 |     138 | PASS
+Tension control    |     136.67 |     138.40 |   1.25 |     193.23 |     197.59 |   2.21 |    87.0 |      87 | PASS
+Pure bending       |       0.00 |       0.00 |   0.00 |     182.40 |     187.45 |   2.69 |    82.4 |      82 | PASS
+Max tension        |   -1899.07 |   -1899.10 |   0.00 |       0.19 |       0.00 |   0.19 |     0.0 |       0 | PASS
+
+[AXIS Y]
+Control Point      |     P_calc |      P_ref |   ├ÄΓÇ¥P% |     M_calc |      M_ref |   ├ÄΓÇ¥M% |  c_calc |   c_ref | STATUS
+Max compression    |    4542.53 |    4542.50 |   0.00 |       0.00 |       0.00 |   0.00 |  7000.0 |    2117 | PASS
+Allowable comp.    |    3634.02 |    3634.00 |   0.00 |     239.69 |     240.20 |   0.21 |   717.9 |     716 | PASS
+fs = 0.0           |    3199.56 |    3201.00 |   0.05 |     332.65 |     333.30 |   0.20 |   635.0 |     635 | PASS
+fs = 0.5 fy        |    2207.38 |    2207.50 |   0.01 |     474.89 |     474.90 |   0.00 |   470.4 |     470 | PASS
+Balanced point     |    1486.24 |    1480.50 |   0.39 |     542.31 |     544.27 |   0.36 |   373.5 |     374 | PASS
+Tension control    |     883.19 |     883.40 |   0.02 |     688.69 |     688.72 |   0.00 |   235.2 |     235 | PASS
+Pure bending       |       0.00 |       0.00 |   0.00 |     531.38 |     531.69 |   0.06 |   144.7 |     144 | PASS
+Max tension        |   -1899.07 |   -1899.10 |   0.00 |       0.19 |       0.00 |   0.19 |     0.0 |       0 | PASS
+
+SUMMARY
+  Axis X: 8/8 PASSED/WARNING
+  Axis Y: 8/8 PASSED/WARNING
+  Overall: PASS

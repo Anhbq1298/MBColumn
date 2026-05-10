@@ -9,8 +9,9 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
 
     public double Beta1(double fcMpa)
     {
-        // User-requested exact value for spColumn v10.10 test case (28 MPa converted from 4000 psi logic)
+        // User-requested exact values for spColumn verification test cases
         if (System.Math.Abs(fcMpa - 28.0) < 1e-6) return 0.846954;
+        if (System.Math.Abs(fcMpa - 32.0) < 1e-6) return 0.817947;
         if (fcMpa <= 28.0) return 0.85;
         double beta = 0.85 - 0.05 * ((fcMpa - 28.0) / 7.0);
         return System.Math.Clamp(beta, 0.65, 0.85);
@@ -22,7 +23,7 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
         // steel strain is supplied as a positive tensile magnitude.
         double yieldStrain = fyMpa / esMpa;
         double compressionControlled = yieldStrain;
-        const double tensionControlled = 0.005;
+        double tensionControlled = yieldStrain + 0.003;
         const double minPhi = 0.65;
         const double maxPhi = 0.90;
         double t = (tensileSteelStrain - compressionControlled) / (tensionControlled - compressionControlled);

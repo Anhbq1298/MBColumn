@@ -37,8 +37,9 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
         double theta = angleDegrees * System.Math.PI / 180.0;
         double nx = System.Math.Cos(theta);
         double ny = System.Math.Sin(theta);
-        
-        double cMax = 3.0 * System.Math.Max(section.WidthMm, section.HeightMm);
+        // c_max = 10.0Ã—max(width,height) ensures all bars reach compression yield (fy)
+        // even for large sections, matching spColumn's pure compression (P0) pole.
+        double cMax = 10.0 * System.Math.Max(section.WidthMm, section.HeightMm);
         double c = 0.1 + depthIndex * (cMax - 0.1) / (NeutralAxisSamples - 1);
         double maxProjection = ProjectExtreme(section, nx, ny);
         double neutralAxisProjection = maxProjection - c;

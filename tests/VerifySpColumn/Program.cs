@@ -22,7 +22,7 @@ var validation = new InputValidationService();
 IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
 var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
 
-// spColumn reference test case: 700Ã—300 mm, fc=28, fy=420, 16-T20 (314mm2), cover=55, ACI 318-19 biaxial tied
+// spColumn reference test case 1: 700Ã—300 mm, fc=28, fy=420, 16-T20 (314mm2), cover=55, ACI 318-19 biaxial tied
 var input = new ColumnInputDto(
     UnitSystem: UnitSystem.Metric,
     Width: 700,
@@ -73,7 +73,7 @@ var refY = new (string Label, double P, double M, double C, double Eps, double P
     ("Balanced point",   1480.5,  544.27,  374,  0.00210, 0.65000),
     ("Tension control",   883.4,  688.72,  235,  0.00500, 0.90000),
     ("Pure bending",        0.0,  531.69,  144,  0.01150, 0.90000),
-    ("Max tension",     -1899.1,    0.00,    0,  9.99999, 0.90000),
+    ("Max tension",     -1899.1,    0.00,    0,   9.99999, 0.90000),
 };
 
 var rowsX = table.Rows.Where(r => r.Axis == "X").ToList();

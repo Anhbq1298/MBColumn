@@ -74,7 +74,7 @@ public static class ControlPointTableBuilderService
             // where bars transition between elastic and yielded zones.
             double cFsHalf  = ecu * dtMm / (ecu + 0.5 * eyield);
             double cBalance = ecu * dtMm / (ecu + eyield);
-            double cTension = ecu * dtMm / (ecu + 0.005);
+            double cTension = ecu * dtMm / (ecu + eyield + 0.003);
 
             // The 8 labeled points
             InteractionPoint?[] labeled =
