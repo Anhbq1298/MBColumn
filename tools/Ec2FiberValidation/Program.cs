@@ -139,7 +139,7 @@ static InteractionPoint InterpolateAtAxial(InteractionSurface surface, int angle
             return Lerp(a, b, t);
         }
     }
-    return pts.MinBy(p => Math.Abs(p.Pn - targetN))!;
+    var minDiff = pts.Min(p => Math.Abs(p.Pn - targetN)); return pts.Where(p => Math.Abs(Math.Abs(p.Pn - targetN) - minDiff) < 1e-7).MinBy(p => p.Mnx * p.Mnx + p.Mny * p.Mny)!;
 }
 
 static InteractionPoint Lerp(InteractionPoint a, InteractionPoint b, double t)

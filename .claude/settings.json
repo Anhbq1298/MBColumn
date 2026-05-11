@@ -9,7 +9,11 @@
       "Bash(Select-Object FullName)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\\\\src\" -Recurse -Include \"*Ec2*\", \"*ec2*\", \"*fiber*\", \"*Fiber*\", \"*pmm*\", \"*Pmm*\")",
       "Bash(dotnet test *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(dotnet sln *)",
+      "Bash(dotnet new *)",
+      "Bash(dir \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\" /b)",
+      "Bash(findstr sln *)"
     ]
   }
 }
