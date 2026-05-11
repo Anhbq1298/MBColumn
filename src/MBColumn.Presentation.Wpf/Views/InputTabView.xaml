@@ -49,7 +49,16 @@
                                   DisplayMemberPath="DisplayName"
                                   SelectedValuePath="Code"
                                   SelectedValue="{Binding SelectedDesignCode}" />
-                        
+
+                        <StackPanel Visibility="{Binding ShowAciSolverOption, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="ACI Solver Type" Style="{StaticResource FieldLabelTextStyle}" Margin="0,10,0,0" />
+                            <ComboBox ItemsSource="{Binding AciSolverOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Solver"
+                                      SelectedValue="{Binding SelectedAciSolver}" />
+                            <TextBlock Text="Conventional uses the Whitney stress block. Fiber integrates a Hognestad-style concrete model and is heavier but smoother."
+                                       Style="{StaticResource HelperTextStyle}" />
+                        </StackPanel>
                     </StackPanel>
                 </GroupBox>
 

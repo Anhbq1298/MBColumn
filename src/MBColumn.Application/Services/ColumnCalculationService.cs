@@ -46,7 +46,7 @@ public sealed class ColumnCalculationService(
         }
 
         var codeService = codeFactory.Get(input.DesignCode);
-        var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver);
+        var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver);
 
         double widthMm = units.LengthToMm(input.Width, input.LengthUnit);
         double heightMm = units.LengthToMm(input.Height, input.LengthUnit);
