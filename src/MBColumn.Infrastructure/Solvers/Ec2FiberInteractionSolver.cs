@@ -23,12 +23,24 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
         var fibers = BuildConcreteFibers(section).ToList();
         var points = new List<InteractionPoint>(angleCount * NeutralAxisSamples);
 
-        for (int d = 0; d < NeutralAxisSamples; d++)
+        // Last depth slot is reserved for the explicit pure-compression point (c → ∞, uniform εc3).
+        // The sweep covers depthIndex 0 .. NeutralAxisSamples-2 using NeutralAxisSamples-1 as the
+        // denominator so the final sweep sample still reaches cMax.
+        int sweepSamples = NeutralAxisSamples - 1;
+        for (int d = 0; d < sweepSamples; d++)
         {
             for (int a = 0; a < angleCount; a++)
             {
-                points.Add(Evaluate(section, concrete, steel, fibers, d, NeutralAxisSamples, a * AngleStepDegrees, a));
+                points.Add(Evaluate(section, concrete, steel, fibers, d, sweepSamples, a * AngleStepDegrees, a));
             }
+        }
+
+        // Pure compression: uniform strain = εc3 across the full section.
+        // All concrete fibres at fcd; all steel bars at Es·εc3 (≤ fyd). Moment = 0 for symmetric sections.
+        int pcIndex = NeutralAxisSamples - 1;
+        for (int a = 0; a < angleCount; a++)
+        {
+            points.Add(EvaluatePureCompression(section, concrete, steel, fibers, pcIndex, a, a * AngleStepDegrees));
         }
 
         return new InteractionSurface(NeutralAxisSamples, angleCount, points);
@@ -137,6 +149,58 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
             maxSteelStrain,
             minSteelStrain,
             LabelState(axial, hasCompressedConcrete, maxTensionSteelStrain, maxSteelStrain));
+    }
+
+    // Pure compression: c → ∞, uniform strain = εc3. Steel stress = Es·εc3 < fyd (steel does not yield).
+    // Moment is zero for symmetric sections; any residual is only numerical rounding in the fiber grid.
+    private static InteractionPoint EvaluatePureCompression(
+        RectangularSection section,
+        ConcreteMaterial concrete,
+        SteelMaterial steel,
+        IReadOnlyList<Fiber> fibers,
+        int depthIndex,
+        int angleIndex,
+        double angleDegrees)
+    {
+        double fcd          = AlphaCc * concrete.FcMpa / GammaC;
+        double fyd          = steel.FyMpa / GammaS;
+        double steelStress  = System.Math.Min(steel.EsMpa * EpsilonC3, fyd);   // Es·εc3 = 350 MPa for B500
+        double dispStress   = EtaRect * fcd;                                   // concrete stress at bar location
+
+        double concreteN = 0.0, concreteMx = 0.0, concreteMy = 0.0;
+        foreach (var fiber in fibers)
+        {
+            double force = EtaRect * fcd * fiber.AreaMm2;
+            concreteN  += force;
+            concreteMx += force * fiber.YMm;
+            concreteMy += force * fiber.XMm;
+        }
+
+        double steelN = 0.0, steelMx = 0.0, steelMy = 0.0;
+        foreach (var bar in section.RebarLayout.Bars)
+        {
+            double force = (steelStress - dispStress) * bar.AreaMm2;
+            steelN  += force;
+            steelMx += force * bar.YMm;
+            steelMy += force * bar.XMm;
+        }
+
+        // Use a large nominal c so the point sorts correctly at the compression tip of the surface.
+        double cNominal = 3.0 * System.Math.Max(section.WidthMm, section.HeightMm) * 10.0;
+
+        return new InteractionPoint(
+            depthIndex, angleIndex, angleDegrees, cNominal,
+            concreteN + steelN,
+            concreteMx + steelMx,
+            concreteMy + steelMy,
+            1.0,
+            0.0,                        // no tension steel at pure compression
+            concreteN, steelN,
+            concreteMx, concreteMy,
+            steelMx, steelMy,
+            EpsilonC3, EpsilonC3,       // max/min concrete strain – uniform
+            EpsilonC3, EpsilonC3,       // max/min steel strain   – uniform
+            "Pure axial compression");
     }
 
     private static string LabelState(double axialN, bool hasCompressedConcrete, double maxTensionSteelStrain, double maxSteelStrain)
