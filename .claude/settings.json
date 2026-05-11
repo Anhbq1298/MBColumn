@@ -13,7 +13,10 @@
       "Bash(dotnet sln *)",
       "Bash(dotnet new *)",
       "Bash(dir \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\" /b)",
-      "Bash(findstr sln *)"
+      "Bash(findstr sln *)",
+      "Bash(Get-ChildItem -Recurse -File)",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)"
     ]
   }
 }
