@@ -16,7 +16,9 @@
       "Bash(findstr sln *)",
       "Bash(Get-ChildItem -Recurse -File)",
       "Bash(Measure-Object)",
-      "Bash(Select-Object -ExpandProperty Count)"
+      "Bash(Select-Object -ExpandProperty Count)",
+      "PowerShell(git -C \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\" status)",
+      "PowerShell(git -C \"c:\\\\Users\\\\NCPC\\\\Desktop\\\\_ReverseEngineering\\\\spColumnReversed-Solution\" diff -- \"src/MBColumn.Presentation.Wpf/ControlPointsWindow.xaml\" \"src/MBColumn.Presentation.Wpf/ControlPointsWindow.xaml.cs\")"
     ]
   }
 }
