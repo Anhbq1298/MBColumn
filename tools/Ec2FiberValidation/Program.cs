@@ -20,14 +20,13 @@ Console.WriteLine($"Parsed {scBlocks.Count} theta blocks ({scBlocks.Sum(b => b.P
 var section  = BuildSection();
 var concrete = new ConcreteMaterial("C35/45", 35.0);
 var steel    = new SteelMaterial("B500", 500.0, 200_000.0);
-var solver   = new Ec2FiberInteractionSolver
+var solver   = new Ec2BoundaryInteractionSolver
 {
     AngleStepDegrees    = 5,
-    NeutralAxisSamples  = 100,
-    ConcreteGridDivisions = 80
+    NeutralAxisSamples  = 100
 };
 
-Console.WriteLine("Running EC2 fiber solver …");
+Console.WriteLine("Running EC2 boundary solver …");
 var surface = solver.Solve(section, concrete, steel);
 Console.WriteLine($"Solver done: {surface.Points.Count} points, {surface.Points.Select(p => p.AngleIndex).Distinct().Count()} angle slices.");
 
