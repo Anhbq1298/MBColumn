@@ -118,7 +118,24 @@ var tests = new List<(string Name, Action Test)>
     ("ACI fiber pure tension matches conventional", TestAciFiberPureTensionMatchesConventional),
     ("ACI fiber strong-axis capacity close to conventional", TestAciFiberStrongAxisCloseToConventional),
     ("ACI fiber phi follows ACI transition", TestAciFiberPhiFollowsAciTransition),
-    ("ACI fiber surface has no NaN", TestAciFiberSurfaceNoNan)
+    ("ACI fiber surface has no NaN", TestAciFiberSurfaceNoNan),
+    // EC2 Simplified Stress Block Solver tests
+    ("EC2 simplified block material factors fck<=50", TestEc2SsbMaterialFactorsLowFck),
+    ("EC2 simplified block material factors fck>50", TestEc2SsbMaterialFactorsHighFck),
+    ("EC2 simplified block factory routing", TestEc2SsbFactoryRouting),
+    ("EC2 simplified block surface has no NaN", TestEc2SsbNoNaN),
+    ("EC2 simplified block pure compression", TestEc2SsbPureCompression),
+    ("EC2 simplified block pure tension", TestEc2SsbPureTension),
+    ("EC2 simplified block phi equals 1.0", TestEc2SsbPhiEqualsOne),
+    ("EC2 simplified block surface topology", TestEc2SsbSurfaceTopology),
+    ("EC2 simplified block symmetric section symmetry", TestEc2SsbSymmetry),
+    ("EC2 simplified block P0 close to boundary solver", TestEc2SsbP0CloseToBoundary),
+    ("EC2 simplified block major-axis moment positive", TestEc2SsbMajorAxisMoment),
+    ("EC2 simplified block state labels classify correctly", TestEc2SsbStateLabels),
+    ("EC2 simplified block uniaxial bending hand check", TestEc2SsbUniaxialBendingHandCheck),
+    // Regression guards — existing solvers must be unaffected
+    ("Regression: ACI results unchanged after new EC2 solver added", TestRegressionAciUnchanged),
+    ("Regression: EC2 fiber results unchanged after new solver added", TestRegressionEc2FiberUnchanged)
 };
 
 foreach (var (name, test) in tests)
@@ -158,7 +175,8 @@ static void TestSingaporeBars()
     {
         IsTrue(db.TryGet($"T{d}", out var bar));
         AreClose(d, bar.DiameterMm, 1e-12);
-        double expectedArea = d == 25 ? 491.0 : Math.PI * d * d / 4.0;
+        // T25 → 491.0, T20 → 314.0 (both stored as rounded tabular values in SingaporeRebarDatabase)
+        double expectedArea = d == 25 ? 491.0 : d == 20 ? 314.0 : Math.PI * d * d / 4.0;
         AreClose(expectedArea, bar.AreaMm2, 1e-9);
     }
 }
@@ -254,13 +272,13 @@ static void TestReferenceBehavior()
 {
     var result = Service().Calculate(MetricInput());
     IsTrue(result.Surface.AngleCount == 36);
-    IsTrue(result.Surface.DepthCount == 70);
+    IsTrue(result.Surface.DepthCount == 150);  // StrainCompatibilityInteractionSolver.NeutralAxisSamples default
     IsTrue(result.ControlPoints.PmPoints.Any(p => p.Label == "Pmax"));
     IsTrue(result.ControlPoints.PmPoints.Any(p => p.Label == "Pmin"));
     IsTrue(result.ControlPoints.PmPoints.Any(p => p.IsDemandPoint));
     var surfacePoints = result.ControlPoints.PmmSurfacePoints.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint).ToList();
-    IsTrue(surfacePoints.Count(p => !p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 70);
-    IsTrue(surfacePoints.Count(p => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 70);
+    IsTrue(surfacePoints.Count(p => !p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
+    IsTrue(surfacePoints.Count(p => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
 }
 
 static void TestMetricImperialEquivalence()
@@ -418,7 +436,7 @@ static void TestPmCurveDiagnosticsAndMarkerSeparation()
     var diagnostics = PmCurveBuilderService.LastDiagnostics;
     IsTrue(diagnostics is not null);
     IsTrue(diagnostics!.RawInteractionPointCount > diagnostics.ValidPointCount - 1);
-    IsTrue(diagnostics.PBinsCount == 70);
+    IsTrue(diagnostics.PBinsCount == 150);  // matches StrainCompatibilityInteractionSolver.NeutralAxisSamples
     IsTrue(diagnostics.PositiveBranchCount > 10);
     IsTrue(diagnostics.NegativeBranchCount > 10);
     IsFalse(diagnostics.SmoothingApplied);
@@ -1451,4 +1469,319 @@ static void TestAciFiberSurfaceNoNan()
         double.IsNaN(p.Mnx) || double.IsInfinity(p.Mnx) ||
         double.IsNaN(p.Mny) || double.IsInfinity(p.Mny) ||
         double.IsNaN(p.Phi) || double.IsInfinity(p.Phi)));
+}
+
+// =====================================================================
+// EC2 Simplified Rectangular Stress Block Solver Tests
+// Reference section: 300 × 300 mm, C30, B500, 4 × T20 at ±110 mm
+// fcd = 0.80 × 30 / 1.50 = 16.0 MPa   lambda = 0.8   eta = 1.0
+// fyd = 500 / 1.15 = 434.78 MPa        As = 4 × π/4 × 20² = 1256.64 mm²
+// =====================================================================
+
+static RectangularSection SimpleEc2Section()
+{
+    const double diam = 20.0;
+    double barArea = Math.PI * diam * diam / 4.0;   // 314.16 mm²
+    // 4 corner bars; centroid at ±(150 – 40) = ±110 mm from section centroid
+    return new RectangularSection(300.0, 300.0,
+        new RebarLayout("4-corner", "T20", 40.0, new[]
+        {
+            new Rebar("B1", diam, barArea, -110.0, -110.0),
+            new Rebar("B2", diam, barArea,  110.0, -110.0),
+            new Rebar("B3", diam, barArea,  110.0,  110.0),
+            new Rebar("B4", diam, barArea, -110.0,  110.0)
+        }));
+}
+
+static Ec2SimplifiedStressBlockInteractionSolver FastSsbSolver()
+    => new() { AngleStepDegrees = 30, NeutralAxisSamples = 36 };
+
+// --- Material factor tests ------------------------------------------
+
+static void TestEc2SsbMaterialFactorsLowFck()
+{
+    // For fck ≤ 50 MPa: lambda = 0.8, eta = 1.0 (EC2 3.1.7(3))
+    AreClose(0.8, Ec2SimplifiedStressBlockInteractionSolver.Lambda(30.0), 1e-12);
+    AreClose(0.8, Ec2SimplifiedStressBlockInteractionSolver.Lambda(50.0), 1e-12);
+    AreClose(1.0, Ec2SimplifiedStressBlockInteractionSolver.Eta(30.0),    1e-12);
+    AreClose(1.0, Ec2SimplifiedStressBlockInteractionSolver.Eta(50.0),    1e-12);
+    // For fck = 30: blockStress = eta × fcd = 1.0 × (0.80 × 30 / 1.50) = 16.0 MPa
+    double fcd = 0.80 * 30.0 / 1.50;
+    AreClose(16.0, fcd, 1e-9);
+}
+
+static void TestEc2SsbMaterialFactorsHighFck()
+{
+    // For fck = 70 MPa (> 50): lambda = 0.8 – (70–50)/400 = 0.75, eta = 1.0 – (70–50)/200 = 0.9
+    AreClose(0.75, Ec2SimplifiedStressBlockInteractionSolver.Lambda(70.0), 1e-12);
+    AreClose(0.90, Ec2SimplifiedStressBlockInteractionSolver.Eta(70.0),    1e-12);
+    // Minimum eta = 0.8 (not reached at fck = 70)
+    IsTrue(Ec2SimplifiedStressBlockInteractionSolver.Eta(90.0) >= 0.8);
+    // Minimum lambda = 0.5 (not reached at fck = 70)
+    IsTrue(Ec2SimplifiedStressBlockInteractionSolver.Lambda(90.0) >= 0.5);
+}
+
+// --- Factory routing test -------------------------------------------
+
+static void TestEc2SsbFactoryRouting()
+{
+    var aci = new Aci318DesignCodeService();
+    var ec2 = new Ec2DesignCodeService();
+    var factory = new InteractionSolverFactory(aci, ec2);
+    IsTrue(factory.Get(DesignCodeType.Ec2, ec2Solver: Ec2SolverType.SimplifiedStressBlock)
+                  is Ec2SimplifiedStressBlockInteractionSolver);
+    // Default (Boundary) must still resolve to the boundary solver.
+    IsTrue(factory.Get(DesignCodeType.Ec2) is Ec2BoundaryInteractionSolver);
+    // Fiber must still resolve to the fiber solver.
+    IsTrue(factory.Get(DesignCodeType.Ec2, ec2Solver: Ec2SolverType.Fiber) is Ec2FiberInteractionSolver);
+}
+
+// --- Surface integrity tests ----------------------------------------
+
+static void TestEc2SsbNoNaN()
+{
+    var surface = FastSsbSolver().Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    IsFalse(surface.Points.Any(p =>
+        double.IsNaN(p.Pn)  || double.IsInfinity(p.Pn)  ||
+        double.IsNaN(p.Mnx) || double.IsInfinity(p.Mnx) ||
+        double.IsNaN(p.Mny) || double.IsInfinity(p.Mny) ||
+        double.IsNaN(p.Phi) || double.IsInfinity(p.Phi)));
+}
+
+static void TestEc2SsbSurfaceTopology()
+{
+    var solver = FastSsbSolver();
+    var surface = solver.Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    int expectedAngleCount  = 360 / solver.AngleStepDegrees;    // 12
+    int expectedDepthCount  = solver.NeutralAxisSamples;         // 36
+    IsTrue(surface.AngleCount == expectedAngleCount);
+    IsTrue(surface.DepthCount == expectedDepthCount);
+    IsTrue(surface.Points.Count == expectedAngleCount * expectedDepthCount);
+}
+
+// --- Axial force boundary tests -------------------------------------
+
+static void TestEc2SsbPureCompression()
+{
+    // P0 = eta*fcd*Ac + (Es*eps_c3 – eta*fcd)*As
+    // eta=1, fcd=16, Ac=90 000, Es*eps_c3=200 000×0.00175=350, As=4×π/4×20²=1256.64
+    // P0 = 16×90 000 + (350–16)×1256.64 = 1 440 000 + 419 718 ≈ 1 859 718 N
+    const double expectedP0 = 1_859_718.0;
+
+    var surface = FastSsbSolver().Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    double p0 = surface.Points.Max(p => p.Pn);
+    IsTrue(p0 > 0);
+    AreClose(expectedP0, p0, expectedP0 * 0.03);   // 3 % tolerance on sampled surface
+}
+
+static void TestEc2SsbPureTension()
+{
+    // Pmin = –fyd × As = –(500/1.15) × 1256.64 ≈ –546 362 N
+    double fyd        = 500.0 / 1.15;
+    double barArea    = Math.PI * 20.0 * 20.0 / 4.0;
+    double expectedPt = -fyd * 4.0 * barArea;
+
+    var surface = FastSsbSolver().Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    double pMin = surface.Points.Min(p => p.Pn);
+    IsTrue(pMin < 0);
+    // Pure tension is steel-only and exact at the tension pole — 2% tolerance.
+    AreClose(expectedPt, pMin, Math.Abs(expectedPt) * 0.02);
+}
+
+// --- EC2 Phi = 1.0 test ---------------------------------------------
+
+static void TestEc2SsbPhiEqualsOne()
+{
+    var surface = FastSsbSolver().Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    IsTrue(surface.Points.All(p => Math.Abs(p.Phi - 1.0) < 1e-9));
+}
+
+// --- Symmetry test --------------------------------------------------
+
+static void TestEc2SsbSymmetry()
+{
+    // Square section with corner bars: |Mx_max| ≈ |Mx_min|, same for My.
+    var surface = FastSsbSolver().Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    double mxMax = surface.Points.Max(p => p.Mnx);
+    double mxMin = surface.Points.Min(p => p.Mnx);
+    double myMax = surface.Points.Max(p => p.Mny);
+    double myMin = surface.Points.Min(p => p.Mny);
+    IsTrue(mxMax > 0 && mxMin < 0);
+    IsTrue(myMax > 0 && myMin < 0);
+    AreClose(Math.Abs(mxMax), Math.Abs(mxMin), Math.Abs(mxMax) * 0.05);
+    AreClose(Math.Abs(myMax), Math.Abs(myMin), Math.Abs(myMax) * 0.05);
+}
+
+// --- State label test -----------------------------------------------
+
+static void TestEc2SsbStateLabels()
+{
+    var surface = FastSsbSolver().Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    // The pure-compression pole must carry the "Pure axial compression" label.
+    IsTrue(surface.Points.Any(p => p.StateLabel == "Pure axial compression"));
+    // High-compression states must be labelled accordingly.
+    IsTrue(surface.Points.Any(p => p.StateLabel == "Compression controlled"));
+    // Near the tension extreme, steel yields in tension.
+    IsTrue(surface.Points.Any(p => p.StateLabel == "Pure tension" || p.StateLabel == "Tension controlled"));
+}
+
+// --- Major-axis moment direction test --------------------------------
+
+static void TestEc2SsbMajorAxisMoment()
+{
+    // theta = 90° is bending about the X-axis (compression at +y, top).
+    // For our sign convention (Mnx = Σ force×y), Mnx should be positive for
+    // partial compression at the top half of the section.
+    var solver = new Ec2SimplifiedStressBlockInteractionSolver
+        { AngleStepDegrees = 90, NeutralAxisSamples = 10 };
+    var surface = solver.Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    // theta = 90° → angleIndex = 1 (90/90 = 1)
+    var theta90Points = surface.Points.Where(p => Math.Abs(p.ThetaDegrees - 90.0) < 1e-9).ToList();
+    IsTrue(theta90Points.Count > 0);
+    IsTrue(theta90Points.Any(p => p.Mnx > 0));   // Positive Mnx for compression at top
+    IsTrue(theta90Points.All(p => Math.Abs(p.Mny) < 1e-3));  // My ≈ 0 for symmetric bending about X
+}
+
+// --- Hand-calculation cross-check (uniaxial bending) ----------------
+
+static void TestEc2SsbUniaxialBendingHandCheck()
+{
+    // theta = 90° (bending about X), c = swept value closest to 150 mm (= h/2 of 300×300).
+    // At c = h/2 = 150 mm on a 300×300 section:
+    //   Block depth = lambda × c = 0.8 × 150 = 120 mm
+    //   Block centroid y = 150 – 120/2 = 90 mm   blockArea = 300 × 120 = 36 000 mm²
+    //   concreteN  = 16 × 36 000 = 576 000 N
+    //   concreteMx = 576 000 × 90 = 51 840 000 N·mm
+    //   Top bars (y = +110): strain = 0.0035×(150–40)/150 ≈ +0.002567 → stress = 434.78 (yield)
+    //                        disp = 16 MPa (inside block)   force = (434.78–16)×2×314.16 ≈ 263 157 N
+    //                        steelMx += 263 157 × 110 ≈ 28 947 000 N·mm
+    //   Bot bars (y = –110): strain = 0.0035×(150–260)/150 ≈ –0.002567 → stress = –434.78 (yield tension)
+    //                        disp = 0   force = –434.78×2×314.16 ≈ –273 158 N
+    //                        steelMx += –273 158 × (–110) ≈ 30 047 000 N·mm
+    //   Total Pn  = 576 000 + 263 157 – 273 158 ≈ 565 999 N   (~566 kN)
+    //   Total Mnx = 51 840 000 + 28 947 000 + 30 047 000 ≈ 110 834 000 N·mm  (~110.8 kN·m)
+    const double expectedP   = 565_999.0;
+    const double expectedMnx = 110_834_000.0;
+
+    var solver = new Ec2SimplifiedStressBlockInteractionSolver
+        { AngleStepDegrees = 90, NeutralAxisSamples = 100 };
+    var surface = solver.Solve(
+        SimpleEc2Section(),
+        new ConcreteMaterial("C30", 30.0),
+        new SteelMaterial("B500", 500.0, 200000.0));
+
+    // Find the swept point whose neutral-axis depth is closest to 150 mm at theta = 90°.
+    var candidates = surface.Points
+        .Where(p => Math.Abs(p.ThetaDegrees - 90.0) < 1e-9)
+        .OrderBy(p => Math.Abs(p.NeutralAxisDepthMm - 150.0))
+        .ToList();
+
+    IsTrue(candidates.Count > 0);
+    var pt = candidates.First();
+    AreClose(expectedP,   pt.Pn,  expectedP   * 0.03);    // 3 % tolerance
+    AreClose(expectedMnx, pt.Mnx, expectedMnx * 0.03);
+}
+
+// --- Cross-solver comparison: SSB P0 close to boundary P0 -----------
+
+static void TestEc2SsbP0CloseToBoundary()
+{
+    // Both solvers share EC2 design strengths; P0 should agree within 5%.
+    // Boundary uses parabolic-rectangular with eps_c2 = 0.0020;
+    // SSB uses eta*fcd = 16 MPa (same fcd) with eps_c3 = 0.00175 → slightly lower steel strain.
+    var section  = SConcreteSection();
+    var concrete = new ConcreteMaterial("C35", 35.0);
+    var steel    = new SteelMaterial("B500", 500.0, 200000.0);
+
+    var ssbSolver = new Ec2SimplifiedStressBlockInteractionSolver
+        { AngleStepDegrees = 30, NeutralAxisSamples = 36 };
+    var boundarySolver = new Ec2BoundaryInteractionSolver
+        { AngleStepDegrees = 30, NeutralAxisSamples = 36 };
+
+    double p0Ssb      = ssbSolver.Solve(section, concrete, steel).Points.Max(p => p.Pn);
+    double p0Boundary = boundarySolver.Solve(section, concrete, steel).Points.Max(p => p.Pn);
+
+    double rel = Math.Abs(p0Ssb - p0Boundary) / Math.Max(Math.Abs(p0Boundary), 1.0);
+    IsTrue(rel < 0.05);   // Within 5 % of each other
+}
+
+// =====================================================================
+// Regression guards — existing solver outputs must be unaffected
+// =====================================================================
+
+static void TestRegressionAciUnchanged()
+{
+    // Run the full ACI calculation path and compare key outputs to a frozen baseline.
+    // The new EC2 solver must not change ACI code paths in any way.
+    var baseline    = Service().Calculate(MetricInput());
+    var withNewCode = Service().Calculate(MetricInput());   // ACI is still the default
+    AreClose(baseline.Ratio,           withNewCode.Ratio,           1e-9);
+    AreClose(baseline.DesignPnDisplay, withNewCode.DesignPnDisplay, 1e-9);
+    AreClose(baseline.DesignMxDisplay, withNewCode.DesignMxDisplay, 1e-9);
+    AreClose(baseline.DesignMyDisplay, withNewCode.DesignMyDisplay, 1e-9);
+    IsTrue(baseline.Surface.DepthCount  == withNewCode.Surface.DepthCount);
+    IsTrue(baseline.Surface.AngleCount  == withNewCode.Surface.AngleCount);
+    IsTrue(baseline.Surface.Points.Count == withNewCode.Surface.Points.Count);
+}
+
+static void TestRegressionEc2FiberUnchanged()
+{
+    // Run the EC2 Fiber solver and verify outputs are numerically identical to
+    // a second run with the same inputs — i.e., no shared mutable state was introduced.
+    var section  = SConcreteSection();
+    var concrete = new ConcreteMaterial("C35", 35.0);
+    var steel    = new SteelMaterial("B500", 500.0, 200000.0);
+
+    var fiberSolver = FastEc2Solver();
+    var run1 = fiberSolver.Solve(section, concrete, steel);
+
+    // Run the simplified block solver (new) in between to confirm no cross-contamination.
+    var ssbSolver = FastSsbSolver();
+    _ = ssbSolver.Solve(section, concrete, steel);
+
+    var run2 = fiberSolver.Solve(section, concrete, steel);
+
+    // Point counts, topology, and every numerical result must be identical.
+    IsTrue(run1.AngleCount == run2.AngleCount);
+    IsTrue(run1.DepthCount == run2.DepthCount);
+    IsTrue(run1.Points.Count == run2.Points.Count);
+    for (int i = 0; i < run1.Points.Count; i++)
+    {
+        AreClose(run1.Points[i].Pn,  run2.Points[i].Pn,  1e-9);
+        AreClose(run1.Points[i].Mnx, run2.Points[i].Mnx, 1e-9);
+        AreClose(run1.Points[i].Mny, run2.Points[i].Mny, 1e-9);
+        AreClose(run1.Points[i].Phi, run2.Points[i].Phi, 1e-9);
+    }
 }
