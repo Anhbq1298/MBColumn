@@ -14,6 +14,7 @@ public sealed class InputViewModel : ViewModelBase
 {
     private UnitSystem unitSystem = UnitSystem.Metric;
     private DesignCodeType selectedDesignCode = DesignCodeType.Aci318Style;
+    private Ec2SolverType selectedEc2Solver = Ec2SolverType.Boundary;
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
     private readonly IRebarCoordinateBuilderService rebarCoordinateBuilder;
@@ -74,10 +75,25 @@ public sealed class InputViewModel : ViewModelBase
             Set(ref selectedDesignCode, value);
             Raise(nameof(FcLabel));
             Raise(nameof(FyLabel));
+            Raise(nameof(ShowEc2SolverOption));
         }
     }
     public string FcLabel => selectedDesignCode == DesignCodeType.Ec2 ? "fck" : "f'c";
     public string FyLabel => selectedDesignCode == DesignCodeType.Ec2 ? "fyk" : "fy";
+
+    public IReadOnlyList<Ec2SolverOption> Ec2SolverOptions { get; } =
+    [
+        new(Ec2SolverType.Boundary, "Boundary Integration (Exact)"),
+        new(Ec2SolverType.Fiber,    "Fiber Integration (Commercial Standard)")
+    ];
+
+    public Ec2SolverType SelectedEc2Solver
+    {
+        get => selectedEc2Solver;
+        set => Set(ref selectedEc2Solver, value);
+    }
+
+    public bool ShowEc2SolverOption => selectedDesignCode == DesignCodeType.Ec2;
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
     [
         new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
@@ -196,7 +212,8 @@ public sealed class InputViewModel : ViewModelBase
             LeftRebarSide = layout.Left,
             RightRebarSide = layout.Right,
             RebarCoordinates = generatedCoordinates,
-            DesignCode = SelectedDesignCode
+            DesignCode = SelectedDesignCode,
+            Ec2Solver = SelectedEc2Solver
         };
     }
 
@@ -406,4 +423,5 @@ public sealed class InputViewModel : ViewModelBase
 }
 
 public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
+public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
 
