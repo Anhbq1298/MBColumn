@@ -83,8 +83,7 @@ public sealed class InputViewModel : ViewModelBase
 
     public IReadOnlyList<Ec2SolverOption> Ec2SolverOptions { get; } =
     [
-        new(Ec2SolverType.Boundary, "Boundary"),
-        new(Ec2SolverType.Fiber,    "Fiber")
+        new(Ec2SolverType.Fiber, "Fiber")
     ];
 
     public Ec2SolverType SelectedEc2Solver
