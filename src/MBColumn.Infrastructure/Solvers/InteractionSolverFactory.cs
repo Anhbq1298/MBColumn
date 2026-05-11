@@ -9,7 +9,6 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
     private readonly IInteractionSolver ec2BoundarySolver = new Ec2BoundaryInteractionSolver();
     private readonly IInteractionSolver ec2FiberSolver = new Ec2FiberInteractionSolver();
 
-    public Ec2SolverType Ec2Solver { get; set; } = Ec2SolverType.Boundary;
 
     public InteractionSolverFactory(IDesignCodeService aci, IDesignCodeService ec2)
     {
@@ -17,9 +16,9 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
         aciSolver = new StrainCompatibilityInteractionSolver(aci);
     }
 
-    public IInteractionSolver Get(DesignCodeType code) => code switch
+    public IInteractionSolver Get(DesignCodeType code, Ec2SolverType ec2SolverType = Ec2SolverType.Boundary) => code switch
     {
-        DesignCodeType.Ec2 => Ec2Solver == Ec2SolverType.Boundary ? ec2BoundarySolver : ec2FiberSolver,
+        DesignCodeType.Ec2 => ec2SolverType == Ec2SolverType.Boundary ? ec2BoundarySolver : ec2FiberSolver,
         _                  => aciSolver
     };
 }
