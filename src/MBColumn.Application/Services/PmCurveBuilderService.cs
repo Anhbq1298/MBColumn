@@ -299,11 +299,16 @@ public static class PmCurveBuilderService
             positive.Add(trimSegment.Value.Positive);
             negative.Add(trimSegment.Value.Negative);
         }
+        else if (trimSegment is not null)
+        {
+            // Degenerate cap: trim segment exists but M=0 on both sides (EC2 pure compression).
+            // Close both branches at the apex (M=0, pMax) so the diagram has a pointed head.
+            var apex = trimSegment.Value.Positive with { P = pMax };
+            if (positive.Count > 0) positive[^1] = apex;
+            if (negative.Count > 0) negative[^1] = apex;
+        }
         else
         {
-            // Fallback for nominal curves or unusual geometry where an explicit cap cannot
-            // be found. The final sampled endpoints are still snapped to pMax so the top
-            // connector is horizontal; design curves normally use the explicit trim segment.
             if (positive.Count > 0) positive[^1] = positive[^1] with { P = pMax };
             if (negative.Count > 0) negative[^1] = negative[^1] with { P = pMax };
         }

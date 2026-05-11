@@ -54,9 +54,6 @@ public sealed class Ec2FiberInteractionSolver : IInteractionSolver
         double theta = angleDegrees * System.Math.PI / 180.0;
         double nx = System.Math.Cos(theta);
         double ny = System.Math.Sin(theta);
-        // Log-space sampling: concentrates samples in partial-compression zone while extending
-        // far enough into full compression that the last sweep point is near-uniform (M ≈ 0).
-        // At c = 20×max, the tension-face strain deviation from εc2 is <0.05% → ΔM < 1 kN·m.
         const double cMin = 5.0;
         double cMax = 20.0 * System.Math.Max(section.WidthMm, section.HeightMm);
         double c = cMin * System.Math.Pow(cMax / cMin, (double)depthIndex / (neutralAxisSamples - 1));
