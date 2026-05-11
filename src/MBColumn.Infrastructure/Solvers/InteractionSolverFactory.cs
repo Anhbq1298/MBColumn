@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Enums;
+using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Infrastructure.Solvers;
@@ -8,7 +8,7 @@ public sealed class InteractionSolverFactory(
     IDesignCodeService ec2) : IInteractionSolverFactory
 {
     private readonly IInteractionSolver aciSolver = new StrainCompatibilityInteractionSolver(aci);
-    private readonly IInteractionSolver ec2Solver = new StrainCompatibilityInteractionSolver(ec2);
+    private readonly IInteractionSolver ec2Solver = new EcPmmFiberAnalyticSolver(ec2);
 
     public IInteractionSolver Get(DesignCodeType code) => code switch
     {

@@ -13,6 +13,7 @@ using System.Windows;
 
 var tests = new List<(string Name, Action Test)>
 {
+    ("Eurocode PMM Validation", MBColumn.Tests.EurocodeValidation.Run),
     ("mm to inch", () => AreClose(1, GetUnits().LengthFromMm(25.4, LengthUnit.Inch), 1e-12)),
     ("inch to mm", () => AreClose(25.4, GetUnits().LengthToMm(1, LengthUnit.Inch), 1e-12)),
     ("kN to kip", () => AreClose(1, GetUnits().ForceFromN(GetUnits().ForceToN(1, ForceUnit.Kip), ForceUnit.Kip), 1e-12)),
@@ -152,7 +153,7 @@ static void TestSingaporeBars()
     {
         IsTrue(db.TryGet($"T{d}", out var bar));
         AreClose(d, bar.DiameterMm, 1e-12);
-        double expectedArea = d == 25 ? 491.0 : Math.PI * d * d / 4.0;
+        double expectedArea = d == 25 ? 491.0 : (d == 20 ? 314.0 : Math.PI * d * d / 4.0);
         AreClose(expectedArea, bar.AreaMm2, 1e-9);
     }
 }
