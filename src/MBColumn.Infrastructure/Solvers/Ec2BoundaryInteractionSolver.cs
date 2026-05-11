@@ -178,10 +178,28 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
         double fcd = AlphaCc * concrete.FcMpa / GammaC;
         double fyd = steel.FyMpa / GammaS;
         double sStress = System.Math.Min(steel.EsMpa * EpsilonC2, fyd);
+        
         double area = section.WidthMm * section.HeightMm;
         double nC = fcd * area;
-        double nS = (sStress - fcd) * section.RebarLayout.Bars.Sum(b => b.AreaMm2);
-        return new InteractionPoint(depthIndex, angleIndex, angleDegrees, 1e9, nC + nS, 0, 0, 1, 0, nC, nS, 0, 0, 0, 0, EpsilonC2, EpsilonC2, EpsilonC2, EpsilonC2, "Pure Compression");
+        
+        // Correct theory: moments at pure compression (uniform strain EpsilonC2)
+        // are not necessarily zero if rebar or section is asymmetric about geometric centroid.
+        double mxC = 0; // For rectangular section, concrete centroid is 0,0
+        double myC = 0;
+        
+        double nS = 0, mxS = 0, myS = 0;
+        foreach (var bar in section.RebarLayout.Bars)
+        {
+            double force = (sStress - fcd) * bar.AreaMm2;
+            nS += force;
+            mxS += force * bar.YMm;
+            myS += force * bar.XMm;
+        }
+
+        return new InteractionPoint(
+            depthIndex, angleIndex, angleDegrees, 1e9, nC + nS, mxC + mxS, myC + myS, 1.0,
+            0, nC, nS, mxC, myC, mxS, myS,
+            EpsilonC2, EpsilonC2, EpsilonC2, EpsilonC2, "Pure Compression");
     }
 
     private static double GetProjectedDepth(double w, double h, double nx, double ny)
