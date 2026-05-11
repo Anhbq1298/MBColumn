@@ -186,7 +186,7 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("  Section      : 600 mm (B, x-dir) × 800 mm (H, y-dir) rectangular");
     sb.AppendLine("  fck          : 35 MPa  (C35/45)");
     sb.AppendLine("  fyk / Es     : 500 MPa / 200 000 MPa");
-    sb.AppendLine("  alpha_cc     : 0.85   (EC2 cl.3.1.6)");
+    sb.AppendLine("  alpha_cc     : 0.80   (EC2 cl.3.1.6)");
     sb.AppendLine("  gamma_c      : 1.50   gamma_s : 1.15");
     sb.AppendLine("  fcd          : 19.833 MPa   (= 0.85 × 35 / 1.50)");
     sb.AppendLine("  fyd          : 434.783 MPa  (= 500 / 1.15)");
@@ -414,7 +414,7 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("     S-CONCRETE gives 12 113 kN. Possible reasons for a lower commercial");
     sb.AppendLine("     maximum than the MBColumn generated curve include:");
     sb.AppendLine("     (i)  S-CONCRETE uses alpha_cc = 0.80 (UK NA) rather than 0.85 (EN default).");
-    sb.AppendLine("          0.80*35/1.5 = 18.667 MPa → Nr ≈ 12 230 kN (closer to 12 113).");
+    sb.AppendLine("          0.80*35/1.5 = 19.833 MPa → Nr ≈ 12 230 kN (closer to 12 113).");
     sb.AppendLine("     (ii) S-CONCRETE may apply slenderness/member reduction before reporting the");
     sb.AppendLine("          N-M curve; the file name includes 'slenderness' but the text export");
     sb.AppendLine("          does not expose all internal settings.");

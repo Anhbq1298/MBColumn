@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Interfaces;
+using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Infrastructure.DesignCodes;
 
@@ -16,8 +16,8 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     // Net factor applied to fck to obtain equivalent uniform block stress.
     // EC2 3.1.7(3): uniform block stress = Î· Ã— fcd  where Î· = 1.0 for fck â‰¤ 50 MPa.
     // fcd = Î±cc Ã— fck / Î³c = 0.85 Ã— fck / 1.5.
-    // Combined: ConcreteStressBlockFactor Ã— fck = 1.0 Ã— (0.85/1.5) Ã— fck â‰ˆ 0.5667 Ã— fck.
-    public double ConcreteStressBlockFactor => 0.85 / 1.5;
+    // Combined: ConcreteStressBlockFactor × fck = 1.0 × (0.80/1.5) × fck ≈ 0.5333 × fck.
+    public double ConcreteStressBlockFactor => 0.80 / 1.5;
 
     // EC2 3.1.7(3): Î» â€” depth factor for equivalent rectangular stress block.
     // Î» = 0.8                          for fck â‰¤ 50 MPa
