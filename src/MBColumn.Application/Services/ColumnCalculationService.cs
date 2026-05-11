@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
@@ -46,7 +46,7 @@ public sealed class ColumnCalculationService(
         }
 
         var codeService = codeFactory.Get(input.DesignCode);
-        var solver = solverFactory.Get(input.DesignCode);
+        var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver);
 
         double widthMm = units.LengthToMm(input.Width, input.LengthUnit);
         double heightMm = units.LengthToMm(input.Height, input.LengthUnit);
@@ -113,6 +113,7 @@ public sealed class ColumnCalculationService(
 
         return new CalculationResultDto(
             input.UnitSystem,
+            input.DesignCode,
             govRatio.Ratio,
             govRatio.Status,
             units.ForceFromN(govDemand.PuN, input.ForceUnit),

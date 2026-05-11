@@ -10,8 +10,8 @@ public partial class ControlPointsWindow : Window
         InitializeComponent();
 
         ColP.Header       = $"P ({table.ForceUnitLabel})";
-        ColMx.Header      = $"X-Moment ({table.MomentUnitLabel})";
-        ColMy.Header      = $"Y-Moment ({table.MomentUnitLabel})";
+        ColMx.Header      = $"Mx ({table.MomentUnitLabel})";
+        ColMy.Header      = $"My ({table.MomentUnitLabel})";
         ColNaDepth.Header = $"NA Depth ({table.LengthUnitLabel})";
         ColDtDepth.Header = $"dt Depth ({table.LengthUnitLabel})";
 
@@ -27,7 +27,6 @@ public partial class ControlPointsWindow : Window
         {
             if (r.Axis != lastAxis)
             {
-                // Axis-group header separator row
                 rows.Add(new ControlPointRow(true, $"── {r.Axis}-Axis ──", "", "", "", "", "", "", ""));
                 lastAxis = r.Axis;
             }
@@ -60,4 +59,3 @@ public sealed record ControlPointRow(
     string DtDepth,
     string EpsilonT,
     string Phi);
-

@@ -2,7 +2,10 @@
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -36,6 +39,7 @@ public sealed class ResultViewModel : ViewModelBase
     private readonly PmChartInsetStateResolverService insetStateResolver = new();
     private CalculationResultDto? result;
     private RelayCommand showControlPointsCommand = null!;
+    private RelayCommand exportAllPointsCommand = null!;
     private bool showGrid = true;
     private bool showLabels = true;
     private bool showLegend = true;
@@ -88,6 +92,8 @@ public sealed class ResultViewModel : ViewModelBase
         CloseViewportCommand = new RelayCommand<DiagramViewportType>(CloseViewport);
         showControlPointsCommand = new RelayCommand(ShowControlPoints, () => HasResult);
         ShowControlPointsCommand = showControlPointsCommand;
+        exportAllPointsCommand = new RelayCommand(ExportAllPoints, () => HasResult);
+        ExportAllPointsCommand = exportAllPointsCommand;
 
         // Viewport options
         ViewportOptions = new ObservableCollection<ViewportOptionViewModel>
@@ -117,6 +123,8 @@ public sealed class ResultViewModel : ViewModelBase
         set
         {
             Set(ref result, value);
+            showPmaxPmin = value?.DesignCode != DesignCodeType.Ec2;
+            Raise(nameof(ShowPmaxPmin));
             MM.Load(value);
             PM3D.Load(value);
             MM3D.Load(value);
@@ -147,6 +155,7 @@ public sealed class ResultViewModel : ViewModelBase
             SelectedChartPoint = null;
             Raise(nameof(HasResult));
             showControlPointsCommand.RaiseCanExecuteChanged();
+            exportAllPointsCommand.RaiseCanExecuteChanged();
             Raise(nameof(StatusText));
             Raise(nameof(PmmRatio));
             Raise(nameof(Pu));
@@ -460,6 +469,7 @@ public sealed class ResultViewModel : ViewModelBase
 
     public ICommand ClearSelectedChartPointCommand { get; }
     public ICommand ShowControlPointsCommand { get; }
+    public ICommand ExportAllPointsCommand { get; }
 
     private void RaiseSelectedPointProperties()
     {
@@ -482,6 +492,79 @@ public sealed class ResultViewModel : ViewModelBase
         var win = new ControlPointsWindow(Result.ControlPointTable) { Owner = System.Windows.Application.Current.MainWindow };
         win.Show();
     }
+
+    private void ExportAllPoints()
+    {
+        if (Result is null) return;
+
+        var dlg = new SaveFileDialog
+        {
+            Title = "Export PMM Points",
+            Filter = "CSV file (*.csv)|*.csv|Text file (*.txt)|*.txt",
+            FilterIndex = 1,
+            DefaultExt = "csv",
+            FileName = "PMM_Points"
+        };
+
+        if (dlg.ShowDialog(System.Windows.Application.Current.MainWindow) != true)
+            return;
+
+        bool isCsv = Path.GetExtension(dlg.FileName).Equals(".csv", StringComparison.OrdinalIgnoreCase);
+        string delim = isCsv ? "," : "\t";
+        bool isImperial = Result.UnitSystem == UnitSystem.Imperial;
+
+        string[] headers =
+        [
+            "theTa",
+            $"P ({ForceUnitLabel})",
+            $"Mx ({MomentUnitLabel})",
+            $"My ({MomentUnitLabel})",
+            $"NA Depth ({LengthUnitLabel})",
+            "phi"
+        ];
+
+        var sb = new StringBuilder();
+
+        var groups = Result.ControlPoints.PmPoints
+            .Where(p => !p.IsDemandPoint && !p.IsGoverningPoint)
+            .GroupBy(p => Math.Round(p.ThetaDegrees, 1))
+            .OrderBy(g => g.Key);
+
+        foreach (var group in groups)
+        {
+            // Section label + header immediately below it
+            sb.AppendLine($"theta = {group.Key:F1} deg  ({group.Count()} points)");
+            sb.AppendLine(Join(delim, isCsv, headers));
+
+            foreach (var pt in group.OrderByDescending(p => p.DisplayP))
+            {
+                double naDisplay = isImperial ? pt.NeutralAxisDepth / 25.4 : pt.NeutralAxisDepth;
+                sb.AppendLine(Join(delim, isCsv,
+                [
+                    $"{pt.ThetaDegrees:F1}",
+                    $"{pt.DisplayP:F2}",
+                    $"{pt.DisplayMx:F2}",
+                    $"{pt.DisplayMy:F2}",
+                    $"{naDisplay:F1}",
+                    $"{pt.Phi:F3}"
+                ]));
+            }
+
+            sb.AppendLine();
+        }
+
+        File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
+
+        int total = Result.ControlPoints.PmPoints.Count(p => !p.IsDemandPoint && !p.IsGoverningPoint);
+        MessageBox.Show(System.Windows.Application.Current.MainWindow,
+            $"Exported {total} points across {groups.Count()} angle slices to:\n{dlg.FileName}",
+            "Export Complete",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    private static string Join(string delim, bool isCsv, string[] values)
+        => string.Join(delim, values.Select(v => isCsv && (v.Contains(',') || v.Contains('"')) ? $"\"{v.Replace("\"", "\"\"")}\"" : v));
 
     // â”€â”€â”€â”€ Viewport selection (Task 6) â”€â”€â”€â”€
 

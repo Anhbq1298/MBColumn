@@ -11,5 +11,9 @@ public interface IDesignCodeService
     // ACI: returns fyk unchanged (phi handles member-level reduction).
     // EC2:  returns fyk / Î³s where Î³s = 1.15.
     double SteelDesignStrength(double fykMpa);
+
+    // True → control-point table uses single-letter labels A–G (EC2 format, 7 points).
+    // False → uses descriptive 8-point ACI format.
+    bool UseLetterControlPoints { get; }
 }
 

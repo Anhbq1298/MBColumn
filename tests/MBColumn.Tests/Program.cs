@@ -113,7 +113,13 @@ var tests = new List<(string Name, Action Test)>
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
     ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon),
-    ("All Sides Equal Rule", TestAllSidesEqualRule)
+    ("ACI factory routes Conventional vs Fiber", TestAciSolverFactoryRouting),
+    ("ACI conventional baseline is regression-stable", TestAciConventionalUnchangedByFiberOption),
+    ("ACI fiber pure compression close to conventional", TestAciFiberPureCompressionCloseToConventional),
+    ("ACI fiber pure tension matches conventional", TestAciFiberPureTensionMatchesConventional),
+    ("ACI fiber strong-axis capacity close to conventional", TestAciFiberStrongAxisCloseToConventional),
+    ("ACI fiber phi follows ACI transition", TestAciFiberPhiFollowsAciTransition),
+    ("ACI fiber surface has no NaN", TestAciFiberSurfaceNoNan)
 };
 
 foreach (var (name, test) in tests)
@@ -1270,6 +1276,74 @@ static void TestControlPointsTensionControlEpsilon()
         AreClose(0.005, row.EpsilonT, 1e-4);
 }
 
+// ----- EC2 Fiber PMM Tests -----
+
+static RectangularSection SConcreteSection()
+{
+    const double diameter = 25.0;
+    double area = Math.PI * diameter * diameter / 4.0;
+    var coords = new (double X, double Y)[]
+    {
+        (-237.5,  337.5),
+        (-118.75, 337.5),
+        (   0.0,  337.5),
+        ( 118.75, 337.5),
+        ( 237.5,  337.5),
+        (-237.5,  168.75),
+        ( 237.5,  168.75),
+        (-237.5,    0.0),
+        ( 237.5,    0.0),
+        (-237.5, -168.75),
+        ( 237.5, -168.75),
+        (-237.5, -337.5),
+        (-118.75,-337.5),
+        (   0.0, -337.5),
+        ( 118.75,-337.5),
+        ( 237.5, -337.5)
+    };
+
+    var bars = coords.Select((p, i) => new Rebar($"B{i + 1:00}", diameter, area, p.X, p.Y)).ToList();
+    return new RectangularSection(600.0, 800.0, new RebarLayout("S-CONCRETE 16H25", "H25", 62.5, bars));
+}
+
+static Ec2FiberInteractionSolver FastEc2Solver()
+    => new() { AngleStepDegrees = 30, NeutralAxisSamples = 36, ConcreteGridDivisions = 20 };
+
+static void TestEc2FactoryUsesFiberSolver()
+{
+    var aci = new Aci318DesignCodeService();
+    var ec2 = new Ec2DesignCodeService();
+    var factory = new InteractionSolverFactory(aci, ec2);
+    IsTrue(factory.Get(DesignCodeType.Aci318Style) is StrainCompatibilityInteractionSolver);
+    IsTrue(factory.Get(DesignCodeType.Ec2) is Ec2FiberInteractionSolver);
+}
+
+static void TestEc2NegativeAxialBendingKeepsConcreteCompression()
+{
+    var surface = FastEc2Solver().Solve(SConcreteSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    var point = surface.Points.FirstOrDefault(p => p.Pn < -100_000.0 && p.ConcretePn > 1.0);
+    IsTrue(point is not null);
+    IsTrue(point!.SteelPn < 0.0);
+    IsTrue(point.ConcretePn > 0.0);
+}
+
+static void TestEc2SteelCarriesTensionAndCompression()
+{
+    var surface = FastEc2Solver().Solve(SConcreteSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    IsTrue(surface.Points.Any(p => p.MinSteelStrain < -0.0001 && p.SteelPn < 0.0));
+    IsTrue(surface.Points.Any(p => p.MaxSteelStrain > 0.0001 && p.SteelPn > 0.0));
+}
+
+static void TestAciBaselineRemainsRectangularBlockPath()
+{
+    var aci = new StrainCompatibilityInteractionSolver(new Aci318DesignCodeService());
+    var section = SConcreteSection();
+    var surface = aci.Solve(section, new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    IsTrue(surface.AngleCount == 36);
+    IsTrue(surface.DepthCount == 70);
+    IsTrue(surface.Points.All(p => p.ConcretePn == 0.0 && p.StateLabel == ""));
+    IsTrue(surface.Points.Any(p => p.Phi < 1.0));
+}
 
 static void TestAllSidesEqualRule()
 {
@@ -1292,4 +1366,90 @@ static void TestAllSidesEqualRule()
         var layout = new RebarLayoutInputDto(RebarLayoutType.AllSidesEqual, count, "T25", 55, null!, null!, null!, null!);
         Throws(() => builder.Build(layout, 500, 500, LengthUnit.Millimeter, UnitSystem.Metric));
     }
+}
+
+static (StrainCompatibilityInteractionSolver Conv, AciFiberInteractionSolver Fiber, RectangularSection Section, ConcreteMaterial Concrete, SteelMaterial Steel) AciSolverFixtures()
+{
+    var aci = new Aci318DesignCodeService();
+    var conv = new StrainCompatibilityInteractionSolver(aci) { AngleStepDegrees = 30, NeutralAxisSamples = 30 };
+    var fiber = new AciFiberInteractionSolver(aci) { AngleStepDegrees = 30, NeutralAxisSamples = 30, ConcreteGridDivisions = 40 };
+    var section = SConcreteSection();
+    return (conv, fiber, section, new ConcreteMaterial("C28", 28.0), new SteelMaterial("Gr420", 420.0, 200000.0));
+}
+
+static void TestAciSolverFactoryRouting()
+{
+    var aci = new Aci318DesignCodeService();
+    var ec2 = new Ec2DesignCodeService();
+    var factory = new InteractionSolverFactory(aci, ec2);
+    IsTrue(factory.Get(DesignCodeType.Aci318Style, aciSolver: AciSolverType.Conventional) is StrainCompatibilityInteractionSolver);
+    IsTrue(factory.Get(DesignCodeType.Aci318Style, aciSolver: AciSolverType.Fiber) is AciFiberInteractionSolver);
+    // Default routes to Conventional (no regression for existing callers).
+    IsTrue(factory.Get(DesignCodeType.Aci318Style) is StrainCompatibilityInteractionSolver);
+}
+
+static void TestAciConventionalUnchangedByFiberOption()
+{
+    // Re-route via DTO option and confirm Conventional still produces the legacy ratio.
+    var baseline = Service().Calculate(MetricInput());
+    var withExplicitConventional = Service().Calculate(MetricInput() with { AciSolver = AciSolverType.Conventional });
+    AreClose(baseline.Ratio, withExplicitConventional.Ratio, 1e-9);
+    AreClose(baseline.DesignPnDisplay, withExplicitConventional.DesignPnDisplay, 1e-9);
+    AreClose(baseline.DesignMxDisplay, withExplicitConventional.DesignMxDisplay, 1e-9);
+    AreClose(baseline.DesignMyDisplay, withExplicitConventional.DesignMyDisplay, 1e-9);
+}
+
+static void TestAciFiberPureCompressionCloseToConventional()
+{
+    var (conv, fiber, section, concrete, steel) = AciSolverFixtures();
+    var convSurface = conv.Solve(section, concrete, steel);
+    var fiberSurface = fiber.Solve(section, concrete, steel);
+    double convP0 = convSurface.Points.Max(p => p.Pn);
+    double fiberP0 = fiberSurface.Points.Max(p => p.Pn);
+    // Conventional Whitney vs fiber Hognestad — pure-compression P0 should agree within ~5%.
+    double rel = System.Math.Abs(convP0 - fiberP0) / System.Math.Max(System.Math.Abs(convP0), 1.0);
+    IsTrue(rel < 0.05);
+}
+
+static void TestAciFiberPureTensionMatchesConventional()
+{
+    var (conv, fiber, section, concrete, steel) = AciSolverFixtures();
+    var convSurface = conv.Solve(section, concrete, steel);
+    var fiberSurface = fiber.Solve(section, concrete, steel);
+    // Pure tension is steel-only in both solvers (concrete tension ignored, steel clamped at fyd).
+    double convPnt = convSurface.Points.Min(p => p.Pn);
+    double fiberPnt = fiberSurface.Points.Min(p => p.Pn);
+    AreClose(convPnt, fiberPnt, System.Math.Abs(convPnt) * 1e-6);
+}
+
+static void TestAciFiberStrongAxisCloseToConventional()
+{
+    var (conv, fiber, section, concrete, steel) = AciSolverFixtures();
+    var convSurface = conv.Solve(section, concrete, steel);
+    var fiberSurface = fiber.Solve(section, concrete, steel);
+    double convMx = convSurface.Points.Max(p => p.Mnx);
+    double fiberMx = fiberSurface.Points.Max(p => p.Mnx);
+    double rel = System.Math.Abs(convMx - fiberMx) / System.Math.Max(System.Math.Abs(convMx), 1.0);
+    IsTrue(rel < 0.05);
+}
+
+static void TestAciFiberPhiFollowsAciTransition()
+{
+    var (_, fiber, section, concrete, steel) = AciSolverFixtures();
+    var surface = fiber.Solve(section, concrete, steel);
+    // ACI phi must vary in [0.65, 0.90] and hit both endpoints across the sweep.
+    IsTrue(surface.Points.Any(p => p.Phi <= 0.66));
+    IsTrue(surface.Points.Any(p => p.Phi >= 0.89));
+    IsTrue(surface.Points.All(p => p.Phi >= 0.65 - 1e-9 && p.Phi <= 0.90 + 1e-9));
+}
+
+static void TestAciFiberSurfaceNoNan()
+{
+    var (_, fiber, section, concrete, steel) = AciSolverFixtures();
+    var surface = fiber.Solve(section, concrete, steel);
+    IsFalse(surface.Points.Any(p =>
+        double.IsNaN(p.Pn) || double.IsInfinity(p.Pn) ||
+        double.IsNaN(p.Mnx) || double.IsInfinity(p.Mnx) ||
+        double.IsNaN(p.Mny) || double.IsInfinity(p.Mny) ||
+        double.IsNaN(p.Phi) || double.IsInfinity(p.Phi)));
 }

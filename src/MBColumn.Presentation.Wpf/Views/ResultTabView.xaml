@@ -219,8 +219,21 @@
                       HorizontalAlignment="Stretch"
                       Background="{DynamicResource LightBackgroundBrush}" />
 
-        <UniformGrid Grid.Column="2"
-                     Margin="8,0,0,0"
+        <Grid Grid.Column="2" Margin="8,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Grid.Row="0" Margin="0,0,0,4">
+                <Button DockPanel.Dock="Right"
+                        Content="↓"
+                        Style="{StaticResource IconButtonStyle}"
+                        ToolTip="Export PMM points (CSV / TXT)"
+                        Command="{Binding ExportAllPointsCommand}" />
+            </DockPanel>
+
+        <UniformGrid Grid.Row="1"
                      Columns="{Binding LayoutColumns}"
                      Rows="{Binding LayoutRows}">
             <Border Style="{StaticResource ChartCardStyle}"
@@ -386,6 +399,7 @@
                 </Grid>
             </Border>
         </UniformGrid>
+        </Grid>
     </Grid>
 </UserControl>
 
