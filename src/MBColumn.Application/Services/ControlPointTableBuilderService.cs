@@ -23,7 +23,7 @@ public static class ControlPointTableBuilderService
         ("-Y", 180.0),
     ];
 
-    private static readonly string[] PointLabels =
+    private static readonly string[] AciPointLabels =
     [
         "Max compression",
         "Allowable comp.",
@@ -34,6 +34,9 @@ public static class ControlPointTableBuilderService
         "Pure bending",
         "Max tension",
     ];
+
+    // EC2 7-point A–G format (no ACI-style compression cap row)
+    private static readonly string[] Ec2PointLabels = ["A", "B", "C", "D", "E", "F", "G"];
 
     public static ControlPointTableDto Build(
         InteractionSurface surface,
@@ -76,26 +79,38 @@ public static class ControlPointTableBuilderService
             double cBalance = ecu * dtMm / (ecu + eyield);
             double cTension = ecu * dtMm / (ecu + eyield + 0.003);
 
-            // The 8 labeled points
-            InteractionPoint?[] labeled =
-            [
-                pts[0],                                                // 0 Max compression
-                InterpolateAtPhiPn(pts, compressionLimitN),           // 1 Allowable comp.
-                InterpolateAtDepth(pts, dtMm),                        // 2 fs = 0.0 (NA = dt by definition)
-                InterpolateAtDepth(pts, cFsHalf),                     // 3 fs = 0.5 fy
-                InterpolateAtDepth(pts, cBalance),                    // 4 Balanced point
-                InterpolateAtDepth(pts, cTension),                    // 5 Tension control
-                InterpolateAtPn(pts, 0.0),                            // 6 Pure bending â€” bracket on Pn (not PhiPn)
-                pts[^1],                                               // 7 Max tension
-            ];
+            // Labeled points: 7 (EC2 A–G) or 8 (ACI)
+            bool ec2 = code.UseLetterControlPoints;
+            string[] labels = ec2 ? Ec2PointLabels : AciPointLabels;
+
+            InteractionPoint?[] labeled = ec2
+                ? [
+                    pts[0],                                            // A Max compression
+                    InterpolateAtDepth(pts, dtMm),                    // B fs = 0.0 (c = dt)
+                    InterpolateAtDepth(pts, cFsHalf),                 // C fs = 0.5 fyd
+                    InterpolateAtDepth(pts, cBalance),                // D Balanced
+                    InterpolateAtDepth(pts, cTension),                // E Tension control
+                    InterpolateAtPn(pts, 0.0),                        // F Pure bending
+                    pts[^1],                                           // G Max tension
+                  ]
+                : [
+                    pts[0],                                            // 0 Max compression
+                    InterpolateAtPhiPn(pts, compressionLimitN),       // 1 Allowable comp.
+                    InterpolateAtDepth(pts, dtMm),                    // 2 fs = 0.0 (NA = dt by definition)
+                    InterpolateAtDepth(pts, cFsHalf),                 // 3 fs = 0.5 fy
+                    InterpolateAtDepth(pts, cBalance),                // 4 Balanced point
+                    InterpolateAtDepth(pts, cTension),                // 5 Tension control
+                    InterpolateAtPn(pts, 0.0),                        // 6 Pure bending
+                    pts[^1],                                           // 7 Max tension
+                  ];
 
             for (int k = 0; k < labeled.Length; k++)
             {
                 var pt = labeled[k];
                 if (pt is null) continue;
 
-                bool isMaxTension  = k == 7;
-                bool isPureBending = k == 6;
+                bool isMaxTension  = k == labeled.Length - 1;
+                bool isPureBending = k == labeled.Length - 2;
                 double naDepthMm = isMaxTension ? 0.0 : Math.Max(0, pt.NeutralAxisDepthMm);
 
                 // Signed Îµt = Îµcu*(dt - c)/c  (positive = tension, negative = all bars in compression).
@@ -120,7 +135,7 @@ public static class ControlPointTableBuilderService
                     rowAxialN = analyticalPhi * pt.Pn;
                 rows.Add(new ControlPointTableRowDto(
                     axisLabel,
-                    PointLabels[k],
+                    labels[k],
                     DisplayForce(rowAxialN, unitSystem, units),
                     DisplayMoment(analyticalPhi * pt.Mnx, unitSystem, units),
                     DisplayMoment(analyticalPhi * pt.Mny, unitSystem, units),

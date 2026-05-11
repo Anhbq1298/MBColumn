@@ -40,5 +40,7 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     // EC2 Table 2.1N: Î³s = 1.15 for persistent/transient design situations.
     // Converts user-input characteristic yield strength fyk â†’ design strength fyd.
     public double SteelDesignStrength(double fykMpa) => fykMpa / 1.15;
+
+    public bool UseLetterControlPoints => true;
 }
 

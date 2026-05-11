@@ -50,13 +50,6 @@
                                   SelectedValuePath="Code"
                                   SelectedValue="{Binding SelectedDesignCode}" />
                         
-                        <StackPanel Visibility="{Binding ShowEc2SolverOption, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="EC2 Solver Engine" Style="{StaticResource FieldLabelTextStyle}" Margin="0,10,0,0" />
-                            <ComboBox ItemsSource="{Binding Ec2SolverOptions}"
-                                      DisplayMemberPath="DisplayName"
-                                      SelectedValuePath="Solver"
-                                      SelectedValue="{Binding SelectedEc2Solver}" />
-                        </StackPanel>
                     </StackPanel>
                 </GroupBox>
 

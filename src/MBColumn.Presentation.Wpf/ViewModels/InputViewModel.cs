@@ -14,7 +14,7 @@ public sealed class InputViewModel : ViewModelBase
 {
     private UnitSystem unitSystem = UnitSystem.Metric;
     private DesignCodeType selectedDesignCode = DesignCodeType.Aci318Style;
-    private Ec2SolverType selectedEc2Solver = Ec2SolverType.Boundary;
+    private Ec2SolverType selectedEc2Solver = Ec2SolverType.Fiber;
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
     private readonly IRebarCoordinateBuilderService rebarCoordinateBuilder;

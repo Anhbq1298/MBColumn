@@ -34,4 +34,6 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
 
     // ACI phi handles member-level reduction; steel yield strength is used as-is.
     public double SteelDesignStrength(double fykMpa) => fykMpa;
+
+    public bool UseLetterControlPoints => false;
 }
