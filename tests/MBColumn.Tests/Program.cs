@@ -11,9 +11,11 @@ using MBColumn.Presentation.Wpf.Controls;
 using MBColumn.Presentation.Wpf.ViewModels;
 using System.Windows;
 
+MBColumn.Tests.EurocodeValidation.Run();
+MBColumn.Tests.EurocodeMultiAngleValidation.Run();
+
 var tests = new List<(string Name, Action Test)>
 {
-    ("Eurocode PMM Validation", MBColumn.Tests.EurocodeValidation.Run),
     ("mm to inch", () => AreClose(1, GetUnits().LengthFromMm(25.4, LengthUnit.Inch), 1e-12)),
     ("inch to mm", () => AreClose(25.4, GetUnits().LengthToMm(1, LengthUnit.Inch), 1e-12)),
     ("kN to kip", () => AreClose(1, GetUnits().ForceFromN(GetUnits().ForceToN(1, ForceUnit.Kip), ForceUnit.Kip), 1e-12)),

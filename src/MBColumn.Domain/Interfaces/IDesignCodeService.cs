@@ -1,4 +1,4 @@
-﻿namespace MBColumn.Domain.Interfaces;
+namespace MBColumn.Domain.Interfaces;
 
 public interface IDesignCodeService
 {
@@ -12,8 +12,9 @@ public interface IDesignCodeService
     // EC2:  returns fyk / Î³s where Î³s = 1.15.
     double SteelDesignStrength(double fykMpa);
 
-    // True → control-point table uses single-letter labels A–G (EC2 format, 7 points).
-    // False → uses descriptive 8-point ACI format.
+    // Eurocode 2 specific: Strength coefficient Î±cc (Standard = 0.85).
+    double AlphaCc { get; set; }
+
     bool UseLetterControlPoints { get; }
 }
 

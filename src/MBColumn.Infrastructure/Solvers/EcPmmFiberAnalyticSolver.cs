@@ -12,7 +12,7 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
     // Eurocode 2 Material Constants (Table 3.1)
     private const double EpsC2 = 0.002;
     private const double EpsCu2 = 0.0035;
-    private const double NExponent = 2.0; // Standard for <= C50/60
+    private const double NExponent = 2.0; 
     private const double Es = 200000.0;
 
     public InteractionSurface Solve(RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel)
@@ -51,54 +51,67 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
         double yMin = projections.Min();
         double h = yMax - yMin;
 
-        // Determine strain state (epsTop, epsBot) based on depthIndex
-        // We follow the Python sweep logic but mapped to NeutralAxisSamples.
         (double epsTop, double epsBot) = GetStrainState(depthIndex, h);
 
-        double axialN = 0;
-        double mxNmm = 0;
-        double myNmm = 0;
+        double concreteN = 0, concreteMx = 0, concreteMy = 0;
+        double steelN = 0, steelMx = 0, steelMy = 0;
         double maxTensionStrain = 0;
+        double maxConcreteStrain = double.NegativeInfinity;
+        double minConcreteStrain = double.PositiveInfinity;
+        double maxSteelStrain = double.NegativeInfinity;
+        double minSteelStrain = double.PositiveInfinity;
+        bool hasCompressedConcrete = false;
 
-        // Concrete Integration (Fiber/Strip Method)
+        // Concrete Integration
         double fcd = code.ConcreteStressBlockFactor * concrete.FcMpa;
         double dy = h / FiberCount;
         for (int i = 0; i < FiberCount; i++)
         {
             double yLocal = yMin + (i + 0.5) * dy;
             double strain = epsBot + (epsTop - epsBot) * (yLocal - yMin) / h;
-            double stress = GetConcreteStress(strain, fcd);
             
+            maxConcreteStrain = System.Math.Max(maxConcreteStrain, strain);
+            minConcreteStrain = System.Math.Min(minConcreteStrain, strain);
+            
+            double stress = GetConcreteStress(strain, fcd);
             if (stress > 0)
             {
+                hasCompressedConcrete = true;
                 double width = GetRectangleWidthAt(section, nx, ny, yLocal);
-                double force = stress * (width * dy); // Compression is positive
-                axialN += force;
+                double force = stress * width * dy;
                 
+                concreteN += force;
                 var (cx, cy) = GetRectangleStripCentroid(section, nx, ny, yLocal);
-                mxNmm -= force * cy;
-                myNmm += force * cx;
+                concreteMx -= force * cy;
+                concreteMy += force * cx;
             }
         }
 
         // Steel Integration
+        double fyd = 500.0 / 1.15; // Standard EC2
         foreach (var bar in section.RebarLayout.Bars)
         {
             double yp = bar.XMm * nx + bar.YMm * ny;
             double strain = epsBot + (epsTop - epsBot) * (yp - yMin) / h;
+            
+            maxSteelStrain = System.Math.Max(maxSteelStrain, strain);
+            minSteelStrain = System.Math.Min(minSteelStrain, strain);
             if (strain < 0) maxTensionStrain = System.Math.Max(maxTensionStrain, -strain);
 
-            double fyd = code.SteelDesignStrength(steel.FyMpa);
             double stress = System.Math.Clamp(Es * strain, -fyd, fyd);
             
             // Displaced concrete
             double concStress = GetConcreteStress(strain, fcd);
             double force = (stress - concStress) * bar.AreaMm2;
             
-            axialN += force;
-            mxNmm -= force * bar.YMm;
-            myNmm += force * bar.XMm;
+            steelN += force;
+            steelMx -= force * bar.YMm;
+            steelMy += force * bar.XMm;
         }
+
+        double axialN = concreteN + steelN;
+        double mxNmm = concreteMx + steelMx;
+        double myNmm = concreteMy + steelMy;
 
         return new InteractionPoint(
             depthIndex, 
@@ -109,7 +122,25 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
             mxNmm, 
             myNmm, 
             1.0, 
-            maxTensionStrain);
+            maxTensionStrain,
+            concreteN,
+            steelN,
+            concreteMx,
+            concreteMy,
+            steelMx,
+            steelMy,
+            maxConcreteStrain,
+            minConcreteStrain,
+            maxSteelStrain,
+            minSteelStrain,
+            LabelState(axialN, hasCompressedConcrete, maxTensionStrain, maxSteelStrain));
+    }
+
+    private static string LabelState(double axialN, bool hasCompressedConcrete, double maxTensionSteelStrain, double maxSteelStrain)
+    {
+        if (!hasCompressedConcrete) return "Pure tension";
+        if (maxTensionSteelStrain >= 0.005) return "Tension controlled";
+        return "Compression controlled";
     }
 
     private (double epsTop, double epsBot) GetStrainState(int index, double h)
@@ -119,43 +150,31 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
 
         if (index < part1Samples)
         {
-            // Part 1: epsTop = 0.0035, epsBot goes from -0.25 to 0.0035 (compression)
             double t = (double)index / (part1Samples - 1);
-            double epsBotStart = -0.25; 
-            double epsBotEnd = EpsCu2;
+            double epsBotStart = -0.05; 
+            double epsBotEnd = 0.0;
             return (EpsCu2, epsBotStart + t * (epsBotEnd - epsBotStart));
         }
         else
         {
-            // Part 2: Pivot transition
-            // pivot_y = h/2 - (1 - epsC2/epsCu2) * h (from top)
-            // But our y is from yMin to yMax. top is yMax.
-            // pivot_y_abs = yMax - (1 - EpsC2/EpsCu2) * h
-            double ratio = 1.0 - EpsC2 / EpsCu2; // ~0.428
+            double pivotRatio = EpsC2 / EpsCu2; 
             double t = (double)(index - part1Samples + 1) / part2Samples;
-            // epsTop goes from 0.0035 down to 0.002
             double epsTop = EpsCu2 - t * (EpsCu2 - EpsC2);
-            // epsBot is constrained by pivot: (epsTop - epsBot)/h = (epsTop - EpsC2) / (ratio * h)
-            // epsBot = epsTop - (epsTop - EpsC2) / ratio
-            double epsBot = epsTop - (epsTop - EpsC2) / (1.0 - ratio);
+            double epsBot = (EpsC2 - epsTop * pivotRatio) / (1.0 - pivotRatio);
             return (epsTop, epsBot);
         }
     }
 
-    private double GetConcreteStress(double strain, double fcd)
+    private double GetConcreteStress(double eps, double fcd)
     {
-        if (strain <= 0) return 0;
-        double eps = System.Math.Min(strain, EpsCu2);
-        if (eps < EpsC2)
-        {
-            return fcd * (1.0 - System.Math.Pow(1.0 - eps / EpsC2, NExponent));
-        }
-        return fcd;
+        if (eps <= 0) return 0;
+        if (eps >= EpsCu2) return fcd;
+        if (eps >= EpsC2) return fcd;
+        return fcd * (1.0 - System.Math.Pow(1.0 - eps / EpsC2, NExponent));
     }
 
     private double GetRectangleWidthAt(RectangularSection section, double nx, double ny, double p)
     {
-        // Length of intersection of line L: x*nx + y*ny = p with rectangle
         var points = GetIntersectionPoints(section, nx, ny, p);
         if (points.Count < 2) return 0;
         double dx = points[0].X - points[1].X;
@@ -176,55 +195,19 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
         double hy = section.HeightMm / 2.0;
         var result = new List<(double X, double Y)>();
 
-        // Check 4 edges
-        // 1. x = hx, -hy <= y <= hy
         if (System.Math.Abs(ny) > 1e-9)
         {
             double y = (p - hx * nx) / ny;
             if (y >= -hy - 1e-7 && y <= hy + 1e-7) result.Add((hx, y));
-        }
-        else if (System.Math.Abs(nx) > 1e-9 && System.Math.Abs(hx * nx - p) < 1e-7)
-        {
-             // Line is vertical and coincides with this edge? 
-             // This doesn't happen with our p sweep usually, but for completeness:
-             result.Add((hx, -hy));
-             result.Add((hx, hy));
-        }
-
-        // 2. x = -hx, -hy <= y <= hy
-        if (System.Math.Abs(ny) > 1e-9)
-        {
-            double y = (p + hx * nx) / ny;
+            y = (p + hx * nx) / ny;
             if (y >= -hy - 1e-7 && y <= hy + 1e-7) result.Add((-hx, y));
         }
-        else if (System.Math.Abs(nx) > 1e-9 && System.Math.Abs(-hx * nx - p) < 1e-7)
-        {
-             result.Add((-hx, -hy));
-             result.Add((-hx, hy));
-        }
-
-        // 3. y = hy, -hx <= x <= hx
         if (System.Math.Abs(nx) > 1e-9)
         {
             double x = (p - hy * ny) / nx;
             if (x >= -hx - 1e-7 && x <= hx + 1e-7) result.Add((x, hy));
-        }
-        else if (System.Math.Abs(ny) > 1e-9 && System.Math.Abs(hy * ny - p) < 1e-7)
-        {
-             result.Add((-hx, hy));
-             result.Add((hx, hy));
-        }
-
-        // 4. y = -hy, -hx <= x <= hx
-        if (System.Math.Abs(nx) > 1e-9)
-        {
-            double x = (p + hy * ny) / nx;
+            x = (p + hy * ny) / nx;
             if (x >= -hx - 1e-7 && x <= hx + 1e-7) result.Add((x, -hy));
-        }
-        else if (System.Math.Abs(ny) > 1e-9 && System.Math.Abs(-hy * ny - p) < 1e-7)
-        {
-             result.Add((-hx, -hy));
-             result.Add((hx, -hy));
         }
 
         // Remove duplicates
@@ -244,7 +227,7 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
 
     private double GetNeutralAxisDepth(double epsTop, double epsBot, double h)
     {
-        if (System.Math.Abs(epsTop - epsBot) < 1e-10) return 10000.0; // Large depth for pure compression
+        if (System.Math.Abs(epsTop - epsBot) < 1e-10) return 10000.0;
         return epsTop * h / (epsTop - epsBot);
     }
 }

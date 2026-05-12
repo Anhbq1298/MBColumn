@@ -8,13 +8,13 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
     private readonly IInteractionSolver aciConventionalSolver;
     private readonly IInteractionSolver aciFiberSolver;
     private readonly IInteractionSolver ec2BoundarySolver = new Ec2BoundaryInteractionSolver();
-    private readonly IInteractionSolver ec2FiberSolver = new Ec2FiberInteractionSolver();
+    private readonly IInteractionSolver ec2FiberSolver;
 
     public InteractionSolverFactory(IDesignCodeService aci, IDesignCodeService ec2)
     {
-        _ = ec2;
         aciConventionalSolver = new StrainCompatibilityInteractionSolver(aci);
         aciFiberSolver = new AciFiberInteractionSolver(aci);
+        ec2FiberSolver = new EcPmmFiberAnalyticSolver(ec2);
     }
 
     public IInteractionSolver Get(

@@ -14,10 +14,9 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     public double ConcreteUltimateStrain => 0.0035;
 
     // Net factor applied to fck to obtain equivalent uniform block stress.
-    // EC2 3.1.7(3): uniform block stress = Î· Ã— fcd  where Î· = 1.0 for fck â‰¤ 50 MPa.
-    // fcd = Î±cc Ã— fck / Î³c = 0.85 Ã— fck / 1.5.
-    // Combined: ConcreteStressBlockFactor Ã— fck = 1.0 Ã— (0.85/1.5) Ã— fck â‰ˆ 0.5667 Ã— fck.
-    public double ConcreteStressBlockFactor => 0.85 / 1.5;
+    // Combined: ConcreteStressBlockFactor * fck = 1.0 * (AlphaCc/1.5) * fck.
+    public double ConcreteStressBlockFactor => AlphaCc / 1.5;
+    public double AlphaCc { get; set; } = 0.85;
 
     // EC2 3.1.7(3): lambda - depth factor for equivalent rectangular stress block.
     // lambda = 0.8                          for fck <= 50 MPa

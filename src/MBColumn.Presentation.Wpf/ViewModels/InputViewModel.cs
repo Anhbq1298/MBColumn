@@ -40,6 +40,7 @@ public sealed class InputViewModel : ViewModelBase
     private bool isSectionPreviewValid;
     private string sectionPreviewErrorMessage = "";
     private string rebarLayoutWarning = "";
+    private double alphaCc = 0.85;
     private int nextLoadCaseIndex = 2;
 
     public InputViewModel(IRebarDatabase metricBars, IRebarDatabase imperialBars)
@@ -78,6 +79,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(FyLabel));
             Raise(nameof(ShowEc2SolverOption));
             Raise(nameof(ShowAciSolverOption));
+            Raise(nameof(ShowAlphaCcOption));
         }
     }
     public string FcLabel => selectedDesignCode == DesignCodeType.Ec2 ? "fck" : "f'c";
@@ -109,6 +111,8 @@ public sealed class InputViewModel : ViewModelBase
     }
 
     public bool ShowAciSolverOption => selectedDesignCode == DesignCodeType.Aci318Style;
+    public double AlphaCc { get => alphaCc; set => Set(ref alphaCc, value); }
+    public bool ShowAlphaCcOption => selectedDesignCode == DesignCodeType.Ec2;
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
     [
         new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
@@ -229,7 +233,8 @@ public sealed class InputViewModel : ViewModelBase
             RebarCoordinates = generatedCoordinates,
             DesignCode = SelectedDesignCode,
             Ec2Solver = SelectedEc2Solver,
-            AciSolver = SelectedAciSolver
+            AciSolver = SelectedAciSolver,
+            AlphaCc = AlphaCc
         };
     }
 
@@ -435,6 +440,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
+        Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
     }
 }
 

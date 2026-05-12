@@ -6,6 +6,7 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
 {
     public double ConcreteUltimateStrain => 0.003;
     public double ConcreteStressBlockFactor => 0.85;
+    public double AlphaCc { get; set; } = 0.85;
 
     public double Beta1(double fcMpa)
     {
