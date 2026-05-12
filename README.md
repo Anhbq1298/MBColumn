@@ -28,9 +28,12 @@ Build artifacts are redirected to the `built/` directory. The final binaries can
 ## Repository Guide
 
 ```text
-docs/        Engineering assumptions, architecture contracts, UI notes, and validation workflow.
+docs/        Engineering assumptions, architecture contracts, UI notes, validation workflow, and review checklists.
 src/         Application source code.
 tests/       Unit tests.
+tools/       Validation tools and scripts.
+scratch/     Temporary scripts and extracts.
+reports/     Validation reports, logs, and output files.
 _ref/        Reference materials (offline binaries and source).
 built/       Build artifacts (bin and obj).
 AGENTS.md   Coding-agent instruction router.

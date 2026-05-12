@@ -48,6 +48,23 @@ Generated\ Files/
 # NUnit
 *.VisualState.xml
 TestResult.xml
+
+# Project-specific ignores for GitHub visibility
+# Keep only src/ and docs/ visible; ignore others
+tests/
+tools/
+scratch/
+reports/
+_ref/
+built/
+.claude/
+.tmp/
+AGENTS.md
+CLAUDE.md
+BUILD_NOTES.md
+REFERENCE_SOURCE_NOTES.md
+MBColumn.slnx
+MBColumn.Tooling.sln
 nunit-*.xml
 
 # Build Results of an ATL Project

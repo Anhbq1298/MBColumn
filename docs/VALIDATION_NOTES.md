@@ -1,6 +1,6 @@
 # Validation Notes
 
-The `developing-skills` files were used as internal review checklists.
+The `docs/validation/skills/` files are used as internal review checklists.
 
 ## Software Architecture
 
