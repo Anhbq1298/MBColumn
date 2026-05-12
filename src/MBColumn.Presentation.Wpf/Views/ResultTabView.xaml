@@ -225,15 +225,23 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0" Margin="0,0,0,4">
-                <Button DockPanel.Dock="Right"
-                        Content="↓"
-                        Style="{StaticResource IconButtonStyle}"
-                        ToolTip="Export PMM points (CSV / TXT)"
-                        Command="{Binding ExportAllPointsCommand}" />
-            </DockPanel>
+            <Grid Grid.Row="0" Margin="0,0,0,0">
+                <Button Style="{StaticResource IconButtonStyle}"
+                ToolTip="Export PMM points (CSV / TXT)"
+                Command="{Binding ExportAllPointsCommand}"
+                Width="42"
+                Height="42"
+                Padding="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top">
+                    <Image Source="C:\Users\NCPC\Desktop\_ReverseEngineering\spColumnReversed-Solution\src\MBColumn.Presentation.Wpf\icon\table.png"
+               Width="30"
+               Height="30"
+               Stretch="Uniform"/>
+                </Button>
+            </Grid>
 
-        <UniformGrid Grid.Row="1"
+            <UniformGrid Grid.Row="1"
                      Columns="{Binding LayoutColumns}"
                      Rows="{Binding LayoutRows}">
             <Border Style="{StaticResource ChartCardStyle}"
