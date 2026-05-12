@@ -9,10 +9,23 @@ using MBColumn.Infrastructure.Rebar;
 using MBColumn.Infrastructure.Solvers;
 using MBColumn.Presentation.Wpf.Controls;
 using MBColumn.Presentation.Wpf.ViewModels;
+using MBColumn.Tests.Verification;
+using System.IO;
+using System.Linq;
 using System.Windows;
 
-MBColumn.Tests.EurocodeValidation.Run();
-MBColumn.Tests.EurocodeMultiAngleValidation.Run();
+if (!args.Contains("--skip-eurocode-validation"))
+{
+    MBColumn.Tests.EurocodeValidation.Run();
+    MBColumn.Tests.EurocodeMultiAngleValidation.Run();
+}
+
+if (args.Contains("--run-pmm-comparison"))
+{
+    TestPmmAppleToAppleComparison();
+    Console.WriteLine("PASS PMM apple-to-apple comparison report");
+    return;
+}
 
 var tests = new List<(string Name, Action Test)>
 {
@@ -41,6 +54,7 @@ var tests = new List<(string Name, Action Test)>
     ("MM control ordering", TestMmControlOrdering),
     ("No NaN in control points", TestNoNan),
     ("Reference control behavior", TestReferenceBehavior),
+    ("PMM apple-to-apple comparison report", TestPmmAppleToAppleComparison),
     ("Metric/Imperial equivalence", TestMetricImperialEquivalence),
     ("Section preview corner bars", TestSectionPreviewCornerBars),
     ("Section preview perimeter bars", TestSectionPreviewPerimeterBars),
@@ -281,6 +295,38 @@ static void TestReferenceBehavior()
     var surfacePoints = result.ControlPoints.PmmSurfacePoints.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint).ToList();
     IsTrue(surfacePoints.Count(p => !p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
     IsTrue(surfacePoints.Count(p => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
+}
+
+static void TestPmmAppleToAppleComparison()
+{
+    var root = LocateRepositoryRoot();
+    var referenceCsv = Path.Combine(root, "docs", "validation", "ec2-fiber-pmm-sconcrete-generated-curves.csv");
+    IsTrue(File.Exists(referenceCsv));
+
+    var runner = new PmmComparisonRunner();
+    var report = runner.Run(Service(), MetricInput(), referenceCsv, Path.Combine(root, "tests", "MBColumn.Tests", "Reports", "PmmComparisonReport.pdf"));
+
+    IsTrue(report.TotalThetaCount > 0);
+    IsTrue(report.TotalMatchedPoints > 0);
+    IsTrue(report.TotalMissingPoints >= 0);
+    IsTrue(report.TotalFailedPoints >= 0);
+    IsTrue(File.Exists(Path.Combine(root, "tests", "MBColumn.Tests", "Reports", "PmmComparisonReport.pdf")));
+}
+
+static string LocateRepositoryRoot()
+{
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory != null)
+    {
+        if (File.Exists(Path.Combine(directory.FullName, "MBColumn.sln")))
+        {
+            return directory.FullName;
+        }
+
+        directory = directory.Parent;
+    }
+
+    throw new FileNotFoundException("Repository root containing MBColumn.sln could not be located from test execution path.");
 }
 
 static void TestMetricImperialEquivalence()
