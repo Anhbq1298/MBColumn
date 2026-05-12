@@ -43,7 +43,7 @@ public static class EurocodeMultiAngleValidation
         var concrete = new ConcreteMaterial("C32/40", 32);
         var steel = new SteelMaterial("B500B", 500, 200000);
         
-        var ec2Code = new Ec2DesignCodeService();
+        var ec2Code = new Ec2DesignCodeService { AlphaCc = 0.80 };
         var solver = new EcPmmFiberAnalyticSolver(ec2Code) { AngleStepDegrees = 1 };
         
         // 3. Run Solver

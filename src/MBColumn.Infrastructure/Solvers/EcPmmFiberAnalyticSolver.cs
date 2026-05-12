@@ -88,7 +88,9 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
         }
 
         // Steel Integration
-        double fyd = 500.0 / 1.15; // Standard EC2
+        double fyd = code.SteelDesignStrength(steel.FyMpa);
+        bool isPureAxial = System.Math.Abs(epsTop - EpsC2) < 1e-9 && System.Math.Abs(epsBot - EpsC2) < 1e-9;
+
         foreach (var bar in section.RebarLayout.Bars)
         {
             double yp = bar.XMm * nx + bar.YMm * ny;
@@ -98,7 +100,7 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
             minSteelStrain = System.Math.Min(minSteelStrain, strain);
             if (strain < 0) maxTensionStrain = System.Math.Max(maxTensionStrain, -strain);
 
-            double stress = System.Math.Clamp(Es * strain, -fyd, fyd);
+            double stress = isPureAxial ? fyd : System.Math.Clamp(Es * strain, -fyd, fyd);
             
             // Displaced concrete
             double concStress = GetConcreteStress(strain, fcd);

@@ -7,10 +7,8 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
 {
     private readonly IInteractionSolver aciConventionalSolver;
     private readonly IInteractionSolver aciFiberSolver;
-    private readonly IInteractionSolver ec2BoundarySolver = new Ec2BoundaryInteractionSolver();
-    private readonly IInteractionSolver ec2FiberSolver;
     private readonly IInteractionSolver ec2BoundarySolver         = new Ec2BoundaryInteractionSolver();
-    private readonly IInteractionSolver ec2FiberSolver            = new Ec2FiberInteractionSolver();
+    private readonly IInteractionSolver ec2FiberSolver;
     private readonly IInteractionSolver ec2SimplifiedBlockSolver  = new Ec2SimplifiedStressBlockInteractionSolver();
 
     public InteractionSolverFactory(IDesignCodeService aci, IDesignCodeService ec2)
