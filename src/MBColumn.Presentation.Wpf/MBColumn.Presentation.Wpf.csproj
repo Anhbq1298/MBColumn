@@ -21,6 +21,7 @@
   <ItemGroup>
     <Resource Include="Resources\desktop-icon.png" />
     <Resource Include="Resources\app.ico" />
+    <Resource Include="icon\*.png" />
   </ItemGroup>
 
 </Project>
