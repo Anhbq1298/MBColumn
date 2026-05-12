@@ -219,40 +219,50 @@
                       HorizontalAlignment="Stretch"
                       Background="{DynamicResource LightBackgroundBrush}" />
 
-        <Grid Grid.Column="2" Margin="8,0,0,0">
+        <Grid Grid.Column="2" Margin="8,0,0,8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0" Margin="0,0,0,4">
-                <Button DockPanel.Dock="Right"
-                        Content="↓"
-                        Style="{StaticResource IconButtonStyle}"
-                        ToolTip="Export PMM points (CSV / TXT)"
-                        Command="{Binding ExportAllPointsCommand}" />
-            </DockPanel>
+            <Grid Grid.Row="0" Margin="0,0,3,3">
+                <Button ToolTip="Export PMM points (CSV / TXT)"
+                    Command="{Binding ExportAllPointsCommand}"
+                    Width="36"
+                    Height="36"
+                    Padding="1"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Background="Transparent"
+                    BorderBrush="Transparent">
+                    <Image Source="/icon/export-csv.png"
+               Stretch="Uniform"/>
+                </Button>
+            </Grid>
 
-        <UniformGrid Grid.Row="1"
+            <UniformGrid Grid.Row="1"
                      Columns="{Binding LayoutColumns}"
                      Rows="{Binding LayoutRows}">
-            <Border Style="{StaticResource ChartCardStyle}"
+                <Border Style="{StaticResource ChartCardStyle}"
                     Visibility="{Binding ShowPM, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,8" MinHeight="28">
-                        <Button DockPanel.Dock="Right"
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,8" MinHeight="28">
+                            <Button DockPanel.Dock="Right"
                                 Content="x"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="Close viewport"
                                 Command="{Binding CloseViewportCommand}"
                                 CommandParameter="{x:Static vm:DiagramViewportType.PM2D}" />
-                        <TextBlock Text="{Binding PM.DiagramTitle}"
+                            <TextBlock Text="{Binding PM.DiagramTitle}"
                                    Style="{StaticResource SectionTitleTextStyle}"
                                    VerticalAlignment="Center"
                                    ToolTip="{Binding PM.DiagramTitle}" />
-                    </DockPanel>
-                    <controls:DiagramCanvas2D Grid.Row="1"
+                        </DockPanel>
+                        <controls:DiagramCanvas2D Grid.Row="1"
                                               MinHeight="220"
                                               Points="{Binding PmAnglePoints}"
                                               ReferenceLines="{Binding PmReferenceLines}"
@@ -269,23 +279,26 @@
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PM.Ratio}"
                                               ResetVersion="{Binding PM.ResetVersion}" />
-                </Grid>
-            </Border>
+                    </Grid>
+                </Border>
 
-            <Border Style="{StaticResource ChartCardStyle}"
+                <Border Style="{StaticResource ChartCardStyle}"
                     Visibility="{Binding ShowPMx, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,8" MinHeight="28">
-                        <Button DockPanel.Dock="Right"
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,8" MinHeight="28">
+                            <Button DockPanel.Dock="Right"
                                 Content="x"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="Close viewport"
                                 Command="{Binding CloseViewportCommand}"
                                 CommandParameter="{x:Static vm:DiagramViewportType.PMx2D}" />
-                        <TextBlock Text="{Binding PMx.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <controls:DiagramCanvas2D Grid.Row="1"
+                            <TextBlock Text="{Binding PMx.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <controls:DiagramCanvas2D Grid.Row="1"
                                               MinHeight="220"
                                               Points="{Binding PmXPoints}"
                                               ReferenceLines="{Binding PmXReferenceLines}"
@@ -301,23 +314,26 @@
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PMx.Ratio}"
                                               ResetVersion="{Binding PMx.ResetVersion}" />
-                </Grid>
-            </Border>
+                    </Grid>
+                </Border>
 
-            <Border Style="{StaticResource ChartCardStyle}"
+                <Border Style="{StaticResource ChartCardStyle}"
                     Visibility="{Binding ShowPMy, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,8" MinHeight="28">
-                        <Button DockPanel.Dock="Right"
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,8" MinHeight="28">
+                            <Button DockPanel.Dock="Right"
                                 Content="x"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="Close viewport"
                                 Command="{Binding CloseViewportCommand}"
                                 CommandParameter="{x:Static vm:DiagramViewportType.PMy2D}" />
-                        <TextBlock Text="{Binding PMy.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <controls:DiagramCanvas2D Grid.Row="1"
+                            <TextBlock Text="{Binding PMy.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <controls:DiagramCanvas2D Grid.Row="1"
                                               MinHeight="220"
                                               Points="{Binding PmYPoints}"
                                               ReferenceLines="{Binding PmYReferenceLines}"
@@ -333,23 +349,26 @@
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PMy.Ratio}"
                                               ResetVersion="{Binding PMy.ResetVersion}" />
-                </Grid>
-            </Border>
+                    </Grid>
+                </Border>
 
-            <Border Style="{StaticResource ChartCardStyle}"
+                <Border Style="{StaticResource ChartCardStyle}"
                     Visibility="{Binding ShowPmm3D, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,8" MinHeight="28">
-                        <Button DockPanel.Dock="Right"
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,8" MinHeight="28">
+                            <Button DockPanel.Dock="Right"
                                 Content="x"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="Close viewport"
                                 Command="{Binding CloseViewportCommand}"
                                 CommandParameter="{x:Static vm:DiagramViewportType.Pmm3D}" />
-                        <TextBlock Text="3D PMM View" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <controls:InteractionViewport3D Grid.Row="1"
+                            <TextBlock Text="3D PMM View" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <controls:InteractionViewport3D Grid.Row="1"
                                                     MinHeight="220"
                                                     Points="{Binding PM3D.SurfacePoints}"
                                                     DemandPoint="{Binding PM3D.DemandPoint}"
@@ -365,23 +384,26 @@
                                                     ShowSlicePlane="{Binding PM3D.ShowSlicePlane}"
                                                     ShowAxialLoadSlice="{Binding PM3D.ShowAxialLoadSlice}"
                                                     ResetVersion="{Binding PM3D.ResetVersion}" />
-                </Grid>
-            </Border>
+                    </Grid>
+                </Border>
 
-            <Border Style="{StaticResource ChartCardStyle}"
+                <Border Style="{StaticResource ChartCardStyle}"
                     Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <DockPanel Margin="0,0,0,8" MinHeight="28">
-                        <Button DockPanel.Dock="Right"
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,8" MinHeight="28">
+                            <Button DockPanel.Dock="Right"
                                 Content="x"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="Close viewport"
                                 Command="{Binding CloseViewportCommand}"
                                 CommandParameter="{x:Static vm:DiagramViewportType.MxMy2D}" />
-                        <TextBlock Text="Mx-My Diagram" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                    </DockPanel>
-                    <controls:DiagramCanvas2D Grid.Row="1"
+                            <TextBlock Text="Mx-My Diagram" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <controls:DiagramCanvas2D Grid.Row="1"
                                               MinHeight="220"
                                               Points="{Binding MxMyPoints}"
                                               XAxisLabel="{Binding MM.XAxisLabel}"
@@ -396,9 +418,9 @@
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding MM.Ratio}"
                                               ResetVersion="{Binding MM.ResetVersion}" />
-                </Grid>
-            </Border>
-        </UniformGrid>
+                    </Grid>
+                </Border>
+            </UniformGrid>
         </Grid>
     </Grid>
 </UserControl>
