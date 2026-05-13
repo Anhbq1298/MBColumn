@@ -300,17 +300,35 @@ static void TestReferenceBehavior()
 static void TestPmmAppleToAppleComparison()
 {
     var root = LocateRepositoryRoot();
-    var referenceCsv = Path.Combine(root, "docs", "validation", "ec2-fiber-pmm-sconcrete-generated-curves.csv");
-    IsTrue(File.Exists(referenceCsv));
+    
+    // Generate simplified reference CSV from EC2 data (converts units: kN->N, kNm->N-mm)
+    var simplifiedReferenceCsv = ReferenceDataSetup.ConvertEc2ReferenceToSimplified(root);
+    IsTrue(File.Exists(simplifiedReferenceCsv));
 
     var runner = new PmmComparisonRunner();
-    var report = runner.Run(Service(), MetricInput(), referenceCsv, Path.Combine(root, "tests", "MBColumn.Tests", "Reports", "PmmComparisonReport.pdf"));
+    var reportPath = Path.Combine(root, "tests", "MBColumn.Tests", "Reports", "PmmComparisonReport.pdf");
+    
+    var report = runner.Run(
+        Service(), 
+        MetricInput(), 
+        simplifiedReferenceCsv, 
+        reportPath);
 
+    // Validate report structure
     IsTrue(report.TotalThetaCount > 0);
     IsTrue(report.TotalMatchedPoints > 0);
     IsTrue(report.TotalMissingPoints >= 0);
     IsTrue(report.TotalFailedPoints >= 0);
-    IsTrue(File.Exists(Path.Combine(root, "tests", "MBColumn.Tests", "Reports", "PmmComparisonReport.pdf")));
+    IsTrue(File.Exists(reportPath));
+    
+    // Print report summary to test output
+    Console.WriteLine($"\n=== PMM Apple-to-Apple Comparison Report ===");
+    Console.WriteLine($"Theta angles: {report.TotalThetaCount}");
+    Console.WriteLine($"Matched points: {report.TotalMatchedPoints}");
+    Console.WriteLine($"Missing points: {report.TotalMissingPoints}");
+    Console.WriteLine($"Failed points: {report.TotalFailedPoints}");
+    Console.WriteLine($"Overall: {report.OverallConclusion}");
+    Console.WriteLine($"PDF Report: {reportPath}");
 }
 
 static string LocateRepositoryRoot()
