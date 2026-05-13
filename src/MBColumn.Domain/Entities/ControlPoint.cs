@@ -26,5 +26,9 @@ public sealed record ControlPoint(
     string Label,
     double SortKey,
     string GroupKey,
-    string SliceKey);
+    string SliceKey,
+    double ReducedDisplayP = double.NaN,
+    double ReducedDisplayMx = double.NaN,
+    double ReducedDisplayMy = double.NaN,
+    string RegionClassification = "");
 

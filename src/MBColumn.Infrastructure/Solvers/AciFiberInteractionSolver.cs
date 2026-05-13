@@ -60,11 +60,15 @@ public sealed class AciFiberInteractionSolver(IDesignCodeService code) : IIntera
         double fyd = code.SteelDesignStrength(steel.FyMpa);
 
         double concreteN = 0.0, concreteMx = 0.0, concreteMy = 0.0;
+        double maxConcreteStrain = double.NegativeInfinity;
+        double minConcreteStrain = double.PositiveInfinity;
         for (int i = 0; i < fibers.Length; i++)
         {
             ref readonly var f = ref fibers[i];
             double projection = f.XMm * nx + f.YMm * ny;
             double strain = ecu * (projection - neutralAxisProjection) / c;
+            maxConcreteStrain = System.Math.Max(maxConcreteStrain, strain);
+            minConcreteStrain = System.Math.Min(minConcreteStrain, strain);
             if (strain <= 0.0) continue;
 
             double stress = HognestadStress(strain, peakStrain, fcCap);
@@ -76,10 +80,14 @@ public sealed class AciFiberInteractionSolver(IDesignCodeService code) : IIntera
 
         double steelN = 0.0, steelMx = 0.0, steelMy = 0.0;
         double maxTensionStrain = 0.0;
+        double maxSteelStrain = double.NegativeInfinity;
+        double minSteelStrain = double.PositiveInfinity;
         foreach (var bar in section.RebarLayout.Bars)
         {
             double projection = bar.XMm * nx + bar.YMm * ny;
             double strain = ecu * (projection - neutralAxisProjection) / c;
+            maxSteelStrain = System.Math.Max(maxSteelStrain, strain);
+            minSteelStrain = System.Math.Min(minSteelStrain, strain);
             if (strain < 0.0)
             {
                 maxTensionStrain = System.Math.Max(maxTensionStrain, -strain);
@@ -99,7 +107,20 @@ public sealed class AciFiberInteractionSolver(IDesignCodeService code) : IIntera
         double mxNmm = concreteMx + steelMx;
         double myNmm = concreteMy + steelMy;
         double phi = code.Phi(maxTensionStrain, steel.FyMpa, steel.EsMpa);
-        return new InteractionPoint(depthIndex, angleIndex, angleDegrees, c, axialN, mxNmm, myNmm, phi, maxTensionStrain);
+        string stateLabel = ClassifyAciStrainRegion(maxTensionStrain, steel);
+        return new InteractionPoint(
+            depthIndex, angleIndex, angleDegrees, c, axialN, mxNmm, myNmm, phi, maxTensionStrain,
+            concreteN, steelN, concreteMx, concreteMy, steelMx, steelMy,
+            maxConcreteStrain, minConcreteStrain, maxSteelStrain, minSteelStrain,
+            stateLabel);
+    }
+
+    private static string ClassifyAciStrainRegion(double maxTensionStrain, SteelMaterial steel)
+    {
+        double yieldStrain = steel.FyMpa / steel.EsMpa;
+        if (maxTensionStrain <= yieldStrain) return "Compression controlled";
+        if (maxTensionStrain >= yieldStrain + 0.003) return "Tension controlled";
+        return "Transition";
     }
 
     // Hognestad-style ascending parabola with flat top at fcCap, zero in tension.

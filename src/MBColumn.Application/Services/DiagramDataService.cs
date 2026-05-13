@@ -22,19 +22,41 @@ public sealed class DiagramDataService
         => new(ToDto(CleanAndSortMmBoundaryPoints(set.MmPoints)), MomentUnit(unitSystem));
 
     public PmXDiagramDto BuildPmXDiagramData(DiagramControlPointSet set, UnitSystem unitSystem)
-        => new(PmCurveBuilderService.BuildPmXCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay), ForceUnit(unitSystem), MomentUnit(unitSystem));
+    {
+        var points = PmCurveBuilderService.BuildPmXCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, set.NominalCompressionLimitDisplay);
+        return new PmXDiagramDto(points, ForceUnit(unitSystem), MomentUnit(unitSystem))
+        {
+            NominalCapacityPoints = NominalCapacity(points),
+            ReducedCapacityPoints = ReducedCapacity(points)
+        };
+    }
 
     public PmYDiagramDto BuildPmYDiagramData(DiagramControlPointSet set, UnitSystem unitSystem)
-        => new(PmCurveBuilderService.BuildPmYCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay), ForceUnit(unitSystem), MomentUnit(unitSystem));
+    {
+        var points = PmCurveBuilderService.BuildPmYCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, set.NominalCompressionLimitDisplay);
+        return new PmYDiagramDto(points, ForceUnit(unitSystem), MomentUnit(unitSystem))
+        {
+            NominalCapacityPoints = NominalCapacity(points),
+            ReducedCapacityPoints = ReducedCapacity(points)
+        };
+    }
 
     public PmAngleDiagramDto BuildPmAngleDiagramData(DiagramControlPointSet set, UnitSystem unitSystem, double angleDegrees)
     {
-        var points = PmCurveBuilderService.BuildPmAngleCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, angleDegrees);
+        var points = PmCurveBuilderService.BuildPmAngleCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, set.NominalCompressionLimitDisplay, angleDegrees);
         return new PmAngleDiagramDto(points, angleDegrees, ForceUnit(unitSystem), MomentUnit(unitSystem))
         {
-            ReferenceLines = PmCurveBuilderService.BuildPmAngleReferenceLines(points)
+            ReferenceLines = PmCurveBuilderService.BuildPmAngleReferenceLines(points),
+            NominalCapacityPoints = NominalCapacity(points),
+            ReducedCapacityPoints = ReducedCapacity(points)
         };
     }
+
+    private static IReadOnlyList<ControlPointDto> NominalCapacity(IReadOnlyList<ControlPointDto> points)
+        => points.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+
+    private static IReadOnlyList<ControlPointDto> ReducedCapacity(IReadOnlyList<ControlPointDto> points)
+        => points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
 
     public IReadOnlyList<ControlPointDto> BuildPmAngleDemandPoints(IEnumerable<LoadCaseResultDto> loadCases, double angleDegrees)
     {

@@ -8,12 +8,13 @@ public static class LegendRenderer
 {
     public static void Draw(DrawingContext dc, Point origin, bool showNominal = true)
     {
-        double height = showNominal ? 56 : 39;
-        var background = new Rect(origin.X - 8, origin.Y - 10, 146, height);
+        double height = showNominal ? 73 : 56;
+        var background = new Rect(origin.X - 8, origin.Y - 10, 168, height);
         dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(232, 255, 255, 255)), new Pen(new SolidColorBrush(Color.FromArgb(145, 214, 222, 230)), 0.8), background, 5, 5);
 
         int row = 0;
-        DrawItem(dc, new Point(origin.X, origin.Y + 17 * row++), Color.FromRgb(0, 75, 133), "Design Capacity", DashStyles.Solid);
+        DrawItem(dc, new Point(origin.X, origin.Y + 17 * row++), Color.FromRgb(0, 75, 133), "Active Design", DashStyles.Solid);
+        DrawItem(dc, new Point(origin.X, origin.Y + 17 * row++), Color.FromRgb(0, 75, 133), "\u03c6-Reduced Capacity", DashStyles.Dash);
         if (showNominal)
         {
             DrawItem(dc, new Point(origin.X, origin.Y + 17 * row++), Color.FromRgb(200, 40, 40), "Nominal Capacity", DashStyles.Dash);

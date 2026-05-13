@@ -18,14 +18,17 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         RatioResult ratioResult,
         IDesignCodeService code)
     {
+        double maxPn = surface.Points.Where(p => p.Pn > 0).Select(p => p.Pn).DefaultIfEmpty(0).Max();
         double maxPhiPn = surface.Points.Where(p => p.PhiPn > 0).Select(p => p.PhiPn).DefaultIfEmpty(0).Max();
+        double nominalCompressionLimit = code.NominalCompressionLimit(maxPn);
         double compressionLimit = code.CompressionDesignLimit(maxPhiPn);
+        double nominalCompressionLimitDisplay = DisplayForce(nominalCompressionLimit, unitSystem);
         double compressionLimitDisplay = DisplayForce(compressionLimit, unitSystem);
         var pm = BuildPm(surface, demand, selectedPmAngleDegrees, unitSystem, ratioResult, compressionLimit);
         var mm = BuildMm(surface, demand, selectedAxialLoadN, unitSystem, ratioResult, compressionLimit);
         var pmm = BuildSurface(surface, demand, unitSystem, ratioResult, compressionLimit);
         var mm3d = BuildMmSlice(surface, demand, selectedAxialLoadN, unitSystem, ratioResult, compressionLimit);
-        return new DiagramControlPointSet(pm, mm, pmm, mm3d, compressionLimitDisplay);
+        return new DiagramControlPointSet(pm, mm, pmm, mm3d, nominalCompressionLimitDisplay, compressionLimitDisplay);
     }
 
     private IReadOnlyList<ControlPoint> BuildPm(InteractionSurface surface, LoadDemand demand, double angleDegrees, UnitSystem unitSystem, RatioResult ratio, double compressionLimit)
@@ -126,12 +129,19 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             double angleRad = p.ThetaDegrees * Math.PI / 180.0;
             double dx = PolePerturbationMoment * Math.Cos(angleRad);
             double dy = PolePerturbationMoment * Math.Sin(angleRad);
+            bool isNominal = p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase);
+            double displayDx = isNominal ? dx : dx * p.Phi;
+            double displayDy = isNominal ? dy : dy * p.Phi;
+            double reducedDx = dx * p.Phi;
+            double reducedDy = dy * p.Phi;
             return p with
             {
-                DisplayMx = p.DisplayMx + dx,
-                DisplayMy = p.DisplayMy + dy,
+                DisplayMx = p.DisplayMx + displayDx,
+                DisplayMy = p.DisplayMy + displayDy,
                 NominalDisplayMx = p.NominalDisplayMx + dx,
-                NominalDisplayMy = p.NominalDisplayMy + dy
+                NominalDisplayMy = p.NominalDisplayMy + dy,
+                ReducedDisplayMx = double.IsNaN(p.ReducedDisplayMx) ? p.ReducedDisplayMx : p.ReducedDisplayMx + reducedDx,
+                ReducedDisplayMy = double.IsNaN(p.ReducedDisplayMy) ? p.ReducedDisplayMy : p.ReducedDisplayMy + reducedDy
             };
         }).ToList();
     }
@@ -165,32 +175,37 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
 
     private ControlPoint ToControl(InteractionPoint point, DiagramType diagramType, UnitSystem unitSystem, double sortKey, string label, string sliceKey, double compressionLimit, bool useMomentMagnitude)
     {
-        double phiPn = point.PhiPn > 0 ? Math.Min(point.PhiPn, compressionLimit) : point.PhiPn;
-        double phiMx = point.PhiMnx;
-        double phiMy = point.PhiMny;
+        var nominal = point.Nominal;
+        var reduced = point.Reduced;
+        double uncappedPhiPn = reduced.PhiPn;
+        double phiPn = uncappedPhiPn > 0 ? Math.Min(uncappedPhiPn, compressionLimit) : uncappedPhiPn;
+        double phiMx = reduced.PhiMnx;
+        double phiMy = reduced.PhiMny;
         double displayMx = useMomentMagnitude ? DisplayMoment(Math.Sqrt(phiMx * phiMx + phiMy * phiMy), unitSystem) * Math.Sign(phiMy == 0 ? phiMx : phiMy) : DisplayMoment(phiMx, unitSystem);
 
         // Nominal display values: always use raw Pn/Mnx/Mny (no phi, no compression cap).
         double nominalDisplayMx = useMomentMagnitude
-            ? DisplayMoment(Math.Sqrt(point.Mnx * point.Mnx + point.Mny * point.Mny), unitSystem) * Math.Sign(point.Mny == 0 ? point.Mnx : point.Mny)
-            : DisplayMoment(point.Mnx, unitSystem);
+            ? DisplayMoment(Math.Sqrt(nominal.Mnx * nominal.Mnx + nominal.Mny * nominal.Mny), unitSystem) * Math.Sign(nominal.Mny == 0 ? nominal.Mnx : nominal.Mny)
+            : DisplayMoment(nominal.Mnx, unitSystem);
+        double reducedDisplayMx = displayMx;
+        double reducedDisplayMy = useMomentMagnitude ? 0 : DisplayMoment(phiMy, unitSystem);
 
         return new ControlPoint(
             $"{diagramType}-{sliceKey}-{sortKey:F0}",
             diagramType,
-            point.Pn,
-            point.Mnx,
-            point.Mny,
-            point.Phi,
+            nominal.Pn,
+            nominal.Mnx,
+            nominal.Mny,
+            reduced.Phi,
             phiPn,
             phiMx,
             phiMy,
             DisplayForce(phiPn, unitSystem),
             displayMx,
-            useMomentMagnitude ? 0 : DisplayMoment(phiMy, unitSystem),
-            DisplayForce(point.Pn, unitSystem),
+            reducedDisplayMy,
+            DisplayForce(nominal.Pn, unitSystem),
             nominalDisplayMx,
-            useMomentMagnitude ? 0 : DisplayMoment(point.Mny, unitSystem),
+            useMomentMagnitude ? 0 : DisplayMoment(nominal.Mny, unitSystem),
             point.ThetaDegrees,
             point.NeutralAxisDepthMm,
             false,
@@ -199,7 +214,11 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             label,
             sortKey,
             label,
-            sliceKey);
+            sliceKey,
+            DisplayForce(uncappedPhiPn, unitSystem),
+            reducedDisplayMx,
+            reducedDisplayMy,
+            point.StrainState.RegionClassification);
     }
 
     private ControlPoint Demand(DiagramType diagramType, LoadDemand demand, UnitSystem unitSystem, double sortKey, string group, string slice, bool useMomentMagnitude)

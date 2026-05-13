@@ -2,6 +2,9 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 
+using System.Globalization;
+using System.Text;
+
 namespace MBColumn.Application.Services;
 
 public static class PmCurveBuilderService
@@ -12,14 +15,17 @@ public static class PmCurveBuilderService
     public static bool EnableDebugDiagnostics { get; set; }
     public static PmCurveBuildDiagnostics? LastDiagnostics { get; private set; }
 
-    public static IReadOnlyList<ControlPointDto> BuildPmXCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay)
-        => BuildCurve(source, CurveAxis.Mx, designCompressionLimitDisplay);
+    public static IReadOnlyList<ControlPointDto> BuildPmXCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay = null)
+        => BuildCurve(source, CurveAxis.Mx, designCompressionLimitDisplay, nominalCompressionLimitDisplay);
 
-    public static IReadOnlyList<ControlPointDto> BuildPmYCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay)
-        => BuildCurve(source, CurveAxis.My, designCompressionLimitDisplay);
+    public static IReadOnlyList<ControlPointDto> BuildPmYCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay = null)
+        => BuildCurve(source, CurveAxis.My, designCompressionLimitDisplay, nominalCompressionLimitDisplay);
 
     public static IReadOnlyList<ControlPointDto> BuildPmAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double angleDegrees)
-        => BuildAngleCurve(source, designCompressionLimitDisplay, angleDegrees);
+        => BuildAngleCurve(source, designCompressionLimitDisplay, null, angleDegrees);
+
+    public static IReadOnlyList<ControlPointDto> BuildPmAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double nominalCompressionLimitDisplay, double angleDegrees)
+        => BuildAngleCurve(source, designCompressionLimitDisplay, nominalCompressionLimitDisplay, angleDegrees);
 
     public static IReadOnlyList<ChartReferenceLineDto> BuildPmAngleReferenceLines(IReadOnlyList<ControlPointDto> points)
     {
@@ -58,14 +64,14 @@ public static class PmCurveBuilderService
         var nominal = points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && p.IsNominal).ToList();
         double transitionP;
 
-        if (nominal.Count > 0)
+        if (Math.Abs(designCapP) > 1e-9)
+        {
+            transitionP = designCapP / AciTiedAxialCapFactor;
+        }
+        else if (nominal.Count > 0)
         {
             double nominalPo = nominal.Max(p => p.Y);
             transitionP = AciTiedCompressionPhi * nominalPo;
-        }
-        else if (Math.Abs(designCapP) > 1e-9)
-        {
-            transitionP = designCapP / AciTiedAxialCapFactor;
         }
         else
         {
@@ -91,7 +97,7 @@ public static class PmCurveBuilderService
             IsNominal: false);
     }
 
-    private static IReadOnlyList<ControlPointDto> BuildCurve(IEnumerable<ControlPoint> source, CurveAxis axis, double designCompressionLimitDisplay)
+    private static IReadOnlyList<ControlPointDto> BuildCurve(IEnumerable<ControlPoint> source, CurveAxis axis, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay)
     {
         var raw = source.ToList();
         var clean = raw.Where(IsValid).ToList();
@@ -99,43 +105,34 @@ public static class PmCurveBuilderService
         var designCapacity = capacity.Where(p => !IsNominalPoint(p)).ToList();
         var nominalCapacity = capacity.Where(IsNominalPoint).ToList();
         int rawCount = raw.Count;
-        if (designCapacity.Count == 0 && nominalCapacity.Count == 0) return [];
+        if (designCapacity.Count == 0) return [];
 
-        var thetaRows = designCapacity
+        // --- DESIGN curve (phiPn / phiMn), uncapped interaction geometry ---
+        // This is the single source of PM curve topology. Nominal points are
+        // reconstructed from these same vertices by removing phi, so cap/reference
+        // logic never becomes interaction geometry.
+        var designThetaRows = designCapacity
             .GroupBy(p => p.GroupKey)
             .Select(g => g.OrderByDescending(DesignDisplayP).ToList())
             .Where(g => g.Count > 1)
             .ToList();
-
-        // --- DESIGN curve (Ï†Pn / Ï†Mn) capped at ACI Pmax ---
-        double rawPMax = designCapacity.Count == 0 ? 0 : designCapacity.Max(DesignDisplayP);
-        double rawPMin = designCapacity.Count == 0 ? 0 : designCapacity.Min(DesignDisplayP);
-        // ACI cap: design curve top is at the compression limit, not the raw maximum
-        double designPMax = Math.Min(rawPMax, designCompressionLimitDisplay);
-        double designPMin = rawPMin;
-        var designLoop = BuildEnvelopeLoop(thetaRows, designPMax, designPMin, axis, nominal: false);
-
-        // Mark all design loop points with "DesignCapacity" group key
+        double designPMax = designCapacity.Max(DesignDisplayP);
+        double designPMin = designCapacity.Min(DesignDisplayP);
+        var designLoop = BuildEnvelopeLoop(designThetaRows, designPMax, designPMin, axis, nominal: false);
         var designDtos = designLoop.Select(p => ToDto(p, axis, "DesignCapacity", isNominal: false)).ToList();
         int finalDesignCount = designDtos.Count;
 
-        // --- NOMINAL curve (Pn / Mn) uncapped ---
-        var nominalThetaRows = nominalCapacity
-            .GroupBy(p => p.GroupKey)
-            .Select(g => g.OrderByDescending(p => p.NominalDisplayP).ToList())
-            .Where(g => g.Count > 1)
-            .ToList();
-        double nomPMax = nominalCapacity.Count == 0 ? 0 : nominalCapacity.Max(p => p.NominalDisplayP);
-        double nomPMin = nominalCapacity.Count == 0 ? 0 : nominalCapacity.Min(p => p.NominalDisplayP);
-        var nominalLoop = BuildEnvelopeLoop(nominalThetaRows, nomPMax, nomPMin, axis, nominal: true);
+        // --- NOMINAL curve (Pn / Mn), restored from design by removing phi ---
+        var nominalLoop = designLoop.Select(RemovePhi).ToList();
         var nominalDtos = nominalLoop.Select(p => ToDto(p, axis, "NominalCapacity", isNominal: true)).ToList();
         int finalNominalCount = nominalDtos.Count;
 
         var result = new List<ControlPointDto>(designDtos);
         result.AddRange(nominalDtos);
 
-        // --- Reference lines at the ACI design Pmax and Pmin ---
-        result.Add(ReferenceDto(designPMax, "Pmax"));
+        // --- Reference lines only; these are not interaction curve geometry. ---
+        double phiPnMaxLine = designCompressionLimitDisplay;
+        result.Add(ReferenceDto(phiPnMaxLine, "Pmax"));
         result.Add(ReferenceDto(designPMin, "Pmin"));
 
         // --- Demand and governing markers ---
@@ -151,6 +148,9 @@ public static class PmCurveBuilderService
             int negCount = designLoop.Count(p => !p.IsPositiveBranch);
             int nomPosCount = nominalLoop.Count(p => p.IsPositiveBranch);
             int nomNegCount = nominalLoop.Count(p => !p.IsPositiveBranch);
+            var warnings = ValidateSourcePairing(capacity, axis)
+                .Concat(ValidateLoopPairing(nominalLoop, designLoop))
+                .ToList();
             LastDiagnostics = new PmCurveBuildDiagnostics(
                 rawCount, clean.Count, rawCount - clean.Count,
                 AxialLevels, posCount, negCount, finalDesignCount,
@@ -159,45 +159,34 @@ public static class PmCurveBuilderService
                 NominalNegativeBranchCount: nomNegCount,
                 FinalNominalCurveCount: finalNominalCount,
                 DesignPMaxDisplay: designPMax,
-                NominalPMaxDisplay: nomPMax);
+                NominalPMaxDisplay: nominalLoop.Count == 0 ? 0 : nominalLoop.Max(p => p.P),
+                ValidationWarnings: warnings);
         }
 
         return result;
     }
 
-    private static IReadOnlyList<ControlPointDto> BuildAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double angleDegrees)
+    private static IReadOnlyList<ControlPointDto> BuildAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay, double angleDegrees)
     {
         var clean = source.Where(IsValid).ToList();
         var capacity = clean.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint).ToList();
         var designCapacity = capacity.Where(p => !IsNominalPoint(p)).ToList();
         var nominalCapacity = capacity.Where(IsNominalPoint).ToList();
-        if (designCapacity.Count == 0 && nominalCapacity.Count == 0) return [];
+        if (designCapacity.Count == 0) return [];
 
         var designRows = designCapacity
             .GroupBy(p => p.GroupKey)
             .Select(g => g.OrderByDescending(DesignDisplayP).ToList())
             .Where(g => g.Count > 1)
             .ToList();
-        double designPMax = Math.Min(designCapacity.Max(DesignDisplayP), designCompressionLimitDisplay);
+        double designPMax = designCapacity.Max(DesignDisplayP);
         double designPMin = designCapacity.Min(DesignDisplayP);
-        var design = BuildAngleEnvelopeLoop(designRows, designPMax, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: true)
-            .Select(p => ToAngleDto(p, "DesignCapacity", isNominal: false))
-            .ToList();
+        var design = BuildAngleEnvelopeLoop(designRows, designPMax, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: false).ToList();
+        var nominal = design.Select(RemovePhi).ToList();
 
-        var nominalRows = nominalCapacity
-            .GroupBy(p => p.GroupKey)
-            .Select(g => g.OrderByDescending(p => p.NominalDisplayP).ToList())
-            .Where(g => g.Count > 1)
-            .ToList();
-        var nominal = new List<AngleEnvelopePoint>();
-        if (nominalCapacity.Count > 0)
-        {
-            nominal.AddRange(BuildAngleEnvelopeLoop(nominalRows, nominalCapacity.Max(p => p.NominalDisplayP), nominalCapacity.Min(p => p.NominalDisplayP), angleDegrees, nominal: true, forceStraightTrimCap: false));
-        }
-
-        var result = new List<ControlPointDto>(design);
+        var result = new List<ControlPointDto>(design.Select(p => ToAngleDto(p, "DesignCapacity", isNominal: false)));
         result.AddRange(nominal.Select(p => ToAngleDto(p, "NominalCapacity", isNominal: true)));
-        result.Add(ReferenceDto(designPMax, "Pmax"));
+        result.Add(ReferenceDto(designCompressionLimitDisplay, "Pmax"));
         result.Add(ReferenceDto(designPMin, "Pmin"));
 
         var demand = clean.FirstOrDefault(p => p.IsDemandPoint);
@@ -214,7 +203,10 @@ public static class PmCurveBuilderService
     /// </summary>
     private static IReadOnlyList<EnvelopePoint> BuildEnvelopeLoop(
         IReadOnlyList<IReadOnlyList<ControlPoint>> thetaRows,
-        double pMax, double pMin, CurveAxis axis, bool nominal)
+        double pMax,
+        double pMin,
+        CurveAxis axis,
+        bool nominal)
     {
         double pRange = Math.Max(1e-9, pMax - pMin);
         double pTol = pRange * 1e-6;
@@ -320,6 +312,28 @@ public static class PmCurveBuilderService
 
     private static double GetAciDesignPmax(double designCompressionLimitDisplay)
         => designCompressionLimitDisplay;
+
+    private static EnvelopePoint RemovePhi(EnvelopePoint point)
+    {
+        double phi = Math.Abs(point.Phi) < 1e-12 ? 1.0 : point.Phi;
+        return point with
+        {
+            Moment = point.Moment / phi,
+            P = point.P / phi
+        };
+    }
+
+    private static AngleEnvelopePoint RemovePhi(AngleEnvelopePoint point)
+    {
+        double phi = Math.Abs(point.Phi) < 1e-12 ? 1.0 : point.Phi;
+        return point with
+        {
+            Mtheta = point.Mtheta / phi,
+            P = point.P / phi,
+            Mx = point.Mx / phi,
+            My = point.My / phi
+        };
+    }
 
     private static StraightTrimSegment? BuildStraightAciTrimSegment(
         IReadOnlyList<IReadOnlyList<ControlPoint>> thetaRows,
@@ -473,6 +487,214 @@ public static class PmCurveBuilderService
 
     // â”€â”€â”€â”€ Validation â”€â”€â”€â”€
 
+    public static string BuildPmInteractionDebugCsv(IEnumerable<ControlPoint> source, PmDebugMomentAxis axis = PmDebugMomentAxis.Mx, double angleDegrees = 0.0)
+    {
+        var rows = BuildDebugRows(source, axis, angleDegrees).ToList();
+        var sb = new StringBuilder();
+        sb.AppendLine("Index,ThetaDeg,NeutralAxisDepth,StrainState,Pn_kN,Mn_kNm,Phi,PhiPn_kN,PhiMn_kNm,SourceCurve");
+
+        foreach (var row in rows)
+        {
+            sb.AppendLine(string.Join(",", [
+                row.Index.ToString(CultureInfo.InvariantCulture),
+                row.ThetaDegrees.ToString("G17", CultureInfo.InvariantCulture),
+                row.NeutralAxisDepth.ToString("G17", CultureInfo.InvariantCulture),
+                Csv(row.StrainState),
+                row.PnKn.ToString("G17", CultureInfo.InvariantCulture),
+                row.MnKnm.ToString("G17", CultureInfo.InvariantCulture),
+                row.Phi.ToString("G17", CultureInfo.InvariantCulture),
+                row.PhiPnKn.ToString("G17", CultureInfo.InvariantCulture),
+                row.PhiMnKnm.ToString("G17", CultureInfo.InvariantCulture),
+                Csv(row.SourceCurve)
+            ]));
+        }
+
+        return sb.ToString();
+    }
+
+    public static void ExportPmInteractionDebugCsv(string path, IEnumerable<ControlPoint> source, PmDebugMomentAxis axis = PmDebugMomentAxis.Mx, double angleDegrees = 0.0)
+        => File.WriteAllText(path, BuildPmInteractionDebugCsv(source, axis, angleDegrees), Encoding.UTF8);
+
+    public static IReadOnlyList<string> ValidateNominalReducedSourcePairing(IEnumerable<ControlPoint> source, PmDebugMomentAxis axis = PmDebugMomentAxis.Mx, double angleDegrees = 0.0)
+        => ValidateSourcePairing(source.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint), ToCurveAxis(axis), angleDegrees);
+
+    public static IReadOnlyList<string> ValidateNominalReducedCurvePairing(IReadOnlyList<ControlPointDto> points)
+    {
+        var warnings = new List<string>();
+        var nominal = points.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+        var reduced = points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+
+        if (nominal.Count != reduced.Count)
+        {
+            warnings.Add($"Nominal/reduced curve point count differs: nominal={nominal.Count}, reduced={reduced.Count}.");
+        }
+
+        int count = Math.Min(nominal.Count, reduced.Count);
+        for (int i = 0; i < count; i++)
+        {
+            if (Math.Abs(nominal[i].ThetaDegrees - reduced[i].ThetaDegrees) > 1e-9 ||
+                Math.Abs(nominal[i].NeutralAxisDepth - reduced[i].NeutralAxisDepth) > 1e-9)
+            {
+                warnings.Add($"Nominal/reduced curve ordering differs at index {i}: nominal(theta={nominal[i].ThetaDegrees:G6}, c={nominal[i].NeutralAxisDepth:G6}), reduced(theta={reduced[i].ThetaDegrees:G6}, c={reduced[i].NeutralAxisDepth:G6}).");
+                break;
+            }
+
+            AddPhiWarning(warnings, $"curve[{i}].P", reduced[i].P, nominal[i].P * nominal[i].Phi);
+            AddPhiWarning(warnings, $"curve[{i}].Mx", reduced[i].Mx, nominal[i].Mx * nominal[i].Phi);
+            AddPhiWarning(warnings, $"curve[{i}].My", reduced[i].My, nominal[i].My * nominal[i].Phi);
+        }
+
+        return warnings;
+    }
+
+    private static IEnumerable<PmDebugCsvRow> BuildDebugRows(IEnumerable<ControlPoint> source, PmDebugMomentAxis axis, double angleDegrees)
+    {
+        var capacity = source
+            .Where(p => !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint)
+            .ToList();
+
+        var nominal = capacity.Where(IsNominalPoint).ToDictionary(DebugPairKey);
+        var reduced = capacity.Where(p => !IsNominalPoint(p)).ToDictionary(DebugPairKey);
+        var keys = nominal.Keys.Concat(reduced.Keys)
+            .Distinct()
+            .OrderBy(k => k.SortKey)
+            .ThenBy(k => k.SliceKey, StringComparer.Ordinal)
+            .ToList();
+
+        int index = 0;
+        foreach (var key in keys)
+        {
+            if (nominal.TryGetValue(key, out var nominalPoint))
+            {
+                yield return ToDebugRow(index++, nominalPoint, axis, angleDegrees, "Nominal Capacity");
+            }
+
+            var reducedPoint = reduced.TryGetValue(key, out var rp) ? rp : nominalPoint;
+            if (reducedPoint is not null)
+            {
+                yield return ToDebugRow(index++, reducedPoint, axis, angleDegrees, "Phi-Reduced Capacity");
+            }
+        }
+
+        foreach (var marker in source.Where(p => p.IsGoverningPoint || p.IsDemandPoint).OrderBy(p => p.SortKey))
+        {
+            yield return ToDebugRow(index++, marker, axis, angleDegrees, marker.IsDemandPoint ? "Demand" : "Active Design");
+        }
+    }
+
+    private static PmDebugCsvRow ToDebugRow(int index, ControlPoint point, PmDebugMomentAxis axis, double angleDegrees, string sourceCurve)
+    {
+        double mn = MomentNmm(point, axis, angleDegrees, reduced: false);
+        double phiMn = mn * point.Phi;
+        return new PmDebugCsvRow(
+            index,
+            point.ThetaDegrees,
+            point.NeutralAxisDepth,
+            string.IsNullOrWhiteSpace(point.RegionClassification) ? "-" : point.RegionClassification,
+            point.Pn / 1000.0,
+            mn / 1_000_000.0,
+            point.Phi,
+            point.Pn * point.Phi / 1000.0,
+            phiMn / 1_000_000.0,
+            sourceCurve);
+    }
+
+    private static IReadOnlyList<string> ValidateSourcePairing(IEnumerable<ControlPoint> capacity, CurveAxis axis, double angleDegrees = 0.0)
+    {
+        var warnings = new List<string>();
+        var nominal = capacity.Where(IsNominalPoint)
+            .OrderBy(p => p.SortKey)
+            .ThenBy(p => p.SliceKey, StringComparer.Ordinal)
+            .ToList();
+        var reduced = capacity.Where(p => !IsNominalPoint(p))
+            .OrderBy(p => p.SortKey)
+            .ThenBy(p => p.SliceKey, StringComparer.Ordinal)
+            .ToList();
+
+        if (nominal.Count != reduced.Count)
+        {
+            warnings.Add($"Nominal/reduced source point count differs: nominal={nominal.Count}, reduced={reduced.Count}.");
+        }
+
+        int count = Math.Min(nominal.Count, reduced.Count);
+        for (int i = 0; i < count; i++)
+        {
+            var n = nominal[i];
+            var r = reduced[i];
+            if (!DebugPairKey(n).Equals(DebugPairKey(r)))
+            {
+                warnings.Add($"Nominal/reduced source ordering differs at index {i}: nominal={DebugPairKey(n)}, reduced={DebugPairKey(r)}.");
+                break;
+            }
+
+            double nMoment = axis == CurveAxis.Mx ? n.NominalDisplayMx : n.NominalDisplayMy;
+            double rMoment = axis == CurveAxis.Mx ? r.ReducedDisplayMx : r.ReducedDisplayMy;
+            AddPhiWarning(warnings, $"source[{i}].P", r.ReducedDisplayP, n.NominalDisplayP * n.Phi);
+            AddPhiWarning(warnings, $"source[{i}].M", rMoment, nMoment * n.Phi);
+        }
+
+        return warnings;
+    }
+
+    private static IReadOnlyList<string> ValidateLoopPairing(IReadOnlyList<EnvelopePoint> nominal, IReadOnlyList<EnvelopePoint> reduced)
+    {
+        var warnings = new List<string>();
+        if (nominal.Count != reduced.Count)
+        {
+            warnings.Add($"Nominal/reduced rendered loop point count differs: nominal={nominal.Count}, reduced={reduced.Count}.");
+        }
+
+        int count = Math.Min(nominal.Count, reduced.Count);
+        for (int i = 0; i < count; i++)
+        {
+            if (Math.Abs(nominal[i].ThetaDegrees - reduced[i].ThetaDegrees) > 1e-9 ||
+                Math.Abs(nominal[i].NeutralAxisDepth - reduced[i].NeutralAxisDepth) > 1e-9)
+            {
+                warnings.Add($"Nominal/reduced rendered loop ordering differs at index {i}.");
+                break;
+            }
+
+            AddPhiWarning(warnings, $"loop[{i}].P", reduced[i].P, nominal[i].P * nominal[i].Phi);
+            AddPhiWarning(warnings, $"loop[{i}].M", reduced[i].Moment, nominal[i].Moment * nominal[i].Phi);
+        }
+
+        return warnings;
+    }
+
+    private static void AddPhiWarning(ICollection<string> warnings, string label, double actual, double expected)
+    {
+        double tolerance = Math.Max(Math.Abs(expected) * 1e-6, 1e-6);
+        if (Math.Abs(actual - expected) > tolerance)
+        {
+            warnings.Add($"{label}: expected phi-scaled value {expected:G6}, got {actual:G6}.");
+        }
+    }
+
+    private static DebugKey DebugPairKey(ControlPoint point)
+        => new(point.SliceKey, point.SortKey);
+
+    private static CurveAxis ToCurveAxis(PmDebugMomentAxis axis)
+        => axis == PmDebugMomentAxis.My ? CurveAxis.My : CurveAxis.Mx;
+
+    private static double MomentNmm(ControlPoint point, PmDebugMomentAxis axis, double angleDegrees, bool reduced)
+    {
+        double mx = reduced ? point.PhiMnx : point.Mnx;
+        double my = reduced ? point.PhiMny : point.Mny;
+        if (axis == PmDebugMomentAxis.My) return my;
+        if (axis == PmDebugMomentAxis.Mtheta)
+        {
+            double radians = angleDegrees * Math.PI / 180.0;
+            return mx * Math.Cos(radians) + my * Math.Sin(radians);
+        }
+
+        return mx;
+    }
+
+    private static string Csv(string value)
+        => value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+            ? $"\"{value.Replace("\"", "\"\"")}\""
+            : value;
+
     /// <summary>
     /// Validates a PM capacity polyline for common defects: interior points, mixed
     /// nominal/design, NaN/Infinity, reference or demand leakage.
@@ -513,6 +735,8 @@ public static class PmCurveBuilderService
                     defects.Add($"Duplicate consecutive point in group '{group.Key.GroupKey}' at ({curve[i].X:F3}, {curve[i].Y:F3})");
             }
         }
+
+        defects.AddRange(ValidateNominalReducedCurvePairing(points));
 
         return defects;
     }
@@ -613,20 +837,33 @@ public static class PmCurveBuilderService
         return result;
     }
 
-    private static double DesignDisplayP(ControlPoint p) => p.NominalDisplayP * p.Phi;
-    private static double DesignDisplayMx(ControlPoint p) => p.NominalDisplayMx * p.Phi;
-    private static double DesignDisplayMy(ControlPoint p) => p.NominalDisplayMy * p.Phi;
+    private static double DesignDisplayP(ControlPoint p) => IsFinite(p.ReducedDisplayP) ? p.ReducedDisplayP : p.DisplayP;
+    private static double DesignDisplayMx(ControlPoint p) => IsFinite(p.ReducedDisplayMx) ? p.ReducedDisplayMx : p.DisplayMx;
+    private static double DesignDisplayMy(ControlPoint p) => IsFinite(p.ReducedDisplayMy) ? p.ReducedDisplayMy : p.DisplayMy;
     private static bool IsValid(ControlPoint p) => IsFinite(p.DisplayP) && IsFinite(p.DisplayMx) && IsFinite(p.DisplayMy);
     private static bool IsNominalPoint(ControlPoint p) => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase) || p.Label.Contains("Nominal", StringComparison.OrdinalIgnoreCase);
     private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
     private static double Lerp(double a, double b, double t) => a + (b - a) * t;
 
+    public enum PmDebugMomentAxis { Mx, My, Mtheta }
     private enum CurveAxis { Mx, My }
     private readonly record struct RingPoint(double Mx, double My, double P, double Phi, double ThetaDegrees, double NeutralAxisDepth);
     private readonly record struct CurvePoint(double Moment, double Mx, double My, double P, double Phi, double ThetaDegrees, double NeutralAxisDepth);
     private readonly record struct EnvelopePoint(double Moment, double P, double Phi, double ThetaDegrees, double NeutralAxisDepth, bool IsPositiveBranch);
     private readonly record struct AngleEnvelopePoint(double Mtheta, double P, double Mx, double My, double Phi, double ThetaDegrees, double NeutralAxisDepth);
     private readonly record struct StraightTrimSegment(AngleEnvelopePoint Positive, AngleEnvelopePoint Negative);
+    private readonly record struct DebugKey(string SliceKey, double SortKey);
+    private readonly record struct PmDebugCsvRow(
+        int Index,
+        double ThetaDegrees,
+        double NeutralAxisDepth,
+        string StrainState,
+        double PnKn,
+        double MnKnm,
+        double Phi,
+        double PhiPnKn,
+        double PhiMnKnm,
+        string SourceCurve);
 }
 
 public sealed record PmCurveBuildDiagnostics(
@@ -643,4 +880,5 @@ public sealed record PmCurveBuildDiagnostics(
     int NominalNegativeBranchCount = 0,
     int FinalNominalCurveCount = 0,
     double DesignPMaxDisplay = 0,
-    double NominalPMaxDisplay = 0);
+    double NominalPMaxDisplay = 0,
+    IReadOnlyList<string>? ValidationWarnings = null);

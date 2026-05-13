@@ -32,6 +32,8 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     // Return 1.0 so InteractionPoint.PhiPn == Pn (already the design value).
     public double Phi(double tensileSteelStrain, double fyMpa, double esMpa) => 1.0;
 
+    public double NominalCompressionLimit(double maximumNominalCompressionN) => maximumNominalCompressionN;
+
     // EC2 has no equivalent of ACI's 0.80 tied-column compression cap.
     // The full design axial capacity is available without further reduction.
     public double CompressionDesignLimit(double maximumPhiCompressionN) => maximumPhiCompressionN;

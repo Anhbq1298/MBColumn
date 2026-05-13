@@ -37,5 +37,6 @@ public sealed record CalculationResultDto(
     public double SectionHeightMm { get; init; }
     public double CoverMm { get; init; }
     public IReadOnlyList<RebarCoordinateDto> RebarCoordinates { get; init; } = [];
+    public IReadOnlyList<CapacityDebugPointDto> CapacityDebugPoints { get; init; } = [];
 }
 

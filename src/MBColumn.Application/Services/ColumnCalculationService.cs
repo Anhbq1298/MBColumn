@@ -111,6 +111,7 @@ public sealed class ColumnCalculationService(
         }).ToList();
 
         var cpTable = ControlPointTableBuilderService.Build(surface, section, fyMpa, esMpa, input.UnitSystem, units, codeService);
+        var debugPoints = BuildCapacityDebugPoints(surface, govPoint, input);
 
         return new CalculationResultDto(
             input.UnitSystem,
@@ -145,9 +146,49 @@ public sealed class ColumnCalculationService(
             SectionWidthMm = widthMm,
             SectionHeightMm = heightMm,
             CoverMm = coverMm,
-            RebarCoordinates = coordinateList
+            RebarCoordinates = coordinateList,
+            CapacityDebugPoints = debugPoints
         };
     }
+
+    private IReadOnlyList<CapacityDebugPointDto> BuildCapacityDebugPoints(InteractionSurface surface, InteractionPoint governingPoint, ColumnInputDto input)
+    {
+        var selected = new List<(string Label, InteractionPoint Point)>();
+
+        void Add(string label, InteractionPoint? point)
+        {
+            if (point is null) return;
+            selected.Add((label, point));
+        }
+
+        Add("Max nominal compression", surface.Points.MaxBy(p => p.Nominal.Pn));
+        Add("Max reduced compression", surface.Points.MaxBy(p => p.Reduced.PhiPn));
+        Add("Pure tension", surface.Points.MinBy(p => p.Nominal.Pn));
+        Add("Max +Mnx nominal", surface.Points.MaxBy(p => p.Nominal.Mnx));
+        Add("Max -Mnx nominal", surface.Points.MinBy(p => p.Nominal.Mnx));
+        Add("Max +Mny nominal", surface.Points.MaxBy(p => p.Nominal.Mny));
+        Add("Max -Mny nominal", surface.Points.MinBy(p => p.Nominal.Mny));
+        Add("Governing", governingPoint);
+
+        return selected.Select(p => ToCapacityDebugPoint(p.Label, p.Point, input)).ToList();
+    }
+
+    private CapacityDebugPointDto ToCapacityDebugPoint(string label, InteractionPoint point, ColumnInputDto input)
+        => new(
+            label,
+            point.ThetaDegrees,
+            point.NeutralAxisDepthMm,
+            point.StrainState.MaxTensionSteelStrain,
+            point.Reduced.Phi,
+            units.ForceFromN(point.Nominal.Pn, input.ForceUnit),
+            units.ForceFromN(point.Reduced.PhiPn, input.ForceUnit),
+            units.MomentFromNmm(point.Nominal.Mnx, input.MomentUnit),
+            units.MomentFromNmm(point.Reduced.PhiMnx, input.MomentUnit),
+            units.MomentFromNmm(point.Nominal.Mny, input.MomentUnit),
+            units.MomentFromNmm(point.Reduced.PhiMny, input.MomentUnit),
+            units.ForceFromN(point.ConcretePn, input.ForceUnit),
+            units.ForceFromN(point.SteelPn, input.ForceUnit),
+            point.StrainState.RegionClassification);
 
     private static RebarLayoutInputDto CreateLayoutInput(ColumnInputDto input)
         => new(

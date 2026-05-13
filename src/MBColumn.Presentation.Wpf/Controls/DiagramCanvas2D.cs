@@ -94,8 +94,10 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void DrawCapacity(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
-        var designPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.8);
+        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 0, 75, 133)), 2.2);
+        var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.35) { DashStyle = DashStyles.Dash };
         var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4) { DashStyle = DashStyles.Dash };
+        double? designCompressionCap = DesignCompressionCap(points);
 
         foreach (var group in points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference).GroupBy(p => p.GroupKey))
         {
@@ -105,9 +107,114 @@ public class DiagramCanvas2D : FrameworkElement
             bool isNominal = ordered[0].IsNominal;
             if (isNominal && !ShowNominalCurve) continue;
 
-            var pen = isNominal ? nominalPen : designPen;
-            var geo = new StreamGeometry();
-            using var ctx = geo.Open();
+            var geo = BuildPolylineGeometry(transform, ordered);
+            if (isNominal)
+            {
+                dc.DrawGeometry(null, nominalPen, geo);
+                continue;
+            }
+
+            // Draw the uncapped phi-reduced interaction curve as the dashed
+            // continuation. The ACI compression cap is a rendering boundary,
+            // not a geometry vertex or roof segment.
+            dc.DrawGeometry(null, reducedDesignPen, geo);
+            DrawBelowCapSegments(dc, transform, ordered, designCompressionCap, activeDesignPen);
+        }
+    }
+
+    private static double? DesignCompressionCap(IReadOnlyList<ControlPointDto> points)
+    {
+        var cap = points.FirstOrDefault(p => p.IsReference && p.Label.Equals("Pmax", StringComparison.OrdinalIgnoreCase));
+        return cap is null ? null : cap.Y;
+    }
+
+    private static void DrawBelowCapSegments(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered, double? cap, Pen pen)
+    {
+        if (cap is null)
+        {
+            dc.DrawGeometry(null, pen, BuildPolylineGeometry(transform, ordered));
+            return;
+        }
+
+        var clipped = ClipPolylineBelowY(ordered, cap.Value);
+        foreach (var segment in clipped.Where(s => s.Count > 1))
+        {
+            dc.DrawGeometry(null, pen, BuildOpenPolylineGeometry(transform, segment));
+        }
+    }
+
+    private static IReadOnlyList<IReadOnlyList<ControlPointDto>> ClipPolylineBelowY(IReadOnlyList<ControlPointDto> ordered, double cap)
+    {
+        var segments = new List<IReadOnlyList<ControlPointDto>>();
+        var current = new List<ControlPointDto>();
+
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            var a = ordered[i];
+            var b = ordered[(i + 1) % ordered.Count];
+            bool aInside = a.Y <= cap;
+            bool bInside = b.Y <= cap;
+
+            if (aInside && current.Count == 0)
+            {
+                current.Add(a);
+            }
+
+            if (aInside && bInside)
+            {
+                if (!ReferenceEquals(b, ordered[0]) || i < ordered.Count - 1)
+                {
+                    current.Add(b);
+                }
+            }
+            else if (aInside && !bInside)
+            {
+                current.Add(InterpolateAtY(a, b, cap));
+                AddSegment(segments, current);
+                current = [];
+            }
+            else if (!aInside && bInside)
+            {
+                current = [InterpolateAtY(a, b, cap), b];
+            }
+        }
+
+        AddSegment(segments, current);
+        return segments;
+    }
+
+    private static void AddSegment(List<IReadOnlyList<ControlPointDto>> segments, List<ControlPointDto> current)
+    {
+        if (current.Count > 1)
+        {
+            segments.Add(current);
+        }
+    }
+
+    private static ControlPointDto InterpolateAtY(ControlPointDto a, ControlPointDto b, double y)
+    {
+        double denominator = b.Y - a.Y;
+        double t = Math.Abs(denominator) < 1e-12 ? 0.0 : (y - a.Y) / denominator;
+        t = Math.Clamp(t, 0.0, 1.0);
+        return a with
+        {
+            X = Lerp(a.X, b.X, t),
+            Y = y,
+            Z = Lerp(a.Z, b.Z, t),
+            P = y,
+            Mx = Lerp(a.Mx, b.Mx, t),
+            My = Lerp(a.My, b.My, t),
+            Phi = Lerp(a.Phi, b.Phi, t),
+            ThetaDegrees = Lerp(a.ThetaDegrees, b.ThetaDegrees, t),
+            NeutralAxisDepth = Lerp(a.NeutralAxisDepth, b.NeutralAxisDepth, t)
+        };
+    }
+
+    private static StreamGeometry BuildPolylineGeometry(ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered)
+    {
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
+        {
             ctx.BeginFigure(transform.ToScreen(ordered[0].X, ordered[0].Y), false, false);
             foreach (var p in ordered.Skip(1))
             {
@@ -118,8 +225,24 @@ public class DiagramCanvas2D : FrameworkElement
             {
                 ctx.LineTo(transform.ToScreen(ordered[0].X, ordered[0].Y), true, false);
             }
-            dc.DrawGeometry(null, pen, geo);
         }
+        geo.Freeze();
+        return geo;
+    }
+
+    private static StreamGeometry BuildOpenPolylineGeometry(ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered)
+    {
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
+        {
+            ctx.BeginFigure(transform.ToScreen(ordered[0].X, ordered[0].Y), false, false);
+            foreach (var p in ordered.Skip(1))
+            {
+                ctx.LineTo(transform.ToScreen(p.X, p.Y), true, false);
+            }
+        }
+        geo.Freeze();
+        return geo;
     }
 
     private void DrawCapacityControlPoints(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
@@ -137,19 +260,37 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void DrawReferences(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
-        var pen = new Pen(new SolidColorBrush(Color.FromRgb(48, 103, 190)), 1) { DashStyle = DashStyles.Dash };
         if (!ShowReferenceLines) return;
         foreach (var p in points.Where(p => p.IsReference))
         {
+            var pen = ReferencePen(p.Label);
             var a = transform.ToScreen(transform.MinX, p.Y);
             var b = transform.ToScreen(transform.MaxX, p.Y);
             dc.DrawLine(pen, a, b);
-            if (ShowLabels && p.Label.Equals("Pmax", StringComparison.OrdinalIgnoreCase))
+            var label = ReferenceDisplayLabel(p.Label);
+            if (ShowLabels && !string.IsNullOrWhiteSpace(label))
             {
-                DrawText(dc, "(Pmax)", 10.5, pen.Brush, new Point(b.X - 48, b.Y - 16), FontWeights.SemiBold);
+                DrawText(dc, label, 10.5, pen.Brush, new Point(b.X - 72, b.Y - 16), FontWeights.SemiBold);
             }
         }
     }
+
+    private static Pen ReferencePen(string label)
+    {
+        var color = label.Equals("Pn,max", StringComparison.OrdinalIgnoreCase)
+            ? Color.FromRgb(200, 40, 40)
+            : Color.FromRgb(48, 103, 190);
+        return new Pen(new SolidColorBrush(color), 1) { DashStyle = DashStyles.Dash };
+    }
+
+    private static string ReferenceDisplayLabel(string label)
+        => label.Equals("Pmax", StringComparison.OrdinalIgnoreCase)
+            ? "(\u03c6Pn,max)"
+            : label.Equals("Pn,max", StringComparison.OrdinalIgnoreCase)
+                ? "(Pn,max)"
+                : label.Equals("Pmin", StringComparison.OrdinalIgnoreCase)
+                    ? "(Pmin)"
+                    : "";
 
     private void DrawConstructionReferenceLines(DrawingContext dc, ChartTransformHelper transform)
     {
@@ -443,6 +584,7 @@ public class DiagramCanvas2D : FrameworkElement
 
     private static bool IsFinite(ControlPointDto p) => !double.IsNaN(p.X) && !double.IsInfinity(p.X) && !double.IsNaN(p.Y) && !double.IsInfinity(p.Y);
     private static bool IsFinite(Point p) => !double.IsNaN(p.X) && !double.IsInfinity(p.X) && !double.IsNaN(p.Y) && !double.IsInfinity(p.Y);
+    private static double Lerp(double a, double b, double t) => a + (b - a) * t;
 
     private IEnumerable<ControlPointDto> VisiblePoints(IEnumerable<ControlPointDto> source)
         => source.Where(p =>

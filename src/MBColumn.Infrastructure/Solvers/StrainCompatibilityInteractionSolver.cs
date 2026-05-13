@@ -54,13 +54,31 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
         
         double concreteForce = code.ConcreteStressBlockFactor * concrete.FcMpa * props.Area;
         double axialN = concreteForce;
-        double mxNmm = -concreteForce * props.CentroidY;
-        double myNmm =  concreteForce * props.CentroidX;
+        double concreteMx = -concreteForce * props.CentroidY;
+        double concreteMy =  concreteForce * props.CentroidX;
+        double mxNmm = concreteMx;
+        double myNmm = concreteMy;
         double maxTensionStrain = 0.0;
+        double steelN = 0.0;
+        double steelMx = 0.0;
+        double steelMy = 0.0;
+        double maxSteelStrain = double.NegativeInfinity;
+        double minSteelStrain = double.PositiveInfinity;
+        double maxConcreteStrain = double.NegativeInfinity;
+        double minConcreteStrain = double.PositiveInfinity;
+
+        foreach (var vertex in boundary)
+        {
+            double concreteStrain = code.ConcreteUltimateStrain * ((vertex.X * nx + vertex.Y * ny) - neutralAxisProjection) / c;
+            maxConcreteStrain = System.Math.Max(maxConcreteStrain, concreteStrain);
+            minConcreteStrain = System.Math.Min(minConcreteStrain, concreteStrain);
+        }
 
         foreach (var bar in section.RebarLayout.Bars)
         {
             double strain = code.ConcreteUltimateStrain * ((bar.XMm * nx + bar.YMm * ny) - neutralAxisProjection) / c;
+            maxSteelStrain = System.Math.Max(maxSteelStrain, strain);
+            minSteelStrain = System.Math.Min(minSteelStrain, strain);
             if (strain < 0)
             {
                 maxTensionStrain = System.Math.Max(maxTensionStrain, -strain);
@@ -74,13 +92,29 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
                 ? code.ConcreteStressBlockFactor * concrete.FcMpa
                 : 0.0;
             double force = (stress - displacedConcrete) * bar.AreaMm2;
+            steelN += force;
+            steelMx -= force * bar.YMm;
+            steelMy += force * bar.XMm;
             axialN += force;
             mxNmm -= force * bar.YMm;
             myNmm += force * bar.XMm;
         }
 
         double phi = code.Phi(maxTensionStrain, steel.FyMpa, steel.EsMpa);
-        return new InteractionPoint(depthIndex, angleIndex, angleDegrees, c, axialN, mxNmm, myNmm, phi, maxTensionStrain);
+        string stateLabel = ClassifyAciStrainRegion(maxTensionStrain, steel);
+        return new InteractionPoint(
+            depthIndex, angleIndex, angleDegrees, c, axialN, mxNmm, myNmm, phi, maxTensionStrain,
+            concreteForce, steelN, concreteMx, concreteMy, steelMx, steelMy,
+            maxConcreteStrain, minConcreteStrain, maxSteelStrain, minSteelStrain,
+            stateLabel);
+    }
+
+    private static string ClassifyAciStrainRegion(double maxTensionStrain, SteelMaterial steel)
+    {
+        double yieldStrain = steel.FyMpa / steel.EsMpa;
+        if (maxTensionStrain <= yieldStrain) return "Compression controlled";
+        if (maxTensionStrain >= yieldStrain + 0.003) return "Tension controlled";
+        return "Transition";
     }
 
     private static (double Area, double CentroidX, double CentroidY) CalculatePolygonProperties(IReadOnlyList<Point> polygon)

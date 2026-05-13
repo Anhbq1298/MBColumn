@@ -66,10 +66,16 @@ var tests = new List<(string Name, Action Test)>
     ("Result settings propagate", TestResultSettingsPropagate),
     ("Nominal uses Pn/Mn values", TestNominalUsesPnMn),
     ("Design uses PhiPn/PhiMn values", TestDesignUsesPhiPnPhiMn),
+    ("Solver exposes nominal/reduced/strain-state split", TestInteractionPointSplitOutput),
+    ("PM curve builder uses explicit reduced display values", TestPmCurveUsesExplicitReducedDisplayValues),
+    ("Calculation result exposes capacity debug points", TestCapacityDebugPoints),
+    ("PM interaction debug CSV validates phi relationships", TestPmInteractionDebugCsv),
     ("Design capacity <= nominal capacity", TestDesignLeNominal),
     ("PMM ratio uses design capacity", TestPmmRatioUsesDesign),
     ("PMx nominal and design curves separated", TestPmxNomDesignSeparated),
     ("PMy nominal and design curves separated", TestPmyNomDesignSeparated),
+    ("ACI PM curves expose nominal and phi-reduced peaks", TestAciPmNominalAndReducedPeaks),
+    ("PM diagram DTO stores split capacity datasets", TestPmDiagramStoresSplitCapacityDatasets),
     ("Demand not in capacity polyline", TestDemandNotInCapacity),
     ("Governing from design curve", TestGoverningFromDesign),
     ("Nominal and design curve diagnostics", TestNominalDesignDiagnostics),
@@ -584,6 +590,75 @@ static void TestDesignUsesPhiPnPhiMn()
     }
 }
 
+static void TestInteractionPointSplitOutput()
+{
+    var result = Service().Calculate(MetricInput());
+    var transition = result.Surface.Points.First(p => p.Phi > 0.66 && p.Phi < 0.89);
+
+    AreClose(transition.Pn, transition.Nominal.Pn, 1e-9);
+    AreClose(transition.Mnx, transition.Nominal.Mnx, 1e-9);
+    AreClose(transition.Mny, transition.Nominal.Mny, 1e-9);
+    AreClose(transition.Pn * transition.Phi, transition.Reduced.PhiPn, Math.Abs(transition.Pn) * 1e-12 + 1e-6);
+    AreClose(transition.Mnx * transition.Phi, transition.Reduced.PhiMnx, Math.Abs(transition.Mnx) * 1e-12 + 1e-6);
+    AreClose(transition.Mny * transition.Phi, transition.Reduced.PhiMny, Math.Abs(transition.Mny) * 1e-12 + 1e-6);
+    IsFalse(string.IsNullOrWhiteSpace(transition.StrainState.RegionClassification));
+}
+
+static void TestPmCurveUsesExplicitReducedDisplayValues()
+{
+    var result = Service().Calculate(MetricInput());
+    var source = result.ControlPoints.PmmSurfacePoints;
+
+    var baseline = PmCurveBuilderService.BuildPmXCurve(source, result.ControlPoints.DesignCompressionLimitDisplay, result.ControlPoints.NominalCompressionLimitDisplay)
+        .Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsNominal)
+        .ToList();
+
+    var corruptedDesignNominalDisplay = source
+        .Select(p => p with
+        {
+            NominalDisplayP = p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase) ? p.NominalDisplayP : p.NominalDisplayP * 100.0,
+            NominalDisplayMx = p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase) ? p.NominalDisplayMx : p.NominalDisplayMx * 100.0,
+            NominalDisplayMy = p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase) ? p.NominalDisplayMy : p.NominalDisplayMy * 100.0
+        })
+        .ToList();
+
+    var rebuilt = PmCurveBuilderService.BuildPmXCurve(corruptedDesignNominalDisplay, result.ControlPoints.DesignCompressionLimitDisplay, result.ControlPoints.NominalCompressionLimitDisplay)
+        .Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsNominal)
+        .ToList();
+
+    IsTrue(baseline.Count == rebuilt.Count);
+    AreClose(baseline.Max(p => p.Y), rebuilt.Max(p => p.Y), 1e-9);
+    AreClose(baseline.Max(p => p.X), rebuilt.Max(p => p.X), 1e-9);
+    AreClose(baseline.Min(p => p.X), rebuilt.Min(p => p.X), 1e-9);
+}
+
+static void TestCapacityDebugPoints()
+{
+    var result = Service().Calculate(MetricInput());
+    IsTrue(result.CapacityDebugPoints.Count >= 5);
+    IsTrue(result.CapacityDebugPoints.Any(p => p.Label == "Max nominal compression"));
+    IsTrue(result.CapacityDebugPoints.Any(p => p.Label == "Max reduced compression"));
+    IsTrue(result.CapacityDebugPoints.All(p => !string.IsNullOrWhiteSpace(p.RegionClassification)));
+
+    foreach (var p in result.CapacityDebugPoints)
+    {
+        AreClose(p.PnDisplay * p.Phi, p.PhiPnDisplay, Math.Abs(p.PhiPnDisplay) * 1e-9 + 1e-6);
+        AreClose(p.MnxDisplay * p.Phi, p.PhiMnxDisplay, Math.Abs(p.PhiMnxDisplay) * 1e-9 + 1e-6);
+        AreClose(p.MnyDisplay * p.Phi, p.PhiMnyDisplay, Math.Abs(p.PhiMnyDisplay) * 1e-9 + 1e-6);
+    }
+}
+
+static void TestPmInteractionDebugCsv()
+{
+    var result = Service().Calculate(MetricInput());
+    var csv = PmCurveBuilderService.BuildPmInteractionDebugCsv(result.ControlPoints.PmmSurfacePoints);
+    IsTrue(csv.StartsWith("Index,ThetaDeg,NeutralAxisDepth,StrainState,Pn_kN,Mn_kNm,Phi,PhiPn_kN,PhiMn_kNm,SourceCurve"));
+    IsTrue(csv.Contains("Nominal Capacity"));
+    IsTrue(csv.Contains("Phi-Reduced Capacity"));
+    IsTrue(PmCurveBuilderService.ValidateNominalReducedSourcePairing(result.ControlPoints.PmmSurfacePoints).Count == 0);
+    IsTrue(PmCurveBuilderService.ValidateNominalReducedCurvePairing(result.PmXDiagram.Points).Count == 0);
+}
+
 static void TestDesignLeNominal()
 {
     // For any given control point, PhiPn <= Pn (design <= nominal).
@@ -631,6 +706,38 @@ static void TestPmyNomDesignSeparated()
     IsTrue(nominal.All(p => p.GroupKey == "NominalCapacity"));
 }
 
+static void TestAciPmNominalAndReducedPeaks()
+{
+    var result = Service().Calculate(MetricInput());
+    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    {
+        var nominal = diagram.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+        var reduced = diagram.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+        double rawPo = result.Surface.Points.Max(p => p.Pn);
+        double nominalCap = GetUnits().ForceFromN(0.80 * rawPo, ForceUnit.kN);
+        double reducedCap = result.ControlPoints.DesignCompressionLimitDisplay;
+
+        IsTrue(nominal.Max(p => p.P) > nominalCap);
+        IsTrue(reduced.Max(p => p.P) > reducedCap);
+        IsTrue(nominal.Count == reduced.Count);
+        IsTrue(nominal.Max(p => p.P) > reduced.Max(p => p.P));
+        var phiPnMax = diagram.Single(p => p.IsReference && p.Label == "Pmax");
+        AreClose(reducedCap, phiPnMax.P, 1.0);
+        IsFalse(diagram.Any(p => p.IsReference && p.Label == "Pn,max"));
+    }
+}
+
+static void TestPmDiagramStoresSplitCapacityDatasets()
+{
+    var result = Service().Calculate(MetricInput());
+    IsTrue(result.PmXDiagram.NominalCapacityPoints.Count > 20);
+    IsTrue(result.PmXDiagram.ReducedCapacityPoints.Count > 20);
+    IsTrue(result.PmYDiagram.NominalCapacityPoints.Count > 20);
+    IsTrue(result.PmYDiagram.ReducedCapacityPoints.Count > 20);
+    IsTrue(result.PmXDiagram.NominalCapacityPoints.All(p => p.IsNominal));
+    IsTrue(result.PmXDiagram.ReducedCapacityPoints.All(p => !p.IsNominal));
+}
+
 static void TestDemandNotInCapacity()
 {
     var result = Service().Calculate(MetricInput());
@@ -667,6 +774,7 @@ static void TestNominalDesignDiagnostics()
     IsTrue(diag.FinalNominalCurveCount > 20);
     IsTrue(diag.DesignPMaxDisplay > 0);
     IsTrue(diag.NominalPMaxDisplay > diag.DesignPMaxDisplay); // nominal Pmax > design (capped)
+    IsTrue(diag.ValidationWarnings is null || diag.ValidationWarnings.Count == 0);
     PmCurveBuilderService.EnableDebugDiagnostics = false;
 }
 
@@ -1410,7 +1518,11 @@ static void TestAciBaselineRemainsRectangularBlockPath()
     var surface = aci.Solve(section, new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
     IsTrue(surface.AngleCount == 36);
     IsTrue(surface.DepthCount == 70);
-    IsTrue(surface.Points.All(p => p.ConcretePn == 0.0 && p.StateLabel == ""));
+    IsTrue(surface.Points.Any(p => p.ConcretePn > 0.0));
+    IsTrue(surface.Points.Any(p => p.SteelPn != 0.0));
+    IsTrue(surface.Points.Any(p => p.StateLabel == "Compression controlled"));
+    IsTrue(surface.Points.Any(p => p.StateLabel == "Transition"));
+    IsTrue(surface.Points.Any(p => p.StateLabel == "Tension controlled"));
     IsTrue(surface.Points.Any(p => p.Phi < 1.0));
 }
 

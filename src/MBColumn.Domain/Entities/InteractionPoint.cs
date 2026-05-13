@@ -22,8 +22,29 @@ public sealed record InteractionPoint(
     double MinSteelStrain = 0.0,
     string StateLabel = "")
 {
+    public NominalCapacity Nominal => new(Pn, Mnx, Mny);
     public double PhiPn => Pn * Phi;
     public double PhiMnx => Mnx * Phi;
     public double PhiMny => Mny * Phi;
+    public ReducedCapacity Reduced => new(PhiPn, PhiMnx, PhiMny, Phi);
+    public StrainState StrainState => new(
+        MaxTensionSteelStrain,
+        MaxConcreteStrain,
+        MinConcreteStrain,
+        MaxSteelStrain,
+        MinSteelStrain,
+        StateLabel);
 }
+
+public sealed record NominalCapacity(double Pn, double Mnx, double Mny);
+
+public sealed record ReducedCapacity(double PhiPn, double PhiMnx, double PhiMny, double Phi);
+
+public sealed record StrainState(
+    double MaxTensionSteelStrain,
+    double MaxConcreteStrain,
+    double MinConcreteStrain,
+    double MaxSteelStrain,
+    double MinSteelStrain,
+    string RegionClassification);
 

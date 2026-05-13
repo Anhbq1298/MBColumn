@@ -5,5 +5,6 @@ public sealed record DiagramControlPointSet(
     IReadOnlyList<ControlPoint> MmPoints,
     IReadOnlyList<ControlPoint> PmmSurfacePoints,
     IReadOnlyList<ControlPoint> MmSlicePoints,
+    double NominalCompressionLimitDisplay,
     double DesignCompressionLimitDisplay);
 
