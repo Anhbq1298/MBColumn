@@ -27,6 +27,20 @@ if (args.Contains("--run-pmm-comparison"))
     return;
 }
 
+if (args.Contains("--run-spcolumn-aci-comparison"))
+{
+    TestSpColumnAciControlPointComparison();
+    Console.WriteLine("PASS spColumn ACI control point comparison harness");
+    return;
+}
+
+if (args.Contains("--run-internal-aci-ec-comparison"))
+{
+    TestInternalAciEcComparisonExport();
+    Console.WriteLine("PASS internal ACI vs Eurocode comparison export");
+    return;
+}
+
 var tests = new List<(string Name, Action Test)>
 {
     ("mm to inch", () => AreClose(1, GetUnits().LengthFromMm(25.4, LengthUnit.Inch), 1e-12)),
@@ -54,6 +68,8 @@ var tests = new List<(string Name, Action Test)>
     ("MM control ordering", TestMmControlOrdering),
     ("No NaN in control points", TestNoNan),
     ("Reference control behavior", TestReferenceBehavior),
+    ("spColumn ACI control point comparison", TestSpColumnAciControlPointComparison),
+    ("Internal ACI vs Eurocode comparison export", TestInternalAciEcComparisonExport),
     ("PMM apple-to-apple comparison report", TestPmmAppleToAppleComparison),
     ("Metric/Imperial equivalence", TestMetricImperialEquivalence),
     ("Section preview corner bars", TestSectionPreviewCornerBars),
@@ -295,6 +311,66 @@ static void TestReferenceBehavior()
     var surfacePoints = result.ControlPoints.PmmSurfacePoints.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint).ToList();
     IsTrue(surfacePoints.Count(p => !p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
     IsTrue(surfacePoints.Count(p => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
+}
+
+static void TestSpColumnAciControlPointComparison()
+{
+    var root = LocateRepositoryRoot();
+    var referencePath = Path.Combine(root, "docs", "validation", "references", "aci-spcolumn", "spColumnTestCase-Rectan1200x500-ACI.txt");
+    var outputDirectory = Path.Combine(root, "reports");
+
+    var reference = new SpColumnReferenceReader().Read(referencePath);
+    var mbColumn = new MbColumnControlPointExtractor().Extract();
+    var rows = new ControlPointComparer().Compare(reference, mbColumn.ControlPoints);
+    var statistics = new ComparisonStatisticsCalculator().Calculate(rows);
+    var report = new ComparisonReportWriter().Write(referencePath, reference, mbColumn, rows, statistics, outputDirectory);
+
+    IsTrue(reference.Count == 32);
+    IsTrue(mbColumn.ControlPoints.Count == 32);
+    IsTrue(rows.Count == 32);
+    IsTrue(statistics.OverallStatus == "PASS");
+    IsTrue(File.Exists(report.CsvPath));
+    IsTrue(File.Exists(report.MarkdownPath));
+    IsTrue(File.Exists(report.ChartPath));
+    IsFalse(rows.Any(r =>
+        double.IsNaN(r.CalcP) || double.IsInfinity(r.CalcP) ||
+        double.IsNaN(r.CalcM) || double.IsInfinity(r.CalcM)));
+
+    Console.WriteLine();
+    Console.WriteLine("=== spColumn ACI Control Point Comparison ===");
+    Console.WriteLine($"Overall benchmark status: {statistics.OverallStatus}");
+    Console.WriteLine($"Rows: {statistics.TotalRows}, Pass: {statistics.PassCount}, Fail: {statistics.FailCount}");
+    Console.WriteLine($"Max |DiffP|: {statistics.MaxAbsDiffP:F3} kN");
+    Console.WriteLine($"Max |DiffM|: {statistics.MaxAbsDiffM:F3} kN-m");
+    Console.WriteLine($"CSV: {report.CsvPath}");
+    Console.WriteLine($"Markdown: {report.MarkdownPath}");
+    Console.WriteLine($"Chart: {report.ChartPath}");
+}
+
+static void TestInternalAciEcComparisonExport()
+{
+    var root = LocateRepositoryRoot();
+    var outputDirectory = Path.Combine(root, "reports", "validation-benchmarks", "internal-aci-vs-eurocode");
+    var report = new InternalAciEcComparisonExporter().Export(outputDirectory);
+
+    IsTrue(report.Points.Count == 5 * 2 * 100);
+    IsTrue(report.Summaries.Count == 5);
+    IsTrue(File.Exists(report.CsvPath));
+    IsTrue(File.Exists(report.HtmlPath));
+    IsTrue(File.Exists(report.MarkdownPath));
+    IsTrue(File.Exists(report.PdfPath));
+    IsFalse(report.Points.Any(p =>
+        double.IsNaN(p.Mtheta) || double.IsInfinity(p.Mtheta) ||
+        double.IsNaN(p.P) || double.IsInfinity(p.P)));
+
+    Console.WriteLine();
+    Console.WriteLine("=== Internal ACI vs Eurocode PM Comparison ===");
+    Console.WriteLine($"Exported points: {report.Points.Count}");
+    Console.WriteLine($"Angles: {string.Join(", ", report.Summaries.Select(s => s.AngleDegrees.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))}");
+    Console.WriteLine($"CSV: {report.CsvPath}");
+    Console.WriteLine($"HTML: {report.HtmlPath}");
+    Console.WriteLine($"Markdown: {report.MarkdownPath}");
+    Console.WriteLine($"PDF: {report.PdfPath}");
 }
 
 static void TestPmmAppleToAppleComparison()

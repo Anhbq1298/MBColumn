@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MBColumn.Application.DTOs;
 
 namespace MBColumn.Tests.Verification;
 
@@ -7,6 +8,19 @@ public sealed record PmmComparisonOptions(
     double AbsoluteAxialTolerance = 25.0,
     double AbsoluteMomentTolerance = 25.0,
     double ZeroReferenceThreshold = 1e-6);
+
+public sealed record PmmRunOptions(
+    int NeutralAxisSamples = 100,
+    int AngleStepDegrees = 1,
+    PmmVerificationSolverKind SolverKind = PmmVerificationSolverKind.AnalyticParabolicFiber);
+
+public enum PmmVerificationSolverKind
+{
+    AnalyticParabolicFiber,
+    GridParabolicFiber,
+    BoundaryParabolic,
+    SimplifiedStressBlock
+}
 
 public sealed record PmmReferencePoint(
     int ThetaDegrees,
@@ -95,3 +109,58 @@ public sealed record PmmComparisonReport(
     string OverallConclusion,
     IReadOnlyList<string> MismatchNotes,
     string FinalAnalysis);
+
+public sealed record DocxPmmReferenceData(
+    string SourcePath,
+    string SectionShape,
+    double WidthMm,
+    double HeightMm,
+    double ClearCoverMm,
+    string DesignCode,
+    string UnitSystem,
+    double ConcreteStrengthMpa,
+    double SteelYieldStrengthMpa,
+    double SteelElasticModulusMpa,
+    string VerticalReinforcement,
+    int BarCount,
+    string BarSize,
+    double BarDiameterMm,
+    double TotalRebarAreaMm2,
+    string LinkDescription,
+    double? LinkDiameterMm,
+    string BarArrangement,
+    IReadOnlyList<int> ThetaDegrees,
+    int ExpectedPointCountPerTheta,
+    double ReferenceAxialStartKn,
+    double ReferenceAxialEndKn,
+    string ReferenceMomentUnit,
+    string ReferenceMomentDefinition,
+    string ReferenceSignConvention,
+    IReadOnlyList<PmmReferencePoint> ReferencePoints,
+    IReadOnlyList<string> ExtractionNotes);
+
+public sealed record PmmMappedReferenceModel(
+    DocxPmmReferenceData Reference,
+    ColumnInputDto Input,
+    IReadOnlyList<RebarCoordinateDto> RebarCoordinates,
+    double BarCentroidCoverMm,
+    double AlphaCc,
+    IReadOnlyDictionary<int, int> ReferenceToMbColumnTheta,
+    IReadOnlyList<string> MappingNotes);
+
+public sealed record PmmDocxComparisonResult(
+    DocxPmmReferenceData Reference,
+    PmmMappedReferenceModel MappedModel,
+    IReadOnlyList<PmmCalculatedPoint> CalculatedPoints,
+    IReadOnlyList<PmmThetaComparison> ThetaComparisons,
+    string CsvOutputPath,
+    int TotalReferencePoints,
+    int TotalCalculatedPoints,
+    int TotalMatchedPoints,
+    int TotalMissingPoints,
+    int TotalFailedPoints,
+    double MaxAbsDiffP,
+    double MaxAbsDiffM,
+    IReadOnlyList<string> ChartOutputPaths,
+    string HtmlOutputPath,
+    IReadOnlyList<string> ValidationNotes);

@@ -88,7 +88,7 @@ public sealed class ReferenceDataSetup
                 for (int idx = 0; idx < points.Count; idx++)
                 {
                     var (p, mx, my) = points[idx];
-                    writer.WriteLine(CultureInfo.InvariantCulture, $"{theta},{idx},{p:F4},{mx:F4},{my:F4}");
+                    writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2:F4},{3:F4},{4:F4}", theta, idx, p, mx, my));
                     totalPoints++;
                 }
             }

@@ -26,12 +26,13 @@ public sealed class PmmPointMatcher
         {
             var refGroup = references.Where(r => r.ThetaDegrees == theta).OrderBy(r => r.PointIndex).ToList();
             var calcGroup = calculations.Where(c => c.ThetaDegrees == theta).OrderBy(c => c.PointIndex).ToList();
-            string matchMethod = refGroup.Count == calcGroup.Count ? "Index" : "NearestNeighbour";
+            bool canMatchByIndex = refGroup.Count == calcGroup.Count && PointIndexPLevelsMatch(refGroup, calcGroup, options);
+            string matchMethod = canMatchByIndex ? "Index" : "InterpolatedByReferenceP";
             var rows = new List<PmmComparisonRow>();
 
             if (refGroup.Count > 0 && calcGroup.Count > 0)
             {
-                if (refGroup.Count == calcGroup.Count)
+                if (canMatchByIndex)
                 {
                     for (int i = 0; i < refGroup.Count; i++)
                     {
@@ -41,12 +42,12 @@ public sealed class PmmPointMatcher
                 }
                 else
                 {
-                    rows.AddRange(MatchByNearestNeighbour(refGroup, calcGroup, options, matchMethod));
+                    rows.AddRange(MatchByReferenceAxialLoad(refGroup, calcGroup, options, matchMethod));
                 }
             }
 
-            int missingReference = refGroup.Count == 0 ? 0 : Math.Max(0, refGroup.Count - rows.Count);
-            int missingCalculated = calcGroup.Count == 0 ? 0 : Math.Max(0, calcGroup.Count - rows.Count);
+            int missingReference = calcGroup.Count == 0 ? refGroup.Count : Math.Max(0, refGroup.Count - rows.Count);
+            int missingCalculated = refGroup.Count == 0 ? calcGroup.Count : 0;
             var stats = statisticsCalculator.Calculate(rows);
 
             comparisons.Add(new PmmThetaComparison(theta, matchMethod, rows, missingReference, missingCalculated, stats));
@@ -55,30 +56,90 @@ public sealed class PmmPointMatcher
         return comparisons;
     }
 
-    private IEnumerable<PmmComparisonRow> MatchByNearestNeighbour(
+    private static bool PointIndexPLevelsMatch(
+        IReadOnlyList<PmmReferencePoint> references,
+        IReadOnlyList<PmmCalculatedPoint> calculations,
+        PmmComparisonOptions options)
+    {
+        for (int i = 0; i < references.Count; i++)
+        {
+            double tolerance = Math.Max(
+                options.AbsoluteAxialTolerance,
+                Math.Abs(references[i].RefP) * options.PercentTolerance / 100.0);
+            if (Math.Abs(calculations[i].CalcP - references[i].RefP) > tolerance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private IEnumerable<PmmComparisonRow> MatchByReferenceAxialLoad(
         IReadOnlyList<PmmReferencePoint> references,
         IReadOnlyList<PmmCalculatedPoint> calculations,
         PmmComparisonOptions options,
         string matchMethod)
     {
-        var unmatched = new List<PmmCalculatedPoint>(calculations);
-        double pScale = Math.Max(1.0, references.Max(r => r.RefP) - references.Min(r => r.RefP));
-        double mScale = Math.Max(1.0, references.Max(r => r.RefM) - references.Min(r => r.RefM));
+        var curve = calculations
+            .OrderBy(c => c.CalcP)
+            .ThenBy(c => c.CalcM)
+            .ToList();
 
         foreach (var reference in references)
         {
-            var nearest = unmatched.OrderBy(c => NormalizedDistance(reference, c, pScale, mScale)).First();
-            var row = differenceCalculator.Calculate(reference, nearest, options) with { MatchMethod = matchMethod };
+            var calculated = InterpolateAtReferenceP(reference, curve);
+            var row = differenceCalculator.Calculate(reference, calculated, options) with { MatchMethod = matchMethod };
             yield return row;
-            unmatched.Remove(nearest);
-            if (!unmatched.Any()) break;
         }
     }
 
-    private static double NormalizedDistance(PmmReferencePoint reference, PmmCalculatedPoint calculated, double pScale, double mScale)
+    private static PmmCalculatedPoint InterpolateAtReferenceP(
+        PmmReferencePoint reference,
+        IReadOnlyList<PmmCalculatedPoint> curve)
     {
-        double dp = (reference.RefP - calculated.CalcP) / pScale;
-        double dm = (reference.RefM - calculated.CalcM) / mScale;
-        return Math.Sqrt(dp * dp + dm * dm);
+        if (curve.Count == 1)
+        {
+            return curve[0] with { PointIndex = reference.PointIndex };
+        }
+
+        if (reference.RefP <= curve[0].CalcP)
+        {
+            return curve[0] with { PointIndex = reference.PointIndex };
+        }
+
+        if (reference.RefP >= curve[^1].CalcP)
+        {
+            return curve[^1] with { PointIndex = reference.PointIndex };
+        }
+
+        for (int i = 0; i < curve.Count - 1; i++)
+        {
+            var lower = curve[i];
+            var upper = curve[i + 1];
+            if (reference.RefP < lower.CalcP || reference.RefP > upper.CalcP)
+            {
+                continue;
+            }
+
+            double span = upper.CalcP - lower.CalcP;
+            if (Math.Abs(span) <= 1e-12)
+            {
+                var stronger = lower.CalcM >= upper.CalcM ? lower : upper;
+                return stronger with { PointIndex = reference.PointIndex };
+            }
+
+            double t = (reference.RefP - lower.CalcP) / span;
+            double interpolatedM = lower.CalcM + (upper.CalcM - lower.CalcM) * t;
+            return new PmmCalculatedPoint(
+                reference.ThetaDegrees,
+                reference.PointIndex,
+                reference.RefP,
+                interpolatedM,
+                0.0);
+        }
+
+        var nearest = curve.OrderBy(c => Math.Abs(c.CalcP - reference.RefP)).First();
+        return nearest with { PointIndex = reference.PointIndex };
     }
 }
