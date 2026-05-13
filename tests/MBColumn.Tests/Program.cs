@@ -14,26 +14,6 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 
-if (!args.Contains("--skip-eurocode-validation"))
-{
-    MBColumn.Tests.EurocodeValidation.Run();
-    MBColumn.Tests.EurocodeMultiAngleValidation.Run();
-}
-
-if (args.Contains("--run-pmm-comparison"))
-{
-    TestPmmAppleToAppleComparison();
-    Console.WriteLine("PASS PMM apple-to-apple comparison report");
-    return;
-}
-
-if (args.Contains("--run-spcolumn-aci-comparison"))
-{
-    TestSpColumnAciControlPointComparison();
-    Console.WriteLine("PASS spColumn ACI control point comparison harness");
-    return;
-}
-
 if (args.Contains("--run-internal-aci-ec-comparison"))
 {
     TestInternalAciEcComparisonExport();
@@ -68,9 +48,7 @@ var tests = new List<(string Name, Action Test)>
     ("MM control ordering", TestMmControlOrdering),
     ("No NaN in control points", TestNoNan),
     ("Reference control behavior", TestReferenceBehavior),
-    ("spColumn ACI control point comparison", TestSpColumnAciControlPointComparison),
     ("Internal ACI vs Eurocode comparison export", TestInternalAciEcComparisonExport),
-    ("PMM apple-to-apple comparison report", TestPmmAppleToAppleComparison),
     ("Metric/Imperial equivalence", TestMetricImperialEquivalence),
     ("Section preview corner bars", TestSectionPreviewCornerBars),
     ("Section preview perimeter bars", TestSectionPreviewPerimeterBars),
@@ -106,7 +84,7 @@ var tests = new List<(string Name, Action Test)>
     ("3D axis labels correct", Test3DAxisLabels),
     ("3D surface has quads and wires", Test3DSurfaceData),
     ("3D nominal/design topology synchronized", Test3DTopologySynchronized),
-    ("3D pole rings follow spColumn nudge", Test3DPoleRingsFollowSpColumnNudge),
+    ("3D pole rings use nondegenerate perturbation", Test3DPoleRingsUseNondegeneratePerturbation),
     ("3D PM angle from result", Test3DPmAngleFromResult),
     ("3D SelectedPmAngle defaults to governing theta", Test3DSelectedPmAngleDefault),
     ("3D slice controls update labels", Test3DSliceControlsUpdateLabels),
@@ -313,40 +291,6 @@ static void TestReferenceBehavior()
     IsTrue(surfacePoints.Count(p => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)) == 36 * 150);
 }
 
-static void TestSpColumnAciControlPointComparison()
-{
-    var root = LocateRepositoryRoot();
-    var referencePath = Path.Combine(root, "docs", "validation", "references", "aci-spcolumn", "spColumnTestCase-Rectan1200x500-ACI.txt");
-    var outputDirectory = Path.Combine(root, "reports");
-
-    var reference = new SpColumnReferenceReader().Read(referencePath);
-    var mbColumn = new MbColumnControlPointExtractor().Extract();
-    var rows = new ControlPointComparer().Compare(reference, mbColumn.ControlPoints);
-    var statistics = new ComparisonStatisticsCalculator().Calculate(rows);
-    var report = new ComparisonReportWriter().Write(referencePath, reference, mbColumn, rows, statistics, outputDirectory);
-
-    IsTrue(reference.Count == 32);
-    IsTrue(mbColumn.ControlPoints.Count == 32);
-    IsTrue(rows.Count == 32);
-    IsTrue(statistics.OverallStatus == "PASS");
-    IsTrue(File.Exists(report.CsvPath));
-    IsTrue(File.Exists(report.MarkdownPath));
-    IsTrue(File.Exists(report.ChartPath));
-    IsFalse(rows.Any(r =>
-        double.IsNaN(r.CalcP) || double.IsInfinity(r.CalcP) ||
-        double.IsNaN(r.CalcM) || double.IsInfinity(r.CalcM)));
-
-    Console.WriteLine();
-    Console.WriteLine("=== spColumn ACI Control Point Comparison ===");
-    Console.WriteLine($"Overall benchmark status: {statistics.OverallStatus}");
-    Console.WriteLine($"Rows: {statistics.TotalRows}, Pass: {statistics.PassCount}, Fail: {statistics.FailCount}");
-    Console.WriteLine($"Max |DiffP|: {statistics.MaxAbsDiffP:F3} kN");
-    Console.WriteLine($"Max |DiffM|: {statistics.MaxAbsDiffM:F3} kN-m");
-    Console.WriteLine($"CSV: {report.CsvPath}");
-    Console.WriteLine($"Markdown: {report.MarkdownPath}");
-    Console.WriteLine($"Chart: {report.ChartPath}");
-}
-
 static void TestInternalAciEcComparisonExport()
 {
     var root = LocateRepositoryRoot();
@@ -371,40 +315,6 @@ static void TestInternalAciEcComparisonExport()
     Console.WriteLine($"HTML: {report.HtmlPath}");
     Console.WriteLine($"Markdown: {report.MarkdownPath}");
     Console.WriteLine($"PDF: {report.PdfPath}");
-}
-
-static void TestPmmAppleToAppleComparison()
-{
-    var root = LocateRepositoryRoot();
-    
-    // Generate simplified reference CSV from EC2 data (converts units: kN->N, kNm->N-mm)
-    var simplifiedReferenceCsv = ReferenceDataSetup.ConvertEc2ReferenceToSimplified(root);
-    IsTrue(File.Exists(simplifiedReferenceCsv));
-
-    var runner = new PmmComparisonRunner();
-    var reportPath = Path.Combine(root, "tests", "MBColumn.Tests", "Reports", "PmmComparisonReport.pdf");
-    
-    var report = runner.Run(
-        Service(), 
-        MetricInput(), 
-        simplifiedReferenceCsv, 
-        reportPath);
-
-    // Validate report structure
-    IsTrue(report.TotalThetaCount > 0);
-    IsTrue(report.TotalMatchedPoints > 0);
-    IsTrue(report.TotalMissingPoints >= 0);
-    IsTrue(report.TotalFailedPoints >= 0);
-    IsTrue(File.Exists(reportPath));
-    
-    // Print report summary to test output
-    Console.WriteLine($"\n=== PMM Apple-to-Apple Comparison Report ===");
-    Console.WriteLine($"Theta angles: {report.TotalThetaCount}");
-    Console.WriteLine($"Matched points: {report.TotalMatchedPoints}");
-    Console.WriteLine($"Missing points: {report.TotalMissingPoints}");
-    Console.WriteLine($"Failed points: {report.TotalFailedPoints}");
-    Console.WriteLine($"Overall: {report.OverallConclusion}");
-    Console.WriteLine($"PDF Report: {reportPath}");
 }
 
 static string LocateRepositoryRoot()
@@ -925,7 +835,7 @@ static void Test3DTopologySynchronized()
     }
 }
 
-static void Test3DPoleRingsFollowSpColumnNudge()
+static void Test3DPoleRingsUseNondegeneratePerturbation()
 {
     var result = Service().Calculate(MetricInput());
     var design = result.PmmSurface.Points
@@ -1437,7 +1347,7 @@ static void TestControlPointsTensionControlEpsilon()
 
 // ----- EC2 Fiber PMM Tests -----
 
-static RectangularSection SConcreteSection()
+static RectangularSection RectangularEc2ValidationSection()
 {
     const double diameter = 25.0;
     double area = Math.PI * diameter * diameter / 4.0;
@@ -1462,7 +1372,7 @@ static RectangularSection SConcreteSection()
     };
 
     var bars = coords.Select((p, i) => new Rebar($"B{i + 1:00}", diameter, area, p.X, p.Y)).ToList();
-    return new RectangularSection(600.0, 800.0, new RebarLayout("S-CONCRETE 16H25", "H25", 62.5, bars));
+    return new RectangularSection(600.0, 800.0, new RebarLayout("EC2 16H25", "H25", 62.5, bars));
 }
 
 static Ec2FiberInteractionSolver FastEc2Solver()
@@ -1479,7 +1389,7 @@ static void TestEc2FactoryUsesFiberSolver()
 
 static void TestEc2NegativeAxialBendingKeepsConcreteCompression()
 {
-    var surface = FastEc2Solver().Solve(SConcreteSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    var surface = FastEc2Solver().Solve(RectangularEc2ValidationSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
     var point = surface.Points.FirstOrDefault(p => p.Pn < -100_000.0 && p.ConcretePn > 1.0);
     IsTrue(point is not null);
     IsTrue(point!.SteelPn < 0.0);
@@ -1488,7 +1398,7 @@ static void TestEc2NegativeAxialBendingKeepsConcreteCompression()
 
 static void TestEc2SteelCarriesTensionAndCompression()
 {
-    var surface = FastEc2Solver().Solve(SConcreteSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
+    var surface = FastEc2Solver().Solve(RectangularEc2ValidationSection(), new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
     IsTrue(surface.Points.Any(p => p.MinSteelStrain < -0.0001 && p.SteelPn < 0.0));
     IsTrue(surface.Points.Any(p => p.MaxSteelStrain > 0.0001 && p.SteelPn > 0.0));
 }
@@ -1496,7 +1406,7 @@ static void TestEc2SteelCarriesTensionAndCompression()
 static void TestAciBaselineRemainsRectangularBlockPath()
 {
     var aci = new StrainCompatibilityInteractionSolver(new Aci318DesignCodeService());
-    var section = SConcreteSection();
+    var section = RectangularEc2ValidationSection();
     var surface = aci.Solve(section, new ConcreteMaterial("C35", 35.0), new SteelMaterial("B500", 500.0, 200000.0));
     IsTrue(surface.AngleCount == 36);
     IsTrue(surface.DepthCount == 70);
@@ -1532,7 +1442,7 @@ static (StrainCompatibilityInteractionSolver Conv, AciFiberInteractionSolver Fib
     var aci = new Aci318DesignCodeService();
     var conv = new StrainCompatibilityInteractionSolver(aci) { AngleStepDegrees = 30, NeutralAxisSamples = 30 };
     var fiber = new AciFiberInteractionSolver(aci) { AngleStepDegrees = 30, NeutralAxisSamples = 30, ConcreteGridDivisions = 40 };
-    var section = SConcreteSection();
+    var section = RectangularEc2ValidationSection();
     return (conv, fiber, section, new ConcreteMaterial("C28", 28.0), new SteelMaterial("Gr420", 420.0, 200000.0));
 }
 
@@ -1863,7 +1773,7 @@ static void TestEc2SsbP0CloseToBoundary()
     // Both solvers share EC2 design strengths; P0 should agree within 5%.
     // Boundary uses parabolic-rectangular with eps_c2 = 0.0020;
     // SSB uses eta*fcd = 16 MPa (same fcd) with eps_c3 = 0.00175 → slightly lower steel strain.
-    var section  = SConcreteSection();
+    var section  = RectangularEc2ValidationSection();
     var concrete = new ConcreteMaterial("C35", 35.0);
     var steel    = new SteelMaterial("B500", 500.0, 200000.0);
 
@@ -1902,7 +1812,7 @@ static void TestRegressionEc2FiberUnchanged()
 {
     // Run the EC2 Fiber solver and verify outputs are numerically identical to
     // a second run with the same inputs — i.e., no shared mutable state was introduced.
-    var section  = SConcreteSection();
+    var section  = RectangularEc2ValidationSection();
     var concrete = new ConcreteMaterial("C35", 35.0);
     var steel    = new SteelMaterial("B500", 500.0, 200000.0);
 

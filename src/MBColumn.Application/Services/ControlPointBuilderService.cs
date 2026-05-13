@@ -7,7 +7,7 @@ namespace MBColumn.Application.Services;
 public sealed class ControlPointBuilderService(IUnitConversionService units) : IControlPointBuilder
 {
     private const double MatchToleranceN = 1e-6;
-    private const double SpColumnPolePerturbationMoment = 0.0001;
+    private const double PolePerturbationMoment = 0.0001;
 
     public DiagramControlPointSet Build(
         InteractionSurface surface,
@@ -104,14 +104,13 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             points.Add(ToControl(ratio.GoverningPoint, DiagramType.Pm3D, unitSystem, points.Count, "Governing", "Governing", compressionLimit, useMomentMagnitude: false) with { IsGoverningPoint = true, Label = "Governing" });
         }
 
-        return ApplySpColumnPolePerturbation(points, surface.DepthCount);
+        return ApplyPolePerturbation(points, surface.DepthCount);
     }
 
-    private static IReadOnlyList<ControlPoint> ApplySpColumnPolePerturbation(IReadOnlyList<ControlPoint> points, int depthCount)
+    private static IReadOnlyList<ControlPoint> ApplyPolePerturbation(IReadOnlyList<ControlPoint> points, int depthCount)
     {
-        // spColumn nudges the first and last BiCurve rings by 0.0001 in the
-        // theta direction so the pole rings are tiny loops instead of 36
-        // perfectly coincident points. This avoids degenerate surface faces.
+        // Nudge the first and last surface rings into tiny loops instead of
+        // perfectly coincident pole points. This avoids degenerate surface faces.
         return points.Select(p =>
         {
             if (p.DiagramType != DiagramType.Pm3D || p.IsDemandPoint || p.IsGoverningPoint || p.IsReferencePoint)
@@ -125,8 +124,8 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             }
 
             double angleRad = p.ThetaDegrees * Math.PI / 180.0;
-            double dx = SpColumnPolePerturbationMoment * Math.Cos(angleRad);
-            double dy = SpColumnPolePerturbationMoment * Math.Sin(angleRad);
+            double dx = PolePerturbationMoment * Math.Cos(angleRad);
+            double dy = PolePerturbationMoment * Math.Sin(angleRad);
             return p with
             {
                 DisplayMx = p.DisplayMx + dx,

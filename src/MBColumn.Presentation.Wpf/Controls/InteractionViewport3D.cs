@@ -170,8 +170,8 @@ public sealed class InteractionViewport3D : FrameworkElement
             }
         }
 
-        // spColumn keeps the first/last structured rings as tiny perturbed pole rings.
-        // This WPF renderer is a painter-style projection rather than a true 3D mesh
+        // The first/last structured rings are tiny perturbed pole rings. This WPF
+        // renderer is a painter-style projection rather than a true 3D mesh
         // pipeline, so close those pole openings visually without changing the DTO
         // control points or engineering surface topology.
         if (rows.Count > 0)

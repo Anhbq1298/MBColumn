@@ -6,15 +6,15 @@ using MBColumn.Domain.Interfaces;
 namespace MBColumn.Application.Services;
 
 /// <summary>
-/// Builds the 8-point control-point table (spColumn "Control Points" report format)
+/// Builds the design-code control-point table
 /// for each of the four principal bending axes: X, Y, -X, -Y.
 /// </summary>
 public static class ControlPointTableBuilderService
 {
     private const double MaxStrainClamp = 9.99999;
 
-    // theta=90 â†’ compression in +y â†’ bending about X axis â†’ Mnx moment (spColumn "X")
-    // theta=0  â†’ compression in +x â†’ bending about Y axis â†’ Mny moment (spColumn "Y")
+    // theta=90 -> compression in +y -> bending about X axis -> Mnx moment.
+    // theta=0  -> compression in +x -> bending about Y axis -> Mny moment.
     private static readonly (string Axis, double AngleDeg)[] Axes =
     [
         ("X",  270.0),
@@ -68,7 +68,7 @@ public static class ControlPointTableBuilderService
             if (pts.Count == 0) continue;
 
             // dt computed analytically from bar geometry (distance from compression face to
-            // extreme tension bar), matching spColumn's approach.
+            // extreme tension bar).
             double dtMm = ComputeDt(section, angleDeg);
             double dtDisplay = DisplayLength(dtMm, unitSystem, units);
 
@@ -114,7 +114,7 @@ public static class ControlPointTableBuilderService
                 double naDepthMm = isMaxTension ? 0.0 : Math.Max(0, pt.NeutralAxisDepthMm);
 
                 // Signed Îµt = Îµcu*(dt - c)/c  (positive = tension, negative = all bars in compression).
-                // Max tension row uses the sentinel 9.99999 (spColumn convention for c â†’ 0).
+                // Max tension row uses the table sentinel for c -> 0.
                 double epsilonT;
                 if (isMaxTension)
                     epsilonT = MaxStrainClamp;
@@ -177,8 +177,8 @@ public static class ControlPointTableBuilderService
     /// where Pn = <paramref name="target"/>. Used for the pure-bending row where
     /// Ï† varies between bracket samples (compression-controlled vs tension-
     /// controlled Ï† values differ); bracketing on PhiPn would otherwise leave
-    /// Pn â‰  0 at the interpolated point. Mirrors spColumn's invariant that
-    /// the P=0 row is built at the c that satisfies axial equilibrium directly.
+    /// Pn is nonzero at the interpolated point. The P=0 row is built at the
+    /// neutral-axis depth that satisfies axial equilibrium directly.
     /// </summary>
     private static InteractionPoint? InterpolateAtPn(
         IReadOnlyList<InteractionPoint> pts, double target)
@@ -280,7 +280,7 @@ public static class ControlPointTableBuilderService
 
     /// <summary>
     /// Analytical dt: distance from the compression face to the extreme tension bar
-    /// along the neutral axis direction (matching spColumn's Depth.OfReinforcement approach).
+    /// along the neutral axis direction.
     /// </summary>
     private static double ComputeDt(RectangularSection section, double angleDeg)
     {

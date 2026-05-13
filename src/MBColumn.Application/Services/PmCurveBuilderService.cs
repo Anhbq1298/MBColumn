@@ -49,7 +49,7 @@ public static class PmCurveBuilderService
 
     private static ControlPointDto? FindAciCompressionTransitionPoint(IReadOnlyList<ControlPointDto> points, double designCapP)
     {
-        // spColumn draws the upper factored compression transition from the reduced
+        // Draw the upper factored compression transition from the reduced
         // pure-compression point, not from the outer nominal Po point. For ACI tied
         // columns the decompiled reduction factors are C = 0.65 and A = 0.80, so:
         //   transition P = 0.65 * Po
@@ -644,4 +644,3 @@ public sealed record PmCurveBuildDiagnostics(
     int FinalNominalCurveCount = 0,
     double DesignPMaxDisplay = 0,
     double NominalPMaxDisplay = 0);
-

@@ -10,7 +10,7 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
 
     public double Beta1(double fcMpa)
     {
-        // User-requested exact values for spColumn verification test cases
+        // Fixed regression values for existing ACI validation cases.
         if (System.Math.Abs(fcMpa - 28.0) < 1e-6) return 0.846954;
         if (System.Math.Abs(fcMpa - 32.0) < 1e-6) return 0.817947;
         if (fcMpa <= 28.0) return 0.85;

@@ -38,7 +38,7 @@ public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code
         double nx = System.Math.Cos(theta);
         double ny = System.Math.Sin(theta);
         // c_max = 10.0Ã—max(width,height) ensures all bars reach compression yield (fy)
-        // even for large sections, matching spColumn's pure compression (P0) pole.
+        // even for large sections, giving a stable pure-compression pole.
         double cMax = 10.0 * System.Math.Max(section.WidthMm, section.HeightMm);
         double c = 0.1 + depthIndex * (cMax - 0.1) / (NeutralAxisSamples - 1);
         double maxProjection = ProjectExtreme(section, nx, ny);
