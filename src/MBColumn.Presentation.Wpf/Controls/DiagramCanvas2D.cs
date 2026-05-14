@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -188,37 +188,42 @@ public class DiagramCanvas2D : FrameworkElement
 
     private static IReadOnlyList<IReadOnlyList<ControlPointDto>> ClipOpenPolylineAboveY(IReadOnlyList<ControlPointDto> ordered, double cap)
     {
+        if (ordered.Count == 0) return [];
+
         var segments = new List<IReadOnlyList<ControlPointDto>>();
         var current = new List<ControlPointDto>();
 
+        // Find a starting index that is below the cap to avoid wrap-around segments
+        int start = 0;
         for (int i = 0; i < ordered.Count; i++)
         {
-            var a = ordered[i];
-            var b = ordered[(i + 1) % ordered.Count];
+            if (ordered[i].Y <= cap)
+            {
+                start = i;
+                break;
+            }
+        }
+
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            var a = ordered[(start + i) % ordered.Count];
+            var b = ordered[(start + i + 1) % ordered.Count];
             bool aInside = a.Y > cap;
             bool bInside = b.Y > cap;
 
-            if (aInside && current.Count == 0)
+            if (!aInside && bInside)
             {
-                current.Add(a);
+                current = [InterpolateAtY(a, b, cap), b];
             }
-
-            if (aInside && bInside)
+            else if (aInside && bInside)
             {
-                if (!ReferenceEquals(b, ordered[0]) || i < ordered.Count - 1)
-                {
-                    current.Add(b);
-                }
+                current.Add(b);
             }
             else if (aInside && !bInside)
             {
                 current.Add(InterpolateAtY(a, b, cap));
                 AddOpenSegment(segments, current);
                 current = [];
-            }
-            else if (!aInside && bInside)
-            {
-                current = [InterpolateAtY(a, b, cap), b];
             }
         }
 

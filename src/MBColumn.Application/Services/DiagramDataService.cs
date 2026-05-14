@@ -115,10 +115,10 @@ public sealed class DiagramDataService
         => IsFinite(loadCase.PuDisplay) && IsFinite(loadCase.MuxDisplay) && IsFinite(loadCase.MuyDisplay);
 
     public PmmSurfaceDto BuildPmmSurfaceRenderData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
-        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 100);
+        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 50);
 
     public PmmSurfaceDto BuildPmmSurfaceData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
-        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 100);
+        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 50);
 
     /// <summary>
     /// Builds the 3D PMM surface by resampling the interaction surface at
@@ -127,7 +127,7 @@ public sealed class DiagramDataService
     /// giving a clean, evenly-spaced mesh regardless of neutral-axis sweep density.
     /// </summary>
     public PmmSurfaceDto BuildPmmSurfaceRenderDataAtPLevels(
-        IReadOnlyList<ControlPoint> points, UnitSystem unitSystem, int pLevelCount = 100)
+        IReadOnlyList<ControlPoint> points, UnitSystem unitSystem, int pLevelCount = 50)
     {
         var dto = ToDto(BuildPLevelSurfaceMesh(points, pLevelCount));
         return new PmmSurfaceDto(dto, ForceUnit(unitSystem), MomentUnit(unitSystem))
@@ -224,6 +224,18 @@ public sealed class DiagramDataService
                     if (interpolated is null) continue;
 
                     var (mx, my, phi, theta, naDepth) = interpolated.Value;
+                    
+                    // Pole perturbation for top/bottom rings
+                    if (pi == 0 || pi == pLevelCount - 1)
+                    {
+                        const double eps = 0.05;
+                        double angleRad = theta * Math.PI / 180.0;
+                        double dx = eps * Math.Cos(angleRad);
+                        double dy = eps * Math.Sin(angleRad);
+                        mx += isNominal ? dx : dx * phi;
+                        my += isNominal ? dy : dy * phi;
+                    }
+
                     result.Add(new ControlPoint(
                         Id:              $"{groupKey}|{theta:F4}|{pi}",
                         DiagramType:     DiagramType.Pm3D,

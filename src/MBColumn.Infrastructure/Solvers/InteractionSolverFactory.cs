@@ -16,12 +16,12 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
 
     public InteractionSolverFactory(IDesignCodeService aci, IDesignCodeService ec2)
     {
-        aciConventionalSolver  = new StrainCompatibilityInteractionSolver(aci) { AngleStepDegrees = 3.6 };
-        aciFiberSolver         = new AciFiberInteractionSolver(aci) { AngleStepDegrees = 3.6 };
-        ec2SimplifiedBlockSolver = new Ec2SimplifiedStressBlockInteractionSolver(ec2) { AngleStepDegrees = 3.6 };
-        ec2FiberSolver         = new Ec2FiberInteractionSolver(ec2) { AngleStepDegrees = 3.6 };
-        ec2BoundarySolver      = new Ec2BoundaryInteractionSolver(ec2) { AngleStepDegrees = 3.6 };
-        ecPmmFiberAnalytic     = new EcPmmFiberAnalyticSolver(ec2) { AngleStepDegrees = 3.6 };
+        aciConventionalSolver  = new StrainCompatibilityInteractionSolver(aci) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        aciFiberSolver         = new AciFiberInteractionSolver(aci) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        ec2SimplifiedBlockSolver = new Ec2SimplifiedStressBlockInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        ec2FiberSolver         = new Ec2FiberInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        ec2BoundarySolver      = new Ec2BoundaryInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        ecPmmFiberAnalytic     = new EcPmmFiberAnalyticSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
     }
 
     public IInteractionSolver Get(
