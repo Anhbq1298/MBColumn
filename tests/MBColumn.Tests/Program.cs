@@ -116,8 +116,12 @@ var tests = new List<(string Name, Action Test)>
     ("AxisTickService independent steps", TestAxisTickIndependentSteps),
     ("AxisTickService nice numbers", TestAxisTickNiceNumbers),
     ("AxisTickService format strings", TestAxisTickFormatStrings),
+    ("AxisTickService fixed grid step", TestAxisTickFixedGridStep),
     ("Chart transform snaps to nice bounds", TestChartTransformSnapsToBounds),
     ("MxMy chart transform uses equal aspect", TestMxMyChartTransformEqualAspect),
+    ("PM active design cap is closed and clipped", TestPmActiveDesignCapClosedAndClipped),
+    ("PM reduced curve only draws above active cap", TestPmReducedCurveOnlyAboveActiveCap),
+    ("Reference guide lines default hidden", TestReferenceGuideLinesDefaultHidden),
     ("Multi-load case governing is max ratio", TestMultiLoadCaseGoverningIsMaxRatio),
     ("Multi-load case result count matches input", TestMultiLoadCaseResultCount),
     ("Multi-load case inactive excluded", TestMultiLoadCaseInactiveExcluded),
@@ -553,10 +557,10 @@ static void TestResultSettingsPropagate()
     IsFalse(vm.PMy.ShowLabels);
     IsFalse(vm.MM.ShowGrid);
     IsFalse(vm.MM.ShowLabels);
-    IsFalse(vm.PM3D.ShowGrid);
-    IsFalse(vm.PM3D.ShowLabels);
-    IsFalse(vm.MM3D.ShowGrid);
-    IsFalse(vm.MM3D.ShowLabels);
+    IsTrue(vm.PM3D.ShowGrid);
+    IsTrue(vm.PM3D.ShowLabels);
+    IsTrue(vm.MM3D.ShowGrid);
+    IsTrue(vm.MM3D.ShowLabels);
     IsFalse(vm.PM3D.ShowSurface);
     IsFalse(vm.MM3D.ShowSurface);
     IsFalse(vm.PM3D.ShowWireframe);
@@ -1213,6 +1217,15 @@ static void TestAxisTickFormatStrings()
     IsTrue(AxisTickService.Format(0.0000000001) == "0");
 }
 
+static void TestAxisTickFixedGridStep()
+{
+    var ticks = AxisTickService.GenerateFixed(-850, 1840, 500);
+    AreClose(500, ticks.MajorInterval, 1e-12);
+    IsTrue(ticks.MajorTicks.Contains(-500));
+    IsTrue(ticks.MajorTicks.Contains(0));
+    IsTrue(ticks.MajorTicks.Contains(1500));
+}
+
 static void TestChartTransformSnapsToBounds()
 {
     var pts = new List<ControlPointDto>
@@ -1251,6 +1264,64 @@ static void TestMxMyChartTransformEqualAspect()
     double pixelsPerY = plot.Height / (helper.MaxY - helper.MinY);
     AreClose(pixelsPerX, pixelsPerY, 1e-9);
 }
+
+static void TestPmActiveDesignCapClosedAndClipped()
+{
+    var points = DiamondPmDesignPoints().ToList();
+    var polygon = DiagramCanvas2D.ClipClosedPolylineBelowYForTesting(points, cap: 4.0);
+
+    IsTrue(polygon.Count > 4);
+    var capPoints = polygon.Where(p => Math.Abs(p.Y - 4.0) < 1e-12).OrderBy(p => p.X).ToList();
+    IsTrue(capPoints.Count == 2);
+    AreClose(-6.0, capPoints[0].X, 1e-9);
+    AreClose(6.0, capPoints[1].X, 1e-9);
+    IsTrue(polygon.All(p => p.Y <= 4.0 + 1e-12));
+
+    foreach (var point in polygon)
+    {
+        double allowed = 10.0 - Math.Abs(point.Y);
+        IsTrue(point.X >= -allowed - 1e-9);
+        IsTrue(point.X <= allowed + 1e-9);
+    }
+}
+
+static void TestPmReducedCurveOnlyAboveActiveCap()
+{
+    var points = DiamondPmDesignPoints().ToList();
+    var segments = DiagramCanvas2D.ClipOpenPolylineAboveYForTesting(points, cap: 4.0);
+
+    IsTrue(segments.Count == 1);
+    var segment = segments[0];
+    IsTrue(segment.Count == 3);
+    AreClose(-6.0, segment[0].X, 1e-9);
+    AreClose(4.0, segment[0].Y, 1e-12);
+    AreClose(0.0, segment[1].X, 1e-12);
+    AreClose(10.0, segment[1].Y, 1e-12);
+    AreClose(6.0, segment[2].X, 1e-9);
+    AreClose(4.0, segment[2].Y, 1e-12);
+    IsTrue(segment.Skip(1).Take(1).All(p => p.Y > 4.0));
+}
+
+static void TestReferenceGuideLinesDefaultHidden()
+{
+    var vm = new ResultViewModel();
+    IsFalse(vm.ShowPmaxPmin);
+
+    vm.ShowPmaxPmin = true;
+    vm.Result = Service().Calculate(MetricInput());
+    IsFalse(vm.ShowPmaxPmin);
+}
+
+static IEnumerable<ControlPointDto> DiamondPmDesignPoints()
+{
+    yield return PmPoint(0, 10);
+    yield return PmPoint(10, 0);
+    yield return PmPoint(0, -10);
+    yield return PmPoint(-10, 0);
+}
+
+static ControlPointDto PmPoint(double x, double y, bool isReference = false, string label = "")
+    => new(DiagramType.PM, x, y, y, y, x, 0, 1, 0, 0, label, isReference ? "Reference" : "DesignCapacity", false, false, isReference, false);
 
 // ----- Pmm3DSliceControlTests -----
 

@@ -14,7 +14,6 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty YAxisLabelProperty = DependencyProperty.Register(nameof(YAxisLabel), typeof(string), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata("Y", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowGridProperty = DependencyProperty.Register(nameof(ShowGrid), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowLabelsProperty = DependencyProperty.Register(nameof(ShowLabels), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty ShowLegendProperty = DependencyProperty.Register(nameof(ShowLegend), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowDemandPointProperty = DependencyProperty.Register(nameof(ShowDemandPoint), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowGoverningPointProperty = DependencyProperty.Register(nameof(ShowGoverningPoint), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowReferenceLinesProperty = DependencyProperty.Register(nameof(ShowReferenceLines), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -26,6 +25,8 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty BoundsOverrideProperty = DependencyProperty.Register(nameof(BoundsOverride), typeof(Rect?), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty UseEqualAspectProperty = DependencyProperty.Register(nameof(UseEqualAspect), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty InsetFigureProperty = DependencyProperty.Register(nameof(InsetFigure), typeof(PmChartInsetFigureDto), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty XGridStepProperty = DependencyProperty.Register(nameof(XGridStep), typeof(double), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty YGridStepProperty = DependencyProperty.Register(nameof(YGridStep), typeof(double), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
     private const double HitTolerance = 10.0;
 
@@ -44,7 +45,6 @@ public class DiagramCanvas2D : FrameworkElement
     public string YAxisLabel { get => (string)GetValue(YAxisLabelProperty); set => SetValue(YAxisLabelProperty, value); }
     public bool ShowGrid { get => (bool)GetValue(ShowGridProperty); set => SetValue(ShowGridProperty, value); }
     public bool ShowLabels { get => (bool)GetValue(ShowLabelsProperty); set => SetValue(ShowLabelsProperty, value); }
-    public bool ShowLegend { get => (bool)GetValue(ShowLegendProperty); set => SetValue(ShowLegendProperty, value); }
     public bool ShowDemandPoint { get => (bool)GetValue(ShowDemandPointProperty); set => SetValue(ShowDemandPointProperty, value); }
     public bool ShowGoverningPoint { get => (bool)GetValue(ShowGoverningPointProperty); set => SetValue(ShowGoverningPointProperty, value); }
     public bool ShowReferenceLines { get => (bool)GetValue(ShowReferenceLinesProperty); set => SetValue(ShowReferenceLinesProperty, value); }
@@ -56,6 +56,8 @@ public class DiagramCanvas2D : FrameworkElement
     public Rect? BoundsOverride { get => (Rect?)GetValue(BoundsOverrideProperty); set => SetValue(BoundsOverrideProperty, value); }
     public bool UseEqualAspect { get => (bool)GetValue(UseEqualAspectProperty); set => SetValue(UseEqualAspectProperty, value); }
     public PmChartInsetFigureDto? InsetFigure { get => (PmChartInsetFigureDto?)GetValue(InsetFigureProperty); set => SetValue(InsetFigureProperty, value); }
+    public double XGridStep { get => (double)GetValue(XGridStepProperty); set => SetValue(XGridStepProperty, value); }
+    public double YGridStep { get => (double)GetValue(YGridStepProperty); set => SetValue(YGridStepProperty, value); }
 
     public void ResetView() => InvalidateVisual();
 
@@ -63,7 +65,8 @@ public class DiagramCanvas2D : FrameworkElement
     {
         base.OnRender(dc);
         dc.DrawRoundedRectangle(Brushes.White, new Pen(new SolidColorBrush(Color.FromRgb(214, 222, 230)), 1), new Rect(0, 0, ActualWidth, ActualHeight), 6, 6);
-        var points = VisiblePoints((Points ?? []).Where(IsFinite)).ToList();
+        var allFinitePoints = (Points ?? []).Where(IsFinite).ToList();
+        var points = VisiblePoints(allFinitePoints).ToList();
         var plot = new Rect(76, 62, Math.Max(10, ActualWidth - 116), Math.Max(10, ActualHeight - 126));
         dc.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
         if (points.Count == 0)
@@ -77,24 +80,20 @@ public class DiagramCanvas2D : FrameworkElement
             ? points.Concat(ReferenceLineBoundsPoints()).ToList()
             : points;
         var transform = ChartTransformHelper.AutoFit2D(transformPoints, plot, BoundsOverride, UseEqualAspect);
-        AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid);
-        DrawCapacity(dc, transform, points);
+        AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid, XGridStep, YGridStep);
+        DrawCapacity(dc, transform, allFinitePoints);
         DrawCapacityControlPoints(dc, transform, points);
         DrawReferences(dc, transform, points);
         DrawConstructionReferenceLines(dc, transform);
         DrawSpecialPoints(dc, transform, points);
         DrawSelectedPoint(dc, transform);
         DrawInsetFigure(dc, plot);
-        if (ShowLegend)
-        {
-            LegendRenderer.Draw(dc, new Point(Math.Max(plot.Left + 12, plot.Right - 146), 16), ShowNominalCurve);
-        }
         dc.Pop();
     }
 
     private void DrawCapacity(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
-        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromArgb(120, 0, 75, 133)), 2.2);
+        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 2.2);
         var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.35) { DashStyle = DashStyles.Dash };
         var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4) { DashStyle = DashStyles.Dash };
         double? designCompressionCap = DesignCompressionCap(points);
@@ -114,10 +113,7 @@ public class DiagramCanvas2D : FrameworkElement
                 continue;
             }
 
-            // Draw the uncapped phi-reduced interaction curve as the dashed
-            // continuation. The ACI compression cap is a rendering boundary,
-            // not a geometry vertex or roof segment.
-            dc.DrawGeometry(null, reducedDesignPen, geo);
+            DrawAboveCapSegments(dc, transform, ordered, designCompressionCap, reducedDesignPen);
             DrawBelowCapSegments(dc, transform, ordered, designCompressionCap, activeDesignPen);
         }
     }
@@ -136,14 +132,61 @@ public class DiagramCanvas2D : FrameworkElement
             return;
         }
 
-        var clipped = ClipPolylineBelowY(ordered, cap.Value);
+        var clipped = ClipClosedPolylineBelowY(ordered, cap.Value);
+        if (clipped.Count > 2)
+        {
+            dc.DrawGeometry(null, pen, BuildPolylineGeometry(transform, clipped));
+        }
+    }
+
+    private static void DrawAboveCapSegments(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered, double? cap, Pen pen)
+    {
+        if (cap is null) return;
+
+        var clipped = ClipOpenPolylineAboveY(ordered, cap.Value);
         foreach (var segment in clipped.Where(s => s.Count > 1))
         {
             dc.DrawGeometry(null, pen, BuildOpenPolylineGeometry(transform, segment));
         }
     }
 
-    private static IReadOnlyList<IReadOnlyList<ControlPointDto>> ClipPolylineBelowY(IReadOnlyList<ControlPointDto> ordered, double cap)
+    public static IReadOnlyList<ControlPointDto> ClipClosedPolylineBelowYForTesting(IReadOnlyList<ControlPointDto> ordered, double cap)
+        => ClipClosedPolylineBelowY(ordered, cap);
+
+    private static IReadOnlyList<ControlPointDto> ClipClosedPolylineBelowY(IReadOnlyList<ControlPointDto> ordered, double cap)
+    {
+        if (ordered.Count == 0) return [];
+
+        var clipped = new List<ControlPointDto>();
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            var a = ordered[(i + ordered.Count - 1) % ordered.Count];
+            var b = ordered[i];
+            bool aInside = a.Y <= cap;
+            bool bInside = b.Y <= cap;
+
+            if (bInside)
+            {
+                if (!aInside)
+                {
+                    clipped.Add(InterpolateAtY(a, b, cap));
+                }
+
+                clipped.Add(b);
+            }
+            else if (aInside)
+            {
+                clipped.Add(InterpolateAtY(a, b, cap));
+            }
+        }
+
+        return RemoveAdjacentDuplicates(clipped);
+    }
+
+    public static IReadOnlyList<IReadOnlyList<ControlPointDto>> ClipOpenPolylineAboveYForTesting(IReadOnlyList<ControlPointDto> ordered, double cap)
+        => ClipOpenPolylineAboveY(ordered, cap);
+
+    private static IReadOnlyList<IReadOnlyList<ControlPointDto>> ClipOpenPolylineAboveY(IReadOnlyList<ControlPointDto> ordered, double cap)
     {
         var segments = new List<IReadOnlyList<ControlPointDto>>();
         var current = new List<ControlPointDto>();
@@ -152,8 +195,8 @@ public class DiagramCanvas2D : FrameworkElement
         {
             var a = ordered[i];
             var b = ordered[(i + 1) % ordered.Count];
-            bool aInside = a.Y <= cap;
-            bool bInside = b.Y <= cap;
+            bool aInside = a.Y > cap;
+            bool bInside = b.Y > cap;
 
             if (aInside && current.Count == 0)
             {
@@ -170,7 +213,7 @@ public class DiagramCanvas2D : FrameworkElement
             else if (aInside && !bInside)
             {
                 current.Add(InterpolateAtY(a, b, cap));
-                AddSegment(segments, current);
+                AddOpenSegment(segments, current);
                 current = [];
             }
             else if (!aInside && bInside)
@@ -179,15 +222,16 @@ public class DiagramCanvas2D : FrameworkElement
             }
         }
 
-        AddSegment(segments, current);
+        AddOpenSegment(segments, current);
         return segments;
     }
 
-    private static void AddSegment(List<IReadOnlyList<ControlPointDto>> segments, List<ControlPointDto> current)
+    private static void AddOpenSegment(List<IReadOnlyList<ControlPointDto>> segments, List<ControlPointDto> current)
     {
-        if (current.Count > 1)
+        var cleaned = RemoveAdjacentDuplicates(current);
+        if (cleaned.Count > 1)
         {
-            segments.Add(current);
+            segments.Add(cleaned);
         }
     }
 
@@ -208,6 +252,29 @@ public class DiagramCanvas2D : FrameworkElement
             ThetaDegrees = Lerp(a.ThetaDegrees, b.ThetaDegrees, t),
             NeutralAxisDepth = Lerp(a.NeutralAxisDepth, b.NeutralAxisDepth, t)
         };
+    }
+
+    private static IReadOnlyList<ControlPointDto> RemoveAdjacentDuplicates(IReadOnlyList<ControlPointDto> points)
+    {
+        var result = new List<ControlPointDto>();
+        foreach (var point in points)
+        {
+            if (result.Count == 0 ||
+                Math.Abs(result[^1].X - point.X) > 1e-9 ||
+                Math.Abs(result[^1].Y - point.Y) > 1e-9)
+            {
+                result.Add(point);
+            }
+        }
+
+        if (result.Count > 1 &&
+            Math.Abs(result[0].X - result[^1].X) <= 1e-9 &&
+            Math.Abs(result[0].Y - result[^1].Y) <= 1e-9)
+        {
+            result.RemoveAt(result.Count - 1);
+        }
+
+        return result;
     }
 
     private static StreamGeometry BuildPolylineGeometry(ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered)

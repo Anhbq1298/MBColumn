@@ -44,7 +44,7 @@ public sealed class ResultViewModel : ViewModelBase
     private bool showLabels = true;
     private bool showLegend = true;
     private bool showDemandPoint = true;
-    private bool showPmaxPmin = true;
+    private bool showPmaxPmin;
     private bool showSurface3D = true;
     private bool showWireframe3D = true;
     private bool showNominalCurve = true;
@@ -62,6 +62,10 @@ public sealed class ResultViewModel : ViewModelBase
     private LoadCaseResultRowViewModel? selectedLoadCaseRow;
     private double selectedSliceAngleDegrees;
     private double selectedAxialLoad;
+    private double pmPGridStep = 2000.0;
+    private double pmMGridStep = 500.0;
+    private double mmMxGridStep = 500.0;
+    private double mmMyGridStep = 500.0;
     private Rect? sharedPmBounds;
     private int layoutVersion;
     private bool isApplyingLoadCaseSelection;
@@ -123,7 +127,7 @@ public sealed class ResultViewModel : ViewModelBase
         set
         {
             Set(ref result, value);
-            showPmaxPmin = value?.DesignCode != DesignCodeType.Ec2;
+            showPmaxPmin = false;
             Raise(nameof(ShowPmaxPmin));
             MM.Load(value);
             PM3D.Load(value);
@@ -638,6 +642,10 @@ public sealed class ResultViewModel : ViewModelBase
     public bool ShowWireframe3D { get => showWireframe3D; set { Set(ref showWireframe3D, value); PropagateDisplaySettings(); } }
     public bool ShowNominalCurve { get => showNominalCurve; set => Set(ref showNominalCurve, value); }
     public bool UseEqualAspectForMM { get => useEqualAspectForMM; set => Set(ref useEqualAspectForMM, value); }
+    public double PStep { get => pmPGridStep; set => Set(ref pmPGridStep, SanitizeGridStep(value)); }
+    public double MStep { get => pmMGridStep; set => Set(ref pmMGridStep, SanitizeGridStep(value)); }
+    public double MStepX { get => mmMxGridStep; set => Set(ref mmMxGridStep, SanitizeGridStep(value)); }
+    public double MStepY { get => mmMyGridStep; set => Set(ref mmMyGridStep, SanitizeGridStep(value)); }
 
     public ICommand ToggleGridCommand { get; }
     public ICommand ToggleLabelsCommand { get; }
@@ -661,15 +669,14 @@ public sealed class ResultViewModel : ViewModelBase
         PMy.ShowLabels = ShowLabels;
         MM.ShowGrid = ShowGrid;
         MM.ShowLabels = ShowLabels;
-        PM3D.ShowGrid = ShowGrid;
-        PM3D.ShowLabels = ShowLabels;
         PM3D.ShowSurface = ShowSurface3D;
-        PM3D.ShowWireframe = ShowWireframe3D;
-        MM3D.ShowGrid = ShowGrid;
-        MM3D.ShowLabels = ShowLabels;
+        PM3D.ShowWireframe = ShowSurface3D;
         MM3D.ShowSurface = ShowSurface3D;
-        MM3D.ShowWireframe = ShowWireframe3D;
+        MM3D.ShowWireframe = ShowSurface3D;
     }
+
+    private static double SanitizeGridStep(double value)
+        => double.IsNaN(value) || double.IsInfinity(value) || value < 0 ? 0.0 : value;
 
     private void Reset3DCharts()
     {

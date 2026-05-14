@@ -12,7 +12,7 @@ public static class AxisRenderer2D
     private static readonly Brush MinorGridBrush = new SolidColorBrush(Color.FromRgb(241, 245, 249)); // very light
     private static readonly Brush TextBrush = new SolidColorBrush(Color.FromRgb(31, 41, 51));
 
-    public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid)
+    public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0)
     {
         var gridPen = new Pen(GridBrush, 1.0);
         var minorGridPen = new Pen(MinorGridBrush, 0.6);
@@ -21,8 +21,12 @@ public static class AxisRenderer2D
         var tickPen = new Pen(AxisBrush, 1.2);
         var minorTickPen = new Pen(AxisBrush, 0.6);
 
-        var xTicks = transform.AxisTicksX();
-        var yTicks = transform.AxisTicksY();
+        var xTicks = xMajorStep > 0
+            ? AxisTickService.GenerateFixed(transform.MinX, transform.MaxX, xMajorStep)
+            : transform.AxisTicksX();
+        var yTicks = yMajorStep > 0
+            ? AxisTickService.GenerateFixed(transform.MinY, transform.MaxY, yMajorStep)
+            : transform.AxisTicksY();
         var axis = transform.ToScreen(transform.AxisYValue, transform.AxisXValue);
 
         if (showGrid)

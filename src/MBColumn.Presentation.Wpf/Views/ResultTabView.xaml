@@ -197,20 +197,78 @@
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource SidebarCardStyle}">
+                <GroupBox Header="3D PMM Diagrams"
+                          Background="White"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Padding="14"
+                          Margin="0,0,0,14">
+                    <WrapPanel>
+                        <CheckBox Content="Surface" IsChecked="{Binding ShowSurface3D}" />
+                        <CheckBox Content="Axial Slice" IsChecked="{Binding PM3D.ShowAxialLoadSlice}" />
+                        <CheckBox Content="Theta Slice" IsChecked="{Binding PM3D.ShowSlicePlane}" />
+                    </WrapPanel>
+                </GroupBox>
+
+                <GroupBox Header="2D Diagrams"
+                          Background="White"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Padding="14"
+                          Margin="0,0,0,14">
                     <StackPanel>
-                        <TextBlock Text="3D Diagrams" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,6" />
-                        <WrapPanel>
-                            <CheckBox Content="Surface" IsChecked="{Binding ShowSurface3D}" />
-                            <CheckBox Content="Wireframe" IsChecked="{Binding ShowWireframe3D}" />
-                            <CheckBox Content="PM slice" IsChecked="{Binding PM3D.ShowSlicePlane}" />
-                            <CheckBox Content="Axial slice" IsChecked="{Binding PM3D.ShowAxialLoadSlice}" />
+                        <WrapPanel Margin="0,0,0,10">
                             <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" />
-                            <CheckBox Content="Labels" IsChecked="{Binding ShowLabels}" />
+                            <CheckBox Content="Label" IsChecked="{Binding ShowLabels}" />
                             <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" />
                         </WrapPanel>
+
+                        <Grid Visibility="{Binding ShowLegend, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,0,0,12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="22" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="16" Height="3" Background="#004B85" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Blue curves: Design curves" Style="{StaticResource HelperTextStyle}" />
+                            <Border Grid.Row="1" Width="16" Height="3" Background="#C82828" VerticalAlignment="Center" Margin="0,7,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Red curves: ACI-only nominal/reference curves" Style="{StaticResource HelperTextStyle}" Margin="0,4,0,0" />
+                        </Grid>
+
+                        <TextBlock Text="PM Chart" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,6" />
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="84" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="84" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="PStep" Style="{StaticResource HelperTextStyle}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding PStep, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="MStep" Style="{StaticResource HelperTextStyle}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="4" Text="{Binding MStep, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Right" />
+                        </Grid>
+
+                        <TextBlock Text="MM Chart" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,6" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="84" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="84" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="MStepX" Style="{StaticResource HelperTextStyle}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding MStepX, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="MStepY" Style="{StaticResource HelperTextStyle}" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="4" Text="{Binding MStepY, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Right" />
+                        </Grid>
                     </StackPanel>
-                </Border>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
 
@@ -270,10 +328,11 @@
                                               YAxisLabel="{Binding PM.YAxisLabel}"
                                               ShowGrid="{Binding ShowGrid}"
                                               ShowLabels="{Binding ShowLabels}"
-                                              ShowLegend="{Binding ShowLegend}"
                                               ShowDemandPoint="{Binding ShowDemandPoint}"
                                               ShowReferenceLines="{Binding ShowPmaxPmin}"
                                               ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              XGridStep="{Binding MStep}"
+                                              YGridStep="{Binding PStep}"
                                               BoundsOverride="{Binding SharedPmBounds}"
                                               InsetFigure="{Binding PmChartInset}"
                                               SelectedPoint="{Binding SelectedChartPoint}"
@@ -306,10 +365,11 @@
                                               YAxisLabel="{Binding PMx.YAxisLabel}"
                                               ShowGrid="{Binding ShowGrid}"
                                               ShowLabels="{Binding ShowLabels}"
-                                              ShowLegend="{Binding ShowLegend}"
                                               ShowDemandPoint="{Binding ShowDemandPoint}"
                                               ShowReferenceLines="{Binding ShowPmaxPmin}"
                                               ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              XGridStep="{Binding MStep}"
+                                              YGridStep="{Binding PStep}"
                                               ShowCapacityControlPoints="False"
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PMx.Ratio}"
@@ -341,10 +401,11 @@
                                               YAxisLabel="{Binding PMy.YAxisLabel}"
                                               ShowGrid="{Binding ShowGrid}"
                                               ShowLabels="{Binding ShowLabels}"
-                                              ShowLegend="{Binding ShowLegend}"
                                               ShowDemandPoint="{Binding ShowDemandPoint}"
                                               ShowReferenceLines="{Binding ShowPmaxPmin}"
                                               ShowNominalCurve="{Binding ShowNominalCurve}"
+                                              XGridStep="{Binding MStep}"
+                                              YGridStep="{Binding PStep}"
                                               ShowCapacityControlPoints="False"
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PMy.Ratio}"
@@ -373,10 +434,8 @@
                                                     Points="{Binding PM3D.SurfacePoints}"
                                                     DemandPoint="{Binding PM3D.DemandPoint}"
                                                     DemandPoints="{Binding PM3D.DemandPoints}"
-                                                    ShowGrid="{Binding ShowGrid}"
-                                                    ShowWireframe="{Binding ShowWireframe3D}"
+                                                    ShowWireframe="{Binding ShowSurface3D}"
                                                     ShowSurface="{Binding ShowSurface3D}"
-                                                    ShowLabels="{Binding ShowLabels}"
                                                     ShowDemandPoint="{Binding ShowDemandPoint}"
                                                     UnitLabels="{Binding PM3D.UnitLabels}"
                                                     SelectedPmAngle="{Binding PM3D.SelectedPmAngle}"
@@ -410,10 +469,11 @@
                                               YAxisLabel="{Binding MM.YAxisLabel}"
                                               ShowGrid="{Binding ShowGrid}"
                                               ShowLabels="{Binding ShowLabels}"
-                                              ShowLegend="{Binding ShowLegend}"
                                               ShowDemandPoint="{Binding ShowDemandPoint}"
                                               ShowNominalCurve="{Binding ShowNominalCurve}"
                                               UseEqualAspect="{Binding UseEqualAspectForMM}"
+                                              XGridStep="{Binding MStepX}"
+                                              YGridStep="{Binding MStepY}"
                                               InsetFigure="{Binding PmChartInset}"
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding MM.Ratio}"

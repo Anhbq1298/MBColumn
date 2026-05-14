@@ -28,6 +28,31 @@ public static class AxisTickService
         return new AxisTicks(niceMin, niceMax, major, minor, GenerateTicks(niceMin, niceMax, major), GenerateMinorTicks(niceMin, niceMax, major, minor));
     }
 
+    public static AxisTicks GenerateFixed(double min, double max, double major, int minorDivisions = 5)
+    {
+        if (double.IsNaN(min) || double.IsInfinity(min) || double.IsNaN(max) || double.IsInfinity(max) || Math.Abs(max - min) < 1e-12)
+        {
+            min = -1;
+            max = 1;
+        }
+
+        if (max < min)
+        {
+            (min, max) = (max, min);
+        }
+
+        if (double.IsNaN(major) || double.IsInfinity(major) || major <= 0)
+        {
+            return Generate(min, max, minorDivisions);
+        }
+
+        double minor = major / Math.Max(1, minorDivisions);
+        double tickMin = Math.Floor(min / major) * major;
+        double tickMax = Math.Ceiling(max / major) * major;
+
+        return new AxisTicks(tickMin, tickMax, major, minor, GenerateTicks(tickMin, tickMax, major), GenerateMinorTicks(tickMin, tickMax, major, minor));
+    }
+
     public static string Format(double value)
     {
         if (Math.Abs(value) < 1e-10) return "0";
