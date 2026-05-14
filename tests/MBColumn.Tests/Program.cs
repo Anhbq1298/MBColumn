@@ -133,6 +133,9 @@ var tests = new List<(string Name, Action Test)>
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
     ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon),
+    ("Control point export preview current view uses selected theta", TestControlPointExportPreviewCurrentViewUsesSelectedTheta),
+    ("Control point export preview custom theta interpolates", TestControlPointExportPreviewCustomThetaInterpolates),
+    ("Control point export CSV uses exact headers", TestControlPointExportCsvUsesExactHeaders),
     ("ACI factory routes Conventional vs Fiber", TestAciSolverFactoryRouting),
     ("ACI conventional baseline is regression-stable", TestAciConventionalUnchangedByFiberOption),
     ("ACI fiber pure compression close to conventional", TestAciFiberPureCompressionCloseToConventional),
@@ -1522,6 +1525,67 @@ static void TestControlPointsTensionControlEpsilon()
     IsTrue(tcRows.Count == 4);
     foreach (var row in tcRows)
         AreClose(0.005, row.EpsilonT, 1e-4);
+}
+
+static void TestControlPointExportPreviewCurrentViewUsesSelectedTheta()
+{
+    var result = Service().Calculate(MetricInput() with { SelectedPmAngleDegrees = 30.0 });
+    var preview = new ControlPointPreviewService(GetUnits()).BuildPreview(
+        result,
+        ControlPointThetaSelectionMode.CurrentView,
+        30.0);
+
+    IsTrue(preview.Rows.Count == result.Surface.DepthCount);
+    IsTrue(preview.Rows.All(r => Math.Abs(r.ThetaDeg - 30.0) < 1e-9));
+}
+
+static void TestControlPointExportPreviewCustomThetaInterpolates()
+{
+    var result = Service().Calculate(MetricInput());
+    var preview = new ControlPointPreviewService(GetUnits()).BuildPreview(
+        result,
+        ControlPointThetaSelectionMode.CustomTheta,
+        0.0,
+        15.0);
+
+    IsTrue(preview.Rows.Count == result.Surface.DepthCount);
+    IsTrue(preview.Rows.All(r => Math.Abs(r.ThetaDeg - 15.0) < 1e-9));
+    IsTrue(preview.Rows.Any(r => Math.Abs(r.MThetaPositive) > 1e-6 || Math.Abs(r.MThetaNegative) > 1e-6));
+}
+
+static void TestControlPointExportCsvUsesExactHeaders()
+{
+    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-control-point-export-{Guid.NewGuid():N}.csv");
+    try
+    {
+        var exporter = new ControlPointCsvExportService();
+        exporter.Export(path,
+        [
+            new ControlPointExportRow
+            {
+                ThetaDeg = 30.0,
+                PointIndex = 1,
+                P = 123.4,
+                MThetaPositive = 56.7,
+                MThetaNegative = 0.0,
+                NeutralAxisDepth = 89.1,
+                SteelStrainMax = 0.005,
+                ConcreteStrainMax = 0.003,
+                Remarks = "Pure Compression"
+            }
+        ]);
+
+        var lines = File.ReadAllLines(path);
+        IsTrue(lines.Length >= 2);
+        IsTrue(lines[0] == "θ,Pt.,P,Mθ+,Mθ-,c,\"εs,max\",\"εc,max\",Remarks");
+    }
+    finally
+    {
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
 }
 
 // ----- EC2 Fiber PMM Tests -----

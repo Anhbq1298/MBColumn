@@ -1,0 +1,192 @@
+<Window x:Class="MBColumn.Presentation.Wpf.ExportControlPointsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Export Control Points"
+        Icon="Resources/desktop-icon.png"
+        Width="1100"
+        Height="680"
+        MinWidth="820"
+        MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource SidebarCardStyle}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock Text="Export Settings"
+                                   Style="{StaticResource SectionTitleTextStyle}"
+                                   Margin="0,0,0,10" />
+                        <TextBlock Text="Theta Selection"
+                                   Style="{StaticResource GroupTitleTextStyle}"
+                                   Margin="0,0,0,8" />
+
+                        <RadioButton GroupName="ThetaSelection"
+                                     IsChecked="{Binding IsCurrentViewSelected}"
+                                     Margin="0,0,0,4">
+                            <TextBlock Text="Current View" />
+                        </RadioButton>
+                        <TextBlock Text="{Binding CurrentViewDescription}"
+                                   Style="{StaticResource HelperTextStyle}"
+                                   Margin="24,0,0,0" />
+                        <TextBlock Text="{Binding CurrentViewScopeDescription}"
+                                   Style="{StaticResource HelperTextStyle}"
+                                   Margin="24,2,0,10" />
+
+                        <RadioButton GroupName="ThetaSelection"
+                                     IsChecked="{Binding IsCustomThetaSelected}"
+                                     Margin="0,0,0,4">
+                            <TextBlock Text="Custom Theta" />
+                        </RadioButton>
+                        <Grid Margin="24,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="42" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding CustomThetaText, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsCustomThetaInputEnabled}"
+                                     HorizontalContentAlignment="Right" />
+                            <TextBlock Grid.Column="1"
+                                       Text="deg"
+                                       Style="{StaticResource UnitTextStyle}"
+                                       Margin="6,0,0,0" />
+                        </Grid>
+                        <TextBlock Text="{Binding ThetaValidationMessage}"
+                                   Style="{StaticResource HelperTextStyle}"
+                                   Foreground="{DynamicResource AccentRedBrush}"
+                                   Margin="24,0,0,10" />
+
+                        <RadioButton GroupName="ThetaSelection"
+                                     IsChecked="{Binding IsAllThetaSelected}"
+                                     Margin="0,0,0,4">
+                            <TextBlock Text="All Theta" />
+                        </RadioButton>
+                        <TextBlock Text="Export all available theta datasets."
+                                   Style="{StaticResource HelperTextStyle}"
+                                   Margin="24,0,0,14" />
+
+                        <Separator Margin="0,0,0,12" />
+
+                        <TextBlock Text="Preview"
+                                   Style="{StaticResource GroupTitleTextStyle}"
+                                   Margin="0,0,0,8" />
+                        <TextBlock Text="{Binding PreviewSummary}"
+                                   Style="{StaticResource HelperTextStyle}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Margin="14,14,14,10">
+                        <Button DockPanel.Dock="Right"
+                                Content="Refresh Preview"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding RefreshPreviewCommand}" />
+                        <TextBlock Text="Control Point Preview"
+                                   Style="{StaticResource SectionTitleTextStyle}"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <Grid Grid.Row="1" Margin="14,0,14,14">
+                        <DataGrid ItemsSource="{Binding PreviewRows}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserResizeColumns="True"
+                                  CanUserResizeRows="False"
+                                  CanUserSortColumns="True"
+                                  ClipboardCopyMode="IncludeHeader"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ColumnWidth="Auto"
+                                  IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="θ"
+                                                    Binding="{Binding ThetaDeg, StringFormat=F1}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Pt."
+                                                    Binding="{Binding PointIndex}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="P"
+                                                    Binding="{Binding P, StringFormat=F3}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Mθ+"
+                                                    Binding="{Binding MThetaPositive, StringFormat=F3}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Mθ-"
+                                                    Binding="{Binding MThetaNegative, StringFormat=F3}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="c"
+                                                    Binding="{Binding NeutralAxisDepth, StringFormat=F3}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="εs,max"
+                                                    Binding="{Binding SteelStrainMax, StringFormat=F5}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="εc,max"
+                                                    Binding="{Binding ConcreteStrainMax, StringFormat=F5}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Remarks"
+                                                    Binding="{Binding Remarks}"
+                                                    Width="*"
+                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Border Background="#CCFFFFFF"
+                                BorderBrush="{DynamicResource BorderGreyBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="18,12"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasEmptyState, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="{Binding EmptyStateMessage}"
+                                       Style="{StaticResource HelperTextStyle}"
+                                       FontSize="12"
+                                       TextAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <DockPanel Grid.Row="1" Margin="0,16,0,0">
+            <Button DockPanel.Dock="Right"
+                    Content="Close"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="10,0,0,0"
+                    Command="{Binding CloseCommand}" />
+            <Button DockPanel.Dock="Right"
+                    Content="Export CSV"
+                    Command="{Binding ExportCsvCommand}" />
+        </DockPanel>
+    </Grid>
+</Window>

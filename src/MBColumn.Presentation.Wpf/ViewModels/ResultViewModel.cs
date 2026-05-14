@@ -2,10 +2,8 @@
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
-using Microsoft.Win32;
+using MBColumn.Presentation.Wpf.Services;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -37,6 +35,7 @@ public sealed class ResultViewModel : ViewModelBase
 {
     private readonly PmChartInsetBuilderService insetBuilder = new();
     private readonly PmChartInsetStateResolverService insetStateResolver = new();
+    private readonly IControlPointExportDialogService controlPointExportDialogService;
     private CalculationResultDto? result;
     private RelayCommand showControlPointsCommand = null!;
     private RelayCommand exportAllPointsCommand = null!;
@@ -71,7 +70,13 @@ public sealed class ResultViewModel : ViewModelBase
     private bool isApplyingLoadCaseSelection;
 
     public ResultViewModel()
+        : this(new ControlPointExportDialogService())
     {
+    }
+
+    public ResultViewModel(IControlPointExportDialogService controlPointExportDialogService)
+    {
+        this.controlPointExportDialogService = controlPointExportDialogService;
         PM = new PMDiagramViewModel();
         PMx = new PMDiagramViewModel();
         PMy = new PMDiagramViewModel();
@@ -492,83 +497,14 @@ public sealed class ResultViewModel : ViewModelBase
 
     private void ShowControlPoints()
     {
-        if (Result?.ControlPointTable is null) return;
-        var win = new ControlPointsWindow(Result.ControlPointTable) { Owner = System.Windows.Application.Current.MainWindow };
-        win.Show();
+        if (Result is null) return;
+        controlPointExportDialogService.ShowDialog(Result, SelectedSliceAngleDegrees, System.Windows.Application.Current.MainWindow);
     }
 
     private void ExportAllPoints()
     {
-        if (Result is null) return;
-
-        var dlg = new SaveFileDialog
-        {
-            Title = "Export PMM Points",
-            Filter = "CSV file (*.csv)|*.csv|Text file (*.txt)|*.txt",
-            FilterIndex = 1,
-            DefaultExt = "csv",
-            FileName = "PMM_Points"
-        };
-
-        if (dlg.ShowDialog(System.Windows.Application.Current.MainWindow) != true)
-            return;
-
-        bool isCsv = Path.GetExtension(dlg.FileName).Equals(".csv", StringComparison.OrdinalIgnoreCase);
-        string delim = isCsv ? "," : "\t";
-        bool isImperial = Result.UnitSystem == UnitSystem.Imperial;
-
-        string[] headers =
-        [
-            "theTa",
-            $"P ({ForceUnitLabel})",
-            $"Mx ({MomentUnitLabel})",
-            $"My ({MomentUnitLabel})",
-            $"NA Depth ({LengthUnitLabel})",
-            "phi"
-        ];
-
-        var sb = new StringBuilder();
-
-        var groups = Result.ControlPoints.PmPoints
-            .Where(p => !p.IsDemandPoint && !p.IsGoverningPoint)
-            .GroupBy(p => Math.Round(p.ThetaDegrees, 1))
-            .OrderBy(g => g.Key);
-
-        foreach (var group in groups)
-        {
-            // Section label + header immediately below it
-            sb.AppendLine($"theta = {group.Key:F1} deg  ({group.Count()} points)");
-            sb.AppendLine(Join(delim, isCsv, headers));
-
-            foreach (var pt in group.OrderByDescending(p => p.DisplayP))
-            {
-                double naDisplay = isImperial ? pt.NeutralAxisDepth / 25.4 : pt.NeutralAxisDepth;
-                sb.AppendLine(Join(delim, isCsv,
-                [
-                    $"{pt.ThetaDegrees:F1}",
-                    $"{pt.DisplayP:F2}",
-                    $"{pt.DisplayMx:F2}",
-                    $"{pt.DisplayMy:F2}",
-                    $"{naDisplay:F1}",
-                    $"{pt.Phi:F3}"
-                ]));
-            }
-
-            sb.AppendLine();
-        }
-
-        File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
-
-        int total = Result.ControlPoints.PmPoints.Count(p => !p.IsDemandPoint && !p.IsGoverningPoint);
-        MessageBox.Show(System.Windows.Application.Current.MainWindow,
-            $"Exported {total} points across {groups.Count()} angle slices to:\n{dlg.FileName}",
-            "Export Complete",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        ShowControlPoints();
     }
-
-    private static string Join(string delim, bool isCsv, string[] values)
-        => string.Join(delim, values.Select(v => isCsv && (v.Contains(',') || v.Contains('"')) ? $"\"{v.Replace("\"", "\"\"")}\"" : v));
 
     // â”€â”€â”€â”€ Viewport selection (Task 6) â”€â”€â”€â”€
 

@@ -84,7 +84,7 @@
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
                             <Button DockPanel.Dock="Right"
-                                    Content="Control points"
+                                    Content="Export control points"
                                     Style="{StaticResource CompactButtonStyle}"
                                     Command="{Binding ShowControlPointsCommand}" />
                             <TextBlock Text="Results Summary"
@@ -284,7 +284,7 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,3,3">
-                <Button ToolTip="Export PMM points (CSV / TXT)"
+                <Button ToolTip="Export control points"
                     Command="{Binding ExportAllPointsCommand}"
                     Width="36"
                     Height="36"
