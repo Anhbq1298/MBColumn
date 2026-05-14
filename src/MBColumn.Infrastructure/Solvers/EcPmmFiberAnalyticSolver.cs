@@ -5,7 +5,7 @@ namespace MBColumn.Infrastructure.Solvers;
 
 public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInteractionSolver
 {
-    public int AngleStepDegrees { get; init; } = 10;
+    public double AngleStepDegrees { get; init; } = 10;
     public int NeutralAxisSamples { get; init; } = 150;
     public int FiberCount { get; init; } = 500;
 
@@ -17,7 +17,7 @@ public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInterac
 
     public InteractionSurface Solve(RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel)
     {
-        int angleCount = 360 / AngleStepDegrees;
+        int angleCount = (int)(360.0 / AngleStepDegrees);
         var points = new List<InteractionPoint>(angleCount * NeutralAxisSamples);
 
         for (int d = 0; d < NeutralAxisSamples; d++)

@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 
@@ -9,7 +9,7 @@ namespace MBColumn.Application.Services;
 
 public static class PmCurveBuilderService
 {
-    private const int AxialLevels = 70;
+    private const int AxialLevels = 100;
     private const double AciTiedCompressionPhi = 0.65;
     private const double AciTiedAxialCapFactor = 0.80;
     public static bool EnableDebugDiagnostics { get; set; }
@@ -104,10 +104,26 @@ public static class PmCurveBuilderService
             .Select(g => g.OrderByDescending(DesignDisplayP).ToList())
             .Where(g => g.Count > 1)
             .ToList();
-        double designPMax = designCapacity.Max(DesignDisplayP);
+        double designPMaxRaw = designCapacity.Max(DesignDisplayP);
         double designPMin = designCapacity.Min(DesignDisplayP);
-        var design = BuildAngleEnvelopeLoop(designRows, designPMax, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: false).ToList();
-        var nominal = design.Select(RemovePhi).ToList();
+        double designCap = Math.Min(designPMaxRaw, designCompressionLimitDisplay);
+        
+        var design = BuildAngleEnvelopeLoop(designRows, designCap, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: true).ToList();
+
+        // Build nominal curve separately to respect its own (usually higher) cap
+        var nominalPointsSource = capacity.Where(IsNominalPoint).ToList();
+        Console.WriteLine($"DEBUG: capacity={capacity.Count}, nominalSource={nominalPointsSource.Count}");
+        var nominalRows = nominalPointsSource
+            .GroupBy(p => p.GroupKey)
+            .Select(g => g.OrderByDescending(p => p.NominalDisplayP).ToList())
+            .Where(g => g.Count > 1)
+            .ToList();
+        
+        double nominalPMaxRaw = nominalPointsSource.Count > 0 ? nominalPointsSource.Max(p => p.NominalDisplayP) : designPMaxRaw / 0.65;
+        double nominalPMin = nominalPointsSource.Count > 0 ? nominalPointsSource.Min(p => p.NominalDisplayP) : designPMin / 0.9;
+        double nominalCap = Math.Min(nominalPMaxRaw, nominalCompressionLimitDisplay ?? double.MaxValue);
+
+        var nominal = BuildAngleEnvelopeLoop(nominalRows, nominalCap, nominalPMin, angleDegrees, nominal: true, forceStraightTrimCap: true).ToList();
 
         var result = new List<ControlPointDto>(design.Select(p => ToAngleDto(p, "DesignCapacity", isNominal: false)));
         result.AddRange(nominal.Select(p => ToAngleDto(p, "NominalCapacity", isNominal: true)));
@@ -122,7 +138,6 @@ public static class PmCurveBuilderService
         if (EnableDebugDiagnostics)
         {
             var warnings = ValidateAngleSourcePairing(capacity, angleDegrees)
-                .Concat(ValidateAngleLoopPairing(nominal, design))
                 .ToList();
             LastDiagnostics = new PmCurveBuildDiagnostics(
                 raw.Count,
@@ -137,7 +152,7 @@ public static class PmCurveBuilderService
                 NominalPositiveBranchCount: nominal.Count(p => p.IsPositiveBranch),
                 NominalNegativeBranchCount: nominal.Count(p => !p.IsPositiveBranch),
                 FinalNominalCurveCount: nominal.Count,
-                DesignPMaxDisplay: designPMax,
+                DesignPMaxDisplay: designCap,
                 NominalPMaxDisplay: nominal.Count == 0 ? 0 : nominal.Max(p => p.P),
                 ValidationWarnings: warnings);
         }
@@ -671,7 +686,7 @@ public static class PmCurveBuilderService
             }
         }
 
-        defects.AddRange(ValidateNominalReducedCurvePairing(points));
+
 
         return defects;
     }
@@ -752,7 +767,7 @@ public static class PmCurveBuilderService
     private static double DesignDisplayMx(ControlPoint p) => IsFinite(p.ReducedDisplayMx) ? p.ReducedDisplayMx : p.DisplayMx;
     private static double DesignDisplayMy(ControlPoint p) => IsFinite(p.ReducedDisplayMy) ? p.ReducedDisplayMy : p.DisplayMy;
     private static bool IsValid(ControlPoint p) => IsFinite(p.DisplayP) && IsFinite(p.DisplayMx) && IsFinite(p.DisplayMy);
-    private static bool IsNominalPoint(ControlPoint p) => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase) || p.Label.Contains("Nominal", StringComparison.OrdinalIgnoreCase);
+    private static bool IsNominalPoint(ControlPoint p) => p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase) || p.Label.Contains("Nominal", StringComparison.OrdinalIgnoreCase) || p.Label == "Pn,max";
     private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
     private static double Lerp(double a, double b, double t) => a + (b - a) * t;
 

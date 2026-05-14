@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Entities;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 
@@ -98,6 +98,7 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             .Select(p => 
             {
                 var cp = ToControl(p, DiagramType.Pm3D, unitSystem, p.DepthIndex * surface.AngleCount + p.AngleIndex, $"Nominal_theta={p.ThetaDegrees:F0}", $"depth={p.DepthIndex}", double.MaxValue, useMomentMagnitude: false);
+                if (p.DepthIndex == surface.DepthCount - 1 && p.AngleIndex == 0) cp = cp with { Label = "Pn,max" };
                 return cp with { DisplayMx = cp.NominalDisplayMx, DisplayMy = cp.NominalDisplayMy, DisplayP = cp.NominalDisplayP };
             }));
             
@@ -191,34 +192,34 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         double reducedDisplayMy = useMomentMagnitude ? 0 : DisplayMoment(phiMy, unitSystem);
 
         return new ControlPoint(
-            $"{diagramType}-{sliceKey}-{sortKey:F0}",
-            diagramType,
-            nominal.Pn,
-            nominal.Mnx,
-            nominal.Mny,
-            reduced.Phi,
-            phiPn,
-            phiMx,
-            phiMy,
-            DisplayForce(phiPn, unitSystem),
-            displayMx,
-            reducedDisplayMy,
-            DisplayForce(nominal.Pn, unitSystem),
-            nominalDisplayMx,
-            useMomentMagnitude ? 0 : DisplayMoment(nominal.Mny, unitSystem),
-            point.ThetaDegrees,
-            point.NeutralAxisDepthMm,
-            false,
-            false,
-            false,
-            label,
-            sortKey,
-            label,
-            sliceKey,
-            DisplayForce(uncappedPhiPn, unitSystem),
-            reducedDisplayMx,
-            reducedDisplayMy,
-            point.StrainState.RegionClassification);
+            Id:              $"{diagramType}-{sliceKey}-{sortKey:F0}",
+            DiagramType:     diagramType,
+            Pn:              nominal.Pn,
+            Mnx:             nominal.Mnx,
+            Mny:             nominal.Mny,
+            Phi:             reduced.Phi,
+            PhiPn:           phiPn,
+            PhiMnx:          phiMx,
+            PhiMny:          phiMy,
+            DisplayP:        DisplayForce(phiPn, unitSystem),
+            DisplayMx:       displayMx,
+            DisplayMy:       reducedDisplayMy,
+            NominalDisplayP: DisplayForce(nominal.Pn, unitSystem),
+            NominalDisplayMx: nominalDisplayMx,
+            NominalDisplayMy: useMomentMagnitude ? 0 : DisplayMoment(nominal.Mny, unitSystem),
+            ThetaDegrees:    point.ThetaDegrees,
+            NeutralAxisDepth: point.NeutralAxisDepthMm,
+            IsDemandPoint:   false,
+            IsGoverningPoint: false,
+            IsReferencePoint: false,
+            Label:           label,
+            SortKey:         sortKey,
+            GroupKey:        label,
+            SliceKey:        sliceKey,
+            ReducedDisplayP: DisplayForce(uncappedPhiPn, unitSystem),
+            ReducedDisplayMx: reducedDisplayMx,
+            ReducedDisplayMy: reducedDisplayMy,
+            RegionClassification: point.StrainState.RegionClassification);
     }
 
     private ControlPoint Demand(DiagramType diagramType, LoadDemand demand, UnitSystem unitSystem, double sortKey, string group, string slice, bool useMomentMagnitude)
@@ -227,13 +228,61 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         double displayMx = DisplayMoment(mx, unitSystem);
         double displayMy = useMomentMagnitude ? 0 : DisplayMoment(demand.MuyNmm, unitSystem);
         double displayP = DisplayForce(demand.PuN, unitSystem);
-        return new ControlPoint($"Demand-{diagramType}", diagramType, demand.PuN, demand.MuxNmm, demand.MuyNmm, 1, demand.PuN, demand.MuxNmm, demand.MuyNmm, displayP, displayMx, displayMy, displayP, displayMx, displayMy, 0, 0, true, false, false, "Demand", sortKey, group, slice);
+        return new ControlPoint(
+            Id:              $"Demand-{diagramType}",
+            DiagramType:     diagramType,
+            Pn:              demand.PuN,
+            Mnx:             demand.MuxNmm,
+            Mny:             demand.MuyNmm,
+            Phi:             1,
+            PhiPn:           demand.PuN,
+            PhiMnx:          demand.MuxNmm,
+            PhiMny:          demand.MuyNmm,
+            DisplayP:        displayP,
+            DisplayMx:       displayMx,
+            DisplayMy:       displayMy,
+            NominalDisplayP: displayP,
+            NominalDisplayMx: displayMx,
+            NominalDisplayMy: displayMy,
+            ThetaDegrees:    0,
+            NeutralAxisDepth: 0,
+            IsDemandPoint:   true,
+            IsGoverningPoint: false,
+            IsReferencePoint: false,
+            Label:           "Demand",
+            SortKey:         sortKey,
+            GroupKey:        group,
+            SliceKey:        slice);
     }
 
     private ControlPoint Reference(DiagramType diagramType, UnitSystem unitSystem, double axialN, string label, double sortKey, string group, string slice)
     {
         double displayP = DisplayForce(axialN, unitSystem);
-        return new ControlPoint($"Reference-{label}", diagramType, axialN, 0, 0, 1, axialN, 0, 0, displayP, 0, 0, displayP, 0, 0, 0, 0, false, false, true, label, sortKey, group, slice);
+        return new ControlPoint(
+            Id:              $"Reference-{label}",
+            DiagramType:     diagramType,
+            Pn:              axialN,
+            Mnx:             0,
+            Mny:             0,
+            Phi:             1,
+            PhiPn:           axialN,
+            PhiMnx:          0,
+            PhiMny:          0,
+            DisplayP:        displayP,
+            DisplayMx:       0,
+            DisplayMy:       0,
+            NominalDisplayP: displayP,
+            NominalDisplayMx: 0,
+            NominalDisplayMy: 0,
+            ThetaDegrees:    0,
+            NeutralAxisDepth: 0,
+            IsDemandPoint:   false,
+            IsGoverningPoint: false,
+            IsReferencePoint: true,
+            Label:           label,
+            SortKey:         sortKey,
+            GroupKey:        group,
+            SliceKey:        slice);
     }
 
     private static int NearestAngleIndex(InteractionSurface surface, double angleDegrees)

@@ -4,21 +4,18 @@ using System.Numerics;
 
 namespace MBColumn.Infrastructure.Solvers;
 
-public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
+public sealed class Ec2BoundaryInteractionSolver(IDesignCodeService code) : IInteractionSolver
 {
-    private const double AlphaCc    = 0.80;
-    private const double GammaC     = 1.50;
-    private const double GammaS     = 1.15;
-    private const double EpsilonC2  = 0.0020;
-    private const double EpsilonCu2 = 0.0035;
-    private const double N_Exponent = 2.0;
+    private double GammaC => 1.50;
+    private double GammaS => 1.15;
 
-    public int AngleStepDegrees { get; init; } = 5;
+
+    public double AngleStepDegrees { get; init; } = 5;
     public int NeutralAxisSamples { get; init; } = 100;
 
     public InteractionSurface Solve(RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel)
     {
-        int angleCount = 360 / AngleStepDegrees;
+        int angleCount = (int)(360.0 / AngleStepDegrees);
         var points = new List<InteractionPoint>(angleCount * NeutralAxisSamples);
         for (int d = 0; d < NeutralAxisSamples - 1; d++)
         {
@@ -47,13 +44,17 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
         double cMax = 3.0 * System.Math.Max(w, h);
         double c = 5.0 + depthIndex * (cMax - 5.0) / (sweepSamples - 1);
 
-        double xC = 2.0 * dMax * (1.0 - EpsilonC2 / EpsilonCu2); 
-        double epsilonTop = c <= 2.0 * dMax ? EpsilonCu2 : (c * EpsilonC2) / (c - xC);
+        double ecu = code.ConcreteUltimateStrain(concrete.FcMpa);
+        double epsC2 = code.ConcretePeakStrain(concrete.FcMpa);
+        double n = code.ConcreteParabolicExponent(concrete.FcMpa);
 
-        double fcd = AlphaCc * concrete.FcMpa / GammaC;
+        double xC = 2.0 * dMax * (1.0 - epsC2 / ecu); 
+        double epsilonTop = c <= 2.0 * dMax ? ecu : (c * epsC2) / (c - xC);
+
+        double fcd = code.AlphaCc * concrete.FcMpa / GammaC;
         double fyd = steel.FyMpa / GammaS;
 
-        var results = IntegrateConcrete(w, h, nx, ny, dMax, c, epsilonTop, fcd);
+        var results = IntegrateConcrete(w, h, nx, ny, dMax, c, epsilonTop, fcd, epsC2, n);
 
         double steelN = 0.0, steelMx = 0.0, steelMy = 0.0;
         double maxTension = 0.0;
@@ -63,7 +64,7 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
             double strain = epsilonTop * (c - distFromCompFace) / c;
             if (strain < 0) maxTension = System.Math.Max(maxTension, -strain);
             double stress = System.Math.Clamp(steel.EsMpa * strain, -fyd, fyd);
-            double dispStress = GetConcreteStress(strain, fcd);
+            double dispStress = GetConcreteStress(strain, fcd, epsC2, n);
             double force = (stress - dispStress) * bar.AreaMm2;
             steelN += force;
             steelMx += force * bar.YMm;
@@ -77,7 +78,7 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
     }
 
     private static (double N, double Mx, double My) IntegrateConcrete(
-        double w, double h, double nx, double ny, double dMax, double c, double epsTop, double fcd)
+        double w, double h, double nx, double ny, double dMax, double c, double epsTop, double fcd, double epsC2, double n)
     {
         // 1. New coordinate system (x', y') where y' is along the neutral axis normal (nx, ny)
         // Transformation: y' = x*nx + y*ny, x' = x*ny - y*nx (Rotation by -theta + 90)
@@ -89,7 +90,7 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
         var compressedPoly = ClipHorizontal(rotatedPoly, yNA);
         if (compressedPoly.Count < 3) return (0, 0, 0);
 
-        double yTrans = yTop - c * (EpsilonC2 / epsTop);
+        double yTrans = yTop - c * (epsC2 / epsTop);
         var slices = compressedPoly.Select(p => (double)p.Y).Concat(new[] { yNA, yTop, yTrans })
                                    .Where(y => y >= yNA && y <= yTop)
                                    .Distinct().OrderBy(y => y).ToList();
@@ -105,7 +106,7 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
 
             var simpson = IntegrateSimpson(y0, y1, y => {
                 double uStrain = epsTop * (c - (yTop - y)) / c;
-                double stress = GetConcreteStress(uStrain, fcd);
+                double stress = GetConcreteStress(uStrain, fcd, epsC2, n);
                 double width = w0 + (w1 - w0) * (y - y0) / (y1 - y0);
                 double xc = xc0 + (xc1 - xc0) * (y - y0) / (y1 - y0);
                 return (stress * width, stress * width * xc, stress * width * y);
@@ -164,20 +165,21 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
         return result;
     }
 
-    private static double GetConcreteStress(double strain, double fcd)
+    private static double GetConcreteStress(double strain, double fcd, double epsC2, double n)
     {
         if (strain <= 0) return 0;
-        if (strain >= EpsilonC2) return fcd;
-        return fcd * (1.0 - System.Math.Pow(1.0 - strain / EpsilonC2, N_Exponent));
+        if (strain >= epsC2) return fcd;
+        return fcd * (1.0 - System.Math.Pow(1.0 - strain / epsC2, n));
     }
 
     private InteractionPoint EvaluatePureCompression(
         RectangularSection section, ConcreteMaterial concrete, SteelMaterial steel,
         int depthIndex, int angleIndex, double angleDegrees)
     {
-        double fcd = AlphaCc * concrete.FcMpa / GammaC;
+        double epsC2 = code.ConcretePeakStrain(concrete.FcMpa);
+        double fcd = code.AlphaCc * concrete.FcMpa / GammaC;
         double fyd = steel.FyMpa / GammaS;
-        double sStress = System.Math.Min(steel.EsMpa * EpsilonC2, fyd);
+        double sStress = System.Math.Min(steel.EsMpa * epsC2, fyd);
         
         double area = section.WidthMm * section.HeightMm;
         double nC = fcd * area;
@@ -199,7 +201,7 @@ public sealed class Ec2BoundaryInteractionSolver : IInteractionSolver
         return new InteractionPoint(
             depthIndex, angleIndex, angleDegrees, 1e9, nC + nS, mxC + mxS, myC + myS, 1.0,
             0, nC, nS, mxC, myC, mxS, myS,
-            EpsilonC2, EpsilonC2, EpsilonC2, EpsilonC2, "Pure Compression");
+            epsC2, epsC2, epsC2, epsC2, "Pure Compression");
     }
 
     private static double GetProjectedDepth(double w, double h, double nx, double ny)

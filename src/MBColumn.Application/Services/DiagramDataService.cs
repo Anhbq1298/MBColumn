@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 
@@ -115,17 +115,27 @@ public sealed class DiagramDataService
         => IsFinite(loadCase.PuDisplay) && IsFinite(loadCase.MuxDisplay) && IsFinite(loadCase.MuyDisplay);
 
     public PmmSurfaceDto BuildPmmSurfaceRenderData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
+        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 100);
+
+    public PmmSurfaceDto BuildPmmSurfaceData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
+        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 100);
+
+    /// <summary>
+    /// Builds the 3D PMM surface by resampling the interaction surface at
+    /// <paramref name="pLevelCount"/> uniformly-spaced P levels.
+    /// Each ring is a true constant-P contour (Mx-My boundary at that axial load),
+    /// giving a clean, evenly-spaced mesh regardless of neutral-axis sweep density.
+    /// </summary>
+    public PmmSurfaceDto BuildPmmSurfaceRenderDataAtPLevels(
+        IReadOnlyList<ControlPoint> points, UnitSystem unitSystem, int pLevelCount = 100)
     {
-        var dto = ToDto(BuildSurfaceMesh(points));
+        var dto = ToDto(BuildPLevelSurfaceMesh(points, pLevelCount));
         return new PmmSurfaceDto(dto, ForceUnit(unitSystem), MomentUnit(unitSystem))
         {
-            MeshTriangles = BuildTriangles(dto),
+            MeshTriangles  = BuildTriangles(dto),
             WireframeLines = BuildWireframe(dto)
         };
     }
-
-    public PmmSurfaceDto BuildPmmSurfaceData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
-        => BuildPmmSurfaceRenderData(points, unitSystem);
 
     public PmmSurfaceDto BuildMmSliceRenderData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
         => new(ToDto(BuildStackedMmContours(points)), ForceUnit(unitSystem), MomentUnit(unitSystem));
@@ -159,6 +169,126 @@ public sealed class DiagramDataService
         double cx = points.Average(p => p.DisplayMx);
         double cy = points.Average(p => p.DisplayMy);
         return points.OrderBy(p => Math.Atan2(p.DisplayMy - cy, p.DisplayMx - cx)).ToList();
+    }
+
+    /// <summary>
+    /// Resamples the PMM surface at <paramref name="pLevelCount"/> uniformly-spaced P levels.
+    /// For each P level, interpolates the Mx and My capacity at every angle θ from
+    /// the existing PM curves. The resulting mesh has one ring per P level — true
+    /// constant-P contours — so the 3D mesh is evenly distributed along the P axis.
+    /// </summary>
+    private static IReadOnlyList<ControlPoint> BuildPLevelSurfaceMesh(
+        IEnumerable<ControlPoint> rawPoints, int pLevelCount)
+    {
+        // Separate nominal and design surfaces; process each independently.
+        var allPoints = Clean(rawPoints).ToList();
+        var result    = new List<ControlPoint>();
+
+        foreach (var isNominal in new[] { false, true })
+        {
+            var surface = allPoints
+                .Where(p => p.DiagramType == DiagramType.Pm3D
+                         && !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint
+                         && (isNominal
+                             ? p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)
+                             : !p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (surface.Count == 0) continue;
+
+            // Group by angle (theta).
+            var byAngle = surface
+                .GroupBy(p => Math.Round(p.ThetaDegrees, 4))
+                .OrderBy(g => g.Key)
+                .Select(g => g.OrderBy(p => isNominal ? p.NominalDisplayP : p.DisplayP).ToList())
+                .Where(g => g.Count >= 2)
+                .ToList();
+
+            if (byAngle.Count == 0) continue;
+
+            // Determine global P range across all angles.
+            double pMin = byAngle.Min(g => isNominal ? g.First().NominalDisplayP : g.First().DisplayP);
+            double pMax = byAngle.Max(g => isNominal ? g.Last().NominalDisplayP  : g.Last().DisplayP);
+            if (Math.Abs(pMax - pMin) < 1e-9) continue;
+
+            string groupKey = isNominal ? "NominalCapacity" : "DesignCapacity";
+
+            for (int pi = 0; pi < pLevelCount; pi++)
+            {
+                double pTarget = pMin + (pMax - pMin) * pi / (pLevelCount - 1);
+                string sliceKey = $"P={pTarget:F2}";
+
+                foreach (var angleCurve in byAngle)
+                {
+                    var interpolated = InterpolatePLevel(angleCurve, pTarget, isNominal);
+                    if (interpolated is null) continue;
+
+                    var (mx, my, phi, theta, naDepth) = interpolated.Value;
+                    result.Add(new ControlPoint(
+                        Id:              $"{groupKey}|{theta:F4}|{pi}",
+                        DiagramType:     DiagramType.Pm3D,
+                        Pn:              pTarget,
+                        Mnx:             mx,
+                        Mny:             my,
+                        Phi:             phi,
+                        PhiPn:           pTarget,
+                        PhiMnx:          mx,
+                        PhiMny:          my,
+                        DisplayP:        pTarget,
+                        DisplayMx:       mx,
+                        DisplayMy:       my,
+                        NominalDisplayP: pTarget,
+                        NominalDisplayMx: mx,
+                        NominalDisplayMy: my,
+                        ThetaDegrees:    theta,
+                        NeutralAxisDepth: naDepth,
+                        IsDemandPoint:   false,
+                        IsGoverningPoint: false,
+                        IsReferencePoint: false,
+                        Label:           string.Empty,
+                        SortKey:         pi,
+                        GroupKey:        groupKey,
+                        SliceKey:        sliceKey));
+                }
+            }
+        }
+
+        // Re-add demand and governing markers
+        result.AddRange(allPoints.Where(p => p.IsDemandPoint || p.IsGoverningPoint || p.IsReferencePoint));
+
+        return result;
+    }
+
+    private static (double Mx, double My, double Phi, double Theta, double NaDepth)?
+        InterpolatePLevel(IReadOnlyList<ControlPoint> curve, double pTarget, bool nominal)
+    {
+        double GetP(ControlPoint p)  => nominal ? p.NominalDisplayP  : p.DisplayP;
+        double GetMx(ControlPoint p) => nominal ? p.NominalDisplayMx : p.DisplayMx;
+        double GetMy(ControlPoint p) => nominal ? p.NominalDisplayMy : p.DisplayMy;
+
+        // Clamp to curve endpoints rather than returning null for out-of-range.
+        if (pTarget <= GetP(curve[0]))
+            return (GetMx(curve[0]), GetMy(curve[0]), curve[0].Phi, curve[0].ThetaDegrees, curve[0].NeutralAxisDepth);
+        if (pTarget >= GetP(curve[^1]))
+            return (GetMx(curve[^1]), GetMy(curve[^1]), curve[^1].Phi, curve[^1].ThetaDegrees, curve[^1].NeutralAxisDepth);
+
+        for (int i = 0; i < curve.Count - 1; i++)
+        {
+            double pa = GetP(curve[i]);
+            double pb = GetP(curve[i + 1]);
+            if (pa <= pTarget && pb >= pTarget)
+            {
+                double t = Math.Abs(pb - pa) < 1e-9 ? 0.0 : (pTarget - pa) / (pb - pa);
+                t = Math.Clamp(t, 0.0, 1.0);
+                return (
+                    Linear(GetMx(curve[i]), GetMx(curve[i + 1]), t),
+                    Linear(GetMy(curve[i]), GetMy(curve[i + 1]), t),
+                    Linear(curve[i].Phi,    curve[i + 1].Phi,    t),
+                    curve[i].ThetaDegrees,
+                    Linear(curve[i].NeutralAxisDepth, curve[i + 1].NeutralAxisDepth, t));
+            }
+        }
+        return null;
     }
 
     public IReadOnlyList<ControlPoint> BuildSurfaceMesh(IEnumerable<ControlPoint> points)

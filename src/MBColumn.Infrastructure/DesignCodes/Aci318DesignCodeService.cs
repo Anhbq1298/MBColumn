@@ -4,12 +4,25 @@ namespace MBColumn.Infrastructure.DesignCodes;
 
 public sealed class Aci318DesignCodeService : IDesignCodeService
 {
-    private const double TiedColumnMinimumPhi = 0.65;
-    private const double TiedColumnMaximumPhi = 0.90;
+    private const double TiedColumnMinimumPhi    = 0.65;
+    private const double TiedColumnMaximumPhi    = 0.90;
     private const double TiedColumnAxialCapFactor = 0.80;
 
-    public double ConcreteUltimateStrain => 0.003;
+    // ACI 318 §22.2.2.1 — εcu = 0.003, independent of f'c.
+    public double ConcreteUltimateStrain(double fckMpa) => 0.003;
+
+    // Hognestad parabola peak strain ε0 = 2εcu/3.
+    public double ConcretePeakStrain(double fckMpa) => 2.0 * ConcreteUltimateStrain(fckMpa) / 3.0;
+
+    // Hognestad parabola exponent n = 2 for ACI.
+    public double ConcreteParabolicExponent(double fckMpa) => 2.0;
+
+    // ACI rectangular block stress = 0.85 f'c; no high-strength η reduction.
+    public double ConcreteEffectiveStrengthFactor(double fckMpa) => 1.0;
+
+    // Whitney block: 0.85 × f'c.
     public double ConcreteStressBlockFactor => 0.85;
+
     public double AlphaCc { get; set; } = 0.85;
 
     public double Beta1(double fcMpa)
@@ -24,22 +37,22 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
 
     public double Phi(double tensileSteelStrain, double fyMpa, double esMpa)
     {
-        // Simplified tied-column ACI-style phi transition. Compression-controlled
-        // points use minimum phi, transition points interpolate linearly, and
-        // tension-controlled points use maximum phi.
-        double yieldStrain = fyMpa / esMpa;
+        double yieldStrain        = fyMpa / esMpa;
         double compressionControlled = yieldStrain;
-        double tensionControlled = yieldStrain + 0.003;
+        double tensionControlled  = yieldStrain + 0.003;
         double t = (tensileSteelStrain - compressionControlled) / (tensionControlled - compressionControlled);
         return TiedColumnMinimumPhi + System.Math.Clamp(t, 0.0, 1.0) * (TiedColumnMaximumPhi - TiedColumnMinimumPhi);
     }
 
     public double NominalCompressionLimit(double maximumNominalCompressionN) => TiedColumnAxialCapFactor * maximumNominalCompressionN;
+    public double CompressionDesignLimit(double maximumPhiCompressionN)       => TiedColumnAxialCapFactor * maximumPhiCompressionN;
 
-    public double CompressionDesignLimit(double maximumPhiCompressionN) => TiedColumnAxialCapFactor * maximumPhiCompressionN;
-
-    // ACI phi handles member-level reduction; steel yield strength is used as-is.
+    // ACI: phi handles member-level reduction; steel strength used as-is.
     public double SteelDesignStrength(double fykMpa) => fykMpa;
+
+    // ACI has no explicit code-imposed steel tensile strain cap.
+    // 0.08 is a practical upper bound consistent with reinforcing bar fracture strain.
+    public double SteelMaxTensileStrain(double fykMpa, double esMpa) => 0.08;
 
     public bool UseLetterControlPoints => false;
 }

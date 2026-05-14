@@ -43,6 +43,7 @@ public static class ControlPointTableBuilderService
         RectangularSection section,
         double fyMpa,
         double esMpa,
+        double fckMpa,
         UnitSystem unitSystem,
         IUnitConversionService units,
         IDesignCodeService code)
@@ -50,7 +51,7 @@ public static class ControlPointTableBuilderService
         double maxPhiPn = surface.Points.Where(p => p.PhiPn > 0).Select(p => p.PhiPn).DefaultIfEmpty(0).Max();
         double compressionLimitN = code.CompressionDesignLimit(maxPhiPn);
 
-        double ecu = code.ConcreteUltimateStrain;
+        double ecu = code.ConcreteUltimateStrain(fckMpa);
         double eyield = fyMpa / esMpa;
 
         var rows = new List<ControlPointTableRowDto>();

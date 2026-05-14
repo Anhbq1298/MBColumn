@@ -4,5 +4,6 @@ public enum Ec2SolverType
 {
     Fiber,
     Boundary,
-    SimplifiedStressBlock
+    SimplifiedStressBlock,
+    AnalyticFiber
 }

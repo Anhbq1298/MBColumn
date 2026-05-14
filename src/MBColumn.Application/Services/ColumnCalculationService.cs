@@ -110,7 +110,7 @@ public sealed class ColumnCalculationService(
                 govPt.NeutralAxisDepthMm);
         }).ToList();
 
-        var cpTable = ControlPointTableBuilderService.Build(surface, section, fyMpa, esMpa, input.UnitSystem, units, codeService);
+        var cpTable = ControlPointTableBuilderService.Build(surface, section, fyMpa, esMpa, fcMpa, input.UnitSystem, units, codeService);
         var debugPoints = BuildCapacityDebugPoints(surface, govPoint, input);
 
         return new CalculationResultDto(
