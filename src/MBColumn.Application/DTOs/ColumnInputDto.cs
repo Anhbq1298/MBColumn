@@ -25,6 +25,8 @@ public sealed record ColumnInputDto(
 {
     public IReadOnlyList<LoadCaseDto>? LoadCases { get; init; }
     public RebarLayoutType RebarLayoutType { get; init; } = RebarLayoutType.AllSidesEqual;
+    public SectionShapeType SectionShape { get; init; } = SectionShapeType.Rectangular;
+    public double Diameter { get; init; }
     public RebarSideInputDto? TopRebarSide { get; init; }
     public RebarSideInputDto? BottomRebarSide { get; init; }
     public RebarSideInputDto? LeftRebarSide { get; init; }

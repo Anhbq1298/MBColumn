@@ -11,6 +11,7 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 {
     public static readonly DependencyProperty SectionWidthProperty = DependencyProperty.Register(nameof(SectionWidth), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty SectionHeightProperty = DependencyProperty.Register(nameof(SectionHeight), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty SectionShapeProperty = DependencyProperty.Register(nameof(SectionShape), typeof(SectionShapeType), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(SectionShapeType.Rectangular, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty CoverProperty = DependencyProperty.Register(nameof(Cover), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty UnitSystemProperty = DependencyProperty.Register(nameof(UnitSystem), typeof(UnitSystem), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(UnitSystem.Metric, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty RebarsProperty = DependencyProperty.Register(nameof(Rebars), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -22,6 +23,7 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 
     public double SectionWidth { get => (double)GetValue(SectionWidthProperty); set => SetValue(SectionWidthProperty, value); }
     public double SectionHeight { get => (double)GetValue(SectionHeightProperty); set => SetValue(SectionHeightProperty, value); }
+    public SectionShapeType SectionShape { get => (SectionShapeType)GetValue(SectionShapeProperty); set => SetValue(SectionShapeProperty, value); }
     public double Cover { get => (double)GetValue(CoverProperty); set => SetValue(CoverProperty, value); }
     public UnitSystem UnitSystem { get => (UnitSystem)GetValue(UnitSystemProperty); set => SetValue(UnitSystemProperty, value); }
     public IEnumerable? Rebars { get => (IEnumerable?)GetValue(RebarsProperty); set => SetValue(RebarsProperty, value); }
@@ -62,17 +64,30 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         var darkNavy = new SolidColorBrush(Color.FromRgb(0, 58, 102));
         var grey = new SolidColorBrush(Color.FromRgb(123, 135, 148));
         var text = new SolidColorBrush(Color.FromRgb(31, 41, 51));
+        var center = new Point(section.Left + section.Width / 2.0, section.Top + section.Height / 2.0);
 
         DrawText(dc, SectionLabel, 13, text, new Point(14, 10), FontWeights.SemiBold);
         DrawText(dc, RebarLabel, 12, darkNavy, new Point(14, 28), FontWeights.Normal);
         DrawText(dc, CoverLabel, 12, grey, new Point(Math.Max(14, ActualWidth - 145), 28), FontWeights.Normal);
 
-        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(244, 247, 250)), new Pen(navy, 2), section);
-        var coverRect = new Rect(section.Left + c * scale, section.Top + c * scale, Math.Max(0, section.Width - 2 * c * scale), Math.Max(0, section.Height - 2 * c * scale));
-        dc.DrawRectangle(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, coverRect);
-        DrawText(dc, "cover", 10, grey, new Point(coverRect.Left + 4, coverRect.Top + 4), FontWeights.Normal);
+        if (SectionShape == SectionShapeType.Circular)
+        {
+            var fill = new SolidColorBrush(Color.FromRgb(244, 247, 250));
+            double rx = section.Width / 2.0;
+            double ry = section.Height / 2.0;
+            dc.DrawEllipse(fill, new Pen(navy, 2), center, rx, ry);
+            double coverRadius = Math.Max(0, rx - c * scale);
+            dc.DrawEllipse(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, center, coverRadius, coverRadius);
+            DrawText(dc, "cover", 10, grey, new Point(center.X + coverRadius * 0.35, center.Y - coverRadius * 0.7), FontWeights.Normal);
+        }
+        else
+        {
+            dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(244, 247, 250)), new Pen(navy, 2), section);
+            var coverRect = new Rect(section.Left + c * scale, section.Top + c * scale, Math.Max(0, section.Width - 2 * c * scale), Math.Max(0, section.Height - 2 * c * scale));
+            dc.DrawRectangle(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, coverRect);
+            DrawText(dc, "cover", 10, grey, new Point(coverRect.Left + 4, coverRect.Top + 4), FontWeights.Normal);
+        }
 
-        var center = new Point(section.Left + section.Width / 2.0, section.Top + section.Height / 2.0);
         dc.DrawLine(new Pen(new SolidColorBrush(Color.FromRgb(227, 27, 35)), 1.2), center, new Point(center.X + Math.Min(34, section.Width / 4), center.Y));
         dc.DrawLine(new Pen(navy, 1.2), center, new Point(center.X, center.Y - Math.Min(34, section.Height / 4)));
         DrawArrow(dc, new Point(center.X + Math.Min(34, section.Width / 4), center.Y), 0, new SolidColorBrush(Color.FromRgb(227, 27, 35)));
@@ -89,8 +104,15 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             dc.DrawEllipse(darkNavy, new Pen(Brushes.White, 0.8), pt, r, r);
         }
 
-        DrawDimension(dc, new Point(section.Left, section.Bottom + 16), new Point(section.Right, section.Bottom + 16), $"b = {SectionWidth:0.###} {UnitText}", text);
-        DrawDimension(dc, new Point(section.Left - 18, section.Bottom), new Point(section.Left - 18, section.Top), $"h = {SectionHeight:0.###} {UnitText}", text, vertical: true);
+        if (SectionShape == SectionShapeType.Circular)
+        {
+            DrawDimension(dc, new Point(section.Left, section.Bottom + 16), new Point(section.Right, section.Bottom + 16), $"D = {SectionWidth:0.###} {UnitText}", text);
+        }
+        else
+        {
+            DrawDimension(dc, new Point(section.Left, section.Bottom + 16), new Point(section.Right, section.Bottom + 16), $"b = {SectionWidth:0.###} {UnitText}", text);
+            DrawDimension(dc, new Point(section.Left - 18, section.Bottom), new Point(section.Left - 18, section.Top), $"h = {SectionHeight:0.###} {UnitText}", text, vertical: true);
+        }
     }
 
     private string UnitText => UnitSystem == UnitSystem.Metric ? "mm" : "in";

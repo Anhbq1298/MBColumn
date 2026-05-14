@@ -552,7 +552,8 @@ public sealed class ResultViewModel : ViewModelBase
             Result.CoverMm,
             Result.RebarCoordinates,
             BuildInsetSelectedState(),
-            SelectedSliceAngleDegrees);
+            SelectedSliceAngleDegrees,
+            Result.SectionShape);
     }
 
     private PmChartInsetSelectedStateDto? BuildInsetSelectedState()

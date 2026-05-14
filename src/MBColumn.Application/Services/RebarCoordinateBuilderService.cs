@@ -164,5 +164,53 @@ public sealed class RebarCoordinateBuilderService(
             bar.Name,
             side));
     }
+
+    public IReadOnlyList<RebarCoordinateDto> BuildCircular(
+        double diameter,
+        double cover,
+        int barCount,
+        string barSize,
+        LengthUnit lengthUnit,
+        UnitSystem unitSystem)
+    {
+        var barDb = unitSystem == UnitSystem.Metric ? metricBars : imperialBars;
+        if (!barDb.TryGet(barSize, out var bar))
+        {
+            throw new InvalidOperationException($"Unknown bar size '{barSize}'.");
+        }
+
+        double diameterMm = units.LengthToMm(diameter, lengthUnit);
+        double coverMm = units.LengthToMm(cover, lengthUnit);
+        // Bar centroid radius: from centre of section to centroid of bar
+        double radiusMm = diameterMm / 2.0 - coverMm - bar.DiameterMm / 2.0;
+        if (radiusMm <= 0)
+        {
+            throw new InvalidOperationException("Cover places rebar centroids outside the circular section boundary.");
+        }
+
+        if (barCount < 1)
+        {
+            throw new InvalidOperationException("At least one bar is required.");
+        }
+
+        var bars = new List<RebarCoordinateDto>(barCount);
+        for (int i = 0; i < barCount; i++)
+        {
+            // Start from top (π/2) and distribute evenly clockwise
+            double angle = Math.PI / 2.0 - 2.0 * Math.PI * i / barCount;
+            double x = radiusMm * Math.Cos(angle);
+            double y = radiusMm * Math.Sin(angle);
+            bars.Add(new RebarCoordinateDto(
+                $"B{i + 1}",
+                x,
+                y,
+                bar.DiameterMm,
+                bar.AreaMm2,
+                bar.Name,
+                "Perimeter"));
+        }
+
+        return bars;
+    }
 }
 

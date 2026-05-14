@@ -47,23 +47,58 @@ public sealed class ColumnCalculationService(
 
         var codeService = codeFactory.Get(input.DesignCode);
         codeService.AlphaCc = input.AlphaCc;
-        var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver);
 
-        double widthMm = units.LengthToMm(input.Width, input.LengthUnit);
-        double heightMm = units.LengthToMm(input.Height, input.LengthUnit);
         double coverMm = units.LengthToMm(input.Cover, input.LengthUnit);
         double fcMpa = units.StressToMpa(input.Fc, input.StressUnit);
         double fyMpa = units.StressToMpa(input.Fy, input.StressUnit);
         double esMpa = units.StressToMpa(input.Es, input.StressUnit);
+        var concrete = new ConcreteMaterial($"fc {fcMpa:F1}", fcMpa);
+        var steel = new SteelMaterial($"fy {fyMpa:F1}", fyMpa, esMpa);
 
-        var coordinateList = input.RebarCoordinates ?? rebarCoordinates.Build(CreateLayoutInput(input), input.Width, input.Height, input.LengthUnit, input.UnitSystem);
-        var bars = coordinateList
-            .Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y))
-            .ToList();
-        var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
-        var section = new RectangularSection(widthMm, heightMm, layout);
-        var surface = solver.Solve(section, new ConcreteMaterial($"fc {fcMpa:F1}", fcMpa), new SteelMaterial($"fy {fyMpa:F1}", fyMpa, esMpa));
+        ColumnSection section;
+        InteractionSurface surface;
 
+        if (input.SectionShape == SectionShapeType.Circular)
+        {
+            double diameterMm = units.LengthToMm(input.Diameter, input.LengthUnit);
+            var coordinateList = input.RebarCoordinates
+                ?? rebarCoordinates.BuildCircular(input.Diameter, input.Cover, input.BarCount, input.BarSize, input.LengthUnit, input.UnitSystem);
+            var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
+            var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
+            section = new CircularSection(diameterMm, layout);
+            var circularSolver = solverFactory.GetCircular(input.DesignCode);
+            surface = circularSolver.Solve((CircularSection)section, concrete, steel);
+
+            return BuildResult(input, section, surface, coordinateList, diameterMm, diameterMm, fcMpa, fyMpa, esMpa, codeService);
+        }
+        else
+        {
+            double widthMm = units.LengthToMm(input.Width, input.LengthUnit);
+            double heightMm = units.LengthToMm(input.Height, input.LengthUnit);
+            var coordinateList = input.RebarCoordinates
+                ?? rebarCoordinates.Build(CreateLayoutInput(input), input.Width, input.Height, input.LengthUnit, input.UnitSystem);
+            var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
+            var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
+            section = new RectangularSection(widthMm, heightMm, layout);
+            var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver);
+            surface = solver.Solve((RectangularSection)section, concrete, steel);
+
+            return BuildResult(input, section, surface, coordinateList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService);
+        }
+    }
+
+    private CalculationResultDto BuildResult(
+        ColumnInputDto input,
+        ColumnSection section,
+        InteractionSurface surface,
+        IReadOnlyList<RebarCoordinateDto> coordinateList,
+        double sectionWidthMm,
+        double sectionHeightMm,
+        double fcMpa,
+        double fyMpa,
+        double esMpa,
+        IDesignCodeService codeService)
+    {
         // Determine active load cases: use LoadCases list when provided; fall back to single (Pu, Mux, Muy)
         var activeCases = (input.LoadCases?.Where(lc => lc.IsActive).ToList()) ?? [];
         if (activeCases.Count == 0)
@@ -140,9 +175,10 @@ public sealed class ColumnCalculationService(
             LoadCaseResults = lcResultDtos,
             GoverningLoadCaseId = govLc.Id,
             ControlPointTable = cpTable,
-            SectionWidthMm = widthMm,
-            SectionHeightMm = heightMm,
-            CoverMm = coverMm,
+            SectionShape = section.Shape,
+            SectionWidthMm = sectionWidthMm,
+            SectionHeightMm = sectionHeightMm,
+            CoverMm = units.LengthToMm(input.Cover, input.LengthUnit),
             RebarCoordinates = coordinateList,
             CapacityDebugPoints = debugPoints
         };
@@ -198,4 +234,3 @@ public sealed class ColumnCalculationService(
             input.LeftRebarSide ?? new RebarSideInputDto(input.BarCount / 4, input.BarSize, input.Cover),
             input.RightRebarSide ?? new RebarSideInputDto(input.BarCount / 4, input.BarSize, input.Cover));
 }
-

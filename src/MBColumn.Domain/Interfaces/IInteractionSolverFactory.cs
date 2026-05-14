@@ -8,4 +8,6 @@ public interface IInteractionSolverFactory
         DesignCodeType code,
         Ec2SolverType ec2Solver = Ec2SolverType.SimplifiedStressBlock,
         AciSolverType aciSolver = AciSolverType.Conventional);
+
+    ICircularInteractionSolver GetCircular(DesignCodeType code);
 }

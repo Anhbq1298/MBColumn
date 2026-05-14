@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Enums;
+using MBColumn.Domain.Enums;
 
 namespace MBColumn.Domain.Entities;
 
@@ -9,5 +9,6 @@ public sealed record RectangularSection(
 {
     public override double WidthMm => Bmm;
     public override double HeightMm => Hmm;
+    public override double AreaMm2 => Bmm * Hmm;
 }
 

@@ -1,4 +1,5 @@
 ﻿using MBColumn.Application.DTOs;
+using MBColumn.Domain.Enums;
 
 namespace MBColumn.Application.Services;
 
@@ -18,7 +19,8 @@ public sealed class PmChartInsetBuilderService(CompressionZonePolygonBuilder com
         double coverMm,
         IReadOnlyList<RebarCoordinateDto> rebarCoordinates,
         PmChartInsetSelectedStateDto? selectedState,
-        double fallbackThetaDegrees)
+        double fallbackThetaDegrees,
+        SectionShapeType sectionShape = SectionShapeType.Rectangular)
     {
         if (!IsFinite(sectionWidthMm) || !IsFinite(sectionHeightMm) || sectionWidthMm <= 0 || sectionHeightMm <= 0)
         {
@@ -27,15 +29,25 @@ public sealed class PmChartInsetBuilderService(CompressionZonePolygonBuilder com
 
         double hx = sectionWidthMm / 2.0;
         double hy = sectionHeightMm / 2.0;
-        var sectionBoundary = new[]
-        {
-            new InsetPointDto(-hx, -hy),
-            new InsetPointDto( hx, -hy),
-            new InsetPointDto( hx,  hy),
-            new InsetPointDto(-hx,  hy)
-        };
+        InsetPointDto[] sectionBoundary;
+        IReadOnlyList<InsetPointDto> coverBoundary;
 
-        var coverBoundary = BuildCoverBoundary(hx, hy, coverMm);
+        if (sectionShape == SectionShapeType.Circular)
+        {
+            sectionBoundary = BuildCirclePolygon(hx, 64);
+            coverBoundary = BuildCircleCoverBoundary(hx, coverMm);
+        }
+        else
+        {
+            sectionBoundary =
+            [
+                new InsetPointDto(-hx, -hy),
+                new InsetPointDto( hx, -hy),
+                new InsetPointDto( hx,  hy),
+                new InsetPointDto(-hx,  hy)
+            ];
+            coverBoundary = BuildCoverBoundary(hx, hy, coverMm);
+        }
         var rebarPoints = rebarCoordinates
             .Where(b => IsFinite(b.X) && IsFinite(b.Y))
             .Select(b => new InsetPointDto(b.X, b.Y))
@@ -210,5 +222,27 @@ public sealed class PmChartInsetBuilderService(CompressionZonePolygonBuilder com
     }
 
     private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+    // Approximates a circle with N evenly-spaced polygon vertices.
+    private static InsetPointDto[] BuildCirclePolygon(double radius, int n)
+    {
+        var pts = new InsetPointDto[n];
+        for (int i = 0; i < n; i++)
+        {
+            double angle = 2.0 * Math.PI * i / n;
+            pts[i] = new InsetPointDto(radius * Math.Cos(angle), radius * Math.Sin(angle));
+        }
+        return pts;
+    }
+
+    private static IReadOnlyList<InsetPointDto> BuildCircleCoverBoundary(double radius, double coverMm)
+    {
+        double innerRadius = radius - coverMm;
+        if (!IsFinite(coverMm) || coverMm <= 0 || innerRadius <= 0)
+        {
+            return [];
+        }
+        return BuildCirclePolygon(innerRadius, 64);
+    }
 }
 

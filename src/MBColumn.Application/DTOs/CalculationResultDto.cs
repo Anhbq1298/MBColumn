@@ -30,6 +30,7 @@ public sealed record CalculationResultDto(
     public IReadOnlyList<LoadCaseResultDto> LoadCaseResults { get; init; } = [];
     public string GoverningLoadCaseId { get; init; } = "";
     public ControlPointTableDto? ControlPointTable { get; init; }
+    public SectionShapeType SectionShape { get; init; } = SectionShapeType.Rectangular;
     public double SectionWidthMm { get; init; }
     public double SectionHeightMm { get; init; }
     public double CoverMm { get; init; }

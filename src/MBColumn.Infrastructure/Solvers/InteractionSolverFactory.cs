@@ -9,6 +9,8 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
     private readonly IInteractionSolver aciFiberSolver;
     private readonly IInteractionSolver ec2SimplifiedBlockSolver;
     private readonly IInteractionSolver ec2FiberSolver;
+    private readonly ICircularInteractionSolver aciCircularSolver;
+    private readonly ICircularInteractionSolver ec2CircularSolver;
 
     // Legacy solvers kept for backward compatibility — not routed as defaults.
     private readonly IInteractionSolver ec2BoundarySolver;
@@ -20,6 +22,8 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
         aciFiberSolver         = new AciFiberInteractionSolver(aci) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
         ec2SimplifiedBlockSolver = new Ec2SimplifiedStressBlockInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
         ec2FiberSolver         = new Ec2FiberInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        aciCircularSolver      = new CircularFiberInteractionSolver(aci) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
+        ec2CircularSolver      = new CircularFiberInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
         ec2BoundarySolver      = new Ec2BoundaryInteractionSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
         ecPmmFiberAnalytic     = new EcPmmFiberAnalyticSolver(ec2) { AngleStepDegrees = 10.0, NeutralAxisSamples = 100 };
     }
@@ -38,4 +42,7 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
         },
         _ => aciSolver == AciSolverType.Fiber ? aciFiberSolver : aciConventionalSolver
     };
+
+    public ICircularInteractionSolver GetCircular(DesignCodeType code)
+        => code == DesignCodeType.Ec2 ? ec2CircularSolver : aciCircularSolver;
 }

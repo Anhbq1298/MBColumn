@@ -40,7 +40,7 @@ public static class ControlPointTableBuilderService
 
     public static ControlPointTableDto Build(
         InteractionSurface surface,
-        RectangularSection section,
+        ColumnSection section,
         double fyMpa,
         double esMpa,
         double fckMpa,
@@ -280,15 +280,28 @@ public static class ControlPointTableBuilderService
     // â”€â”€ Geometry helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// Analytical dt: distance from the compression face to the extreme tension bar
-    /// along the neutral axis direction.
+    /// Analytical dt: distance from the extreme compression fiber to the most
+    /// distant bar centroid in the tension direction, measured along the neutral
+    /// axis normal. For circular sections the extreme fiber is always at R from
+    /// centre; for rectangular sections it is the outermost corner.
     /// </summary>
-    private static double ComputeDt(RectangularSection section, double angleDeg)
+    private static double ComputeDt(ColumnSection section, double angleDeg)
     {
         double theta = angleDeg * Math.PI / 180.0;
         double nx = Math.Cos(theta), ny = Math.Sin(theta);
-        double hx = section.WidthMm / 2.0, hy = section.HeightMm / 2.0;
-        double maxProjection = new[] { -hx * nx - hy * ny, hx * nx - hy * ny, hx * nx + hy * ny, -hx * nx + hy * ny }.Max();
+
+        double maxProjection;
+        if (section.Shape == SectionShapeType.Circular)
+        {
+            // Extreme compression fiber is always at radius in the compression direction
+            maxProjection = section.WidthMm / 2.0;
+        }
+        else
+        {
+            double hx = section.WidthMm / 2.0, hy = section.HeightMm / 2.0;
+            maxProjection = new[] { -hx * nx - hy * ny, hx * nx - hy * ny, hx * nx + hy * ny, -hx * nx + hy * ny }.Max();
+        }
+
         double minBarProjection = section.RebarLayout.Bars.Min(b => b.XMm * nx + b.YMm * ny);
         return maxProjection - minBarProjection;
     }

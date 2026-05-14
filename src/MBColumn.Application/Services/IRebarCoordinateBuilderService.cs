@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Enums;
 
 namespace MBColumn.Application.Services;
@@ -11,5 +11,12 @@ public interface IRebarCoordinateBuilderService
         double height,
         LengthUnit lengthUnit,
         UnitSystem unitSystem);
-}
 
+    IReadOnlyList<RebarCoordinateDto> BuildCircular(
+        double diameter,
+        double cover,
+        int barCount,
+        string barSize,
+        LengthUnit lengthUnit,
+        UnitSystem unitSystem);
+}

@@ -2,6 +2,7 @@
 
 public enum SectionShapeType
 {
-    Rectangular
+    Rectangular,
+    Circular
 }
 
