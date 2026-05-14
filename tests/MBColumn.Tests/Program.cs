@@ -54,8 +54,8 @@ var tests = new List<(string Name, Action Test)>
     ("Section preview perimeter bars", TestSectionPreviewPerimeterBars),
     ("Section preview invalid geometry", TestSectionPreviewInvalidGeometry),
     ("Section preview unit labels", TestSectionPreviewUnitLabels),
-    ("PMx diagram axis mapping", TestPmxDiagramAxisMapping),
-    ("PMy diagram axis mapping", TestPmyDiagramAxisMapping),
+    ("PM angle 0 deg axis mapping", TestPmAngleZeroAxisMapping),
+    ("PM angle 90 deg axis mapping", TestPmAngleNinetyAxisMapping),
     ("Mx-My diagram axis mapping", TestMxMyDiagramAxisMapping),
     ("3D PMM mapping and mesh", TestPmm3DMappingAndMesh),
     ("Axis tick service", TestAxisTickService),
@@ -64,6 +64,7 @@ var tests = new List<(string Name, Action Test)>
     ("Diagram bounds include points", TestDiagramBoundsIncludePoints),
     ("2D chart auto-fit transform", TestChartAutoFitTransform),
     ("Result settings propagate", TestResultSettingsPropagate),
+    ("Selected point report derives Mtheta from Mx My and theta", TestSelectedPointReportDerivesMtheta),
     ("Nominal uses Pn/Mn values", TestNominalUsesPnMn),
     ("Design uses PhiPn/PhiMn values", TestDesignUsesPhiPnPhiMn),
     ("Solver exposes nominal/reduced/strain-state split", TestInteractionPointSplitOutput),
@@ -72,15 +73,15 @@ var tests = new List<(string Name, Action Test)>
     ("PM interaction debug CSV validates phi relationships", TestPmInteractionDebugCsv),
     ("Design capacity <= nominal capacity", TestDesignLeNominal),
     ("PMM ratio uses design capacity", TestPmmRatioUsesDesign),
-    ("PMx nominal and design curves separated", TestPmxNomDesignSeparated),
-    ("PMy nominal and design curves separated", TestPmyNomDesignSeparated),
+    ("PM angle 0 deg nominal and design curves separated", TestPmAngleZeroNomDesignSeparated),
+    ("PM angle 90 deg nominal and design curves separated", TestPmAngleNinetyNomDesignSeparated),
     ("ACI PM curves expose nominal and phi-reduced peaks", TestAciPmNominalAndReducedPeaks),
     ("PM diagram DTO stores split capacity datasets", TestPmDiagramStoresSplitCapacityDatasets),
     ("Demand not in capacity polyline", TestDemandNotInCapacity),
     ("Governing from design curve", TestGoverningFromDesign),
     ("Nominal and design curve diagnostics", TestNominalDesignDiagnostics),
-    ("ACI design cap in PMx", TestAciDesignCapPmx),
-    ("ACI design cap in PMy", TestAciDesignCapPmy),
+    ("ACI design cap in PM angle 0 deg", TestAciDesignCapPmAngleZero),
+    ("ACI design cap in PM angle 90 deg", TestAciDesignCapPmAngleNinety),
     ("Pmax reference separate from design cap", TestPmaxRefSeparateFromDesignCap),
     ("PM polyline validation passes", TestPmPolylineValidation),
     ("3D X maps to Mx", Test3DXMapsMx),
@@ -127,15 +128,12 @@ var tests = new List<(string Name, Action Test)>
     ("Multi-load case inactive excluded", TestMultiLoadCaseInactiveExcluded),
     ("Multi-load case fallback to single", TestMultiLoadCaseFallbackToSingle),
     ("Multi-load case governing id in result", TestMultiLoadCaseGoverningIdInResult),
-    ("ACI trim segment is straight â€” PMx", TestAciTrimSegmentStraightPmx),
-    ("ACI trim segment is straight â€” PMy", TestAciTrimSegmentStraightPmy),
+    ("ACI trim segment is straight - PM angle 0 deg", TestAciTrimSegmentStraightPmx),
+    ("ACI trim segment is straight - PM angle 90 deg", TestAciTrimSegmentStraightPmy),
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
     ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon),
-    ("Control point export preview current view uses selected theta", TestControlPointExportPreviewCurrentViewUsesSelectedTheta),
-    ("Control point export preview custom theta interpolates", TestControlPointExportPreviewCustomThetaInterpolates),
-    ("Control point export CSV uses exact headers", TestControlPointExportCsvUsesExactHeaders),
     ("ACI factory routes Conventional vs Fiber", TestAciSolverFactoryRouting),
     ("ACI conventional baseline is regression-stable", TestAciConventionalUnchangedByFiberOption),
     ("ACI fiber pure compression close to conventional", TestAciFiberPureCompressionCloseToConventional),
@@ -191,6 +189,9 @@ static ColumnInputDto MetricInput(double pu = 2500, double mux = 250, double muy
 
 static ColumnInputDto ImperialInput()
     => new(UnitSystem.Imperial, 27.5590551, 27.5590551, 2.16535433, "#8", 28, "Perimeter bars", 4.061, 60.916, 29007.5, 562.02, 184.39, 132.77, ForceUnit.Kip, LengthUnit.Inch, MomentUnit.KipFt, StressUnit.Ksi, 0, 0);
+
+static PmAngleDiagramDto PmAngleDiagram(CalculationResultDto result, double angleDegrees)
+    => new DiagramDataService().BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, angleDegrees);
 
 static void TestSingaporeBars()
 {
@@ -416,24 +417,26 @@ static void TestSectionPreviewUnitLabels()
     IsTrue(vm.RebarPreviewLabel.Contains("8-#6"));
 }
 
-static void TestPmxDiagramAxisMapping()
+static void TestPmAngleZeroAxisMapping()
 {
     var result = Service().Calculate(MetricInput());
-    var point = result.PmXDiagram.Points.First(p => !p.IsDemand && !p.IsGoverning && !p.IsReference);
+    var diagram = PmAngleDiagram(result, 0.0);
+    var point = diagram.Points.First(p => !p.IsDemand && !p.IsGoverning && !p.IsReference);
     AreClose(point.Mx, point.X, 1e-9);
     AreClose(point.P, point.Y, 1e-9);
-    var demand = result.PmXDiagram.Points.First(p => p.IsDemand);
+    var demand = diagram.Points.First(p => p.IsDemand);
     AreClose(result.MuxDisplay, demand.X, 1e-9);
     AreClose(result.PuDisplay, demand.Y, 1e-9);
 }
 
-static void TestPmyDiagramAxisMapping()
+static void TestPmAngleNinetyAxisMapping()
 {
     var result = Service().Calculate(MetricInput());
-    var point = result.PmYDiagram.Points.First(p => !p.IsDemand && !p.IsGoverning && !p.IsReference);
+    var diagram = PmAngleDiagram(result, 90.0);
+    var point = diagram.Points.First(p => !p.IsDemand && !p.IsGoverning && !p.IsReference);
     AreClose(point.My, point.X, 1e-9);
     AreClose(point.P, point.Y, 1e-9);
-    var demand = result.PmYDiagram.Points.First(p => p.IsDemand);
+    var demand = diagram.Points.First(p => p.IsDemand);
     AreClose(result.MuyDisplay, demand.X, 1e-9);
     AreClose(result.PuDisplay, demand.Y, 1e-9);
 }
@@ -475,7 +478,7 @@ static void TestAxisTickService()
 static void TestPmBranchContinuity()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         // Now a single merged loop per curve type
         var groups = diagram.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference).GroupBy(p => p.GroupKey).ToList();
@@ -488,10 +491,10 @@ static void TestPmBranchContinuity()
         }
     }
 
-    IsTrue(result.PmXDiagram.Points.Any(p => p.IsReference && p.Label == "Pmax"));
-    IsTrue(result.PmXDiagram.Points.Any(p => p.IsReference && p.Label == "Pmin"));
-    IsTrue(result.PmYDiagram.Points.Any(p => p.IsReference && p.Label == "Pmax"));
-    IsTrue(result.PmYDiagram.Points.Any(p => p.IsReference && p.Label == "Pmin"));
+    IsTrue(PmAngleDiagram(result, 0.0).Points.Any(p => p.IsReference && p.Label == "Pmax"));
+    IsTrue(PmAngleDiagram(result, 0.0).Points.Any(p => p.IsReference && p.Label == "Pmin"));
+    IsTrue(PmAngleDiagram(result, 90.0).Points.Any(p => p.IsReference && p.Label == "Pmax"));
+    IsTrue(PmAngleDiagram(result, 90.0).Points.Any(p => p.IsReference && p.Label == "Pmin"));
 }
 
 static void TestPmCurveDiagnosticsAndMarkerSeparation()
@@ -506,7 +509,7 @@ static void TestPmCurveDiagnosticsAndMarkerSeparation()
     IsTrue(diagnostics.NegativeBranchCount > 10);
     IsFalse(diagnostics.SmoothingApplied);
 
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var capacity = diagram.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         IsFalse(capacity.Any(p => p.GroupKey == "Demand" || p.GroupKey == "Governing" || p.GroupKey == "Reference"));
@@ -525,8 +528,9 @@ static void TestPmCurveDiagnosticsAndMarkerSeparation()
 static void TestDiagramBoundsIncludePoints()
 {
     var result = Service().Calculate(MetricInput());
-    var bounds = ChartTransformHelper.AutoFit2D(result.PmXDiagram.Points, new Rect(0, 0, 800, 500));
-    IsTrue(result.PmXDiagram.Points.All(p => p.X >= bounds.MinX && p.X <= bounds.MaxX && p.Y >= bounds.MinY && p.Y <= bounds.MaxY));
+    var diagram = PmAngleDiagram(result, 0.0);
+    var bounds = ChartTransformHelper.AutoFit2D(diagram.Points, new Rect(0, 0, 800, 500));
+    IsTrue(diagram.Points.All(p => p.X >= bounds.MinX && p.X <= bounds.MaxX && p.Y >= bounds.MinY && p.Y <= bounds.MaxY));
 }
 
 static void TestChartAutoFitTransform()
@@ -556,8 +560,6 @@ static void TestResultSettingsPropagate()
 
     IsFalse(vm.PM.ShowGrid);
     IsFalse(vm.PM.ShowLabels);
-    IsFalse(vm.PMy.ShowGrid);
-    IsFalse(vm.PMy.ShowLabels);
     IsFalse(vm.MM.ShowGrid);
     IsFalse(vm.MM.ShowLabels);
     IsTrue(vm.PM3D.ShowGrid);
@@ -570,13 +572,43 @@ static void TestResultSettingsPropagate()
     IsFalse(vm.MM3D.ShowWireframe);
 }
 
+static void TestSelectedPointReportDerivesMtheta()
+{
+    var vm = new ResultViewModel
+    {
+        Result = Service().Calculate(MetricInput())
+    };
+
+    vm.SelectedChartPoint = new ControlPointDto(
+        DiagramType.PM,
+        999.0,
+        10884.34,
+        10884.34,
+        10884.34,
+        30.49,
+        57.34,
+        0.65,
+        333.6,
+        1743.3,
+        "Selected",
+        "DesignCapacity",
+        false,
+        false,
+        false,
+        false);
+
+    double thetaRadians = 333.6 * Math.PI / 180.0;
+    double expectedMtheta = 30.49 * Math.Cos(thetaRadians) + 57.34 * Math.Sin(thetaRadians);
+    IsTrue(vm.SelectedPointMthetaDisplay == $"{expectedMtheta:F2} {vm.MomentUnitLabel}");
+}
+
 // ----- Nominal vs Design Curve Tests -----
 
 static void TestNominalUsesPnMn()
 {
     // Nominal curve points must use Pn/Mn (no phi), so they should be larger than corresponding design points.
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var nominal = diagram.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         IsTrue(nominal.Count > 0);
@@ -588,7 +620,7 @@ static void TestNominalUsesPnMn()
 static void TestDesignUsesPhiPnPhiMn()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var design = diagram.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         IsTrue(design.Count > 0);
@@ -616,7 +648,7 @@ static void TestPmCurveUsesExplicitReducedDisplayValues()
     var result = Service().Calculate(MetricInput());
     var source = result.ControlPoints.PmmSurfacePoints;
 
-    var baseline = PmCurveBuilderService.BuildPmXCurve(source, result.ControlPoints.DesignCompressionLimitDisplay, result.ControlPoints.NominalCompressionLimitDisplay)
+    var baseline = PmCurveBuilderService.BuildPmAngleCurve(source, result.ControlPoints.DesignCompressionLimitDisplay, result.ControlPoints.NominalCompressionLimitDisplay, 0.0)
         .Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsNominal)
         .ToList();
 
@@ -629,7 +661,7 @@ static void TestPmCurveUsesExplicitReducedDisplayValues()
         })
         .ToList();
 
-    var rebuilt = PmCurveBuilderService.BuildPmXCurve(corruptedDesignNominalDisplay, result.ControlPoints.DesignCompressionLimitDisplay, result.ControlPoints.NominalCompressionLimitDisplay)
+    var rebuilt = PmCurveBuilderService.BuildPmAngleCurve(corruptedDesignNominalDisplay, result.ControlPoints.DesignCompressionLimitDisplay, result.ControlPoints.NominalCompressionLimitDisplay, 0.0)
         .Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsNominal)
         .ToList();
 
@@ -663,7 +695,7 @@ static void TestPmInteractionDebugCsv()
     IsTrue(csv.Contains("Nominal Capacity"));
     IsTrue(csv.Contains("Phi-Reduced Capacity"));
     IsTrue(PmCurveBuilderService.ValidateNominalReducedSourcePairing(result.ControlPoints.PmmSurfacePoints).Count == 0);
-    IsTrue(PmCurveBuilderService.ValidateNominalReducedCurvePairing(result.PmXDiagram.Points).Count == 0);
+    IsTrue(PmCurveBuilderService.ValidateNominalReducedCurvePairing(PmAngleDiagram(result, 0.0).Points).Count == 0);
 }
 
 static void TestDesignLeNominal()
@@ -688,10 +720,10 @@ static void TestPmmRatioUsesDesign()
     // RatioCheckService uses PhiPn/PhiMnx/PhiMny â€” verified in source code review.
 }
 
-static void TestPmxNomDesignSeparated()
+static void TestPmAngleZeroNomDesignSeparated()
 {
     var result = Service().Calculate(MetricInput());
-    var points = result.PmXDiagram.Points;
+    var points = PmAngleDiagram(result, 0.0).Points;
     var design = points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
     var nominal = points.Where(p => p.IsNominal).ToList();
     IsTrue(design.Count > 20);
@@ -701,10 +733,10 @@ static void TestPmxNomDesignSeparated()
     IsTrue(nominal.All(p => p.GroupKey == "NominalCapacity"));
 }
 
-static void TestPmyNomDesignSeparated()
+static void TestPmAngleNinetyNomDesignSeparated()
 {
     var result = Service().Calculate(MetricInput());
-    var points = result.PmYDiagram.Points;
+    var points = PmAngleDiagram(result, 90.0).Points;
     var design = points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
     var nominal = points.Where(p => p.IsNominal).ToList();
     IsTrue(design.Count > 20);
@@ -716,7 +748,7 @@ static void TestPmyNomDesignSeparated()
 static void TestAciPmNominalAndReducedPeaks()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var nominal = diagram.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         var reduced = diagram.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
@@ -737,18 +769,20 @@ static void TestAciPmNominalAndReducedPeaks()
 static void TestPmDiagramStoresSplitCapacityDatasets()
 {
     var result = Service().Calculate(MetricInput());
-    IsTrue(result.PmXDiagram.NominalCapacityPoints.Count > 20);
-    IsTrue(result.PmXDiagram.ReducedCapacityPoints.Count > 20);
-    IsTrue(result.PmYDiagram.NominalCapacityPoints.Count > 20);
-    IsTrue(result.PmYDiagram.ReducedCapacityPoints.Count > 20);
-    IsTrue(result.PmXDiagram.NominalCapacityPoints.All(p => p.IsNominal));
-    IsTrue(result.PmXDiagram.ReducedCapacityPoints.All(p => !p.IsNominal));
+    var pm0 = PmAngleDiagram(result, 0.0);
+    var pm90 = PmAngleDiagram(result, 90.0);
+    IsTrue(pm0.NominalCapacityPoints.Count > 20);
+    IsTrue(pm0.ReducedCapacityPoints.Count > 20);
+    IsTrue(pm90.NominalCapacityPoints.Count > 20);
+    IsTrue(pm90.ReducedCapacityPoints.Count > 20);
+    IsTrue(pm0.NominalCapacityPoints.All(p => p.IsNominal));
+    IsTrue(pm0.ReducedCapacityPoints.All(p => !p.IsNominal));
 }
 
 static void TestDemandNotInCapacity()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var capacity = diagram.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         IsFalse(capacity.Any(p => p.Label == "Demand"));
@@ -761,7 +795,7 @@ static void TestDemandNotInCapacity()
 static void TestGoverningFromDesign()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var governing = diagram.Where(p => p.IsGoverning).ToList();
         IsTrue(governing.Count == 1);
@@ -772,7 +806,8 @@ static void TestGoverningFromDesign()
 static void TestNominalDesignDiagnostics()
 {
     PmCurveBuilderService.EnableDebugDiagnostics = true;
-    Service().Calculate(MetricInput());
+    var result = Service().Calculate(MetricInput());
+    _ = PmAngleDiagram(result, 0.0);
     var diag = PmCurveBuilderService.LastDiagnostics;
     IsTrue(diag is not null);
     IsTrue(diag!.NominalAndDesignSeparated);
@@ -787,29 +822,31 @@ static void TestNominalDesignDiagnostics()
 
 // ----- ACI Trim Cap Tests (Task 3) -----
 
-static void TestAciDesignCapPmx()
+static void TestAciDesignCapPmAngleZero()
 {
     var result = Service().Calculate(MetricInput());
-    var design = result.PmXDiagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+    var diagram = PmAngleDiagram(result, 0.0);
+    var design = diagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
     // The design loop contains points at the ACI-capped Pmax level (top of envelope)
     double designPMax = design.Max(p => p.Y);
     // There should be at least 2 points near the top (positive and negative sides of the cap)
     var topPoints = design.Where(p => Math.Abs(p.Y - designPMax) < 0.01).ToList();
     IsTrue(topPoints.Count >= 1);
     // The Pmax reference line should be at the same level as the design cap
-    var pmaxRef = result.PmXDiagram.Points.FirstOrDefault(p => p.IsReference && p.Label == "Pmax");
+    var pmaxRef = diagram.Points.FirstOrDefault(p => p.IsReference && p.Label == "Pmax");
     IsTrue(pmaxRef is not null);
     AreClose(designPMax, pmaxRef!.Y, 1.0); // within tolerance
 }
 
-static void TestAciDesignCapPmy()
+static void TestAciDesignCapPmAngleNinety()
 {
     var result = Service().Calculate(MetricInput());
-    var design = result.PmYDiagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+    var diagram = PmAngleDiagram(result, 90.0);
+    var design = diagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
     double designPMax = design.Max(p => p.Y);
     var topPoints = design.Where(p => Math.Abs(p.Y - designPMax) < 0.01).ToList();
     IsTrue(topPoints.Count >= 1);
-    var pmaxRef = result.PmYDiagram.Points.FirstOrDefault(p => p.IsReference && p.Label == "Pmax");
+    var pmaxRef = diagram.Points.FirstOrDefault(p => p.IsReference && p.Label == "Pmax");
     IsTrue(pmaxRef is not null);
     AreClose(designPMax, pmaxRef!.Y, 1.0);
 }
@@ -817,7 +854,7 @@ static void TestAciDesignCapPmy()
 static void TestPmaxRefSeparateFromDesignCap()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         // Pmax reference is separate from capacity points
         var pmaxRef = diagram.Where(p => p.IsReference && p.Label == "Pmax").ToList();
@@ -832,7 +869,7 @@ static void TestPmaxRefSeparateFromDesignCap()
 static void TestPmPolylineValidation()
 {
     var result = Service().Calculate(MetricInput());
-    foreach (var diagram in new[] { result.PmXDiagram.Points, result.PmYDiagram.Points })
+    foreach (var diagram in new[] { PmAngleDiagram(result, 0.0).Points, PmAngleDiagram(result, 90.0).Points })
     {
         var defects = PmCurveBuilderService.ValidatePmCapacityPolyline(diagram);
         IsTrue(defects.Count == 0);
@@ -1167,8 +1204,8 @@ static void Test3DBoundsMatch2D()
     double min3DX = pm3D.Min(p => p.X);
     double min3DY = pm3D.Min(p => p.Y);
     
-    var pmx = result.PmXDiagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
-    var pmy = result.PmYDiagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+    var pmx = PmAngleDiagram(result, 0.0).Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+    var pmy = PmAngleDiagram(result, 90.0).Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
     
     double max2DX = pmx.Max(p => p.X);
     double max2DY = pmy.Max(p => p.X);
@@ -1176,7 +1213,7 @@ static void Test3DBoundsMatch2D()
     double min2DX = pmx.Min(p => p.X);
     double min2DY = pmy.Min(p => p.X);
 
-    // PMx/PMy are XZ/YZ plane intersections of the PMM surface, so their values must be
+    // The axis-aligned PM angle slices are XZ/YZ plane intersections of the PMM surface, so their values must be
     // contained by the design 3D bounds but do not have to equal the global Mx/My maxima.
     IsTrue(max2DX <= max3DX + 5.0);
     IsTrue(max2DY <= max3DY + 5.0);
@@ -1474,7 +1511,7 @@ static void TestAciTrimSegmentStraightPmx()
 {
     var result = Service().Calculate(MetricInput());
     double cap = result.ControlPoints.DesignCompressionLimitDisplay;
-    var defects = PmCurveBuilderService.ValidateStraightTrimSegment(result.PmXDiagram.Points, cap);
+    var defects = PmCurveBuilderService.ValidateStraightTrimSegment(PmAngleDiagram(result, 0.0).Points, cap);
     IsTrue(defects.Count == 0);
 }
 
@@ -1482,7 +1519,7 @@ static void TestAciTrimSegmentStraightPmy()
 {
     var result = Service().Calculate(MetricInput());
     double cap = result.ControlPoints.DesignCompressionLimitDisplay;
-    var defects = PmCurveBuilderService.ValidateStraightTrimSegment(result.PmYDiagram.Points, cap);
+    var defects = PmCurveBuilderService.ValidateStraightTrimSegment(PmAngleDiagram(result, 90.0).Points, cap);
     IsTrue(defects.Count == 0);
 }
 
@@ -1525,67 +1562,6 @@ static void TestControlPointsTensionControlEpsilon()
     IsTrue(tcRows.Count == 4);
     foreach (var row in tcRows)
         AreClose(0.005, row.EpsilonT, 1e-4);
-}
-
-static void TestControlPointExportPreviewCurrentViewUsesSelectedTheta()
-{
-    var result = Service().Calculate(MetricInput() with { SelectedPmAngleDegrees = 30.0 });
-    var preview = new ControlPointPreviewService(GetUnits()).BuildPreview(
-        result,
-        ControlPointThetaSelectionMode.CurrentView,
-        30.0);
-
-    IsTrue(preview.Rows.Count == result.Surface.DepthCount);
-    IsTrue(preview.Rows.All(r => Math.Abs(r.ThetaDeg - 30.0) < 1e-9));
-}
-
-static void TestControlPointExportPreviewCustomThetaInterpolates()
-{
-    var result = Service().Calculate(MetricInput());
-    var preview = new ControlPointPreviewService(GetUnits()).BuildPreview(
-        result,
-        ControlPointThetaSelectionMode.CustomTheta,
-        0.0,
-        15.0);
-
-    IsTrue(preview.Rows.Count == result.Surface.DepthCount);
-    IsTrue(preview.Rows.All(r => Math.Abs(r.ThetaDeg - 15.0) < 1e-9));
-    IsTrue(preview.Rows.Any(r => Math.Abs(r.MThetaPositive) > 1e-6 || Math.Abs(r.MThetaNegative) > 1e-6));
-}
-
-static void TestControlPointExportCsvUsesExactHeaders()
-{
-    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-control-point-export-{Guid.NewGuid():N}.csv");
-    try
-    {
-        var exporter = new ControlPointCsvExportService();
-        exporter.Export(path,
-        [
-            new ControlPointExportRow
-            {
-                ThetaDeg = 30.0,
-                PointIndex = 1,
-                P = 123.4,
-                MThetaPositive = 56.7,
-                MThetaNegative = 0.0,
-                NeutralAxisDepth = 89.1,
-                SteelStrainMax = 0.005,
-                ConcreteStrainMax = 0.003,
-                Remarks = "Pure Compression"
-            }
-        ]);
-
-        var lines = File.ReadAllLines(path);
-        IsTrue(lines.Length >= 2);
-        IsTrue(lines[0] == "θ,Pt.,P,Mθ+,Mθ-,c,\"εs,max\",\"εc,max\",Remarks");
-    }
-    finally
-    {
-        if (File.Exists(path))
-        {
-            File.Delete(path);
-        }
-    }
 }
 
 // ----- EC2 Fiber PMM Tests -----

@@ -50,12 +50,8 @@ public sealed class ResultViewModel : ViewModelBase
     private bool useEqualAspectForMM = true;
     private ControlPointDto? selectedChartPoint;
     private IReadOnlyList<ControlPointDto> pmAnglePoints = [];
-    private IReadOnlyList<ControlPointDto> pmXPoints = [];
-    private IReadOnlyList<ControlPointDto> pmYPoints = [];
     private IReadOnlyList<ControlPointDto> mxMyPoints = [];
     private IReadOnlyList<ChartReferenceLineDto> pmReferenceLines = [];
-    private IReadOnlyList<ChartReferenceLineDto> pmXReferenceLines = [];
-    private IReadOnlyList<ChartReferenceLineDto> pmYReferenceLines = [];
     private PmChartInsetFigureDto? pmChartInset;
     private IReadOnlyList<LoadCaseResultRowViewModel> loadCaseRows = [];
     private LoadCaseResultRowViewModel? selectedLoadCaseRow;
@@ -78,8 +74,6 @@ public sealed class ResultViewModel : ViewModelBase
     {
         this.controlPointExportDialogService = controlPointExportDialogService;
         PM = new PMDiagramViewModel();
-        PMx = new PMDiagramViewModel();
-        PMy = new PMDiagramViewModel();
         MM = new MMDiagramViewModel();
         PM3D = new PM3DViewModel();
         MM3D = new MM3DViewModel();
@@ -108,8 +102,6 @@ public sealed class ResultViewModel : ViewModelBase
         ViewportOptions = new ObservableCollection<ViewportOptionViewModel>
         {
             new(DiagramViewportType.PM2D, "2D PM", true),
-            new(DiagramViewportType.PMx2D, "2D PMx", false),
-            new(DiagramViewportType.PMy2D, "2D PMy", false),
             new(DiagramViewportType.Pmm3D, "3D PMM", true),
             new(DiagramViewportType.MxMy2D, "2D Mx-My", false)
         };
@@ -121,8 +113,6 @@ public sealed class ResultViewModel : ViewModelBase
     }
 
     public PMDiagramViewModel PM { get; }
-    public PMDiagramViewModel PMx { get; }
-    public PMDiagramViewModel PMy { get; }
     public MMDiagramViewModel MM { get; }
     public PM3DViewModel PM3D { get; }
     public MM3DViewModel MM3D { get; }
@@ -144,8 +134,8 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(SelectedAxialLoad));
             // Build load case result rows
             var govId = value?.GoverningLoadCaseId ?? "";
-            var fUnit = value?.PmXDiagram?.PUnit ?? "";
-            var mUnit = value?.PmXDiagram?.MUnit ?? "";
+            var fUnit = value?.ControlPointTable?.ForceUnitLabel ?? value?.MxMyDiagram?.PUnit ?? "";
+            var mUnit = value?.ControlPointTable?.MomentUnitLabel ?? value?.MxMyDiagram?.MUnit ?? "";
             loadCaseRows = value?.LoadCaseResults?.Count > 0
                 ? value.LoadCaseResults.Select(r => new LoadCaseResultRowViewModel(
                     r.LoadCaseId, r.LoadCaseName,
@@ -182,12 +172,8 @@ public sealed class ResultViewModel : ViewModelBase
         }
     }
     public IReadOnlyList<ControlPointDto> PmAnglePoints { get => pmAnglePoints; private set => Set(ref pmAnglePoints, value); }
-    public IReadOnlyList<ControlPointDto> PmXPoints { get => pmXPoints; private set => Set(ref pmXPoints, value); }
-    public IReadOnlyList<ControlPointDto> PmYPoints { get => pmYPoints; private set => Set(ref pmYPoints, value); }
     public IReadOnlyList<ControlPointDto> MxMyPoints { get => mxMyPoints; private set => Set(ref mxMyPoints, value); }
     public IReadOnlyList<ChartReferenceLineDto> PmReferenceLines { get => pmReferenceLines; private set => Set(ref pmReferenceLines, value); }
-    public IReadOnlyList<ChartReferenceLineDto> PmXReferenceLines { get => pmXReferenceLines; private set => Set(ref pmXReferenceLines, value); }
-    public IReadOnlyList<ChartReferenceLineDto> PmYReferenceLines { get => pmYReferenceLines; private set => Set(ref pmYReferenceLines, value); }
     public PmChartInsetFigureDto? PmChartInset { get => pmChartInset; private set => Set(ref pmChartInset, value); }
     public IReadOnlyList<LoadCaseResultRowViewModel> LoadCaseRows { get => loadCaseRows; private set => Set(ref loadCaseRows, value); }
     public LoadCaseResultRowViewModel? SelectedLoadCaseRow
@@ -226,8 +212,8 @@ public sealed class ResultViewModel : ViewModelBase
     public double Phi => Result?.Phi ?? 0;
     public double ThetaDegrees => Result?.GoverningThetaDegrees ?? 0;
     public double NeutralAxisDepth => Result is null ? 0 : Result.UnitSystem == UnitSystem.Imperial ? Result.GoverningNeutralAxisDepth / 25.4 : Result.GoverningNeutralAxisDepth;
-    public string ForceUnitLabel => Result?.PmXDiagram?.PUnit ?? "";
-    public string MomentUnitLabel => Result?.PmXDiagram?.MUnit ?? "";
+    public string ForceUnitLabel => Result?.ControlPointTable?.ForceUnitLabel ?? Result?.MxMyDiagram?.PUnit ?? "";
+    public string MomentUnitLabel => Result?.ControlPointTable?.MomentUnitLabel ?? Result?.MxMyDiagram?.MUnit ?? "";
     public string LengthUnitLabel => Result is null ? "" : Result.UnitSystem == UnitSystem.Imperial ? "in" : "mm";
     public string GoverningLoadCaseName => Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == (Result?.GoverningLoadCaseId ?? ""))?.LoadCaseName ?? "";
     public string CriticalLoadCaseName => string.IsNullOrWhiteSpace(GoverningLoadCaseName) ? "-" : GoverningLoadCaseName;
@@ -284,22 +270,6 @@ public sealed class ResultViewModel : ViewModelBase
             PmReferenceLines = pmDiagram.ReferenceLines;
             PM.LoadPmAngle(pmDiagramWithDemand, Result.Ratio);
 
-            var pmXDiagram = Result.PmXDiagram;
-            var pmXDemand = diagramService.BuildPmAngleDemandPoints(Result.LoadCaseResults, 0.0);
-            var pmXPoints = ReplaceDemandAndRemoveGoverning(pmXDiagram.Points, pmXDemand);
-            pmXPoints = pmXPoints.Concat(GetLabeledPointsForPMx(Result.ControlPointTable)).ToList();
-            PmXPoints = pmXPoints;
-            PmXReferenceLines = [];
-            PMx.LoadPmX(Result);
-
-            var pmYDiagram = Result.PmYDiagram;
-            var pmYDemand = diagramService.BuildPmAngleDemandPoints(Result.LoadCaseResults, 90.0);
-            var pmYPoints = ReplaceDemandAndRemoveGoverning(pmYDiagram.Points, pmYDemand);
-            pmYPoints = pmYPoints.Concat(GetLabeledPointsForPMy(Result.ControlPointTable)).ToList();
-            PmYPoints = pmYPoints;
-            PmYReferenceLines = [];
-            PMy.LoadPmY(Result);
-
             UpdateSharedPmBoundsFromAnglePoints(pmDiagramWithDemand.Points);
 
             var mmDiagram = diagramService.BuildMxMyDiagramDataAtDisplayP(Result.ControlPoints, Result.UnitSystem, SelectedAxialLoad);
@@ -313,15 +283,7 @@ public sealed class ResultViewModel : ViewModelBase
         {
             PmAnglePoints = [];
             PmReferenceLines = [];
-            PmXPoints = [];
-            PmXReferenceLines = [];
-            PmYPoints = [];
-            PmYReferenceLines = [];
             PM.LoadPmAngle(null, 0);
-            PMx.LoadPmAngle(null, 0);
-            PMx.OverrideTitleAndXAxis("PMx Diagram", "Mx");
-            PMy.LoadPmAngle(null, 0);
-            PMy.OverrideTitleAndXAxis("PMy Diagram", "My");
             MxMyPoints = [];
             MM.Load(null, 0);
             PM3D.DemandPoints = [];
@@ -348,26 +310,6 @@ public sealed class ResultViewModel : ViewModelBase
         }
     }
 
-    private static IReadOnlyList<ControlPointDto> GetLabeledPointsForPMx(ControlPointTableDto? table)
-    {
-        if (table == null) return [];
-        return table.Rows.Where(r => r.Axis == "X" || r.Axis == "-X")
-            .Select(r => new ControlPointDto(
-                DiagramType.PM, r.Mx != 0 ? Math.Abs(r.Mx) : Math.Abs(r.My), r.P, r.P, r.P, r.Mx, r.My, r.Phi, 90.0, r.NaDepth,
-                r.PointLabel, "LabeledPoint", false, false, true, false))
-            .ToList();
-    }
-
-    private static IReadOnlyList<ControlPointDto> GetLabeledPointsForPMy(ControlPointTableDto? table)
-    {
-        if (table == null) return [];
-        return table.Rows.Where(r => r.Axis == "Y" || r.Axis == "-Y")
-            .Select(r => new ControlPointDto(
-                DiagramType.PM, r.My != 0 ? Math.Abs(r.My) : Math.Abs(r.Mx), r.P, r.P, r.P, r.Mx, r.My, r.Phi, 0.0, r.NaDepth,
-                r.PointLabel, "LabeledPoint", false, false, true, false))
-            .ToList();
-    }
-
     private static IReadOnlyList<ControlPointDto> ReplaceDemandAndRemoveGoverning(IReadOnlyList<ControlPointDto> points, IReadOnlyList<ControlPointDto> demandPoints)
         => points.Where(p => !p.IsDemand && !p.IsGoverning).Concat(demandPoints).ToList();
 
@@ -390,31 +332,6 @@ public sealed class ResultViewModel : ViewModelBase
     {
         if (Math.Abs(mx) < 1e-12 && Math.Abs(my) < 1e-12) return 0;
         return NormalizeAngle(Math.Atan2(my, mx) * 180.0 / Math.PI);
-    }
-
-    private void UpdateSharedPmBounds(CalculationResultDto? result)
-    {
-        if (result != null && result.PmXDiagram.Points.Count > 0 && result.PmYDiagram.Points.Count > 0)
-        {
-            var xPts = result.PmXDiagram.Points;
-            var yPts = result.PmYDiagram.Points;
-            double minP = Math.Min(xPts.Min(p => p.Y), yPts.Min(p => p.Y));
-            double maxP = Math.Max(xPts.Max(p => p.Y), yPts.Max(p => p.Y));
-            double maxAbsM = Math.Max(
-                xPts.Max(p => Math.Max(Math.Abs(p.X), Math.Abs(p.X))), // Wait, p.X is the absolute value already for symmetric? Wait, for non-symmetric it might be negative. Let's just use Math.Abs(p.X).
-                yPts.Max(p => Math.Max(Math.Abs(p.X), Math.Abs(p.X))));
-            
-            // Recompute maxAbsM properly
-            double maxAbsMx = xPts.Max(p => Math.Abs(p.X));
-            double maxAbsMy = yPts.Max(p => Math.Abs(p.X));
-            double finalMaxM = Math.Max(maxAbsMx, maxAbsMy);
-            
-            SharedPmBounds = new Rect(new Point(-finalMaxM, minP), new Point(finalMaxM, maxP));
-        }
-        else
-        {
-            SharedPmBounds = null;
-        }
     }
 
     private void UpdateSharedPmBoundsFromAnglePoints(IReadOnlyList<ControlPointDto> points)
@@ -450,7 +367,16 @@ public sealed class ResultViewModel : ViewModelBase
     public string SelectedPointPDisplay => SelectedChartPoint is null ? "-" : $"{SelectedChartPoint.P:F2} {ForceUnitLabel}";
     public string SelectedPointMxDisplay => SelectedChartPoint is null ? "-" : $"{SelectedChartPoint.Mx:F2} {MomentUnitLabel}";
     public string SelectedPointMyDisplay => SelectedChartPoint is null ? "-" : $"{SelectedChartPoint.My:F2} {MomentUnitLabel}";
-    public string SelectedPointMthetaDisplay => SelectedChartPoint?.DiagramType == DiagramType.PM ? $"{SelectedChartPoint.X:F2} {MomentUnitLabel}" : "-";
+    public string SelectedPointMthetaDisplay
+    {
+        get
+        {
+            if (SelectedChartPoint is null) return "-";
+            double thetaRadians = SelectedChartPoint.ThetaDegrees * Math.PI / 180.0;
+            double mtheta = SelectedChartPoint.Mx * Math.Cos(thetaRadians) + SelectedChartPoint.My * Math.Sin(thetaRadians);
+            return $"{mtheta:F2} {MomentUnitLabel}";
+        }
+    }
 
     public string SelectedPointTypeDisplay
     {
@@ -511,8 +437,6 @@ public sealed class ResultViewModel : ViewModelBase
     public ObservableCollection<ViewportOptionViewModel> ViewportOptions { get; }
 
     public bool ShowPM => ViewportOptions.First(v => v.Type == DiagramViewportType.PM2D).IsSelected;
-    public bool ShowPMx => ViewportOptions.First(v => v.Type == DiagramViewportType.PMx2D).IsSelected;
-    public bool ShowPMy => ViewportOptions.First(v => v.Type == DiagramViewportType.PMy2D).IsSelected;
     public bool ShowMxMy => ViewportOptions.First(v => v.Type == DiagramViewportType.MxMy2D).IsSelected;
     public bool ShowPmm3D => ViewportOptions.First(v => v.Type == DiagramViewportType.Pmm3D).IsSelected;
 
@@ -551,8 +475,6 @@ public sealed class ResultViewModel : ViewModelBase
     private void OnViewportSelectionChanged()
     {
         LayoutVersion++;
-        Raise(nameof(ShowPMx));
-        Raise(nameof(ShowPMy));
         Raise(nameof(ShowPM));
         Raise(nameof(ShowMxMy));
         Raise(nameof(ShowPmm3D));
@@ -599,10 +521,6 @@ public sealed class ResultViewModel : ViewModelBase
     {
         PM.ShowGrid = ShowGrid;
         PM.ShowLabels = ShowLabels;
-        PMx.ShowGrid = ShowGrid;
-        PMx.ShowLabels = ShowLabels;
-        PMy.ShowGrid = ShowGrid;
-        PMy.ShowLabels = ShowLabels;
         MM.ShowGrid = ShowGrid;
         MM.ShowLabels = ShowLabels;
         PM3D.ShowSurface = ShowSurface3D;

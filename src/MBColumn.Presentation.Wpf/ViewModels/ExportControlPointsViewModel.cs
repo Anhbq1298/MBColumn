@@ -51,8 +51,8 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
     public ICommand CloseCommand { get; }
 
     public double CurrentThetaDegrees { get; }
-    public string ForceUnitLabel => result.PmXDiagram.PUnit;
-    public string MomentUnitLabel => result.PmXDiagram.MUnit;
+    public string ForceUnitLabel => result.ControlPointTable?.ForceUnitLabel ?? result.MxMyDiagram.PUnit;
+    public string MomentUnitLabel => result.ControlPointTable?.MomentUnitLabel ?? result.MxMyDiagram.MUnit;
     public string LengthUnitLabel => result.ControlPointTable?.LengthUnitLabel ?? (result.UnitSystem == UnitSystem.Metric ? "mm" : "in");
     public string CurrentViewDescription => $"Current view theta = {CurrentThetaDegrees:F1}\u00b0";
     public string CurrentViewScopeDescription => $"Export only \u03b8 = {CurrentThetaDegrees:F1}\u00b0";

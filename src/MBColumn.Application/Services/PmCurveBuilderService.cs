@@ -15,12 +15,6 @@ public static class PmCurveBuilderService
     public static bool EnableDebugDiagnostics { get; set; }
     public static PmCurveBuildDiagnostics? LastDiagnostics { get; private set; }
 
-    public static IReadOnlyList<ControlPointDto> BuildPmXCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay = null)
-        => BuildCurve(source, CurveAxis.Mx, designCompressionLimitDisplay, nominalCompressionLimitDisplay);
-
-    public static IReadOnlyList<ControlPointDto> BuildPmYCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay = null)
-        => BuildCurve(source, CurveAxis.My, designCompressionLimitDisplay, nominalCompressionLimitDisplay);
-
     public static IReadOnlyList<ControlPointDto> BuildPmAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double angleDegrees)
         => BuildAngleCurve(source, designCompressionLimitDisplay, null, angleDegrees);
 
@@ -97,81 +91,12 @@ public static class PmCurveBuilderService
             IsNominal: false);
     }
 
-    private static IReadOnlyList<ControlPointDto> BuildCurve(IEnumerable<ControlPoint> source, CurveAxis axis, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay)
+    private static IReadOnlyList<ControlPointDto> BuildAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay, double angleDegrees)
     {
         var raw = source.ToList();
         var clean = raw.Where(IsValid).ToList();
         var capacity = clean.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint).ToList();
         var designCapacity = capacity.Where(p => !IsNominalPoint(p)).ToList();
-        var nominalCapacity = capacity.Where(IsNominalPoint).ToList();
-        int rawCount = raw.Count;
-        if (designCapacity.Count == 0) return [];
-
-        // --- DESIGN curve (phiPn / phiMn), uncapped interaction geometry ---
-        // This is the single source of PM curve topology. Nominal points are
-        // reconstructed from these same vertices by removing phi, so cap/reference
-        // logic never becomes interaction geometry.
-        var designThetaRows = designCapacity
-            .GroupBy(p => p.GroupKey)
-            .Select(g => g.OrderByDescending(DesignDisplayP).ToList())
-            .Where(g => g.Count > 1)
-            .ToList();
-        double designPMax = designCapacity.Max(DesignDisplayP);
-        double designPMin = designCapacity.Min(DesignDisplayP);
-        var designLoop = BuildEnvelopeLoop(designThetaRows, designPMax, designPMin, axis, nominal: false);
-        var designDtos = designLoop.Select(p => ToDto(p, axis, "DesignCapacity", isNominal: false)).ToList();
-        int finalDesignCount = designDtos.Count;
-
-        // --- NOMINAL curve (Pn / Mn), restored from design by removing phi ---
-        var nominalLoop = designLoop.Select(RemovePhi).ToList();
-        var nominalDtos = nominalLoop.Select(p => ToDto(p, axis, "NominalCapacity", isNominal: true)).ToList();
-        int finalNominalCount = nominalDtos.Count;
-
-        var result = new List<ControlPointDto>(designDtos);
-        result.AddRange(nominalDtos);
-
-        // --- Reference lines only; these are not interaction curve geometry. ---
-        double phiPnMaxLine = designCompressionLimitDisplay;
-        result.Add(ReferenceDto(phiPnMaxLine, "Pmax"));
-        result.Add(ReferenceDto(designPMin, "Pmin"));
-
-        // --- Demand and governing markers ---
-        var demand = clean.FirstOrDefault(p => p.IsDemandPoint);
-        if (demand is not null) result.Add(ProjectMarker(demand, axis, "Demand"));
-
-        var governing = clean.FirstOrDefault(p => p.IsGoverningPoint);
-        if (governing is not null) result.Add(ProjectMarker(governing, axis, "Governing"));
-
-        if (EnableDebugDiagnostics)
-        {
-            int posCount = designLoop.Count(p => p.IsPositiveBranch);
-            int negCount = designLoop.Count(p => !p.IsPositiveBranch);
-            int nomPosCount = nominalLoop.Count(p => p.IsPositiveBranch);
-            int nomNegCount = nominalLoop.Count(p => !p.IsPositiveBranch);
-            var warnings = ValidateSourcePairing(capacity, axis)
-                .Concat(ValidateLoopPairing(nominalLoop, designLoop))
-                .ToList();
-            LastDiagnostics = new PmCurveBuildDiagnostics(
-                rawCount, clean.Count, rawCount - clean.Count,
-                AxialLevels, posCount, negCount, finalDesignCount,
-                NominalAndDesignSeparated: true, SmoothingApplied: false,
-                NominalPositiveBranchCount: nomPosCount,
-                NominalNegativeBranchCount: nomNegCount,
-                FinalNominalCurveCount: finalNominalCount,
-                DesignPMaxDisplay: designPMax,
-                NominalPMaxDisplay: nominalLoop.Count == 0 ? 0 : nominalLoop.Max(p => p.P),
-                ValidationWarnings: warnings);
-        }
-
-        return result;
-    }
-
-    private static IReadOnlyList<ControlPointDto> BuildAngleCurve(IEnumerable<ControlPoint> source, double designCompressionLimitDisplay, double? nominalCompressionLimitDisplay, double angleDegrees)
-    {
-        var clean = source.Where(IsValid).ToList();
-        var capacity = clean.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint).ToList();
-        var designCapacity = capacity.Where(p => !IsNominalPoint(p)).ToList();
-        var nominalCapacity = capacity.Where(IsNominalPoint).ToList();
         if (designCapacity.Count == 0) return [];
 
         var designRows = designCapacity
@@ -193,61 +118,31 @@ public static class PmCurveBuilderService
         if (demand is not null) result.Add(ProjectMarkerAngle(demand, angleDegrees, "Demand"));
         var governing = clean.FirstOrDefault(p => p.IsGoverningPoint);
         if (governing is not null) result.Add(ProjectMarkerAngle(governing, angleDegrees, "Governing"));
-        return result;
-    }
 
-    /// <summary>
-    /// Builds a closed PM envelope loop. The loop runs:
-    ///   positive branch ascending (Pmin â†’ Pmax) â†’ top cap at Pmax â†’ negative branch descending (Pmax â†’ Pmin)
-    /// This produces a single closed polyline for the renderer.
-    /// </summary>
-    private static IReadOnlyList<EnvelopePoint> BuildEnvelopeLoop(
-        IReadOnlyList<IReadOnlyList<ControlPoint>> thetaRows,
-        double pMax,
-        double pMin,
-        CurveAxis axis,
-        bool nominal)
-    {
-        double pRange = Math.Max(1e-9, pMax - pMin);
-        double pTol = pRange * 1e-6;
-
-        var positive = new List<EnvelopePoint>();
-        var negative = new List<EnvelopePoint>();
-
-        for (int i = 0; i < AxialLevels; i++)
+        if (EnableDebugDiagnostics)
         {
-            double p = pMin + (pRange * i / (AxialLevels - 1));
-            var ring = BuildRingAtP(thetaRows, p, pTol, nominal).OrderBy(r => r.ThetaDegrees).ToList();
-            if (ring.Count < 3) continue;
-
-            var intersections = axis == CurveAxis.Mx
-                ? IntersectRing(ring, r => r.My, r => r.Mx)
-                : IntersectRing(ring, r => r.Mx, r => r.My);
-            if (intersections.Count == 0) continue;
-
-            var max = intersections.MaxBy(x => x.Moment)!;
-            var min = intersections.MinBy(x => x.Moment)!;
-            positive.Add(new EnvelopePoint(max.Moment, p, max.Phi, max.ThetaDegrees, max.NeutralAxisDepth, IsPositiveBranch: true));
-            negative.Add(new EnvelopePoint(min.Moment, p, min.Phi, min.ThetaDegrees, min.NeutralAxisDepth, IsPositiveBranch: false));
+            var warnings = ValidateAngleSourcePairing(capacity, angleDegrees)
+                .Concat(ValidateAngleLoopPairing(nominal, design))
+                .ToList();
+            LastDiagnostics = new PmCurveBuildDiagnostics(
+                raw.Count,
+                clean.Count,
+                raw.Count - clean.Count,
+                designRows.Count == 0 ? 0 : designRows.Max(row => row.Count),
+                design.Count(p => p.IsPositiveBranch),
+                design.Count(p => !p.IsPositiveBranch),
+                design.Count,
+                NominalAndDesignSeparated: true,
+                SmoothingApplied: false,
+                NominalPositiveBranchCount: nominal.Count(p => p.IsPositiveBranch),
+                NominalNegativeBranchCount: nominal.Count(p => !p.IsPositiveBranch),
+                FinalNominalCurveCount: nominal.Count,
+                DesignPMaxDisplay: designPMax,
+                NominalPMaxDisplay: nominal.Count == 0 ? 0 : nominal.Max(p => p.P),
+                ValidationWarnings: warnings);
         }
 
-        if (positive.Count == 0) return [];
-
-        // Snap the topmost sample on each branch to exactly pMax.
-        // The loop formula already produces p = pMax at i = AxialLevels-1, but an explicit
-        // clamp guards against any floating-point drift and makes the intent unambiguous.
-        positive[^1] = positive[^1] with { P = pMax };
-        negative[^1] = negative[^1] with { P = pMax };
-
-        // Build loop: positive ascending (Pminâ†’Pmax) â†’ negative descending (Pmaxâ†’Pmin)
-        // The junction between positive[last] and negative[first-after-reverse] is the ACI
-        // trim cap â€” a straight horizontal segment at exactly P = pMax.
-        var loop = new List<EnvelopePoint>();
-        loop.AddRange(positive); // already ascending by P
-        negative.Reverse();     // make descending by P
-        loop.AddRange(negative);
-
-        return RemoveDuplicateEnvelope(loop, pTol);
+        return result;
     }
 
     private static IReadOnlyList<AngleEnvelopePoint> BuildAngleEnvelopeLoop(
@@ -281,8 +176,8 @@ public static class PmCurveBuilderService
 
             var max = intersections.MaxBy(x => x.Moment)!;
             var min = intersections.MinBy(x => x.Moment)!;
-            positive.Add(new AngleEnvelopePoint(max.Moment, p, max.Mx, max.My, max.Phi, max.ThetaDegrees, max.NeutralAxisDepth));
-            negative.Add(new AngleEnvelopePoint(min.Moment, p, min.Mx, min.My, min.Phi, min.ThetaDegrees, min.NeutralAxisDepth));
+            positive.Add(new AngleEnvelopePoint(max.Moment, p, max.Mx, max.My, max.Phi, max.ThetaDegrees, max.NeutralAxisDepth, IsPositiveBranch: true));
+            negative.Add(new AngleEnvelopePoint(min.Moment, p, min.Mx, min.My, min.Phi, min.ThetaDegrees, min.NeutralAxisDepth, IsPositiveBranch: false));
         }
 
         // Same cap-snap as BuildEnvelopeLoop â€” guarantee the topmost sample is exactly at pMax.
@@ -312,16 +207,6 @@ public static class PmCurveBuilderService
 
     private static double GetAciDesignPmax(double designCompressionLimitDisplay)
         => designCompressionLimitDisplay;
-
-    private static EnvelopePoint RemovePhi(EnvelopePoint point)
-    {
-        double phi = Math.Abs(point.Phi) < 1e-12 ? 1.0 : point.Phi;
-        return point with
-        {
-            Moment = point.Moment / phi,
-            P = point.P / phi
-        };
-    }
 
     private static AngleEnvelopePoint RemovePhi(AngleEnvelopePoint point)
     {
@@ -355,7 +240,9 @@ public static class PmCurveBuilderService
         // The ACI compression trim is a constructed cap, not a sampled curve.
         // Force both endpoints to one axial ordinate so the renderer draws a
         // single straight horizontal segment between left and right intersections.
-        return new StraightTrimSegment(positive with { P = capP }, negative with { P = capP });
+        return new StraightTrimSegment(
+            positive with { P = capP, IsPositiveBranch = true },
+            negative with { P = capP, IsPositiveBranch = false });
     }
 
     private static IReadOnlyList<AngleEnvelopePoint> FindDesignCurveIntersectionsAtP(
@@ -375,7 +262,7 @@ public static class PmCurveBuilderService
         }
 
         return IntersectRing(ring, r => -r.Mx * sin + r.My * cos, r => r.Mx * cos + r.My * sin)
-            .Select(p => new AngleEnvelopePoint(p.Moment, capP, p.Mx, p.My, p.Phi, p.ThetaDegrees, p.NeutralAxisDepth))
+            .Select(p => new AngleEnvelopePoint(p.Moment, capP, p.Mx, p.My, p.Phi, p.ThetaDegrees, p.NeutralAxisDepth, IsPositiveBranch: false))
             .ToList();
     }
 
@@ -636,7 +523,44 @@ public static class PmCurveBuilderService
         return warnings;
     }
 
-    private static IReadOnlyList<string> ValidateLoopPairing(IReadOnlyList<EnvelopePoint> nominal, IReadOnlyList<EnvelopePoint> reduced)
+    private static IReadOnlyList<string> ValidateAngleSourcePairing(IEnumerable<ControlPoint> capacity, double angleDegrees)
+    {
+        var warnings = new List<string>();
+        var nominal = capacity.Where(IsNominalPoint)
+            .OrderBy(p => p.SortKey)
+            .ThenBy(p => p.SliceKey, StringComparer.Ordinal)
+            .ToList();
+        var reduced = capacity.Where(p => !IsNominalPoint(p))
+            .OrderBy(p => p.SortKey)
+            .ThenBy(p => p.SliceKey, StringComparer.Ordinal)
+            .ToList();
+
+        if (nominal.Count != reduced.Count)
+        {
+            warnings.Add($"Nominal/reduced source point count differs: nominal={nominal.Count}, reduced={reduced.Count}.");
+        }
+
+        int count = Math.Min(nominal.Count, reduced.Count);
+        for (int i = 0; i < count; i++)
+        {
+            var n = nominal[i];
+            var r = reduced[i];
+            if (!DebugPairKey(n).Equals(DebugPairKey(r)))
+            {
+                warnings.Add($"Nominal/reduced source ordering differs at index {i}: nominal={DebugPairKey(n)}, reduced={DebugPairKey(r)}.");
+                break;
+            }
+
+            AddPhiWarning(warnings, $"source[{i}].P", r.ReducedDisplayP, n.NominalDisplayP * n.Phi);
+            AddPhiWarning(warnings, $"source[{i}].Mtheta",
+                ProjectMomentDisplay(r, angleDegrees, reduced: true),
+                ProjectMomentDisplay(n, angleDegrees, reduced: false) * n.Phi);
+        }
+
+        return warnings;
+    }
+
+    private static IReadOnlyList<string> ValidateAngleLoopPairing(IReadOnlyList<AngleEnvelopePoint> nominal, IReadOnlyList<AngleEnvelopePoint> reduced)
     {
         var warnings = new List<string>();
         if (nominal.Count != reduced.Count)
@@ -648,14 +572,17 @@ public static class PmCurveBuilderService
         for (int i = 0; i < count; i++)
         {
             if (Math.Abs(nominal[i].ThetaDegrees - reduced[i].ThetaDegrees) > 1e-9 ||
-                Math.Abs(nominal[i].NeutralAxisDepth - reduced[i].NeutralAxisDepth) > 1e-9)
+                Math.Abs(nominal[i].NeutralAxisDepth - reduced[i].NeutralAxisDepth) > 1e-9 ||
+                nominal[i].IsPositiveBranch != reduced[i].IsPositiveBranch)
             {
                 warnings.Add($"Nominal/reduced rendered loop ordering differs at index {i}.");
                 break;
             }
 
             AddPhiWarning(warnings, $"loop[{i}].P", reduced[i].P, nominal[i].P * nominal[i].Phi);
-            AddPhiWarning(warnings, $"loop[{i}].M", reduced[i].Moment, nominal[i].Moment * nominal[i].Phi);
+            AddPhiWarning(warnings, $"loop[{i}].Mtheta", reduced[i].Mtheta, nominal[i].Mtheta * nominal[i].Phi);
+            AddPhiWarning(warnings, $"loop[{i}].Mx", reduced[i].Mx, nominal[i].Mx * nominal[i].Phi);
+            AddPhiWarning(warnings, $"loop[{i}].My", reduced[i].My, nominal[i].My * nominal[i].Phi);
         }
 
         return warnings;
@@ -688,6 +615,14 @@ public static class PmCurveBuilderService
         }
 
         return mx;
+    }
+
+    private static double ProjectMomentDisplay(ControlPoint point, double angleDegrees, bool reduced)
+    {
+        double mx = reduced ? DesignDisplayMx(point) : point.NominalDisplayMx;
+        double my = reduced ? DesignDisplayMy(point) : point.NominalDisplayMy;
+        double radians = angleDegrees * Math.PI / 180.0;
+        return mx * Math.Cos(radians) + my * Math.Sin(radians);
     }
 
     private static string Csv(string value)
@@ -785,23 +720,10 @@ public static class PmCurveBuilderService
 
     private static CurvePoint ToCurvePoint(RingPoint p, double moment) => new(moment, p.Mx, p.My, p.P, p.Phi, p.ThetaDegrees, p.NeutralAxisDepth);
 
-    private static ControlPointDto ToDto(EnvelopePoint point, CurveAxis axis, string branch, bool isNominal)
-        => new(DiagramType.PM, point.Moment, point.P, point.P, point.P,
-            axis == CurveAxis.Mx ? point.Moment : 0, axis == CurveAxis.My ? point.Moment : 0,
-            point.Phi, point.ThetaDegrees, point.NeutralAxisDepth, branch, branch, false, false, false, isNominal);
-
     private static ControlPointDto ToAngleDto(AngleEnvelopePoint point, string branch, bool isNominal)
         => new(DiagramType.PM, point.Mtheta, point.P, point.P, point.P,
             point.Mx, point.My, point.Phi, point.ThetaDegrees, point.NeutralAxisDepth,
             branch, branch, false, false, false, isNominal);
-
-    private static ControlPointDto ProjectMarker(ControlPoint point, CurveAxis axis, string group)
-    {
-        double x = axis == CurveAxis.Mx ? point.DisplayMx : point.DisplayMy;
-        return new ControlPointDto(DiagramType.PM, x, point.DisplayP, point.DisplayP, point.DisplayP,
-            point.DisplayMx, point.DisplayMy, point.Phi, point.ThetaDegrees, point.NeutralAxisDepth,
-            point.Label, group, point.IsDemandPoint, point.IsGoverningPoint, point.IsReferencePoint, false);
-    }
 
     private static ControlPointDto ProjectMarkerAngle(ControlPoint point, double angleDegrees, string group)
     {
@@ -814,17 +736,6 @@ public static class PmCurveBuilderService
 
     private static ControlPointDto ReferenceDto(double axial, string label)
         => new(DiagramType.PM, 0, axial, axial, axial, 0, 0, 1, 0, 0, label, "Reference", false, false, true, false);
-
-    private static IReadOnlyList<EnvelopePoint> RemoveDuplicateEnvelope(IReadOnlyList<EnvelopePoint> points, double pTol)
-    {
-        var result = new List<EnvelopePoint>();
-        foreach (var pt in points)
-        {
-            if (result.Count == 0 || Math.Abs(result[^1].Moment - pt.Moment) > pTol * 0.01 || Math.Abs(result[^1].P - pt.P) > pTol)
-                result.Add(pt);
-        }
-        return result;
-    }
 
     private static IReadOnlyList<AngleEnvelopePoint> RemoveDuplicateAngleEnvelope(IReadOnlyList<AngleEnvelopePoint> points, double pTol)
     {
@@ -849,8 +760,7 @@ public static class PmCurveBuilderService
     private enum CurveAxis { Mx, My }
     private readonly record struct RingPoint(double Mx, double My, double P, double Phi, double ThetaDegrees, double NeutralAxisDepth);
     private readonly record struct CurvePoint(double Moment, double Mx, double My, double P, double Phi, double ThetaDegrees, double NeutralAxisDepth);
-    private readonly record struct EnvelopePoint(double Moment, double P, double Phi, double ThetaDegrees, double NeutralAxisDepth, bool IsPositiveBranch);
-    private readonly record struct AngleEnvelopePoint(double Mtheta, double P, double Mx, double My, double Phi, double ThetaDegrees, double NeutralAxisDepth);
+    private readonly record struct AngleEnvelopePoint(double Mtheta, double P, double Mx, double My, double Phi, double ThetaDegrees, double NeutralAxisDepth, bool IsPositiveBranch);
     private readonly record struct StraightTrimSegment(AngleEnvelopePoint Positive, AngleEnvelopePoint Negative);
     private readonly record struct DebugKey(string SliceKey, double SortKey);
     private readonly record struct PmDebugCsvRow(

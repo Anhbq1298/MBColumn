@@ -174,6 +174,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -187,12 +188,14 @@
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedPointMxDisplay}" Style="{StaticResource MetricValueStyle}" />
                             <TextBlock Grid.Row="3" Text="My" Style="{StaticResource MetricLabelStyle}" />
                             <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedPointMyDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="4" Text="Theta" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedPointThetaDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="5" Text="Neutral axis depth" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedPointNeutralAxisDepthDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="6" Text="DCR / Ratio" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedPointDcrDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="4" Text="Mθ" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedPointMthetaDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="5" Text="Theta" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedPointThetaDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="6" Text="Neutral axis depth" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedPointNeutralAxisDepthDisplay}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="7" Text="DCR / Ratio" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedPointDcrDisplay}" Style="{StaticResource MetricValueStyle}" />
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -338,78 +341,6 @@
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PM.Ratio}"
                                               ResetVersion="{Binding PM.ResetVersion}" />
-                    </Grid>
-                </Border>
-
-                <Border Style="{StaticResource ChartCardStyle}"
-                    Visibility="{Binding ShowPMx, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <DockPanel Margin="0,0,0,8" MinHeight="28">
-                            <Button DockPanel.Dock="Right"
-                                Content="x"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTip="Close viewport"
-                                Command="{Binding CloseViewportCommand}"
-                                CommandParameter="{x:Static vm:DiagramViewportType.PMx2D}" />
-                            <TextBlock Text="{Binding PMx.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                        </DockPanel>
-                        <controls:DiagramCanvas2D Grid.Row="1"
-                                              MinHeight="220"
-                                              Points="{Binding PmXPoints}"
-                                              ReferenceLines="{Binding PmXReferenceLines}"
-                                              XAxisLabel="{Binding PMx.XAxisLabel}"
-                                              YAxisLabel="{Binding PMx.YAxisLabel}"
-                                              ShowGrid="{Binding ShowGrid}"
-                                              ShowLabels="{Binding ShowLabels}"
-                                              ShowDemandPoint="{Binding ShowDemandPoint}"
-                                              ShowReferenceLines="{Binding ShowPmaxPmin}"
-                                              ShowNominalCurve="{Binding ShowNominalCurve}"
-                                              XGridStep="{Binding MStep}"
-                                              YGridStep="{Binding PStep}"
-                                              ShowCapacityControlPoints="False"
-                                              SelectedPoint="{Binding SelectedChartPoint}"
-                                              Ratio="{Binding PMx.Ratio}"
-                                              ResetVersion="{Binding PMx.ResetVersion}" />
-                    </Grid>
-                </Border>
-
-                <Border Style="{StaticResource ChartCardStyle}"
-                    Visibility="{Binding ShowPMy, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <DockPanel Margin="0,0,0,8" MinHeight="28">
-                            <Button DockPanel.Dock="Right"
-                                Content="x"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTip="Close viewport"
-                                Command="{Binding CloseViewportCommand}"
-                                CommandParameter="{x:Static vm:DiagramViewportType.PMy2D}" />
-                            <TextBlock Text="{Binding PMy.DiagramTitle}" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                        </DockPanel>
-                        <controls:DiagramCanvas2D Grid.Row="1"
-                                              MinHeight="220"
-                                              Points="{Binding PmYPoints}"
-                                              ReferenceLines="{Binding PmYReferenceLines}"
-                                              XAxisLabel="{Binding PMy.XAxisLabel}"
-                                              YAxisLabel="{Binding PMy.YAxisLabel}"
-                                              ShowGrid="{Binding ShowGrid}"
-                                              ShowLabels="{Binding ShowLabels}"
-                                              ShowDemandPoint="{Binding ShowDemandPoint}"
-                                              ShowReferenceLines="{Binding ShowPmaxPmin}"
-                                              ShowNominalCurve="{Binding ShowNominalCurve}"
-                                              XGridStep="{Binding MStep}"
-                                              YGridStep="{Binding PStep}"
-                                              ShowCapacityControlPoints="False"
-                                              SelectedPoint="{Binding SelectedChartPoint}"
-                                              Ratio="{Binding PMy.Ratio}"
-                                              ResetVersion="{Binding PMy.ResetVersion}" />
                     </Grid>
                 </Border>
 

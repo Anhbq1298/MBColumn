@@ -76,96 +76,158 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         IReadOnlyList<double> availableThetas,
         double requestedTheta)
     {
-        var points = ResolveThetaDataset(result.Surface, availableThetas, requestedTheta);
-        if (points.Count == 0)
+        var diagramService = new DiagramDataService();
+        var pmAngle = diagramService.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, requestedTheta);
+        var designPoints = pmAngle.ReducedCapacityPoints;
+        if (designPoints.Count == 0)
         {
             return [];
         }
 
-        return points
-            .OrderByDescending(p => p.PhiPn)
-            .ThenBy(p => p.DepthIndex)
-            .Select((point, index) => ToRow(result.UnitSystem, requestedTheta, index + 1, point))
-            .ToList();
+        var grouped = GroupByAxialLevel(designPoints);
+        var rows = new List<ControlPointExportRow>(grouped.Count);
+        for (int i = 0; i < grouped.Count; i++)
+        {
+            rows.Add(ToRow(result, requestedTheta, i + 1, grouped[i]));
+        }
+
+        return rows;
     }
 
-    private IReadOnlyList<InteractionPoint> ResolveThetaDataset(
-        InteractionSurface surface,
-        IReadOnlyList<double> availableThetas,
-        double requestedTheta)
+    private ControlPointExportRow ToRow(
+        CalculationResultDto result,
+        double thetaDegrees,
+        int pointIndex,
+        IReadOnlyList<ControlPointDto> group)
     {
-        double angleStep = 360.0 / surface.AngleCount;
-        int exactIndex = FindExactThetaIndex(availableThetas, requestedTheta);
-        if (exactIndex >= 0)
-        {
-            return surface.Points
-                .Where(p => p.AngleIndex == exactIndex)
-                .OrderBy(p => p.DepthIndex)
-                .ToList();
-        }
+        var positive = group.MaxBy(p => p.X);
+        var negative = group.MinBy(p => p.X);
+        var positiveMatch = positive is null ? null : MatchInteractionPoint(result, thetaDegrees, positive);
+        var negativeMatch = negative is null ? null : MatchInteractionPoint(result, thetaDegrees, negative);
 
-        double normalized = NormalizeAngle(requestedTheta);
-        double scaled = normalized / angleStep;
-        int lowerIndex = (int)Math.Floor(scaled) % surface.AngleCount;
-        int upperIndex = (lowerIndex + 1) % surface.AngleCount;
-        double lowerTheta = lowerIndex * angleStep;
-        double upperTheta = upperIndex == 0 ? 360.0 : upperIndex * angleStep;
-        double adjustedTheta = normalized;
-        if (upperTheta <= lowerTheta)
-        {
-            upperTheta += 360.0;
-            if (adjustedTheta < lowerTheta)
-            {
-                adjustedTheta += 360.0;
-            }
-        }
-
-        double denominator = upperTheta - lowerTheta;
-        double t = denominator < ThetaTolerance ? 0.0 : Math.Clamp((adjustedTheta - lowerTheta) / denominator, 0.0, 1.0);
-
-        var lowerRow = surface.Points
-            .Where(p => p.AngleIndex == lowerIndex)
-            .OrderBy(p => p.DepthIndex)
-            .ToList();
-        var upperRow = surface.Points
-            .Where(p => p.AngleIndex == upperIndex)
-            .OrderBy(p => p.DepthIndex)
-            .ToList();
-
-        int count = Math.Min(lowerRow.Count, upperRow.Count);
-        var result = new List<InteractionPoint>(count);
-        for (int i = 0; i < count; i++)
-        {
-            result.Add(Lerp(lowerRow[i], upperRow[i], t, requestedTheta));
-        }
-
-        return result;
-    }
-
-    private ControlPointExportRow ToRow(UnitSystem unitSystem, double thetaDegrees, int pointIndex, InteractionPoint point)
-    {
-        double thetaRadians = thetaDegrees * Math.PI / 180.0;
-        double mTheta = point.PhiMnx * Math.Cos(thetaRadians) + point.PhiMny * Math.Sin(thetaRadians);
-        double displayLength = unitSystem == UnitSystem.Metric
-            ? point.NeutralAxisDepthMm
-            : units.LengthFromMm(point.NeutralAxisDepthMm, LengthUnit.Inch);
+        double displayLength = DisplayLength(
+            RepresentativeDepthMm(positiveMatch, negativeMatch, positive, negative),
+            result.UnitSystem);
 
         return new ControlPointExportRow
         {
             ThetaDeg = thetaDegrees,
             PointIndex = pointIndex,
-            P = DisplayForce(point.PhiPn, unitSystem),
-            MThetaPositive = mTheta > 0 ? DisplayMoment(mTheta, unitSystem) : 0.0,
-            MThetaNegative = mTheta < 0 ? DisplayMoment(mTheta, unitSystem) : 0.0,
+            P = group.Average(p => p.P),
+            MThetaPositive = positive is null ? 0.0 : Math.Max(0.0, positive.X),
+            MThetaNegative = negative is null ? 0.0 : Math.Min(0.0, negative.X),
             NeutralAxisDepth = displayLength,
-            SteelStrainMax = MaxAbs(point.MaxSteelStrain, point.MinSteelStrain, point.MaxTensionSteelStrain),
-            ConcreteStrainMax = MaxAbs(point.MaxConcreteStrain, point.MinConcreteStrain),
-            Remarks = ResolveRemarks(point)
+            SteelStrainMax = MaxAbs(
+                positiveMatch?.MaxSteelStrain ?? double.NaN,
+                positiveMatch?.MinSteelStrain ?? double.NaN,
+                positiveMatch?.MaxTensionSteelStrain ?? double.NaN,
+                negativeMatch?.MaxSteelStrain ?? double.NaN,
+                negativeMatch?.MinSteelStrain ?? double.NaN,
+                negativeMatch?.MaxTensionSteelStrain ?? double.NaN),
+            ConcreteStrainMax = MaxAbs(
+                positiveMatch?.MaxConcreteStrain ?? double.NaN,
+                positiveMatch?.MinConcreteStrain ?? double.NaN,
+                negativeMatch?.MaxConcreteStrain ?? double.NaN,
+                negativeMatch?.MinConcreteStrain ?? double.NaN),
+            Remarks = ResolveRemarks(positiveMatch, negativeMatch)
         };
     }
 
-    private string ResolveRemarks(InteractionPoint point)
+    private IReadOnlyList<IReadOnlyList<ControlPointDto>> GroupByAxialLevel(IReadOnlyList<ControlPointDto> points)
     {
+        if (points.Count == 0)
+        {
+            return [];
+        }
+
+        double minP = points.Min(p => p.P);
+        double maxP = points.Max(p => p.P);
+        double tolerance = Math.Max((maxP - minP) * 1e-6, 1e-6);
+        var ordered = points
+            .OrderByDescending(p => p.P)
+            .ThenByDescending(p => p.X)
+            .ToList();
+
+        var groups = new List<IReadOnlyList<ControlPointDto>>();
+        var current = new List<ControlPointDto>();
+        double? currentP = null;
+
+        foreach (var point in ordered)
+        {
+            if (currentP is null || Math.Abs(point.P - currentP.Value) <= tolerance)
+            {
+                current.Add(point);
+                currentP ??= point.P;
+                continue;
+            }
+
+            groups.Add(current.ToList());
+            current.Clear();
+            current.Add(point);
+            currentP = point.P;
+        }
+
+        if (current.Count > 0)
+        {
+            groups.Add(current.ToList());
+        }
+
+        return groups;
+    }
+
+    private InteractionPoint? MatchInteractionPoint(CalculationResultDto result, double requestedTheta, ControlPointDto point)
+    {
+        var best = result.Surface.Points
+            .Select(surfacePoint => new
+            {
+                Point = surfacePoint,
+                Score = MatchScore(result.UnitSystem, requestedTheta, point, surfacePoint)
+            })
+            .OrderBy(x => x.Score)
+            .FirstOrDefault();
+
+        return best?.Point;
+    }
+
+    private double MatchScore(UnitSystem unitSystem, double requestedTheta, ControlPointDto target, InteractionPoint candidate)
+    {
+        double candidateP = DisplayForce(candidate.PhiPn, unitSystem);
+        double candidateMtheta = DisplayMoment(
+            candidate.PhiMnx * Math.Cos(requestedTheta * Math.PI / 180.0) +
+            candidate.PhiMny * Math.Sin(requestedTheta * Math.PI / 180.0),
+            unitSystem);
+        double candidateDepth = DisplayLength(candidate.NeutralAxisDepthMm, unitSystem);
+
+        return Math.Abs(candidateP - target.P)
+            + Math.Abs(candidateMtheta - target.X)
+            + Math.Abs(candidateDepth - DisplayLength(target.NeutralAxisDepth, unitSystem));
+    }
+
+    private string ResolveRemarks(InteractionPoint? positive, InteractionPoint? negative)
+    {
+        string positiveLabel = ResolveRemark(positive);
+        string negativeLabel = ResolveRemark(negative);
+
+        if (string.IsNullOrWhiteSpace(positiveLabel))
+        {
+            return negativeLabel;
+        }
+
+        if (string.IsNullOrWhiteSpace(negativeLabel) || positiveLabel.Equals(negativeLabel, StringComparison.OrdinalIgnoreCase))
+        {
+            return positiveLabel;
+        }
+
+        return $"{positiveLabel} / {negativeLabel}";
+    }
+
+    private string ResolveRemark(InteractionPoint? point)
+    {
+        if (point is null)
+        {
+            return "";
+        }
+
         string label = point.StateLabel?.Trim() ?? "";
         if (label.Equals("Pure axial compression", StringComparison.OrdinalIgnoreCase))
         {
@@ -195,47 +257,43 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         return "";
     }
 
-    private static InteractionPoint Lerp(InteractionPoint a, InteractionPoint b, double t, double thetaDegrees)
-        => new(
-            a.DepthIndex,
-            a.AngleIndex,
-            thetaDegrees,
-            Linear(a.NeutralAxisDepthMm, b.NeutralAxisDepthMm, t),
-            Linear(a.Pn, b.Pn, t),
-            Linear(a.Mnx, b.Mnx, t),
-            Linear(a.Mny, b.Mny, t),
-            Linear(a.Phi, b.Phi, t),
-            Linear(a.MaxTensionSteelStrain, b.MaxTensionSteelStrain, t),
-            Linear(a.ConcretePn, b.ConcretePn, t),
-            Linear(a.SteelPn, b.SteelPn, t),
-            Linear(a.ConcreteMnx, b.ConcreteMnx, t),
-            Linear(a.ConcreteMny, b.ConcreteMny, t),
-            Linear(a.SteelMnx, b.SteelMnx, t),
-            Linear(a.SteelMny, b.SteelMny, t),
-            Linear(a.MaxConcreteStrain, b.MaxConcreteStrain, t),
-            Linear(a.MinConcreteStrain, b.MinConcreteStrain, t),
-            Linear(a.MaxSteelStrain, b.MaxSteelStrain, t),
-            Linear(a.MinSteelStrain, b.MinSteelStrain, t),
-            string.IsNullOrWhiteSpace(a.StateLabel) ? b.StateLabel : a.StateLabel);
-
-    private int FindExactThetaIndex(IReadOnlyList<double> availableThetas, double requestedTheta)
-    {
-        for (int i = 0; i < availableThetas.Count; i++)
-        {
-            if (Math.Abs(availableThetas[i] - requestedTheta) <= ThetaTolerance)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
     private double DisplayForce(double forceN, UnitSystem unitSystem)
         => units.ForceFromN(forceN, unitSystem == UnitSystem.Metric ? ForceUnit.kN : ForceUnit.Kip);
 
     private double DisplayMoment(double momentNmm, UnitSystem unitSystem)
         => units.MomentFromNmm(momentNmm, unitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt);
+
+    private double DisplayLength(double lengthMm, UnitSystem unitSystem)
+        => unitSystem == UnitSystem.Metric ? lengthMm : units.LengthFromMm(lengthMm, LengthUnit.Inch);
+
+    private static double RepresentativeDepthMm(
+        InteractionPoint? positiveMatch,
+        InteractionPoint? negativeMatch,
+        ControlPointDto? positive,
+        ControlPointDto? negative)
+    {
+        if (positiveMatch is not null && negativeMatch is not null)
+        {
+            return (positiveMatch.NeutralAxisDepthMm + negativeMatch.NeutralAxisDepthMm) * 0.5;
+        }
+
+        if (positiveMatch is not null)
+        {
+            return positiveMatch.NeutralAxisDepthMm;
+        }
+
+        if (negativeMatch is not null)
+        {
+            return negativeMatch.NeutralAxisDepthMm;
+        }
+
+        if (positive is not null && negative is not null)
+        {
+            return (positive.NeutralAxisDepth + negative.NeutralAxisDepth) * 0.5;
+        }
+
+        return positive?.NeutralAxisDepth ?? negative?.NeutralAxisDepth ?? 0.0;
+    }
 
     private static double MaxAbs(params double[] values)
         => values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).Select(Math.Abs).DefaultIfEmpty(0.0).Max();
@@ -250,6 +308,4 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         double normalized = angle % 360.0;
         return normalized < 0 ? normalized + 360.0 : normalized;
     }
-
-    private static double Linear(double a, double b, double t) => a + (b - a) * t;
 }

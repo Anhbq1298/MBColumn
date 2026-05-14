@@ -6,9 +6,6 @@ namespace MBColumn.Application.Services;
 
 public sealed class DiagramDataService
 {
-    public PmDiagramDto BuildPm(DiagramControlPointSet set, UnitSystem unitSystem)
-        => new(BuildPmXDiagramData(set, unitSystem).Points, ForceUnit(unitSystem), MomentUnit(unitSystem));
-
     public MmDiagramDto BuildMm(DiagramControlPointSet set, UnitSystem unitSystem)
         => new(BuildMxMyDiagramData(set, unitSystem).Points, MomentUnit(unitSystem));
 
@@ -20,26 +17,6 @@ public sealed class DiagramDataService
 
     public MmDiagramDto BuildMmDiagramRenderData(DiagramControlPointSet set, UnitSystem unitSystem)
         => new(ToDto(CleanAndSortMmBoundaryPoints(set.MmPoints)), MomentUnit(unitSystem));
-
-    public PmXDiagramDto BuildPmXDiagramData(DiagramControlPointSet set, UnitSystem unitSystem)
-    {
-        var points = PmCurveBuilderService.BuildPmXCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, set.NominalCompressionLimitDisplay);
-        return new PmXDiagramDto(points, ForceUnit(unitSystem), MomentUnit(unitSystem))
-        {
-            NominalCapacityPoints = NominalCapacity(points),
-            ReducedCapacityPoints = ReducedCapacity(points)
-        };
-    }
-
-    public PmYDiagramDto BuildPmYDiagramData(DiagramControlPointSet set, UnitSystem unitSystem)
-    {
-        var points = PmCurveBuilderService.BuildPmYCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, set.NominalCompressionLimitDisplay);
-        return new PmYDiagramDto(points, ForceUnit(unitSystem), MomentUnit(unitSystem))
-        {
-            NominalCapacityPoints = NominalCapacity(points),
-            ReducedCapacityPoints = ReducedCapacity(points)
-        };
-    }
 
     public PmAngleDiagramDto BuildPmAngleDiagramData(DiagramControlPointSet set, UnitSystem unitSystem, double angleDegrees)
     {

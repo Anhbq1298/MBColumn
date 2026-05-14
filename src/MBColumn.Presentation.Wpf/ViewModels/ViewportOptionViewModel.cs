@@ -1,6 +1,6 @@
 ﻿namespace MBColumn.Presentation.Wpf.ViewModels;
 
-public enum DiagramViewportType { PM2D, MxMy2D, Pmm3D, PMx2D, PMy2D }
+public enum DiagramViewportType { PM2D, MxMy2D, Pmm3D }
 
 public sealed class ViewportOptionViewModel : ViewModelBase
 {
