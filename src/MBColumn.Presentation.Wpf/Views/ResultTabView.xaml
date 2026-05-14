@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MBColumn.Presentation.Wpf.Views.ResultTabView"
+<UserControl x:Class="MBColumn.Presentation.Wpf.Views.ResultTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
@@ -156,49 +156,7 @@
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource SidebarCardStyle}">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,8">
-                            <Button DockPanel.Dock="Right"
-                                    Content="Clear"
-                                    Style="{StaticResource CompactButtonStyle}"
-                                    Command="{Binding ClearSelectedChartPointCommand}" />
-                            <TextBlock Text="Selected Point" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                        </DockPanel>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" MinWidth="130" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Type" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Column="1" Text="{Binding SelectedPointTypeDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="1" Text="P" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedPointPDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="2" Text="Mx" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedPointMxDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="3" Text="My" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedPointMyDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="4" Text="Mθ" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedPointMthetaDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="5" Text="Theta" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedPointThetaDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="6" Text="Neutral axis depth" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedPointNeutralAxisDepthDisplay}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="7" Text="DCR / Ratio" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedPointDcrDisplay}" Style="{StaticResource MetricValueStyle}" />
-                        </Grid>
-                    </StackPanel>
-                </Border>
+
 
                 <GroupBox Header="3D PMM Diagrams"
                           Background="White"

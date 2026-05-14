@@ -128,8 +128,6 @@ var tests = new List<(string Name, Action Test)>
     ("Multi-load case inactive excluded", TestMultiLoadCaseInactiveExcluded),
     ("Multi-load case fallback to single", TestMultiLoadCaseFallbackToSingle),
     ("Multi-load case governing id in result", TestMultiLoadCaseGoverningIdInResult),
-    ("ACI trim segment is straight - PM angle 0 deg", TestAciTrimSegmentStraightPmx),
-    ("ACI trim segment is straight - PM angle 90 deg", TestAciTrimSegmentStraightPmy),
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
@@ -756,13 +754,16 @@ static void TestAciPmNominalAndReducedPeaks()
         var nominal = diagram.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         var reduced = diagram.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
         double rawPo = result.Surface.Points.Max(p => p.Pn);
-        double nominalCap = GetUnits().ForceFromN(0.80 * rawPo, ForceUnit.kN);
+        double reducedPo = result.Surface.Points.Max(p => p.PhiPn);
         double reducedCap = result.ControlPoints.DesignCompressionLimitDisplay;
 
-        double expectedNominal = GetUnits().ForceFromN(0.80 * rawPo, ForceUnit.kN);
-        Console.WriteLine($"DEBUG: NominalMax={nominal.Max(p => p.P)}, Expected={expectedNominal}, ReducedMax={reduced.Max(p => p.P)}, ReducedCap={reducedCap}");
-        IsTrue(nominal.Max(p => p.P) >= expectedNominal - 1.0);
-        IsTrue(reduced.Max(p => p.P) >= reducedCap - 1.0);
+        Console.WriteLine($"DEBUG: NominalMax={nominal.Max(p => p.P)}, Po={GetUnits().ForceFromN(rawPo, ForceUnit.kN)}, ReducedMax={reduced.Max(p => p.P)}, PhiPo={GetUnits().ForceFromN(reducedPo, ForceUnit.kN)}");
+        
+        // Nominal peak should be the full Po (no 0.80/0.85 cap)
+        AreClose(GetUnits().ForceFromN(rawPo, ForceUnit.kN), nominal.Max(p => p.P), 10.0); 
+        // Reduced peak should be the full phi*Po (no 0.80/0.85 cap)
+        AreClose(GetUnits().ForceFromN(reducedPo, ForceUnit.kN), reduced.Max(p => p.P), 10.0);
+        
         IsTrue(nominal.Max(p => p.P) > reduced.Max(p => p.P));
         var phiPnMax = diagram.Single(p => p.IsReference && p.Label == "Pmax");
         AreClose(reducedCap, phiPnMax.P, 1.0);
@@ -836,15 +837,12 @@ static void TestAciDesignCapPmAngleZero()
     var result = Service().Calculate(MetricInput());
     var diagram = PmAngleDiagram(result, 0.0);
     var design = diagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
-    // The design loop contains points at the ACI-capped Pmax level (top of envelope)
+    // The design loop contains points ABOVE the ACI-capped Pmax level (theoretical reduced curve)
     double designPMax = design.Max(p => p.Y);
-    // There should be at least 2 points near the top (positive and negative sides of the cap)
-    var topPoints = design.Where(p => Math.Abs(p.Y - designPMax) < 0.01).ToList();
-    IsTrue(topPoints.Count >= 1);
-    // The Pmax reference line should be at the same level as the design cap
     var pmaxRef = diagram.Points.FirstOrDefault(p => p.IsReference && p.Label == "Pmax");
     IsTrue(pmaxRef is not null);
-    AreClose(designPMax, pmaxRef!.Y, 1.0); // within tolerance
+    // Uncapped peak must be higher than the design cap reference line
+    IsTrue(designPMax > pmaxRef!.Y + 1.0);
 }
 
 static void TestAciDesignCapPmAngleNinety()
@@ -853,11 +851,9 @@ static void TestAciDesignCapPmAngleNinety()
     var diagram = PmAngleDiagram(result, 90.0);
     var design = diagram.Points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
     double designPMax = design.Max(p => p.Y);
-    var topPoints = design.Where(p => Math.Abs(p.Y - designPMax) < 0.01).ToList();
-    IsTrue(topPoints.Count >= 1);
     var pmaxRef = diagram.Points.FirstOrDefault(p => p.IsReference && p.Label == "Pmax");
     IsTrue(pmaxRef is not null);
-    AreClose(designPMax, pmaxRef!.Y, 1.0);
+    IsTrue(designPMax > pmaxRef!.Y + 1.0);
 }
 
 static void TestPmaxRefSeparateFromDesignCap()

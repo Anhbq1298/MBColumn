@@ -117,18 +117,16 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
             MThetaPositive = positive is null ? 0.0 : Math.Max(0.0, positive.X),
             MThetaNegative = negative is null ? 0.0 : Math.Min(0.0, negative.X),
             NeutralAxisDepth = displayLength,
-            SteelStrainMax = MaxAbs(
+            SteelStrainMax = SignedMaxAbs(
                 positiveMatch?.MaxSteelStrain ?? double.NaN,
                 positiveMatch?.MinSteelStrain ?? double.NaN,
                 positiveMatch?.MaxTensionSteelStrain ?? double.NaN,
                 negativeMatch?.MaxSteelStrain ?? double.NaN,
                 negativeMatch?.MinSteelStrain ?? double.NaN,
                 negativeMatch?.MaxTensionSteelStrain ?? double.NaN),
-            ConcreteStrainMax = MaxAbs(
+            ConcreteStrainMax = MaxPositive(
                 positiveMatch?.MaxConcreteStrain ?? double.NaN,
-                positiveMatch?.MinConcreteStrain ?? double.NaN,
-                negativeMatch?.MaxConcreteStrain ?? double.NaN,
-                negativeMatch?.MinConcreteStrain ?? double.NaN),
+                negativeMatch?.MaxConcreteStrain ?? double.NaN),
             Remarks = ResolveRemarks(positiveMatch, negativeMatch)
         };
     }
@@ -295,8 +293,15 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         return positive?.NeutralAxisDepth ?? negative?.NeutralAxisDepth ?? 0.0;
     }
 
-    private static double MaxAbs(params double[] values)
-        => values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).Select(Math.Abs).DefaultIfEmpty(0.0).Max();
+    private static double SignedMaxAbs(params double[] values)
+    {
+        var valid = values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).ToList();
+        if (valid.Count == 0) return 0.0;
+        return valid.OrderByDescending(Math.Abs).First();
+    }
+
+    private static double MaxPositive(params double[] values)
+        => values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v) && v > 0).DefaultIfEmpty(0.0).Max();
 
     private static double NormalizeAngle(double angle)
     {

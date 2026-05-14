@@ -106,9 +106,9 @@ public static class PmCurveBuilderService
             .ToList();
         double designPMaxRaw = designCapacity.Max(DesignDisplayP);
         double designPMin = designCapacity.Min(DesignDisplayP);
-        double designCap = Math.Min(designPMaxRaw, designCompressionLimitDisplay);
-        
-        var design = BuildAngleEnvelopeLoop(designRows, designCap, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: true).ToList();
+        // Build design curve (phi-reduced) without capping it at the service level.
+        // Capping/clipping for visualization is now handled by the UI.
+        var design = BuildAngleEnvelopeLoop(designRows, designPMaxRaw, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: false).ToList();
 
         // Build nominal curve separately to respect its own (usually higher) cap
         var nominalPointsSource = capacity.Where(IsNominalPoint).ToList();
@@ -121,9 +121,8 @@ public static class PmCurveBuilderService
         
         double nominalPMaxRaw = nominalPointsSource.Count > 0 ? nominalPointsSource.Max(p => p.NominalDisplayP) : designPMaxRaw / 0.65;
         double nominalPMin = nominalPointsSource.Count > 0 ? nominalPointsSource.Min(p => p.NominalDisplayP) : designPMin / 0.9;
-        double nominalCap = Math.Min(nominalPMaxRaw, nominalCompressionLimitDisplay ?? double.MaxValue);
-
-        var nominal = BuildAngleEnvelopeLoop(nominalRows, nominalCap, nominalPMin, angleDegrees, nominal: true, forceStraightTrimCap: true).ToList();
+        // Build nominal curve (unfactored) without capping.
+        var nominal = BuildAngleEnvelopeLoop(nominalRows, nominalPMaxRaw, nominalPMin, angleDegrees, nominal: true, forceStraightTrimCap: false).ToList();
 
         var result = new List<ControlPointDto>(design.Select(p => ToAngleDto(p, "DesignCapacity", isNominal: false)));
         result.AddRange(nominal.Select(p => ToAngleDto(p, "NominalCapacity", isNominal: true)));
@@ -152,7 +151,7 @@ public static class PmCurveBuilderService
                 NominalPositiveBranchCount: nominal.Count(p => p.IsPositiveBranch),
                 NominalNegativeBranchCount: nominal.Count(p => !p.IsPositiveBranch),
                 FinalNominalCurveCount: nominal.Count,
-                DesignPMaxDisplay: designCap,
+                DesignPMaxDisplay: designPMaxRaw,
                 NominalPMaxDisplay: nominal.Count == 0 ? 0 : nominal.Max(p => p.P),
                 ValidationWarnings: warnings);
         }

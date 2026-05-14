@@ -95,7 +95,7 @@ public class DiagramCanvas2D : FrameworkElement
     {
         var activeDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 2.2);
         var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.35) { DashStyle = DashStyles.Dash };
-        var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4) { DashStyle = DashStyles.Dash };
+        var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4);
         double? designCompressionCap = DesignCompressionCap(points);
 
         foreach (var group in points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference).GroupBy(p => p.GroupKey))
