@@ -38,6 +38,13 @@
                                 Command="{Binding CalculateCommand}"
                                 HorizontalAlignment="Left"
                                 MinWidth="210" />
+                        <TextBlock Text="Changes made, require re-calculation"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AccentRedBrush}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Margin="0,6,0,0"
+                                   Visibility="{Binding IsCalculationOutdated, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <TextBlock Text="{Binding ValidationMessage}" TextWrapping="Wrap"
                                    Foreground="{DynamicResource AccentRedBrush}"
                                    Margin="0,8,0,0" />
@@ -45,7 +52,7 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Results"
-                     IsEnabled="{Binding Result.HasResult}"
+                     IsEnabled="{Binding IsResultsTabAvailable}"
                      Background="{DynamicResource PanelBackgroundBrush}"
                      Foreground="{DynamicResource TextDarkBrush}">
                 <views:ResultTabView DataContext="{Binding Result}" Margin="0,12,0,0" />

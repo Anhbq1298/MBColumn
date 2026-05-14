@@ -32,8 +32,8 @@
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="650" />
-            <ColumnDefinition Width="360" MinWidth="330" />
+            <ColumnDefinition Width="3*" MinWidth="650" />
+            <ColumnDefinition Width="*" MinWidth="300" />
         </Grid.ColumnDefinitions>
 
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,14,0">
@@ -204,9 +204,53 @@
                     </StackPanel>
                 </GroupBox>
 
+                <Border Style="{StaticResource CardBorderStyle}" Padding="18" MinHeight="340" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Section Preview" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}" Margin="0,0,0,4" />
+                        <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,0,0,12"
+                                   Text="Compression (+). Internal units: N, mm, MPa. Slenderness excluded." />
+
+                        <controls:SectionPreviewCanvas Height="300" MinHeight="260"
+                            HorizontalAlignment="Stretch"
+                            SectionWidth="{Binding SectionWidth}"
+                            SectionHeight="{Binding SectionHeight}"
+                            Cover="{Binding Cover}"
+                            UnitSystem="{Binding SelectedUnitSystem}"
+                            Rebars="{Binding PreviewRebars}"
+                            SectionLabel="{Binding SectionPreviewLabel}"
+                            RebarLabel="{Binding RebarPreviewLabel}"
+                            CoverLabel="{Binding CoverPreviewLabel}"
+                            IsValid="{Binding IsSectionPreviewValid}"
+                            ErrorMessage="{Binding SectionPreviewErrorMessage}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <Border Style="{StaticResource CardBorderStyle}" Padding="14" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Moment Sign Convention" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}" Margin="0,0,0,10" />
+                        <Border Background="{DynamicResource PanelBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="8">
+                            <Image Source="/MBColumn;component/Resources/MomentSignConvention.png"
+                                   Stretch="Uniform"
+                                   MaxHeight="210"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
                 <GroupBox Header="Load Cases" Background="White" Foreground="{DynamicResource DarkNavyBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" Padding="14" Margin="0,0,0,14">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,0,0,8"
+                        <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,0,0,8" TextWrapping="Wrap"
                                    Text="P: compression (+). Mx: moment about X-axis. My: moment about Y-axis." />
 
                         <DataGrid x:Name="LoadCasesGrid"
@@ -214,21 +258,23 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
+                                  CanUserResizeColumns="True"
+                                  CanUserResizeRows="True"
                                   HeadersVisibility="Column"
                                   SelectionMode="Extended"
                                   SelectionUnit="FullRow"
-                                  MinHeight="170"
-                                  MaxHeight="220"
+                                  MinHeight="210"
+                                  MaxHeight="360"
                                   Margin="0,0,0,8">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="130" ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="P" Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="90" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                <DataGridTextColumn Header="Mx" Binding="{Binding Mux, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="90" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                <DataGridTextColumn Header="My" Binding="{Binding Muy, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="90" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="92" MinWidth="78" ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="P" Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="64" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                <DataGridTextColumn Header="Mx" Binding="{Binding Mux, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="64" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                <DataGridTextColumn Header="My" Binding="{Binding Muy, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="64" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <StackPanel Orientation="Horizontal">
+                        <WrapPanel>
                             <Button Content="+ Add case" Command="{Binding AddLoadCaseCommand}"
                                     Style="{StaticResource CompactButtonStyle}" />
                             <Button Content="Delete load case"
@@ -236,32 +282,11 @@
                                     CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Padding="10,4" FontSize="11.5" Margin="8,0,0,0" />
-                        </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
-
-        <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}" Padding="18" MinHeight="340">
-            <StackPanel>
-                <TextBlock Text="Section Preview" FontSize="15" FontWeight="SemiBold"
-                           Foreground="{DynamicResource PrimaryNavyBrush}" Margin="0,0,0,4" />
-                <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,0,0,12"
-                           Text="Compression (+). Internal units: N, mm, MPa. Slenderness excluded." />
-
-                <controls:SectionPreviewCanvas Height="300" MinHeight="260"
-                    SectionWidth="{Binding SectionWidth}"
-                    SectionHeight="{Binding SectionHeight}"
-                    Cover="{Binding Cover}"
-                    UnitSystem="{Binding SelectedUnitSystem}"
-                    Rebars="{Binding PreviewRebars}"
-                    SectionLabel="{Binding SectionPreviewLabel}"
-                    RebarLabel="{Binding RebarPreviewLabel}"
-                    CoverLabel="{Binding CoverPreviewLabel}"
-                    IsValid="{Binding IsSectionPreviewValid}"
-                    ErrorMessage="{Binding SectionPreviewErrorMessage}" />
-            </StackPanel>
-        </Border>
     </Grid>
 </UserControl>
 
