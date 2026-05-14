@@ -260,7 +260,7 @@ public sealed class DiagramDataService
                         Label:           string.Empty,
                         SortKey:         pi,
                         GroupKey:        groupKey,
-                        SliceKey:        sliceKey));
+                        SliceKey:        $"depth={pi}"));
                 }
             }
         }
@@ -400,22 +400,31 @@ public sealed class DiagramDataService
         var triangles = new List<(ControlPointDto A, ControlPointDto B, ControlPointDto C)>();
         foreach (var surface in points.Where(p => !p.IsDemand && !p.IsGoverning).GroupBy(p => p.IsNominal))
         {
-            var groups = surface
+            var rows = surface
                 .GroupBy(DepthRowKey)
                 .OrderBy(g => g.Key)
                 .Select(g => g.OrderBy(p => NormalizeTheta(p.ThetaDegrees)).ToList())
-                .Where(g => g.Count > 2)
+                .Where(g => g.Count >= 3) // Minimum 3 points to form a ring
                 .ToList();
-            for (int i = 0; i < groups.Count - 1; i++)
+
+            for (int i = 0; i < rows.Count - 1; i++)
             {
-                var a = groups[i];
-                var b = groups[i + 1];
-                int count = Math.Min(a.Count, b.Count);
+                var rowA = rows[i];
+                var rowB = rows[i + 1];
+                int n = rowA.Count;
+                int m = rowB.Count;
+                
+                // For a structured mesh, we expect n == m == 36.
+                // We use the smaller count to be safe, but the user expects exactly 36.
+                int count = Math.Min(n, m);
                 for (int j = 0; j < count; j++)
                 {
                     int next = (j + 1) % count;
-                    triangles.Add((a[j], a[next], b[j]));
-                    triangles.Add((a[next], b[next], b[j]));
+                    
+                    // Quad face (p0, p1, p2, p3) split into two triangles
+                    // p0 = rowA[j], p1 = rowA[next], p2 = rowB[next], p3 = rowB[j]
+                    triangles.Add((rowA[j], rowA[next], rowB[j]));
+                    triangles.Add((rowA[next], rowB[next], rowB[j]));
                 }
             }
         }
@@ -432,35 +441,32 @@ public sealed class DiagramDataService
                 .GroupBy(DepthRowKey)
                 .OrderBy(g => g.Key)
                 .Select(g => g.OrderBy(p => NormalizeTheta(p.ThetaDegrees)).ToList())
-                .Where(g => g.Count > 2)
+                .Where(g => g.Count >= 2)
                 .ToList();
 
-            foreach (var group in rows)
+            // 1. Horizontal Rings (connect points in each P-level)
+            foreach (var row in rows)
             {
-                ControlPointDto? previous = null;
-                foreach (var point in group)
+                for (int j = 0; j < row.Count; j++)
                 {
-                    if (previous is not null)
-                    {
-                        lines.Add((previous, point));
-                    }
-
-                    previous = point;
-                }
-                if (group.Count > 2)
-                {
-                    lines.Add((group[^1], group[0]));
+                    int next = (j + 1) % row.Count;
+                    lines.Add((row[j], row[next]));
                 }
             }
 
+            // 2. Vertical Meridian Curves (connect same theta across P-levels)
             if (rows.Count > 1)
             {
-                int count = rows.Min(r => r.Count);
-                for (int theta = 0; theta < count; theta++)
+                int maxThetaCount = rows.Max(r => r.Count);
+                for (int t = 0; t < maxThetaCount; t++)
                 {
-                    for (int row = 0; row < rows.Count - 1; row++)
+                    for (int i = 0; i < rows.Count - 1; i++)
                     {
-                        lines.Add((rows[row][theta], rows[row + 1][theta]));
+                        // Ensure both rows have a point at this index
+                        if (t < rows[i].Count && t < rows[i + 1].Count)
+                        {
+                            lines.Add((rows[i][t], rows[i + 1][t]));
+                        }
                     }
                 }
             }
