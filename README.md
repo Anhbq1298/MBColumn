@@ -1,19 +1,24 @@
 # MBColumn
 
-MBColumn is a clean-room .NET 8 WPF desktop application for reinforced-concrete rectangular column PMM interaction checks.
+MBColumn is a clean-room .NET 8 WPF desktop application for reinforced-concrete column PMM interaction checks.
 
 It is designed for learning, validation, and preliminary engineering review workflows. It is not a certified design-code engine.
 
 ## Current Scope
 
 - Rectangular reinforced-concrete column sections.
-- Live section preview with cover line, rebars, centroid, local axes, and dimensions.
-- PMx diagram, PMy diagram, Mx-My diagram, and 3D PMM interaction surface.
-- PMM demand/capacity ratio using directional capacity search.
+- Circular reinforced-concrete column sections.
+- Live section preview with cover line, rebars, centroid, local axes, dimensions, and sign-convention reference image.
+- PM angle diagram, PMx/PMy-style slices, Mx-My diagram, and 3D PMM interaction surface.
+- PMM demand/capacity ratio using directional capacity search against the design capacity surface.
+- Multiple load-case workflow with governing-ratio selection.
 - Metric and Imperial input workflows.
 - Singapore metric rebar notation and US imperial rebar notation.
-- ACI-style calculation path currently implemented.
-- Eurocode documentation and implementation guidance prepared for future design-code expansion.
+- ACI 318-style calculation path.
+- Eurocode 2 calculation path with separated EC2 material, stress-block, strain-limit, and ratio assumptions.
+- Section integration method selection:
+  - Fiber integration.
+  - Polygon stress-block integration.
 
 ## How To Run
 
@@ -49,59 +54,110 @@ The calculation engine uses one internal unit system:
 - Force: N
 - Length: mm
 - Moment: N-mm
-- Stress: MPa
+- Stress: MPa = N/mm2
 
-All UI values are converted at the application boundary through `IUnitConversionService`. The solver should never receive display units or rebar notation.
+All UI values are converted at the application boundary through `IUnitConversionService`. The solver should not receive display units or rebar notation.
 
 ## Sign Convention
 
 Axial compression is positive. Axial tension is negative.
 
-Moments are summed about the section centroid using:
-
-- `Mx = force * y`
-- `My = -force * x`
-
 The internal coordinate origin is the section centroid.
 
-## Design-Code Architecture
+The current solver sums moments about the section centroid using:
 
-Design-code assumptions should be isolated behind dedicated services.
+- `Mx = -force * y`
+- `My =  force * x`
 
-Expected direction:
+This applies consistently to concrete and steel force resultants in the current integration code.
+
+## Solver Architecture
+
+The active PMM solver is organized as:
 
 ```text
-DesignCodeService
--> Common PMM Solver / Interaction Surface Model
--> Diagram Data Services
--> ViewModels
--> WPF Chart Controls
+PmmInteractionSolver
+-> PmmSolver
+   -> ISweepStrategy
+   -> ISectionIntegrator
+   -> IDesignCodeAdapter
 ```
 
-The UI/chart engine should stay solver-agnostic. Adding a new design code should change the calculated data and labels, not duplicate the chart controls.
+Main responsibilities:
 
-## ACI-Style Assumptions
+- `NeutralAxisSweepStrategy` generates neutral-axis states by angle and neutral-axis depth.
+- `FiberSectionIntegrator` integrates concrete fibers and discrete rebars.
+- `PolygonSectionIntegrator` clips the compressed concrete polygon and adds discrete rebar forces.
+- `Aci318DesignAdapter` and `Eurocode2DesignAdapter` convert nominal integration output into design capacity points.
+- `DiagramDataService` and `PmCurveBuilderService` convert solver points into PM, Mx-My, and 3D PMM chart datasets.
 
-The current implemented calculation path follows these simplified ACI-style assumptions:
+The UI/chart engine should stay solver-agnostic. Adding or changing a design code should change calculated data and labels, not duplicate chart controls.
+
+## Neutral-Axis Sweep Logic
+
+The current sweep samples:
+
+- Angle: `AngleStepDegrees`, default 10 degrees.
+- Depth: `NeutralAxisSamples`, default 100 samples.
+- Maximum sampled neutral-axis depth: `10 * max(section width, section height)`.
+
+For each neutral-axis state:
+
+1. The compression normal is generated from the angle.
+2. The extreme compression projection of the section is found.
+3. Neutral-axis offset is calculated as `maxProjection - c`.
+4. Concrete and steel strains are calculated from the plane-section assumption.
+5. Invalid integration states are skipped.
+
+## Integration Methods
+
+### Fiber Integration
+
+Fiber integration uses discrete concrete fibers and discrete rebars.
+
+- Rectangular sections use a rectangular fiber grid.
+- Circular sections use radial/angular concrete fibers.
+- Concrete tension is ignored.
+- Concrete compression stress follows the active design-code service.
+- Steel is elastic-perfectly plastic and capped by the active design-code steel strength.
+- Compression steel subtracts displaced concrete stress at the bar location.
+
+### Polygon Integration
+
+Polygon integration uses compressed-zone clipping.
+
+- Rectangular sections use the rectangular boundary.
+- Circular sections use a polygonal circular boundary controlled by `CirclePolygonSegmentCount`.
+- The compression polygon is clipped by the stress-block projection.
+- Concrete force is stress block stress multiplied by clipped area.
+- Concrete moment is calculated from the clipped polygon centroid.
+- Rebar force is still integrated discretely.
+
+## Design-Code Paths
+
+Design-code assumptions are isolated behind `IDesignCodeService` and `IDesignCodeAdapter`.
+
+### ACI 318-Style Path
+
+The ACI-style path currently includes:
 
 - Plane sections remain plane.
-- Maximum concrete compression strain is 0.003.
+- Maximum concrete compression strain is `0.003`.
 - Concrete tension is ignored.
-- Concrete compression is represented by fiber integration using `0.85 fc`.
-- Steel is elastic-perfectly plastic and capped at `+/- fy`.
-- Phi factor is implemented in `Aci318DesignCodeService`.
+- Concrete stress block factor is `0.85`.
+- ACI `beta1` is provided by `Aci318DesignCodeService`.
+- Steel strength uses `fy` directly.
+- Phi factor is based on maximum tensile steel strain.
+- Tied-column compression design cap is handled through the ACI design-code service and PM curve/data services.
 - Slenderness and second-order effects are excluded.
 
-## Eurocode Direction
+### Eurocode 2 Path
 
-Eurocode support should be implemented as a separate design-code path.
+The EC2 path is implemented as a separate design-code route.
 
-Key rules:
-
-- Do not mutate ACI logic directly to implement Eurocode behavior.
-- Reuse the common solver, diagram data, ViewModel, and chart pipeline where appropriate.
-- Keep EC2 material model, strain limits, stress block, and ratio logic separated from ACI assumptions.
-- Reuse existing 2D/3D chart controls for Eurocode PMM charts.
+- EC2 material factors, concrete strain limits, steel design strength, and stress-block assumptions are separated from ACI logic.
+- EC2 design points use the common solver and chart pipeline.
+- EC2 phi is treated through the active EC2 design-code service/adaptor route rather than by mutating ACI logic.
 
 See:
 
@@ -111,6 +167,44 @@ See:
 - `docs/engineering/eurocode/ec2-stress-block.md`
 - `docs/engineering/eurocode/ec2-strain-limits.md`
 - `docs/engineering/eurocode/ec2-pmm-ratio.md`
+
+## Nominal vs Design Capacity Data
+
+The solver and diagram pipeline keep nominal and design capacity data separated.
+
+- Nominal points store `Pn`, `Mnx`, and `Mny`.
+- Design points store `PhiPn`, `PhiMnx`, and `PhiMny` or the equivalent design-reduced values for the active code.
+- PM, Mx-My, and 3D PMM diagrams can render both nominal and design capacity datasets.
+- Demand points and governing points are kept separate from capacity polylines.
+- ACI PM charts expose nominal reference curves and phi-reduced design curves separately.
+
+## 2D and 3D Diagram Logic
+
+### PM Angle Diagram
+
+The PM angle diagram projects 3D capacity points to a selected bending direction:
+
+- `Mtheta = Mx * cos(theta) + My * sin(theta)` for demand/report projection.
+- Capacity envelopes are built from constant-P rings and projected to the selected PM angle.
+- Nominal and design curves are built separately.
+- Reference lines such as `Pmax` and `Pmin` are stored as reference datasets, not capacity points.
+
+### Mx-My Diagram
+
+The Mx-My diagram is generated at a selected axial load level.
+
+- Boundary points are interpolated from the PMM surface at the selected display `P`.
+- Nominal and design boundaries are kept as separate groups.
+- Demand and governing markers are added after capacity boundary generation.
+
+### 3D PMM Surface
+
+The 3D PMM surface is rendered from resampled constant-P levels.
+
+- The surface is rebuilt into P-level rings for cleaner visual topology.
+- Wireframe lines connect horizontal P-level rings and vertical theta meridians.
+- Mesh triangles are generated between adjacent rings.
+- Demand and governing markers are added separately from the capacity mesh.
 
 ## Rebar Tables
 
@@ -126,21 +220,23 @@ Singapore metric bars:
 | T32 | 32 mm |
 | T40 | 40 mm |
 
-Area is calculated as `pi d^2 / 4`.
+Area is calculated as `pi d^2 / 4`, except where database values are intentionally set to match common bar table conventions.
 
 US bars:
 
 `#3`, `#4`, `#5`, `#6`, `#7`, `#8`, `#9`, `#10`, `#11`.
 
-US diameter and area are stored in inch units and converted to mm and mm2 before solving.
+US diameter and area are stored in inch-based source values and converted to mm and mm2 before solving.
 
 ## Engineering UI
 
 - Input tab includes a live `SectionPreviewCanvas` without running the PMM solver.
-- Result tab uses a 2x2 dashboard: PMx, PMy, 3D PMM, and Mx-My.
-- 2D charts support visible axes, engineering tick labels, grid toggle, wheel zoom, pan, reset, and point tooltips.
-- 3D charts support orbit, zoom, pan, reset, grid toggle, and wireframe toggle.
+- Load-case inputs can be edited through the UI and evaluated in batch.
+- Result tab uses a dashboard for PM, Mx-My, and 3D PMM results.
+- 2D charts support visible axes, engineering tick labels, grid control, wheel zoom, pan, reset, point tooltips, and optional legend/reference-line display.
+- 3D charts support orbit, zoom, pan, reset, grid toggle, wireframe toggle, axial slice, and theta slice controls.
 - Display scaling is isolated in chart controls/helpers; tooltips and labels keep true engineering display units.
+- Result views should be recalculated after input changes before being treated as current.
 
 See:
 
@@ -162,17 +258,21 @@ Recommended validation documents:
 - `docs/validation/regression-tests.md` if present
 - `docs/engineering/eurocode/worked-example.md`
 
+The test project currently covers unit conversion, input validation, section preview behavior, PMM ratio checks, nominal/design split, diagram mapping, 3D PMM topology, integration method propagation, circular section support, ACI fiber checks, EC2 simplified stress-block checks, and regression guards.
+
 All engineering outputs must be independently verified by a qualified structural engineer before design or construction use.
 
 ## Known Limitations
 
-- Rectangular sections only.
-- Fiber concrete approximation rather than exact stress-block polygon clipping.
-- No slenderness, minimum eccentricity, confinement, bar development, or second-order effects.
+- This is a preliminary checking and validation tool, not a certified design-code engine.
+- Neutral-axis sweep is sample-based, not an exact closed-form interaction solution.
+- Fiber integration is approximate and depends on fiber density.
+- Circular polygon integration accuracy depends on polygon segment count.
+- Slenderness, minimum eccentricity, confinement, bar development, fire design, seismic detailing, and second-order effects are excluded.
 - 3D WPF view is a lightweight custom projected surface/contour renderer.
 - Ratio interpolation is conservative but simplified for MVP use.
+- Design-code implementation should be validated against independent hand calculations and trusted reference software before production use.
 
 ## Disclaimer
 
 MBColumn is for study, validation, and preliminary checking only. It must not be used as the sole basis for engineering design or construction decisions.
-
