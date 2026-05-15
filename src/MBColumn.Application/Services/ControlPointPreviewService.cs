@@ -79,19 +79,65 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         var diagramService = new DiagramDataService();
         var pmAngle = diagramService.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, requestedTheta);
         var designPoints = pmAngle.ReducedCapacityPoints;
-        if (designPoints.Count == 0)
+        if (designPoints.Count == 0) return [];
+
+        var specialPts = pmAngle.SpecialCapacityPoints;
+        var grouped = GroupByAxialLevel(designPoints);
+
+        // For each special point, find the nearest normal group by P and mark it for exclusion
+        // so the total stays at (N - specialCount) normal + specialCount rows.
+        var excludedGroups = new HashSet<int>();
+        foreach (var sp in specialPts)
         {
-            return [];
+            int nearest = -1;
+            double minDist = double.MaxValue;
+            for (int i = 0; i < grouped.Count; i++)
+            {
+                if (excludedGroups.Contains(i)) continue;
+                double dist = Math.Abs(grouped[i].Average(p => p.P) - sp.P);
+                if (dist < minDist) { minDist = dist; nearest = i; }
+            }
+            if (nearest >= 0) excludedGroups.Add(nearest);
         }
 
-        var grouped = GroupByAxialLevel(designPoints);
-        var rows = new List<ControlPointExportRow>(grouped.Count);
+        // Build normal rows without remarks
+        var unsorted = new List<ControlPointExportRow>();
         for (int i = 0; i < grouped.Count; i++)
         {
-            rows.Add(ToRow(result, requestedTheta, i + 1, grouped[i]));
+            if (excludedGroups.Contains(i)) continue;
+            var row = ToRow(result, requestedTheta, 0, grouped[i]);
+            unsorted.Add(row with { Remarks = "" });
         }
 
-        return rows;
+        // Add special rows — match to nearest surface point for NA depth and strains
+        foreach (var sp in specialPts)
+        {
+            var matched = MatchInteractionPoint(result, requestedTheta, sp);
+            unsorted.Add(new ControlPointExportRow
+            {
+                ThetaDeg = requestedTheta,
+                PointIndex = 0,
+                P = sp.P,
+                MThetaPositive = Math.Max(0.0, sp.X),
+                MThetaNegative = Math.Min(0.0, sp.X),
+                NeutralAxisDepth = matched is not null
+                    ? DisplayLength(matched.NeutralAxisDepthMm, result.UnitSystem)
+                    : DisplayLength(sp.NeutralAxisDepth, result.UnitSystem),
+                SteelStrainMax = matched is null ? 0.0 : SignedMaxAbs(
+                    matched.MaxSteelStrain, matched.MinSteelStrain, matched.MaxTensionSteelStrain,
+                    double.NaN, double.NaN, double.NaN),
+                ConcreteStrainMax = matched is null ? 0.0 : MaxPositive(
+                    matched.MaxConcreteStrain, double.NaN),
+                Remarks = sp.Label
+            });
+        }
+
+        // Sort by P descending and assign sequential indices
+        var sorted = unsorted.OrderByDescending(r => r.P).ToList();
+        for (int i = 0; i < sorted.Count; i++)
+            sorted[i] = sorted[i] with { PointIndex = i + 1 };
+
+        return sorted;
     }
 
     private ControlPointExportRow ToRow(

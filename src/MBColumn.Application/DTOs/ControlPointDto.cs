@@ -22,5 +22,8 @@ public sealed record ControlPointDto(
     double SortKey = 0,
     string SliceKey = "",
     double Utilization = 0,
-    string StatusText = "");
+    string StatusText = "")
+{
+    public bool IsSpecialPoint { get; init; } = false;
+}
 

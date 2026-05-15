@@ -37,32 +37,42 @@
             <Setter Property="Margin" Value="0,0,0,12" />
         </Style>
         <Style x:Key="SectionShapeRadioStyle" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
-            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="FontSize" Value="12.5" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="12,2" />
-            <Setter Property="Margin" Value="16,0,0,0" />
-            <Setter Property="MinWidth" Value="126" />
+            <Setter Property="Padding" Value="14,6" />
+            <Setter Property="Margin" Value="12,0,0,0" />
+            <Setter Property="MinWidth" Value="110" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="ShapeBorder"
                                 Background="{DynamicResource PanelBackgroundBrush}"
-                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderBrush="{DynamicResource BorderGreyBrush}"
                                 BorderThickness="1"
+                                CornerRadius="4"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            <ContentPresenter x:Name="Content"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ShapeBorder" Property="Background" Value="#FFECFF77" />
-                                <Setter TargetName="ShapeBorder" Property="BorderBrush" Value="#FFFFB000" />
+                                <Setter TargetName="ShapeBorder" Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                <Setter TargetName="ShapeBorder" Property="BorderBrush" Value="{DynamicResource PrimaryNavyBrush}" />
+                                <Setter Property="Foreground" Value="White" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ShapeBorder" Property="BorderBrush" Value="{DynamicResource PrimaryNavyBrush}" />
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsChecked" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="ShapeBorder" Property="Background" Value="{DynamicResource BorderSoftBrush}" />
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -256,11 +266,11 @@
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
-                            <RadioButton Content="RECTANGULAR"
+                            <RadioButton Content="Rectangular"
                                          GroupName="SectionShape"
                                          IsChecked="{Binding IsRectangularSection}"
                                          Style="{StaticResource SectionShapeRadioStyle}" />
-                            <RadioButton Content="CIRCULAR"
+                            <RadioButton Content="Circular"
                                          GroupName="SectionShape"
                                          IsChecked="{Binding IsCircularSection}"
                                          Style="{StaticResource SectionShapeRadioStyle}" />

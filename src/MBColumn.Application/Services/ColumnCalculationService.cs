@@ -145,6 +145,21 @@ public sealed class ColumnCalculationService(
                 govPt.NeutralAxisDepthMm);
         }).ToList();
 
+        var specialEntries = SpecialCapacityPointsService.Build(surface, section, fyMpa, esMpa, fcMpa, codeService);
+        var specialControlPoints = specialEntries.Select(e => SpecialEntryToControlPoint(e, input.UnitSystem)).ToList();
+        pointSet = pointSet with { SpecialCapacityPoints = specialControlPoints };
+
+        var pmmSurface = diagramData.BuildSurface(pointSet.PmmSurfacePoints, input.UnitSystem);
+        var special3dDtos = specialControlPoints
+            .Select(cp => new ControlPointDto(
+                DiagramType.Pm3D, cp.DisplayMx, cp.DisplayMy, cp.DisplayP,
+                cp.DisplayP, cp.DisplayMx, cp.DisplayMy, cp.Phi,
+                cp.ThetaDegrees, cp.NeutralAxisDepth, cp.Label, cp.GroupKey,
+                false, false, false, false, 0, "special")
+            { IsSpecialPoint = true })
+            .ToList();
+        pmmSurface = pmmSurface with { SpecialCapacityPoints = special3dDtos };
+
         var cpTable = ControlPointTableBuilderService.Build(surface, section, fyMpa, esMpa, fcMpa, input.UnitSystem, units, codeService);
         var debugPoints = BuildCapacityDebugPoints(surface, govPoint, input);
 
@@ -167,7 +182,7 @@ public sealed class ColumnCalculationService(
             units.MomentFromNmm(govPoint.PhiMny, input.MomentUnit),
             diagramData.BuildMxMyDiagramData(pointSet, input.UnitSystem),
             diagramData.BuildMm(pointSet, input.UnitSystem),
-            diagramData.BuildSurface(pointSet.PmmSurfacePoints, input.UnitSystem),
+            pmmSurface,
             diagramData.BuildMmSliceRenderData(pointSet.MmSlicePoints, input.UnitSystem),
             surface,
             pointSet)
@@ -182,6 +197,46 @@ public sealed class ColumnCalculationService(
             RebarCoordinates = coordinateList,
             CapacityDebugPoints = debugPoints
         };
+    }
+
+    private ControlPoint SpecialEntryToControlPoint(SpecialCapacityEntry entry, UnitSystem unitSystem)
+    {
+        var src = entry.Source;
+        var fu = unitSystem == UnitSystem.Metric ? ForceUnit.kN : ForceUnit.Kip;
+        var mu = unitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt;
+        double displayP = units.ForceFromN(src.PhiPn, fu);
+        double displayMx = units.MomentFromNmm(src.PhiMnx, mu);
+        double displayMy = units.MomentFromNmm(src.PhiMny, mu);
+        double nomP = units.ForceFromN(src.Pn, fu);
+        double nomMx = units.MomentFromNmm(src.Mnx, mu);
+        double nomMy = units.MomentFromNmm(src.Mny, mu);
+        string groupKey = $"SpecialCapacity|{entry.Label.Replace(" ", "")}";
+        return new ControlPoint(
+            Id: $"Special-{entry.Label}-{entry.AngleIndex}",
+            DiagramType: DiagramType.Pm3D,
+            Pn: src.Pn,
+            Mnx: src.Mnx,
+            Mny: src.Mny,
+            Phi: src.Phi,
+            PhiPn: src.PhiPn,
+            PhiMnx: src.PhiMnx,
+            PhiMny: src.PhiMny,
+            DisplayP: displayP,
+            DisplayMx: displayMx,
+            DisplayMy: displayMy,
+            NominalDisplayP: nomP,
+            NominalDisplayMx: nomMx,
+            NominalDisplayMy: nomMy,
+            ThetaDegrees: entry.ThetaDegrees,
+            NeutralAxisDepth: src.NeutralAxisDepthMm,
+            IsDemandPoint: false,
+            IsGoverningPoint: false,
+            IsReferencePoint: false,
+            Label: entry.Label,
+            SortKey: 0,
+            GroupKey: groupKey,
+            SliceKey: "special")
+        { IsSpecialPoint = true };
     }
 
     private IReadOnlyList<CapacityDebugPointDto> BuildCapacityDebugPoints(InteractionSurface surface, InteractionPoint governingPoint, ColumnInputDto input)

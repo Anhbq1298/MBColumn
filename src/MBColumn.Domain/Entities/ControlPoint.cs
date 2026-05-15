@@ -30,5 +30,8 @@ public sealed record ControlPoint(
     double ReducedDisplayP = double.NaN,
     double ReducedDisplayMx = double.NaN,
     double ReducedDisplayMy = double.NaN,
-    string RegionClassification = "");
+    string RegionClassification = "")
+{
+    public bool IsSpecialPoint { get; init; } = false;
+}
 

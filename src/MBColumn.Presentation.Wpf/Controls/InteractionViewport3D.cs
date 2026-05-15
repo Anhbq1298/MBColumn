@@ -36,6 +36,7 @@ public sealed class InteractionViewport3D : FrameworkElement
     public static readonly DependencyProperty SelectedAxialLoadProperty = DependencyProperty.Register(nameof(SelectedAxialLoad), typeof(double), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowSlicePlaneProperty = DependencyProperty.Register(nameof(ShowSlicePlane), typeof(bool), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowAxialLoadSliceProperty = DependencyProperty.Register(nameof(ShowAxialLoadSlice), typeof(bool), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty SpecialCapacityPointsProperty = DependencyProperty.Register(nameof(SpecialCapacityPoints), typeof(IEnumerable<ControlPointDto>), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public InteractionViewport3D()
     {
@@ -63,6 +64,7 @@ public sealed class InteractionViewport3D : FrameworkElement
     public double SelectedAxialLoad { get => (double)GetValue(SelectedAxialLoadProperty); set => SetValue(SelectedAxialLoadProperty, value); }
     public bool ShowSlicePlane { get => (bool)GetValue(ShowSlicePlaneProperty); set => SetValue(ShowSlicePlaneProperty, value); }
     public bool ShowAxialLoadSlice { get => (bool)GetValue(ShowAxialLoadSliceProperty); set => SetValue(ShowAxialLoadSliceProperty, value); }
+    public IEnumerable<ControlPointDto>? SpecialCapacityPoints { get => (IEnumerable<ControlPointDto>?)GetValue(SpecialCapacityPointsProperty); set => SetValue(SpecialCapacityPointsProperty, value); }
 
     public void ResetCamera()
     {
@@ -484,6 +486,22 @@ public sealed class InteractionViewport3D : FrameworkElement
         double y1 = p.X * sinY + p.Y * cosY;
         double zView = p.Z * cosP - y1 * sinP;
         return new Point(origin.X + x1 * scale, origin.Y - zView * scale);
+    }
+
+    private void DrawSpecialCapacityMarkers(DrawingContext dc, Func<double, double, double, ProjectedPoint> proj)
+    {
+        var pts = (SpecialCapacityPoints ?? []).Where(IsFinite).ToList();
+        if (pts.Count == 0) return;
+        var brush = new SolidColorBrush(Color.FromRgb(215, 107, 15));
+        brush.Freeze();
+        var pen = new Pen(Brushes.White, 1.0);
+        pen.Freeze();
+        foreach (var p in pts)
+        {
+            var pp = proj(p.X, p.Y, p.Z);
+            if (IsFinite(pp.Screen))
+                dc.DrawEllipse(Brushes.White, new Pen(brush, 1.2), pp.Screen, 3.8, 3.8);
+        }
     }
 
     private void DrawDemandMarkers(DrawingContext dc, IReadOnlyList<(double X, double Y, double Z, string Label)> points, Func<double, double, double, ProjectedPoint> proj)

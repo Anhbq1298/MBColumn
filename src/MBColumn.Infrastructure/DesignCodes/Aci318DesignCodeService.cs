@@ -55,4 +55,5 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
     public double SteelMaxTensileStrain(double fykMpa, double esMpa) => 0.08;
 
     public bool UseLetterControlPoints => false;
+    public bool SupportsNominalReferenceCurve => true;
 }

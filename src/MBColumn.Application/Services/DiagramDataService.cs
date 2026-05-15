@@ -21,19 +21,111 @@ public sealed class DiagramDataService
     public PmAngleDiagramDto BuildPmAngleDiagramData(DiagramControlPointSet set, UnitSystem unitSystem, double angleDegrees)
     {
         var points = PmCurveBuilderService.BuildPmAngleCurve(set.PmmSurfacePoints, set.DesignCompressionLimitDisplay, set.NominalCompressionLimitDisplay, angleDegrees);
+        var reducedPoints = ReducedCapacity(points);
         return new PmAngleDiagramDto(points, angleDegrees, ForceUnit(unitSystem), MomentUnit(unitSystem))
         {
             ReferenceLines = PmCurveBuilderService.BuildPmAngleReferenceLines(points),
             NominalCapacityPoints = NominalCapacity(points),
-            ReducedCapacityPoints = ReducedCapacity(points)
+            ReducedCapacityPoints = reducedPoints,
+            SpecialCapacityPoints = ExtractSpecialPointsFromCurve(reducedPoints)
         };
     }
 
+    // Derive special capacity points directly from the 2D reduced PM curve so they
+    // always lie exactly on the envelope regardless of chart angle.
+    // Phi stored on each curve point identifies ACI strain zones:
+    //   phiMin → compression-controlled boundary, phiMax → tension-controlled.
+    private static IReadOnlyList<ControlPointDto> ExtractSpecialPointsFromCurve(IReadOnlyList<ControlPointDto> reducedPoints)
+    {
+        var valid = reducedPoints
+            .Where(p => double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Phi))
+            .ToList();
+        if (valid.Count < 3) return [];
+
+        double phiMin = valid.Min(p => p.Phi);
+        double phiMax = valid.Max(p => p.Phi);
+        bool phiVaries = phiMax - phiMin > 1e-3;
+
+        var result = new List<ControlPointDto>();
+        result.Add(SpecialOnCurve(valid.MaxBy(p => p.Y)!, "Max Compression", "MaxCompression"));
+        result.Add(SpecialOnCurve(valid.MinBy(p => p.Y)!, "Max Tension",     "MaxTension"));
+
+        // Positive (M+) and negative (M-) branches sorted by P descending
+        var pos = valid.Where(p => p.X >= 0).OrderByDescending(p => p.Y).ToList();
+        var neg = valid.Where(p => p.X < 0).OrderByDescending(p => p.Y).ToList();
+        AddBranchSpecials(result, pos, phiMin, phiMax, phiVaries);
+        AddBranchSpecials(result, neg, phiMin, phiMax, phiVaries);
+
+        return result;
+    }
+
+    // Adds Balanced, Tension Control, Pure Bending for one branch (sorted by P desc).
+    // Points are emitted in natural P order — for heavily reinforced sections TC can
+    // legitimately appear at negative P (below Pure Bending), which is correct ACI behaviour.
+    // TC search starts from the balanced index to avoid phi non-monotonicity placing TC
+    // above the balanced point (which is physically impossible).
+    private static void AddBranchSpecials(
+        List<ControlPointDto> result, List<ControlPointDto> branch,
+        double phiMin, double phiMax, bool phiVaries)
+    {
+        if (branch.Count < 2) return;
+
+        // Pure Bending: point closest to P = 0
+        int pbIdx = Enumerable.Range(0, branch.Count).MinBy(i => Math.Abs(branch[i].Y));
+        TryAddOnCurve(result, branch[pbIdx], "Pure Bending", "PureBending");
+
+        if (!phiVaries)
+        {
+            // phi nearly constant (EC2 etc.) — place at 1/3 and 2/3 of branch by index
+            if (branch.Count >= 3)
+            {
+                TryAddOnCurve(result, branch[branch.Count / 3],     "Balanced",        "Balanced");
+                TryAddOnCurve(result, branch[2 * branch.Count / 3], "Tension Control", "TensionControl");
+            }
+            return;
+        }
+
+        double phiRange     = phiMax - phiMin;
+        double balThreshold = phiMin + phiRange * 0.02;
+        double tcThreshold  = phiMax - phiRange * 0.02;
+
+        // Balanced: first from top where phi rises above compression-controlled zone
+        int balIdx = branch.FindIndex(p => p.Phi > balThreshold);
+        TryAddOnCurve(result, balIdx >= 0 ? branch[balIdx] : null, "Balanced", "Balanced");
+
+        // Tension Control: first point AFTER balanced where phi reaches the TC zone.
+        // Starting from balIdx prevents non-monotonic phi from placing TC above balanced.
+        // No upper bound — TC may validly fall below Pure Bending for high-ρ sections.
+        int searchFrom = Math.Max(0, balIdx);
+        ControlPointDto? tc = branch.Skip(searchFrom).FirstOrDefault(p => p.Phi >= tcThreshold);
+        // Fallback: phi threshold never reached (e.g. lightly reinforced, wide transition)
+        if (tc is null && branch.Count - searchFrom > 2)
+            tc = branch[searchFrom + 2 * (branch.Count - searchFrom) / 3];
+        TryAddOnCurve(result, tc, "Tension Control", "TensionControl");
+    }
+
+    private static void TryAddOnCurve(List<ControlPointDto> result, ControlPointDto? src, string label, string keyPart)
+    {
+        if (src is not null) result.Add(SpecialOnCurve(src, label, keyPart));
+    }
+
+    private static ControlPointDto SpecialOnCurve(ControlPointDto src, string label, string keyPart)
+        => src with
+        {
+            Label     = label,
+            GroupKey  = $"SpecialCapacity|{keyPart}",
+            IsSpecialPoint = true,
+            IsDemand  = false,
+            IsGoverning = false,
+            IsReference = false,
+            IsNominal = false
+        };
+
     private static IReadOnlyList<ControlPointDto> NominalCapacity(IReadOnlyList<ControlPointDto> points)
-        => points.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+        => points.Where(p => p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsSpecialPoint).ToList();
 
     private static IReadOnlyList<ControlPointDto> ReducedCapacity(IReadOnlyList<ControlPointDto> points)
-        => points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference).ToList();
+        => points.Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsSpecialPoint).ToList();
 
     public IReadOnlyList<ControlPointDto> BuildPmAngleDemandPoints(IEnumerable<LoadCaseResultDto> loadCases, double angleDegrees)
     {
@@ -115,10 +207,10 @@ public sealed class DiagramDataService
         => IsFinite(loadCase.PuDisplay) && IsFinite(loadCase.MuxDisplay) && IsFinite(loadCase.MuyDisplay);
 
     public PmmSurfaceDto BuildPmmSurfaceRenderData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
-        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 50);
+        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 100);
 
     public PmmSurfaceDto BuildPmmSurfaceData(IReadOnlyList<ControlPoint> points, UnitSystem unitSystem)
-        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 50);
+        => BuildPmmSurfaceRenderDataAtPLevels(points, unitSystem, pLevelCount: 100);
 
     /// <summary>
     /// Builds the 3D PMM surface by resampling the interaction surface at
@@ -314,7 +406,8 @@ public sealed class DiagramDataService
         {
             var chartY = p.DiagramType == DiagramType.PM ? p.DisplayP : p.DisplayMy;
             bool isNominal = p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase);
-            return new ControlPointDto(p.DiagramType, p.DisplayMx, chartY, p.DisplayP, p.DisplayP, p.DisplayMx, p.DisplayMy, p.Phi, p.ThetaDegrees, p.NeutralAxisDepth, p.Label, p.GroupKey, p.IsDemandPoint, p.IsGoverningPoint, p.IsReferencePoint, isNominal, p.SortKey, p.SliceKey);
+            return new ControlPointDto(p.DiagramType, p.DisplayMx, chartY, p.DisplayP, p.DisplayP, p.DisplayMx, p.DisplayMy, p.Phi, p.ThetaDegrees, p.NeutralAxisDepth, p.Label, p.GroupKey, p.IsDemandPoint, p.IsGoverningPoint, p.IsReferencePoint, isNominal, p.SortKey, p.SliceKey)
+            { IsSpecialPoint = p.IsSpecialPoint };
         }).ToList();
 
     private static IReadOnlyList<ControlPointDto> BuildMxMyBoundaryAtDisplayP(IReadOnlyList<ControlPoint> points, double selectedPDisplay, bool nominal)

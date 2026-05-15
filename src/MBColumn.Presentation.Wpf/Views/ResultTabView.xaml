@@ -184,8 +184,9 @@
                             <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" />
                         </WrapPanel>
 
-                        <Grid Visibility="{Binding ShowLegend, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,0,0,12">
+                        <Grid Visibility="{Binding ShowLegend, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,0,0,16">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
@@ -193,10 +194,51 @@
                                 <ColumnDefinition Width="22" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Border Width="16" Height="3" Background="#004B85" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="Blue curves: Design curves" Style="{StaticResource HelperTextStyle}" />
-                            <Border Grid.Row="1" Width="16" Height="3" Background="#C82828" VerticalAlignment="Center" Margin="0,7,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="Red curves: ACI-only nominal/reference curves" Style="{StaticResource HelperTextStyle}" Margin="0,4,0,0" />
+                            
+                            <!-- Curve Legend -->
+                            <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="22" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="16" Height="3" Background="#004B85" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="Blue: Design curves" Style="{StaticResource HelperTextStyle}" />
+                                </Grid>
+                                <Grid Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="22" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="16" Height="3" Background="#C82828" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="Red: ACI-only nominal curves" Style="{StaticResource HelperTextStyle}" />
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Capacity Points Legend -->
+                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Capacity Points" Style="{StaticResource FieldLabelTextStyle}" FontSize="11" Margin="0,4,0,6" />
+                            <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,4">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+                                    <Ellipse Width="8" Height="8" Stroke="#4A148C" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Max Compression" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+                                    <Ellipse Width="8" Height="8" Stroke="#1B5E20" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Balanced" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+                                    <Ellipse Width="8" Height="8" Stroke="#01579B" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Tension Control" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+                                    <Ellipse Width="8" Height="8" Stroke="#F57F17" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Pure Bending" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+                                    <Ellipse Width="8" Height="8" Stroke="#5D4037" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="Max Tension" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
+                                </StackPanel>
+                            </WrapPanel>
                         </Grid>
 
                         <TextBlock Text="PM Chart" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,6" />
@@ -331,6 +373,7 @@
                                                     SelectedAxialLoad="{Binding PM3D.SelectedAxialLoad}"
                                                     ShowSlicePlane="{Binding PM3D.ShowSlicePlane}"
                                                     ShowAxialLoadSlice="{Binding PM3D.ShowAxialLoadSlice}"
+                                                    SpecialCapacityPoints="{Binding PM3D.SpecialCapacityPoints}"
                                                     ResetVersion="{Binding PM3D.ResetVersion}" />
                     </Grid>
                 </Border>

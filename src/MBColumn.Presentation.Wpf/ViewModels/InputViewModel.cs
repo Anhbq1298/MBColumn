@@ -348,7 +348,15 @@ public sealed class InputViewModel : ViewModelBase
         IsSectionPreviewValid = true;
         SectionPreviewErrorMessage = "";
         SectionPreviewLabel = $"{Width:0.###} x {Height:0.###} {LengthLabel}";
-        RebarPreviewLabel = $"{PreviewRebars.Count}-{BarSize}";
+
+        var selectedBar = AvailableBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase));
+        double barAreaMm2 = selectedBar?.AreaMm2 ?? 0;
+        double totalAsMm2 = PreviewRebars.Count * barAreaMm2;
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double agMm2 = (Width * factor) * (Height * factor);
+        double rho = agMm2 > 0 ? (totalAsMm2 / agMm2) : 0;
+
+        RebarPreviewLabel = $"{PreviewRebars.Count}-{BarSize} (\u03c1 = {rho * 100:F2}%)";
         CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
     }
 
@@ -406,7 +414,12 @@ public sealed class InputViewModel : ViewModelBase
         IsSectionPreviewValid = true;
         SectionPreviewErrorMessage = "";
         SectionPreviewLabel = $"D = {Diameter:0.###} {LengthLabel}";
-        RebarPreviewLabel = $"{BarCount}-{BarSize}, equal spacing";
+
+        double totalAsMm2 = BarCount * bar.AreaMm2;
+        double agMm2 = Math.PI * Math.Pow(diameterMm / 2.0, 2);
+        double rho = agMm2 > 0 ? (totalAsMm2 / agMm2) : 0;
+
+        RebarPreviewLabel = $"{BarCount}-{BarSize} (\u03c1 = {rho * 100:F2}%)";
         CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
     }
 

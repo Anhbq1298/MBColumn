@@ -103,6 +103,7 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     public double AlphaCc { get; set; } = 0.85;
 
     public bool UseLetterControlPoints => true;
+    public bool SupportsNominalReferenceCurve => false;
 
     // ── Helpers ─────────────────────────────────────────────────────────────────────
 

@@ -31,6 +31,7 @@ public sealed class PM3DViewModel : ViewModelBase
 
     public event EventHandler? ResetRequested;
     public IReadOnlyList<ControlPointDto> SurfacePoints { get; private set; } = [];
+    public IReadOnlyList<ControlPointDto> SpecialCapacityPoints { get; private set; } = [];
     public IReadOnlyList<ControlPointDto> SurfaceMesh => SurfacePoints;
     public IReadOnlyList<ControlPointDto> WireframeLines => SurfacePoints;
     public ControlPointDto? DemandPoint { get; private set; }
@@ -76,11 +77,13 @@ public sealed class PM3DViewModel : ViewModelBase
         forceUnit = result?.PmmSurface.ForceUnit ?? "";
         var points = result?.PmmSurface.Points ?? [];
         SurfacePoints = points.Where(p => !p.IsDemand && !p.IsGoverning).ToList();
+        SpecialCapacityPoints = result?.PmmSurface.SpecialCapacityPoints ?? [];
         DemandPoints = points.Where(p => p.IsDemand).ToList();
         GoverningPoint = null;
         SelectedPmAngle = result?.GoverningThetaDegrees ?? 0;
         SelectedAxialLoad = result?.PuDisplay ?? 0;
         Raise(nameof(SurfacePoints)); Raise(nameof(SurfaceMesh)); Raise(nameof(WireframeLines));
+        Raise(nameof(SpecialCapacityPoints));
         Raise(nameof(DemandPoints)); Raise(nameof(DemandPoint)); Raise(nameof(GoverningPoint)); Raise(nameof(UnitLabels));
         RaiseSliceLabels();
     }

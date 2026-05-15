@@ -98,7 +98,7 @@ public class DiagramCanvas2D : FrameworkElement
         var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4);
         double? designCompressionCap = DesignCompressionCap(points);
 
-        foreach (var group in points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference).GroupBy(p => p.GroupKey))
+        foreach (var group in points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsSpecialPoint).GroupBy(p => p.GroupKey))
         {
             var ordered = group.ToList();
             if (ordered.Count < 2) continue;
@@ -411,6 +411,27 @@ public class DiagramCanvas2D : FrameworkElement
                 DrawText(dc, $"@ {p.Label}", 10.5, brush, new Point(pt.X + 8, pt.Y - 12), FontWeights.Normal);
             }
         }
+        foreach (var p in points.Where(p => p.IsSpecialPoint))
+        {
+            var brush = GetSpecialPointBrush(p.Label);
+            var pt = transform.ToScreen(p.X, p.Y);
+            dc.DrawEllipse(Brushes.White, new Pen(brush, 1.8), pt, 4.5, 4.5);
+            // Labels for special points are removed to avoid overlap; managed via Legend
+        }
+    }
+
+    private static Brush GetSpecialPointBrush(string label)
+    {
+        var color = label switch
+        {
+            "Max Compression" => Color.FromRgb(74, 20, 140),  // Purple 900
+            "Max Tension"     => Color.FromRgb(93, 64, 55),   // Brown 700
+            "Balanced"        => Color.FromRgb(27, 94, 32),   // Green 900
+            "Tension Control" => Color.FromRgb(1, 87, 155),   // Light Blue 900
+            "Pure Bending"    => Color.FromRgb(245, 127, 23), // Yellow 900
+            _                 => Color.FromRgb(215, 107, 15)  // Default orange
+        };
+        return new SolidColorBrush(color);
     }
 
     private void DrawSelectedPoint(DrawingContext dc, ChartTransformHelper transform)

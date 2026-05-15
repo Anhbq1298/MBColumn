@@ -1,5 +1,6 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
+using SMath = System.Math;
 
 namespace MBColumn.Infrastructure.Solvers;
 
@@ -16,15 +17,20 @@ public sealed class CircularFiberInteractionSolver(IDesignCodeService code) : IC
 
     public InteractionSurface Solve(CircularSection section, ConcreteMaterial concrete, SteelMaterial steel)
     {
-        int angleCount = System.Math.Max(1, (int)System.Math.Round(360.0 / AngleStepDegrees));
+        int angleCount = SMath.Max(1, (int)SMath.Round(360.0 / AngleStepDegrees));
         var concreteFibers = BuildConcreteFibers(section);
         var points = new List<InteractionPoint>(angleCount * NeutralAxisSamples);
+
+        double ecu = code.ConcreteUltimateStrain(concrete.FcMpa);
+        double peakStrain = code.ConcretePeakStrain(concrete.FcMpa);
+        double n = code.ConcreteParabolicExponent(concrete.FcMpa);
+        double fcCap = code.ConcreteStressBlockFactor * concrete.FcMpa;
 
         for (int d = 0; d < NeutralAxisSamples; d++)
         {
             for (int a = 0; a < angleCount; a++)
             {
-                points.Add(Evaluate(section, concrete, steel, concreteFibers, d, a * AngleStepDegrees, a));
+                points.Add(Evaluate(section, concrete, steel, concreteFibers, d, a * AngleStepDegrees, a, ecu, peakStrain, n, fcCap));
             }
         }
 
@@ -38,17 +44,19 @@ public sealed class CircularFiberInteractionSolver(IDesignCodeService code) : IC
         IReadOnlyList<ConcreteFiber> concreteFibers,
         int depthIndex,
         double angleDegrees,
-        int angleIndex)
+        int angleIndex,
+        double ecu,
+        double peakStrain,
+        double n,
+        double fcCap)
     {
-        double theta = angleDegrees * System.Math.PI / 180.0;
-        double nx = System.Math.Cos(theta);
-        double ny = System.Math.Sin(theta);
+        double theta = angleDegrees * SMath.PI / 180.0;
+        double nx = SMath.Cos(theta);
+        double ny = SMath.Sin(theta);
         double maxProjection = section.RadiusMm;
         double cMax = 10.0 * section.DiameterMm;
-        double c = 0.1 + depthIndex * (cMax - 0.1) / System.Math.Max(1, NeutralAxisSamples - 1);
+        double c = 0.1 + depthIndex * (cMax - 0.1) / SMath.Max(1, NeutralAxisSamples - 1);
         double neutralAxisProjection = maxProjection - c;
-        double ecu = code.ConcreteUltimateStrain(concrete.FcMpa);
-        double concreteStress = code.ConcreteStressBlockFactor * concrete.FcMpa;
 
         double concreteN = 0.0;
         double concreteMx = 0.0;
@@ -60,14 +68,12 @@ public sealed class CircularFiberInteractionSolver(IDesignCodeService code) : IC
         {
             double projection = fiber.X * nx + fiber.Y * ny;
             double strain = ecu * (projection - neutralAxisProjection) / c;
-            maxConcreteStrain = System.Math.Max(maxConcreteStrain, strain);
-            minConcreteStrain = System.Math.Min(minConcreteStrain, strain);
-            if (strain <= 0)
-            {
-                continue;
-            }
+            maxConcreteStrain = SMath.Max(maxConcreteStrain, strain);
+            minConcreteStrain = SMath.Min(minConcreteStrain, strain);
+            if (strain <= 0) continue;
 
-            double force = concreteStress * fiber.Area;
+            double stress = ConcreteStress(strain, peakStrain, n, fcCap);
+            double force = stress * fiber.Area;
             concreteN += force;
             concreteMx -= force * fiber.Y;
             concreteMy += force * fiber.X;
@@ -89,15 +95,15 @@ public sealed class CircularFiberInteractionSolver(IDesignCodeService code) : IC
         {
             double projection = bar.XMm * nx + bar.YMm * ny;
             double strain = ecu * (projection - neutralAxisProjection) / c;
-            maxSteelStrain = System.Math.Max(maxSteelStrain, strain);
-            minSteelStrain = System.Math.Min(minSteelStrain, strain);
+            maxSteelStrain = SMath.Max(maxSteelStrain, strain);
+            minSteelStrain = SMath.Min(minSteelStrain, strain);
             if (strain < 0)
             {
-                maxTensionStrain = System.Math.Min(System.Math.Max(maxTensionStrain, -strain), epsUd);
+                maxTensionStrain = SMath.Min(SMath.Max(maxTensionStrain, -strain), epsUd);
             }
 
-            double stress = System.Math.Clamp(steel.EsMpa * strain, -fyd, fyd);
-            double displacedConcrete = strain > 0 ? concreteStress : 0.0;
+            double stress = SMath.Clamp(steel.EsMpa * strain, -fyd, fyd);
+            double displacedConcrete = strain > 0 ? ConcreteStress(strain, peakStrain, n, fcCap) : 0.0;
             double force = (stress - displacedConcrete) * bar.AreaMm2;
             steelN += force;
             steelMx -= force * bar.YMm;
@@ -136,10 +142,18 @@ public sealed class CircularFiberInteractionSolver(IDesignCodeService code) : IC
             ClassifyState(concreteN > 1e-9, maxTensionStrain, steel));
     }
 
+    private static double ConcreteStress(double strain, double peakStrain, double n, double fcCap)
+    {
+        if (strain <= 0.0) return 0.0;
+        if (strain >= peakStrain) return fcCap;
+        double r = strain / peakStrain;
+        return fcCap * (1.0 - SMath.Pow(1.0 - r, n));
+    }
+
     private IReadOnlyList<ConcreteFiber> BuildConcreteFibers(CircularSection section)
     {
         double radius = section.RadiusMm;
-        int divisions = System.Math.Max(20, ConcreteGridDivisions);
+        int divisions = SMath.Max(20, ConcreteGridDivisions);
         double step = section.DiameterMm / divisions;
         double cellArea = step * step;
         var fibers = new List<ConcreteFiber>(divisions * divisions);

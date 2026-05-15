@@ -204,13 +204,4 @@ public sealed class RebarCoordinateBuilderService(
                 $"B{i + 1}",
                 x,
                 y,
-                bar.DiameterMm,
-                bar.AreaMm2,
-                bar.Name,
-                "Perimeter"));
-        }
-
-        return bars;
-    }
-}
-
+                

@@ -25,8 +25,8 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         double nominalCompressionLimitDisplay = DisplayForce(nominalCompressionLimit, unitSystem);
         double compressionLimitDisplay = DisplayForce(compressionLimit, unitSystem);
         var pm = BuildPm(surface, demand, selectedPmAngleDegrees, unitSystem, ratioResult, compressionLimit);
-        var mm = BuildMm(surface, demand, selectedAxialLoadN, unitSystem, ratioResult, compressionLimit);
-        var pmm = BuildSurface(surface, demand, unitSystem, ratioResult, compressionLimit);
+        var mm = BuildMm(surface, demand, selectedAxialLoadN, unitSystem, ratioResult, compressionLimit, code);
+        var pmm = BuildSurface(surface, demand, unitSystem, ratioResult, compressionLimit, code);
         var mm3d = BuildMmSlice(surface, demand, selectedAxialLoadN, unitSystem, ratioResult, compressionLimit);
         return new DiagramControlPointSet(pm, mm, pmm, mm3d, nominalCompressionLimitDisplay, compressionLimitDisplay);
     }
@@ -56,7 +56,7 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         return points.OrderBy(p => p.SortKey).ToList();
     }
 
-    private IReadOnlyList<ControlPoint> BuildMm(InteractionSurface surface, LoadDemand demand, double axialLoadN, UnitSystem unitSystem, RatioResult ratio, double compressionLimit)
+    private IReadOnlyList<ControlPoint> BuildMm(InteractionSurface surface, LoadDemand demand, double axialLoadN, UnitSystem unitSystem, RatioResult ratio, double compressionLimit, IDesignCodeService code)
     {
         var points = new List<ControlPoint>();
         // Design boundary: interpolate using factored PhiPn
@@ -66,14 +66,17 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             points.Add(ToControl(p, DiagramType.MM, unitSystem, a, "DesignCapacity", $"P={DisplayForce(axialLoadN, unitSystem):F1}", compressionLimit, useMomentMagnitude: false));
         }
 
-        // Nominal boundary: interpolate using unfactored Pn, display as NominalDisplayMx/My
-        for (int a = 0; a < surface.AngleCount; a++)
+        // Nominal boundary: only for codes that distinguish between nominal and design
+        if (code.SupportsNominalReferenceCurve)
         {
-            var p = InterpolateAtAxial(surface, a, axialLoadN, factored: false);
-            var cp = ToControl(p, DiagramType.MM, unitSystem, a + surface.AngleCount, "NominalCapacity", $"P={DisplayForce(axialLoadN, unitSystem):F1}", double.MaxValue, useMomentMagnitude: false);
-            // Override display values to use nominal (Mnx/Mny) instead of factored
-            cp = cp with { DisplayMx = cp.NominalDisplayMx, DisplayMy = cp.NominalDisplayMy };
-            points.Add(cp);
+            for (int a = 0; a < surface.AngleCount; a++)
+            {
+                var p = InterpolateAtAxial(surface, a, axialLoadN, factored: false);
+                var cp = ToControl(p, DiagramType.MM, unitSystem, a + surface.AngleCount, "NominalCapacity", $"P={DisplayForce(axialLoadN, unitSystem):F1}", double.MaxValue, useMomentMagnitude: false);
+                // Override display values to use nominal (Mnx/Mny) instead of factored
+                cp = cp with { DisplayMx = cp.NominalDisplayMx, DisplayMy = cp.NominalDisplayMy };
+                points.Add(cp);
+            }
         }
 
         points.Add(Demand(DiagramType.MM, demand, unitSystem, points.Count, "Demand", "SelectedPu", useMomentMagnitude: false));
@@ -85,7 +88,7 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         return RemoveConsecutiveDuplicates(points).OrderBy(p => p.SortKey).ToList();
     }
 
-    private IReadOnlyList<ControlPoint> BuildSurface(InteractionSurface surface, LoadDemand demand, UnitSystem unitSystem, RatioResult ratio, double compressionLimit)
+    private IReadOnlyList<ControlPoint> BuildSurface(InteractionSurface surface, LoadDemand demand, UnitSystem unitSystem, RatioResult ratio, double compressionLimit, IDesignCodeService code)
     {
         var points = new List<ControlPoint>();
         
@@ -94,13 +97,16 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             .Select(p => ToControl(p, DiagramType.Pm3D, unitSystem, p.DepthIndex * surface.AngleCount + p.AngleIndex, $"theta={p.ThetaDegrees:F0}", $"depth={p.DepthIndex}", compressionLimit, useMomentMagnitude: false)));
             
         // Nominal surface (unfactored)
-        points.AddRange(surface.Points
-            .Select(p => 
-            {
-                var cp = ToControl(p, DiagramType.Pm3D, unitSystem, p.DepthIndex * surface.AngleCount + p.AngleIndex, $"Nominal_theta={p.ThetaDegrees:F0}", $"depth={p.DepthIndex}", double.MaxValue, useMomentMagnitude: false);
-                if (p.DepthIndex == surface.DepthCount - 1 && p.AngleIndex == 0) cp = cp with { Label = "Pn,max" };
-                return cp with { DisplayMx = cp.NominalDisplayMx, DisplayMy = cp.NominalDisplayMy, DisplayP = cp.NominalDisplayP };
-            }));
+        if (code.SupportsNominalReferenceCurve)
+        {
+            points.AddRange(surface.Points
+                .Select(p => 
+                {
+                    var cp = ToControl(p, DiagramType.Pm3D, unitSystem, p.DepthIndex * surface.AngleCount + p.AngleIndex, $"Nominal_theta={p.ThetaDegrees:F0}", $"depth={p.DepthIndex}", double.MaxValue, useMomentMagnitude: false);
+                    if (p.DepthIndex == surface.DepthCount - 1 && p.AngleIndex == 0) cp = cp with { Label = "Pn,max" };
+                    return cp with { DisplayMx = cp.NominalDisplayMx, DisplayMy = cp.NominalDisplayMy, DisplayP = cp.NominalDisplayP };
+                }));
+        }
             
         points.Add(Demand(DiagramType.Pm3D, demand, unitSystem, points.Count, "Demand", "Demand", useMomentMagnitude: false));
         if (ratio.GoverningPoint is not null)

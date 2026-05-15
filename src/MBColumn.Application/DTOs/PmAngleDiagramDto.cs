@@ -5,5 +5,6 @@ public sealed record PmAngleDiagramDto(IReadOnlyList<ControlPointDto> Points, do
     public IReadOnlyList<ChartReferenceLineDto> ReferenceLines { get; init; } = [];
     public IReadOnlyList<ControlPointDto> NominalCapacityPoints { get; init; } = [];
     public IReadOnlyList<ControlPointDto> ReducedCapacityPoints { get; init; } = [];
+    public IReadOnlyList<ControlPointDto> SpecialCapacityPoints { get; init; } = [];
 }
 

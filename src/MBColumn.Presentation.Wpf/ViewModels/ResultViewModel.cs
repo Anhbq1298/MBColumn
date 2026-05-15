@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
@@ -169,6 +169,7 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(SelectedPmAngleText));
             Raise(nameof(SelectedPuLevelText));
             RaiseNavigationLabels();
+            Raise(nameof(IsAciCode));
         }
     }
     public IReadOnlyList<ControlPointDto> PmAnglePoints { get => pmAnglePoints; private set => Set(ref pmAnglePoints, value); }
@@ -204,6 +205,7 @@ public sealed class ResultViewModel : ViewModelBase
     public bool HasResult => Result is not null;
     public bool HasLoadCaseRows => loadCaseRows.Count > 0;
     public string StatusText => Result is null ? "Not calculated" : Result.Status == CapacityStatus.Pass ? "PASS" : "FAIL";
+    public bool IsAciCode => Result?.DesignCode == DesignCodeType.Aci318Style;
     public double PmmRatio => Result?.Ratio ?? 0;
     public double MaxUtilization => LoadCaseRows.Count == 0 ? PmmRatio : LoadCaseRows.Max(r => r.Utilization);
     public double Pu => Result?.PuDisplay ?? 0;
@@ -265,8 +267,9 @@ public sealed class ResultViewModel : ViewModelBase
             var diagramService = new DiagramDataService();
             var pmDiagram = diagramService.BuildPmAngleDiagramData(Result.ControlPoints, Result.UnitSystem, SelectedSliceAngleDegrees);
             var pmPoints = ReplaceDemandAndRemoveGoverning(pmDiagram.Points, diagramService.BuildPmAngleDemandPoints(Result.LoadCaseResults, SelectedSliceAngleDegrees));
-            var pmDiagramWithDemand = pmDiagram with { Points = pmPoints };
-            PmAnglePoints = pmDiagramWithDemand.Points;
+            var pmAllPoints = pmPoints.Concat(pmDiagram.SpecialCapacityPoints).ToList();
+            var pmDiagramWithDemand = pmDiagram with { Points = pmAllPoints };
+            PmAnglePoints = pmAllPoints;
             PmReferenceLines = pmDiagram.ReferenceLines;
             PM.LoadPmAngle(pmDiagramWithDemand, Result.Ratio);
 

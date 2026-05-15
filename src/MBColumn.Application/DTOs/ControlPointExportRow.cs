@@ -1,6 +1,6 @@
 namespace MBColumn.Application.DTOs;
 
-public sealed class ControlPointExportRow
+public sealed record ControlPointExportRow
 {
     public double ThetaDeg { get; init; }
     public int PointIndex { get; init; }

@@ -64,4 +64,6 @@ public interface IDesignCodeService
     double AlphaCc { get; set; }
 
     bool UseLetterControlPoints { get; }
+
+    bool SupportsNominalReferenceCurve { get; }
 }
