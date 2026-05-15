@@ -1,6 +1,6 @@
 using MBColumn.Domain.Enums;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers.Integration;
 
 public static class SectionIntegratorFactory
 {

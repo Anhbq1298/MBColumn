@@ -1,6 +1,6 @@
 using MBColumn.Domain.Entities;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers;
 
 public sealed class PmmSolver(
     ISweepStrategy sweepStrategy,

@@ -1,7 +1,7 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 
-namespace MBColumn.Infrastructure.Solvers.Fiber;
+namespace MBColumn.Infrastructure.Solvers.Legacy;
 
 // Optional ACI fiber-based solver. Uses Hognestad-style parabolic concrete integration
 // over a 100×100 fiber grid. Steel follows the same strain-compatibility treatment as

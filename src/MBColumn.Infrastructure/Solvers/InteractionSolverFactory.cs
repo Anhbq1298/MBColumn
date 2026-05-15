@@ -1,8 +1,6 @@
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
-using MBColumn.Infrastructure.Solvers.Fiber;
-using MBColumn.Infrastructure.Solvers.Pmm;
-using MBColumn.Infrastructure.Solvers.StressBlock;
+using MBColumn.Infrastructure.Solvers.Legacy;
 
 namespace MBColumn.Infrastructure.Solvers;
 
@@ -46,7 +44,6 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
     public IInteractionSolver Get(
         DesignCodeType code,
         Ec2SolverType ec2Solver = Ec2SolverType.SimplifiedStressBlock,
-        AciSolverType aciSolver = AciSolverType.Conventional,
         SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Fiber) => integrationMethod switch
     {
         SectionIntegrationMethod.Polygon => code == DesignCodeType.Ec2 ? ec2PmmPolygonSolver : aciPmmPolygonSolver,
@@ -56,8 +53,7 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
 
     public IInteractionSolver GetLegacy(
         DesignCodeType code,
-        Ec2SolverType ec2Solver = Ec2SolverType.SimplifiedStressBlock,
-        AciSolverType aciSolver = AciSolverType.Conventional) => code switch
+        Ec2SolverType ec2Solver = Ec2SolverType.SimplifiedStressBlock) => code switch
     {
         DesignCodeType.Ec2 => ec2Solver switch
         {
@@ -66,7 +62,7 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
             Ec2SolverType.AnalyticFiber        => ecPmmFiberAnalytic,
             _                                  => ec2SimplifiedBlockSolver   // SimplifiedStressBlock is default
         },
-        _ => aciSolver == AciSolverType.Fiber ? aciFiberSolver : aciConventionalSolver
+        _ => aciConventionalSolver
     };
 
     public ICircularInteractionSolver GetCircular(

@@ -1,7 +1,7 @@
 using MBColumn.Domain.Entities;
 using SMath = System.Math;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers;
 
 public sealed class NeutralAxisSweepStrategy : ISweepStrategy
 {

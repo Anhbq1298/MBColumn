@@ -2,7 +2,7 @@ using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers;
 
 public readonly record struct Vector2D(double X, double Y);
 

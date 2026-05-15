@@ -7,9 +7,7 @@ using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Rebar;
 using MBColumn.Infrastructure.Solvers;
-using MBColumn.Infrastructure.Solvers.Fiber;
-using MBColumn.Infrastructure.Solvers.Pmm;
-using MBColumn.Infrastructure.Solvers.StressBlock;
+using MBColumn.Infrastructure.Solvers.Legacy;
 using MBColumn.Presentation.Wpf.Controls;
 using MBColumn.Presentation.Wpf.ViewModels;
 using MBColumn.Tests.Verification;
@@ -138,8 +136,6 @@ var tests = new List<(string Name, Action Test)>
     ("Section integration method selection propagates", TestSectionIntegrationSelectionPropagates),
     ("Polygon integration supports circular section", TestPolygonIntegrationCircularSection),
     ("Control point export includes integration metadata", TestControlPointExportIntegrationMetadata),
-    ("ACI factory routes Conventional vs Fiber", TestAciSolverFactoryRouting),
-    ("ACI conventional baseline is regression-stable", TestAciConventionalUnchangedByFiberOption),
     ("ACI fiber pure compression close to conventional", TestAciFiberPureCompressionCloseToConventional),
     ("ACI fiber pure tension matches conventional", TestAciFiberPureTensionMatchesConventional),
     ("ACI fiber strong-axis capacity close to conventional", TestAciFiberStrongAxisCloseToConventional),
@@ -1646,18 +1642,6 @@ static (StrainCompatibilityInteractionSolver Conv, AciFiberInteractionSolver Fib
     return (conv, fiber, section, new ConcreteMaterial("C28", 28.0), new SteelMaterial("Gr420", 420.0, 200000.0));
 }
 
-static void TestAciSolverFactoryRouting()
-{
-    var aci = new Aci318DesignCodeService();
-    var ec2 = new Ec2DesignCodeService();
-    var factory = new InteractionSolverFactory(aci, ec2);
-    IsTrue(factory.Get(DesignCodeType.Aci318Style, integrationMethod: SectionIntegrationMethod.Fiber) is PmmInteractionSolver);
-    IsTrue(factory.Get(DesignCodeType.Aci318Style, integrationMethod: SectionIntegrationMethod.Polygon) is PmmInteractionSolver);
-    IsTrue(factory.Get(DesignCodeType.Aci318Style) is PmmInteractionSolver);
-    IsTrue(factory.GetLegacy(DesignCodeType.Aci318Style, aciSolver: AciSolverType.Conventional) is StrainCompatibilityInteractionSolver);
-    IsTrue(factory.GetLegacy(DesignCodeType.Aci318Style, aciSolver: AciSolverType.Fiber) is AciFiberInteractionSolver);
-}
-
 static void TestSectionIntegrationSelectionPropagates()
 {
     var fiber = Service().Calculate(MetricInput() with { IntegrationMethod = SectionIntegrationMethod.Fiber });
@@ -1732,17 +1716,6 @@ static void TestControlPointExportIntegrationMetadata()
             File.Delete(path);
         }
     }
-}
-
-static void TestAciConventionalUnchangedByFiberOption()
-{
-    // Re-route via DTO option and confirm Conventional still produces the legacy ratio.
-    var baseline = Service().Calculate(MetricInput());
-    var withExplicitConventional = Service().Calculate(MetricInput() with { AciSolver = AciSolverType.Conventional });
-    AreClose(baseline.Ratio, withExplicitConventional.Ratio, 1e-9);
-    AreClose(baseline.DesignPnDisplay, withExplicitConventional.DesignPnDisplay, 1e-9);
-    AreClose(baseline.DesignMxDisplay, withExplicitConventional.DesignMxDisplay, 1e-9);
-    AreClose(baseline.DesignMyDisplay, withExplicitConventional.DesignMyDisplay, 1e-9);
 }
 
 static void TestAciFiberPureCompressionCloseToConventional()

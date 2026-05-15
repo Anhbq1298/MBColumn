@@ -4,7 +4,7 @@ using System.Linq;
 using MBColumn.Domain.Entities;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Solvers;
-using MBColumn.Infrastructure.Solvers.Fiber;
+using MBColumn.Infrastructure.Solvers.Legacy;
 
 namespace MBColumn.Validation;
 

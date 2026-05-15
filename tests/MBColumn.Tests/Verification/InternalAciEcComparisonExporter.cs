@@ -10,8 +10,6 @@ using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Rebar;
 using MBColumn.Infrastructure.Solvers;
-using MBColumn.Infrastructure.Solvers.Fiber;
-using MBColumn.Infrastructure.Solvers.StressBlock;
 
 namespace MBColumn.Tests.Verification;
 
@@ -115,7 +113,6 @@ public sealed class InternalAciEcComparisonExporter
             LeftRebarSide = new RebarSideInputDto(3, "T20", 40),
             RightRebarSide = new RebarSideInputDto(3, "T20", 40),
             DesignCode = code,
-            AciSolver = AciSolverType.Conventional,
             Ec2Solver = Ec2SolverType.Fiber,
             AlphaCc = 0.85
         };

@@ -2,7 +2,7 @@ using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 
-namespace MBColumn.Infrastructure.Solvers.StressBlock;
+namespace MBColumn.Infrastructure.Solvers.Legacy;
 
 /// <summary>
 /// Eurocode 2 (EN 1992-1-1:2004) §3.1.7 — simplified rectangular concrete stress block.

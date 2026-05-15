@@ -1,9 +1,10 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
+using MBColumn.Infrastructure.Solvers.Integration;
 using SMath = System.Math;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers;
 
 public sealed class PmmInteractionSolver(
     IDesignCodeService code,

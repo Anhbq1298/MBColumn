@@ -2,7 +2,7 @@ using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using SMath = System.Math;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers;
 
 public sealed class Aci318DesignAdapter : IDesignCodeAdapter
 {

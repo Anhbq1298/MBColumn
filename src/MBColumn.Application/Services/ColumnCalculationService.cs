@@ -80,7 +80,7 @@ public sealed class ColumnCalculationService(
             var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
             var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
             section = new RectangularSection(widthMm, heightMm, layout);
-            var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver, input.IntegrationMethod);
+            var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.IntegrationMethod);
             surface = solver.Solve((RectangularSection)section, concrete, steel);
 
             return BuildResult(input, section, surface, coordinateList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService);

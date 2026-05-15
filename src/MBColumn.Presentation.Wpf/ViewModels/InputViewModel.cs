@@ -15,7 +15,6 @@ public sealed class InputViewModel : ViewModelBase
     private UnitSystem unitSystem = UnitSystem.Metric;
     private DesignCodeType selectedDesignCode = DesignCodeType.Aci318Style;
     private Ec2SolverType selectedEc2Solver = Ec2SolverType.Fiber;
-    private AciSolverType selectedAciSolver = AciSolverType.Conventional;
     private SectionIntegrationMethod selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
@@ -81,7 +80,6 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(FcLabel));
             Raise(nameof(FyLabel));
             Raise(nameof(ShowEc2SolverOption));
-            Raise(nameof(ShowAciSolverOption));
             Raise(nameof(ShowAlphaCcOption));
         }
     }
@@ -101,19 +99,6 @@ public sealed class InputViewModel : ViewModelBase
 
     public bool ShowEc2SolverOption => selectedDesignCode == DesignCodeType.Ec2;
 
-    public IReadOnlyList<AciSolverOption> AciSolverOptions { get; } =
-    [
-        new(AciSolverType.Conventional, "Conventional"),
-        new(AciSolverType.Fiber,        "Fiber")
-    ];
-
-    public AciSolverType SelectedAciSolver
-    {
-        get => selectedAciSolver;
-        set => Set(ref selectedAciSolver, value);
-    }
-
-    public bool ShowAciSolverOption => selectedDesignCode == DesignCodeType.Aci318Style;
     public double AlphaCc { get => alphaCc; set => Set(ref alphaCc, value); }
     public bool ShowAlphaCcOption => selectedDesignCode == DesignCodeType.Ec2;
     public IReadOnlyList<SectionIntegrationMethodOption> SectionIntegrationMethodOptions { get; } =
@@ -289,7 +274,6 @@ public sealed class InputViewModel : ViewModelBase
                 RebarCoordinates = circularCoords,
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
-                AciSolver = SelectedAciSolver,
                 IntegrationMethod = SelectedIntegrationMethod,
                 AlphaCc = AlphaCc
             };
@@ -311,7 +295,6 @@ public sealed class InputViewModel : ViewModelBase
             RebarCoordinates = generatedCoordinates,
             DesignCode = SelectedDesignCode,
             Ec2Solver = SelectedEc2Solver,
-            AciSolver = SelectedAciSolver,
             IntegrationMethod = SelectedIntegrationMethod,
             AlphaCc = AlphaCc
         };
@@ -607,6 +590,5 @@ public sealed class InputViewModel : ViewModelBase
 
 public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
 public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
-public sealed record AciSolverOption(AciSolverType Solver, string DisplayName);
 public sealed record SectionIntegrationMethodOption(SectionIntegrationMethod Method, string DisplayName);
 

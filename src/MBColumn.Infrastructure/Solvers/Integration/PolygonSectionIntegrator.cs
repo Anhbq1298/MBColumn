@@ -2,7 +2,7 @@ using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 using SMath = System.Math;
 
-namespace MBColumn.Infrastructure.Solvers.Pmm;
+namespace MBColumn.Infrastructure.Solvers.Integration;
 
 public sealed class PolygonSectionIntegrator : ISectionIntegrator
 {

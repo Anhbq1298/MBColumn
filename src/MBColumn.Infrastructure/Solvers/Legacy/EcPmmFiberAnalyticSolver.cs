@@ -1,7 +1,7 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 
-namespace MBColumn.Infrastructure.Solvers.Fiber;
+namespace MBColumn.Infrastructure.Solvers.Legacy;
 
 public sealed class EcPmmFiberAnalyticSolver(IDesignCodeService code) : IInteractionSolver
 {
