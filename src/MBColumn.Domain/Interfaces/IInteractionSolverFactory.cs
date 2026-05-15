@@ -12,4 +12,8 @@ public interface IInteractionSolverFactory
     ICircularInteractionSolver GetCircular(
         DesignCodeType code,
         SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Fiber);
+
+    IIrregularInteractionSolver GetIrregular(
+        DesignCodeType code,
+        SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Polygon);
 }

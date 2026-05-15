@@ -1,5 +1,6 @@
 using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
+using MBColumn.Application.Services.ImportExport;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.Math;
@@ -56,6 +57,9 @@ public sealed class InputViewModel : ViewModelBase
         this.imperialBars = imperialBars;
         this.rebarCoordinateBuilder = rebarCoordinateBuilder;
         RebarLayout = new RebarLayoutViewModel(UpdateSectionPreview);
+        IrregularInput = new IrregularSectionInputViewModel(new IrregularSectionCsvService());
+        IrregularInput.BoundaryPoints.CollectionChanged += (_, _) => UpdateSectionPreview();
+        IrregularInput.Rebars.CollectionChanged += (_, _) => UpdateSectionPreview();
         ApplyMetricDefaults();
         UpdateSectionPreview();
         AddLoadCaseCommand = new RelayCommand(AddLoadCase);
@@ -119,7 +123,8 @@ public sealed class InputViewModel : ViewModelBase
         new(RebarLayoutType.SidesDifferent, "Sides Different")
     ];
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
-    public IReadOnlyList<SectionShapeType> SectionShapes { get; } = [SectionShapeType.Rectangular, SectionShapeType.Circular];
+    public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
+        [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
     public IReadOnlyList<RebarDefinition> AvailableBars => UnitSystem == UnitSystem.Metric ? metricBars.GetBars() : imperialBars.GetBars();
     public string LengthLabel => UnitSystem == UnitSystem.Metric ? "mm" : "in";
     public string ForceLabel => UnitSystem == UnitSystem.Metric ? "kN" : "kip";
@@ -161,6 +166,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise();
             Raise(nameof(IsRectangularSection));
             Raise(nameof(IsCircularSection));
+            Raise(nameof(IsIrregularSection));
             Raise(nameof(IsCircularEqualSpacingLayout));
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
@@ -226,6 +232,12 @@ public sealed class InputViewModel : ViewModelBase
     public bool IsSidesDifferentLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.SidesDifferent;
     public bool IsCircularEqualSpacingLayout => IsCircularSection;
     public RebarLayoutViewModel RebarLayout { get; }
+    public IrregularSectionInputViewModel IrregularInput { get; }
+    public bool IsIrregularSection
+    {
+        get => SelectedSectionShape == SectionShapeType.Irregular;
+        set { if (value) SelectedSectionShape = SectionShapeType.Irregular; }
+    }
     public ObservableCollection<PreviewRebarPoint> PreviewRebars { get; } = [];
     public ObservableCollection<LoadCaseViewModel> LoadCases { get; } = [];
     public ICommand AddLoadCaseCommand { get; }
@@ -252,6 +264,27 @@ public sealed class InputViewModel : ViewModelBase
             : null;
         var layoutLengthUnit = UnitSystem == UnitSystem.Metric ? LengthUnit.Millimeter : LengthUnit.Inch;
         var stressUnit = UnitSystem == UnitSystem.Metric ? StressUnit.MPa : StressUnit.Ksi;
+
+        if (SelectedSectionShape == SectionShapeType.Irregular)
+        {
+            var irregularDto = IrregularInput?.ToDto(Cover) ?? new IrregularSectionInputDto(
+                Array.Empty<IrregularBoundaryPointDto>(),
+                Array.Empty<IrregularRebarInputDto>(),
+                Cover,
+                IrregularRebarModeType.CustomCoordinates);
+
+            return new(UnitSystem, Width, Height, Cover, BarSize, BarCount, LayoutPreset, Fc, Fy, Es, Pu, Mux, Muy,
+                forceUnit, layoutLengthUnit, momentUnit, stressUnit, SelectedPmAngleDegrees, SelectedAxialLoad)
+            {
+                LoadCases = lcDtos,
+                SectionShape = SectionShapeType.Irregular,
+                DesignCode = SelectedDesignCode,
+                Ec2Solver = SelectedEc2Solver,
+                IntegrationMethod = SectionIntegrationMethod.Polygon,
+                AlphaCc = AlphaCc,
+                Irregular = irregularDto
+            };
+        }
 
         if (IsCircularSection)
         {
@@ -306,6 +339,16 @@ public sealed class InputViewModel : ViewModelBase
         ClearSideWarnings();
         RebarLayoutWarning = "";
         Raise(nameof(HasRebarLayoutWarning));
+        if (SelectedSectionShape == SectionShapeType.Irregular)
+        {
+            // Irregular section preview is rendered by the dedicated irregular preview surface.
+            IsSectionPreviewValid = IrregularInput.BoundaryPoints.Count >= 3;
+            SectionPreviewErrorMessage = IsSectionPreviewValid ? "" : "Add at least 3 boundary points.";
+            SectionPreviewLabel = $"Irregular ({IrregularInput.BoundaryPoints.Count} pts)";
+            RebarPreviewLabel = $"{IrregularInput.Rebars.Count} rebars";
+            CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            return;
+        }
         if (SelectedSectionShape == SectionShapeType.Circular)
         {
             UpdateCircularSectionPreview();

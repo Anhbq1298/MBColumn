@@ -9,7 +9,7 @@ namespace MBColumn.Infrastructure.Solvers;
 public sealed class PmmInteractionSolver(
     IDesignCodeService code,
     DesignCodeType designCodeType,
-    SectionIntegrationMethod integrationMethod) : IInteractionSolver, ICircularInteractionSolver
+    SectionIntegrationMethod integrationMethod) : IInteractionSolver, ICircularInteractionSolver, IIrregularInteractionSolver
 {
     public double AngleStepDegrees { get; init; } = 10.0;
     public int NeutralAxisSamples { get; init; } = 100;
@@ -23,6 +23,9 @@ public sealed class PmmInteractionSolver(
         => SolveCore(section, concrete, steel);
 
     public InteractionSurface Solve(CircularSection section, ConcreteMaterial concrete, SteelMaterial steel)
+        => SolveCore(section, concrete, steel);
+
+    public InteractionSurface Solve(IrregularSection section, ConcreteMaterial concrete, SteelMaterial steel)
         => SolveCore(section, concrete, steel);
 
     private InteractionSurface SolveCore(ColumnSection section, ConcreteMaterial concrete, SteelMaterial steel)

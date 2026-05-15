@@ -3,6 +3,7 @@
 public enum SectionShapeType
 {
     Rectangular,
-    Circular
+    Circular,
+    Irregular
 }
 

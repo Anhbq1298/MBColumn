@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Mappers;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
@@ -58,7 +59,39 @@ public sealed class ColumnCalculationService(
         ColumnSection section;
         InteractionSurface surface;
 
-        if (input.SectionShape == SectionShapeType.Circular)
+        if (input.SectionShape == SectionShapeType.Irregular)
+        {
+            if (input.Irregular is null)
+            {
+                throw new InvalidOperationException("Irregular section requires an Irregular block.");
+            }
+
+            var mapper = new IrregularSectionMapper(new IrregularSectionValidationService());
+            var mapResult = mapper.ValidateAndMap(input.Irregular, out var irregular, out var rebarCoords);
+            if (!mapResult.IsValid || irregular is null)
+            {
+                var msg = string.Join(Environment.NewLine,
+                    mapResult.Issues.Select(i => i.Message));
+                throw new InvalidOperationException(msg);
+            }
+
+            // Irregular section currently only supports polygon integration.
+            var irregularSolver = solverFactory.GetIrregular(input.DesignCode, SectionIntegrationMethod.Polygon);
+            section = irregular;
+            surface = irregularSolver.Solve(irregular, concrete, steel);
+            var rebarDtoList = rebarCoords.Select(r => new RebarCoordinateDto(
+                r.RebarIndex,
+                r.X,
+                r.Y,
+                r.AreaMm2 is double a ? Math.Sqrt(4.0 * a / Math.PI) : 0.0,
+                r.AreaMm2 ?? 0.0,
+                r.BarSize ?? "",
+                "Irregular")).ToList();
+            double widthMm = irregular.BoundingBoxMm.Width;
+            double heightMm = irregular.BoundingBoxMm.Height;
+            return BuildResult(input, section, surface, rebarDtoList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService);
+        }
+        else if (input.SectionShape == SectionShapeType.Circular)
         {
             double diameterMm = units.LengthToMm(input.Diameter, input.LengthUnit);
             var coordinateList = input.RebarCoordinates

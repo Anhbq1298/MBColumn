@@ -74,4 +74,18 @@ public sealed class InteractionSolverFactory : IInteractionSolverFactory
             SectionIntegrationMethod.Fiber => code == DesignCodeType.Ec2 ? ec2PmmFiberSolver : aciPmmFiberSolver,
             _ => throw new NotSupportedException($"Unsupported integration method: {integrationMethod}")
         };
+
+    public IIrregularInteractionSolver GetIrregular(
+        DesignCodeType code,
+        SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Polygon)
+    {
+        // Irregular sections currently only support polygon integration. Fiber path is not implemented yet.
+        if (integrationMethod == SectionIntegrationMethod.Fiber)
+        {
+            throw new NotSupportedException(
+                "Fiber integration for irregular sections is not yet implemented. Use polygon integration.");
+        }
+
+        return code == DesignCodeType.Ec2 ? ec2PmmPolygonSolver : aciPmmPolygonSolver;
+    }
 }
