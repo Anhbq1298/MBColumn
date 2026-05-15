@@ -31,6 +31,12 @@ public sealed record CalculationResultDto(
     public string GoverningLoadCaseId { get; init; } = "";
     public ControlPointTableDto? ControlPointTable { get; init; }
     public SectionShapeType SectionShape { get; init; } = SectionShapeType.Rectangular;
+    public SectionIntegrationMethod IntegrationMethod { get; init; } = SectionIntegrationMethod.Fiber;
+    public int ConcreteFiberCountX { get; init; } = 40;
+    public int ConcreteFiberCountY { get; init; } = 40;
+    public int CircularRadialFiberCount { get; init; } = 32;
+    public int CircularAngularFiberCount { get; init; } = 72;
+    public int CirclePolygonSegmentCount { get; init; } = 128;
     public double SectionWidthMm { get; init; }
     public double SectionHeightMm { get; init; }
     public double CoverMm { get; init; }

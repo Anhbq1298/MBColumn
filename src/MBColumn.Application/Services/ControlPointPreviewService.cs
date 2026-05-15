@@ -128,6 +128,12 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
                     double.NaN, double.NaN, double.NaN),
                 ConcreteStrainMax = matched is null ? 0.0 : MaxPositive(
                     matched.MaxConcreteStrain, double.NaN),
+                IntegrationMethod = result.IntegrationMethod.ToString(),
+                ConcreteFiberCountX = result.ConcreteFiberCountX,
+                ConcreteFiberCountY = result.ConcreteFiberCountY,
+                CircularRadialFiberCount = result.CircularRadialFiberCount,
+                CircularAngularFiberCount = result.CircularAngularFiberCount,
+                CirclePolygonSegmentCount = result.CirclePolygonSegmentCount,
                 Remarks = sp.Label
             });
         }
@@ -173,6 +179,12 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
             ConcreteStrainMax = MaxPositive(
                 positiveMatch?.MaxConcreteStrain ?? double.NaN,
                 negativeMatch?.MaxConcreteStrain ?? double.NaN),
+            IntegrationMethod = result.IntegrationMethod.ToString(),
+            ConcreteFiberCountX = result.ConcreteFiberCountX,
+            ConcreteFiberCountY = result.ConcreteFiberCountY,
+            CircularRadialFiberCount = result.CircularRadialFiberCount,
+            CircularAngularFiberCount = result.CircularAngularFiberCount,
+            CirclePolygonSegmentCount = result.CirclePolygonSegmentCount,
             Remarks = ResolveRemarks(positiveMatch, negativeMatch)
         };
     }

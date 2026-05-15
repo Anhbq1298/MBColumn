@@ -352,7 +352,7 @@ public sealed class ResultViewModel : ViewModelBase
         SharedPmBounds = new Rect(new Point(-maxAbsM, minP), new Point(maxAbsM, maxP));
     }
 
-    // â”€â”€â”€â”€ Selected chart point (Task 2) â”€â”€â”€â”€
+    // ---- Selected chart point (Task 2) ----
 
     public ControlPointDto? SelectedChartPoint
     {

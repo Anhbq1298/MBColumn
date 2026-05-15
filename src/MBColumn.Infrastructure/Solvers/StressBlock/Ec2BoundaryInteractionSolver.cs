@@ -2,7 +2,7 @@ using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 using System.Numerics;
 
-namespace MBColumn.Infrastructure.Solvers;
+namespace MBColumn.Infrastructure.Solvers.StressBlock;
 
 public sealed class Ec2BoundaryInteractionSolver(IDesignCodeService code) : IInteractionSolver
 {

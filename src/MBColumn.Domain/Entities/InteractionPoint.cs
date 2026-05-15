@@ -22,6 +22,13 @@ public sealed record InteractionPoint(
     double MinSteelStrain = 0.0,
     string StateLabel = "")
 {
+    public MBColumn.Domain.Enums.SectionIntegrationMethod IntegrationMethod { get; init; } = MBColumn.Domain.Enums.SectionIntegrationMethod.Fiber;
+    public double ThetaRad { get; init; } = ThetaDegrees * Math.PI / 180.0;
+    public bool IsSpecialPoint { get; init; } = false;
+    public string? SpecialPointType { get; init; }
+    public double DesignP => PhiPn;
+    public double DesignMx => PhiMnx;
+    public double DesignMy => PhiMny;
     public NominalCapacity Nominal => new(Pn, Mnx, Mny);
     public double PhiPn => Pn * Phi;
     public double PhiMnx => Mnx * Phi;

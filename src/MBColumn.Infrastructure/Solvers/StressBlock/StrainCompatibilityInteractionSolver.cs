@@ -1,7 +1,7 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 
-namespace MBColumn.Infrastructure.Solvers;
+namespace MBColumn.Infrastructure.Solvers.StressBlock;
 
 public sealed class StrainCompatibilityInteractionSolver(IDesignCodeService code) : IInteractionSolver
 {

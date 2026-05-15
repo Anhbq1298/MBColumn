@@ -7,7 +7,10 @@ public interface IInteractionSolverFactory
     IInteractionSolver Get(
         DesignCodeType code,
         Ec2SolverType ec2Solver = Ec2SolverType.SimplifiedStressBlock,
-        AciSolverType aciSolver = AciSolverType.Conventional);
+        AciSolverType aciSolver = AciSolverType.Conventional,
+        SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Fiber);
 
-    ICircularInteractionSolver GetCircular(DesignCodeType code);
+    ICircularInteractionSolver GetCircular(
+        DesignCodeType code,
+        SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Fiber);
 }

@@ -6,7 +6,13 @@ namespace MBColumn.Application.Services;
 
 public sealed class ControlPointCsvExportService : IControlPointCsvExportService
 {
-    private static readonly string[] Headers = ["θ", "Pt.", "P", "Mθ+", "Mθ-", "c", "εs,max", "εc,max", "Remarks"];
+    private static readonly string[] Headers =
+    [
+        "\u03b8", "Pt.", "P", "M\u03b8+", "M\u03b8-", "c", "\u03b5s,max", "\u03b5c,max",
+        "IntegrationMethod", "ConcreteFiberCountX", "ConcreteFiberCountY",
+        "CircularRadialFiberCount", "CircularAngularFiberCount", "CirclePolygonSegmentCount",
+        "Remarks"
+    ];
 
     public void Export(string path, IEnumerable<ControlPointExportRow> rows)
     {
@@ -25,6 +31,12 @@ public sealed class ControlPointCsvExportService : IControlPointCsvExportService
                 Format(row.NeutralAxisDepth),
                 Format(row.SteelStrainMax),
                 Format(row.ConcreteStrainMax),
+                Escape(row.IntegrationMethod),
+                row.ConcreteFiberCountX.ToString(CultureInfo.InvariantCulture),
+                row.ConcreteFiberCountY.ToString(CultureInfo.InvariantCulture),
+                row.CircularRadialFiberCount.ToString(CultureInfo.InvariantCulture),
+                row.CircularAngularFiberCount.ToString(CultureInfo.InvariantCulture),
+                row.CirclePolygonSegmentCount.ToString(CultureInfo.InvariantCulture),
                 Escape(row.Remarks)
             }));
         }

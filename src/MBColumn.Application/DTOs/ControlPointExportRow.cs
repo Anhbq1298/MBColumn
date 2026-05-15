@@ -10,6 +10,12 @@ public sealed record ControlPointExportRow
     public double NeutralAxisDepth { get; init; }
     public double SteelStrainMax { get; init; }
     public double ConcreteStrainMax { get; init; }
+    public string IntegrationMethod { get; init; } = "";
+    public int ConcreteFiberCountX { get; init; }
+    public int ConcreteFiberCountY { get; init; }
+    public int CircularRadialFiberCount { get; init; }
+    public int CircularAngularFiberCount { get; init; }
+    public int CirclePolygonSegmentCount { get; init; }
     public string Remarks { get; init; } = "";
 }
 

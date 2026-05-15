@@ -104,6 +104,17 @@
                                   SelectedValuePath="Code"
                                   SelectedValue="{Binding SelectedDesignCode}" />
 
+                        <TextBlock Text="Section Integration Method" Style="{StaticResource FieldLabelTextStyle}" Margin="0,10,0,0" />
+                        <ComboBox ItemsSource="{Binding SectionIntegrationMethodOptions}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="Method"
+                                  SelectedValue="{Binding SelectedIntegrationMethod}">
+                            <ComboBox.ToolTip>
+                                <TextBlock TextWrapping="Wrap" MaxWidth="360"
+                                           Text="Fiber Integration: General numerical integration method recommended for circular sections and future arbitrary sections. Polygon Integration: Faster compression-zone clipping method useful for stress-block comparison." />
+                            </ComboBox.ToolTip>
+                        </ComboBox>
+
                         <StackPanel Visibility="{Binding ShowAciSolverOption, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="ACI Solver Type" Style="{StaticResource FieldLabelTextStyle}" Margin="0,10,0,0" />
                             <ComboBox ItemsSource="{Binding AciSolverOptions}"
@@ -220,7 +231,7 @@
                             Style="{StaticResource PrimaryButtonStyle}"
                             Command="{Binding DataContext.CalculateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                             MinWidth="210" />
-                    <TextBlock Text="Changes made, require re-calculation"
+                    <TextBlock Text="Changes made, recalculation required."
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource AccentRedBrush}"
                                FontSize="12"

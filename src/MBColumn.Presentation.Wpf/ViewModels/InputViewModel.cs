@@ -16,6 +16,7 @@ public sealed class InputViewModel : ViewModelBase
     private DesignCodeType selectedDesignCode = DesignCodeType.Aci318Style;
     private Ec2SolverType selectedEc2Solver = Ec2SolverType.Fiber;
     private AciSolverType selectedAciSolver = AciSolverType.Conventional;
+    private SectionIntegrationMethod selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
     private readonly IRebarCoordinateBuilderService rebarCoordinateBuilder;
@@ -115,6 +116,18 @@ public sealed class InputViewModel : ViewModelBase
     public bool ShowAciSolverOption => selectedDesignCode == DesignCodeType.Aci318Style;
     public double AlphaCc { get => alphaCc; set => Set(ref alphaCc, value); }
     public bool ShowAlphaCcOption => selectedDesignCode == DesignCodeType.Ec2;
+    public IReadOnlyList<SectionIntegrationMethodOption> SectionIntegrationMethodOptions { get; } =
+    [
+        new(SectionIntegrationMethod.Fiber, "Fiber Integration"),
+        new(SectionIntegrationMethod.Polygon, "Polygon Integration")
+    ];
+
+    public SectionIntegrationMethod SelectedIntegrationMethod
+    {
+        get => selectedIntegrationMethod;
+        set => Set(ref selectedIntegrationMethod, value);
+    }
+
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
     [
         new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
@@ -277,6 +290,7 @@ public sealed class InputViewModel : ViewModelBase
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
                 AciSolver = SelectedAciSolver,
+                IntegrationMethod = SelectedIntegrationMethod,
                 AlphaCc = AlphaCc
             };
         }
@@ -298,6 +312,7 @@ public sealed class InputViewModel : ViewModelBase
             DesignCode = SelectedDesignCode,
             Ec2Solver = SelectedEc2Solver,
             AciSolver = SelectedAciSolver,
+            IntegrationMethod = SelectedIntegrationMethod,
             AlphaCc = AlphaCc
         };
     }
@@ -543,6 +558,7 @@ public sealed class InputViewModel : ViewModelBase
         layoutPreset = "All Sides Equal";
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+        selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
         fc = 28; fy = 420; es = 200000; pu = 2500; mux = 250; muy = 180; selectedAxialLoad = 0;
@@ -557,6 +573,7 @@ public sealed class InputViewModel : ViewModelBase
         layoutPreset = "All Sides Equal";
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+        selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
         fc = 4; fy = 60; es = 29000; pu = 560; mux = 185; muy = 130; selectedAxialLoad = 0;
@@ -583,7 +600,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(Fc)); Raise(nameof(Fy)); Raise(nameof(Es)); Raise(nameof(Pu)); Raise(nameof(Mux)); Raise(nameof(Muy)); Raise(nameof(SelectedAxialLoad));
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
-        Raise(nameof(SelectedDesignCode)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
+        Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
     }
 }
@@ -591,4 +608,5 @@ public sealed class InputViewModel : ViewModelBase
 public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
 public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
 public sealed record AciSolverOption(AciSolverType Solver, string DisplayName);
+public sealed record SectionIntegrationMethodOption(SectionIntegrationMethod Method, string DisplayName);
 

@@ -518,8 +518,8 @@ public class DiagramCanvas2D : FrameworkElement
         }
 
         string caption = string.IsNullOrWhiteSpace(inset.SelectedLoadCaseName)
-            ? $"Î¸ = {inset.ThetaDegrees:0.#}Â°"
-            : $"{inset.SelectedLoadCaseName}  Î¸ = {inset.ThetaDegrees:0.#}Â°";
+            ? $"\u03b8 = {inset.ThetaDegrees:0.#}\u00b0"
+            : $"{inset.SelectedLoadCaseName}  \u03b8 = {inset.ThetaDegrees:0.#}\u00b0";
         DrawInsetLegend(dc, bounds, caption, compressionFill, tensionFill);
     }
 
@@ -601,7 +601,7 @@ public class DiagramCanvas2D : FrameworkElement
 
         double labelAngle = (theta > 0.5 ? Math.Min(theta, 359.5) / 2.0 : 12.0) * Math.PI / 180.0;
         var labelPoint = map(new InsetPointDto(radius * 1.22 * Math.Cos(labelAngle), radius * 1.22 * Math.Sin(labelAngle)));
-        DrawText(dc, "Î¸", 8.0, brush, Offset(labelPoint, 3, -9), FontWeights.SemiBold);
+        DrawText(dc, "\u03b8", 8.0, brush, Offset(labelPoint, 3, -9), FontWeights.SemiBold);
     }
 
     private static double NormalizePositiveAngle(double angle)

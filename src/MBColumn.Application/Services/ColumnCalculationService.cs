@@ -66,7 +66,7 @@ public sealed class ColumnCalculationService(
             var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
             var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
             section = new CircularSection(diameterMm, layout);
-            var circularSolver = solverFactory.GetCircular(input.DesignCode);
+            var circularSolver = solverFactory.GetCircular(input.DesignCode, input.IntegrationMethod);
             surface = circularSolver.Solve((CircularSection)section, concrete, steel);
 
             return BuildResult(input, section, surface, coordinateList, diameterMm, diameterMm, fcMpa, fyMpa, esMpa, codeService);
@@ -80,7 +80,7 @@ public sealed class ColumnCalculationService(
             var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
             var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
             section = new RectangularSection(widthMm, heightMm, layout);
-            var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver);
+            var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.AciSolver, input.IntegrationMethod);
             surface = solver.Solve((RectangularSection)section, concrete, steel);
 
             return BuildResult(input, section, surface, coordinateList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService);
@@ -191,6 +191,7 @@ public sealed class ColumnCalculationService(
             GoverningLoadCaseId = govLc.Id,
             ControlPointTable = cpTable,
             SectionShape = section.Shape,
+            IntegrationMethod = input.IntegrationMethod,
             SectionWidthMm = sectionWidthMm,
             SectionHeightMm = sectionHeightMm,
             CoverMm = units.LengthToMm(input.Cover, input.LengthUnit),

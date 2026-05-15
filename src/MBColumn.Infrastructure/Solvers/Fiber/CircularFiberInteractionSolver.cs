@@ -2,7 +2,7 @@ using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 using SMath = System.Math;
 
-namespace MBColumn.Infrastructure.Solvers;
+namespace MBColumn.Infrastructure.Solvers.Fiber;
 
 /// <summary>
 /// Circular RC interaction solver using strain compatibility and numerical concrete fibers.

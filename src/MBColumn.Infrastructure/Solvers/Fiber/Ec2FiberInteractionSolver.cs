@@ -1,7 +1,7 @@
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Interfaces;
 
-namespace MBColumn.Infrastructure.Solvers;
+namespace MBColumn.Infrastructure.Solvers.Fiber;
 
 // Optional EC2 fiber-based solver. Uses EC2 parabolic-rectangular concrete model
 // integrated over a 100×100 fiber grid. All material parameters are read from
