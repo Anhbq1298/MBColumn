@@ -9,7 +9,19 @@ public sealed class ColumnInputValidator
     {
         var errors = new List<string>();
 
-        if (input.SectionShape == SectionShapeType.Circular)
+        if (input.SectionShape == SectionShapeType.Irregular)
+        {
+            if (input.Irregular is null || input.Irregular.BoundaryPoints.Count < 3)
+            {
+                errors.Add("Irregular section requires at least 3 boundary points.");
+            }
+            if (input.Cover <= 0) errors.Add("Concrete cover must be positive.");
+            if (input.Irregular is { Rebars.Count: 0 })
+            {
+                errors.Add("Irregular section requires at least one rebar.");
+            }
+        }
+        else if (input.SectionShape == SectionShapeType.Circular)
         {
             if (input.Diameter <= 0) errors.Add("Section diameter must be positive.");
             if (input.Cover <= 0) errors.Add("Concrete cover must be positive.");

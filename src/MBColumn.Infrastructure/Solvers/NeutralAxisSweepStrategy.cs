@@ -38,11 +38,22 @@ public sealed class NeutralAxisSweepStrategy : ISweepStrategy
         return states;
     }
 
-    internal static double ProjectExtreme(ColumnSection section, double nx, double ny)
+    public static double ProjectExtreme(ColumnSection section, double nx, double ny)
     {
         if (section is CircularSection circular)
         {
             return circular.RadiusMm;
+        }
+
+        if (section is IrregularSection irregular)
+        {
+            double max = double.NegativeInfinity;
+            foreach (var p in irregular.BoundaryPoints)
+            {
+                double proj = p.X * nx + p.Y * ny;
+                if (proj > max) max = proj;
+            }
+            return max;
         }
 
         double hx = section.WidthMm / 2.0;

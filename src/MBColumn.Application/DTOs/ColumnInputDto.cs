@@ -36,5 +36,6 @@ public sealed record ColumnInputDto(
     public Ec2SolverType Ec2Solver { get; init; } = Ec2SolverType.Boundary;
     public SectionIntegrationMethod IntegrationMethod { get; init; } = SectionIntegrationMethod.Fiber;
     public double AlphaCc { get; init; } = 0.85;
+    public IrregularSectionInputDto? Irregular { get; init; }
 }
 

@@ -8,6 +8,7 @@ It is designed for learning, validation, and preliminary engineering review work
 
 - Rectangular reinforced-concrete column sections.
 - Circular reinforced-concrete column sections.
+- Irregular (polygon) reinforced-concrete column sections via user-entered boundary points and rebar coordinates. Polygon integration only in this milestone; boundary/rebar can be edited or imported/exported through the stable CSV contract (`# MBColumnCsvVersion=1`). Boundary points must be entered clockwise; the polygon is implicitly closed.
 - Live section preview with cover line, rebars, centroid, local axes, dimensions, and sign-convention reference image.
 - PM angle diagram, PMx/PMy-style slices, Mx-My diagram, and 3D PMM interaction surface.
 - PMM demand/capacity ratio using directional capacity search against the design capacity surface.

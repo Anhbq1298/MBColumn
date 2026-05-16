@@ -157,7 +157,37 @@ var tests = new List<(string Name, Action Test)>
     ("EC2 simplified block uniaxial bending hand check", TestEc2SsbUniaxialBendingHandCheck),
     // Regression guards — existing solvers must be unaffected
     ("Regression: ACI results unchanged after new EC2 solver added", TestRegressionAciUnchanged),
-    ("Regression: EC2 fiber results unchanged after new solver added", TestRegressionEc2FiberUnchanged)
+    ("Regression: EC2 fiber results unchanged after new solver added", TestRegressionEc2FiberUnchanged),
+    // Irregular section feature tests
+    ("Irregular boundary accepts clockwise triangle",                TestIrregularBoundaryClockwiseTriangle),
+    ("Irregular boundary accepts clockwise L-shape",                 TestIrregularBoundaryClockwiseLShape),
+    ("Irregular boundary rejects fewer than 3 points",               TestIrregularBoundaryRejectsFewerThan3),
+    ("Irregular boundary rejects duplicate points",                  TestIrregularBoundaryRejectsDuplicate),
+    ("Irregular boundary rejects duplicate consecutive points",      TestIrregularBoundaryRejectsDuplicateConsecutive),
+    ("Irregular boundary rejects repeated first/last",               TestIrregularBoundaryRejectsRepeatedFirstLast),
+    ("Irregular boundary rejects counter-clockwise polygon",         TestIrregularBoundaryRejectsCcw),
+    ("Irregular boundary rejects self-intersecting polygon",         TestIrregularBoundaryRejectsSelfIntersecting),
+    ("Irregular boundary rejects zero-area polygon",                 TestIrregularBoundaryRejectsZeroArea),
+    ("Irregular rebar accepts inside rebar",                         TestIrregularRebarAcceptsInside),
+    ("Irregular rebar rejects outside rebar",                        TestIrregularRebarRejectsOutside),
+    ("Irregular rebar rejects cover violation",                      TestIrregularRebarRejectsCoverViolation),
+    ("Irregular rebar rejects overlapping rebars",                   TestIrregularRebarRejectsOverlap),
+    ("Irregular rebar accepts area-only rebar",                      TestIrregularRebarAcceptsAreaOnly),
+    ("Irregular rebar prefers AreaMm2 over BarSize",                 TestIrregularRebarPrefersAreaOverBarSize),
+    ("Irregular CSV boundary round-trip preserves order",            TestIrregularCsvBoundaryRoundTrip),
+    ("Irregular CSV rebar round-trip preserves order",               TestIrregularCsvRebarRoundTrip),
+    ("Irregular CSV parser ignores metadata lines",                  TestIrregularCsvIgnoresMetadata),
+    ("Irregular CSV parser rejects wrong header",                    TestIrregularCsvRejectsWrongHeader),
+    ("Irregular CSV parser reports invalid numbers with context",    TestIrregularCsvReportsInvalidNumbers),
+    ("Irregular CSV export omits duplicate closing point",           TestIrregularCsvExportNoClosingPoint),
+    ("Irregular section solves with Polygon integration",            TestIrregularPolygonIntegrationSolves),
+    ("Irregular section PMM surface has no NaN/Infinity",            TestIrregularPmmNoNan),
+    ("Irregular section pure compression positive",                  TestIrregularPureCompressionPositive),
+    ("Irregular section pure tension negative",                      TestIrregularPureTensionNegative),
+    ("Irregular section ratio is finite",                            TestIrregularRatioFinite),
+    ("Irregular mapper shifts boundary to centroid",                 TestIrregularMapperShiftsToCentroid),
+    ("Irregular section shape exposed on result",                    TestIrregularResultExposesShape),
+    ("Irregular section integrator boundary handled",                TestIrregularIntegratorBoundaryHandled)
 };
 
 foreach (var (name, test) in tests)
@@ -2088,4 +2118,422 @@ static void TestRegressionEc2FiberUnchanged()
         AreClose(run1.Points[i].Mny, run2.Points[i].Mny, 1e-9);
         AreClose(run1.Points[i].Phi, run2.Points[i].Phi, 1e-9);
     }
+}
+
+// ----- Irregular section tests -----
+
+static List<MBColumn.Domain.Entities.Point2D> ClockwiseSquare(double half = 300.0) =>
+    new()
+    {
+        new(-half, -half),
+        new(-half,  half),
+        new( half,  half),
+        new( half, -half)
+    };
+
+static List<MBColumn.Domain.Entities.Point2D> ClockwiseLShape() =>
+    new()
+    {
+        new(-200, -200),
+        new(-200,  200),
+        new(   0,  200),
+        new(   0,    0),
+        new( 200,    0),
+        new( 200, -200)
+    };
+
+static MBColumn.Application.Services.IrregularSectionValidationService IrregularValidator()
+    => new();
+
+static void TestIrregularBoundaryClockwiseTriangle()
+{
+    var tri = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-300, -200),
+        new(   0,  300),
+        new( 300, -200)
+    };
+    var result = IrregularValidator().ValidateBoundary(tri);
+    IsTrue(result.IsValid);
+}
+
+static void TestIrregularBoundaryClockwiseLShape()
+{
+    var result = IrregularValidator().ValidateBoundary(ClockwiseLShape());
+    IsTrue(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsFewerThan3()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D> { new(0, 0), new(1, 0) };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsDuplicate()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new(-100,  100),
+        new( 100,  100),
+        new(-100, -100),  // duplicate of first (not adjacent in indexing)
+        new( 100, -100)
+    };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsDuplicateConsecutive()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new(-100,  100),
+        new(-100,  100), // duplicate consecutive
+        new( 100,  100),
+        new( 100, -100)
+    };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsRepeatedFirstLast()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new(-100,  100),
+        new( 100,  100),
+        new( 100, -100),
+        new(-100, -100) // explicit duplicate of first point
+    };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsCcw()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new( 100, -100),
+        new( 100,  100),
+        new(-100,  100)
+    };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsSelfIntersecting()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new( 100,  100),
+        new(-100,  100),
+        new( 100, -100)
+    };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularBoundaryRejectsZeroArea()
+{
+    var pts = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(0, 0),
+        new(1, 0),
+        new(2, 0)
+    };
+    var result = IrregularValidator().ValidateBoundary(pts);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularRebarAcceptsInside()
+{
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", -200, -200, null, 491.0),
+        new("B2",  200, -200, null, 491.0),
+        new("B3",  200,  200, null, 491.0),
+        new("B4", -200,  200, null, 491.0)
+    };
+    var result = IrregularValidator().ValidateRebars(ClockwiseSquare(300.0), bars, 40.0);
+    IsTrue(result.IsValid);
+}
+
+static void TestIrregularRebarRejectsOutside()
+{
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", 400, 0, null, 491.0)
+    };
+    var result = IrregularValidator().ValidateRebars(ClockwiseSquare(300.0), bars, 40.0);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularRebarRejectsCoverViolation()
+{
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", 290, 0, null, 491.0)
+    };
+    var result = IrregularValidator().ValidateRebars(ClockwiseSquare(300.0), bars, 40.0);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularRebarRejectsOverlap()
+{
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", 0, 0, null, 491.0),
+        new("B2", 5, 0, null, 491.0)
+    };
+    var result = IrregularValidator().ValidateRebars(ClockwiseSquare(300.0), bars, 40.0);
+    IsFalse(result.IsValid);
+}
+
+static void TestIrregularRebarAcceptsAreaOnly()
+{
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", 0, 0, null, 491.0)
+    };
+    var result = IrregularValidator().ValidateRebars(ClockwiseSquare(300.0), bars, 40.0);
+    IsTrue(result.IsValid);
+}
+
+static void TestIrregularRebarPrefersAreaOverBarSize()
+{
+    var validator = IrregularValidator();
+    // Area provided -> diameter derived from area, BarSize ignored for diameter.
+    var bar = new MBColumn.Application.DTOs.IrregularRebarInputDto("B1", 0, 0, "T25", 100.0);
+    IsTrue(validator.TryResolveDiameter(bar, out double diameter, out _));
+    double expectedDiameter = Math.Sqrt(4.0 * 100.0 / Math.PI);
+    AreClose(expectedDiameter, diameter, 1e-9);
+}
+
+static void TestIrregularCsvBoundaryRoundTrip()
+{
+    var svc = new MBColumn.Application.Services.ImportExport.IrregularSectionCsvService();
+    var rows = new List<MBColumn.Application.DTOs.ImportExport.IrregularBoundaryPointCsvDto>
+    {
+        new(1, -300, -250),
+        new(2,  300, -250),
+        new(3,  350,    0),
+        new(4,  250,  300),
+        new(5, -250,  300),
+        new(6, -350,    0)
+    };
+    var text = svc.SerializeBoundary(rows);
+    var parsed = svc.ParseBoundary(text);
+    IsTrue(parsed.Count == rows.Count);
+    for (int i = 0; i < rows.Count; i++)
+    {
+        IsTrue(parsed[i].PtIndex == rows[i].PtIndex);
+        AreClose(parsed[i].X, rows[i].X, 1e-12);
+        AreClose(parsed[i].Y, rows[i].Y, 1e-12);
+    }
+}
+
+static void TestIrregularCsvRebarRoundTrip()
+{
+    var svc = new MBColumn.Application.Services.ImportExport.IrregularSectionCsvService();
+    var rows = new List<MBColumn.Application.DTOs.ImportExport.IrregularRebarCsvDto>
+    {
+        new("B1", -250, -200, "T20", null),
+        new("B2",  250, -200, "T20", null),
+        new("B3",  250,  200, "T25", null),
+        new("B4", -250,  200, null, 491.0)
+    };
+    var text = svc.SerializeRebars(rows);
+    var parsed = svc.ParseRebars(text);
+    IsTrue(parsed.Count == rows.Count);
+    for (int i = 0; i < rows.Count; i++)
+    {
+        IsTrue(parsed[i].RebarIndex == rows[i].RebarIndex);
+        AreClose(parsed[i].X, rows[i].X, 1e-12);
+        AreClose(parsed[i].Y, rows[i].Y, 1e-12);
+        IsTrue((parsed[i].BarSize ?? "") == (rows[i].BarSize ?? ""));
+        bool aMatch = (parsed[i].AreaMm2 ?? -1) == (rows[i].AreaMm2 ?? -1)
+                      || Math.Abs((parsed[i].AreaMm2 ?? 0) - (rows[i].AreaMm2 ?? 0)) < 1e-9;
+        IsTrue(aMatch);
+    }
+}
+
+static void TestIrregularCsvIgnoresMetadata()
+{
+    var svc = new MBColumn.Application.Services.ImportExport.IrregularSectionCsvService();
+    string text = "# MBColumnCsvVersion=1\n# DataType=IrregularBoundary\n# CoordinateUnit=mm\nptIndex,X,Y\n1,0,0\n\n2,100,0\n3,50,100\n";
+    var parsed = svc.ParseBoundary(text);
+    IsTrue(parsed.Count == 3);
+    AreClose(parsed[1].X, 100, 1e-12);
+}
+
+static void TestIrregularCsvRejectsWrongHeader()
+{
+    var svc = new MBColumn.Application.Services.ImportExport.IrregularSectionCsvService();
+    string text = "idx,X,Y\n1,0,0\n";
+    Throws(() => svc.ParseBoundary(text));
+}
+
+static void TestIrregularCsvReportsInvalidNumbers()
+{
+    var svc = new MBColumn.Application.Services.ImportExport.IrregularSectionCsvService();
+    string text = "ptIndex,X,Y\n1,abc,0\n";
+    try { svc.ParseBoundary(text); }
+    catch (FormatException ex)
+    {
+        IsTrue(ex.Message.Contains("row") && ex.Message.Contains("X"));
+        return;
+    }
+    throw new InvalidOperationException("Expected FormatException with row/column context.");
+}
+
+static void TestIrregularCsvExportNoClosingPoint()
+{
+    var svc = new MBColumn.Application.Services.ImportExport.IrregularSectionCsvService();
+    var rows = new List<MBColumn.Application.DTOs.ImportExport.IrregularBoundaryPointCsvDto>
+    {
+        new(1, 0, 0),
+        new(2, 100, 0),
+        new(3, 50, 100)
+    };
+    var text = svc.SerializeBoundary(rows);
+    int rowCount = text.Split('\n').Count(l => l.Length > 0 && !l.StartsWith('#') && !l.StartsWith("ptIndex"));
+    IsTrue(rowCount == 3);
+}
+
+static MBColumn.Application.DTOs.IrregularSectionInputDto BuildSquareIrregularInput()
+{
+    var boundary = new List<MBColumn.Application.DTOs.IrregularBoundaryPointDto>
+    {
+        new(1, -350, -350),
+        new(2, -350,  350),
+        new(3,  350,  350),
+        new(4,  350, -350)
+    };
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", -270, -270, null, 491.0),
+        new("B2",  270, -270, null, 491.0),
+        new("B3",  270,  270, null, 491.0),
+        new("B4", -270,  270, null, 491.0)
+    };
+    return new MBColumn.Application.DTOs.IrregularSectionInputDto(boundary, bars, 55.0,
+        MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates);
+}
+
+static MBColumn.Application.DTOs.ColumnInputDto IrregularMetricInput(double pu = 2500, double mux = 250, double muy = 180)
+{
+    return MetricInput(pu, mux, muy) with
+    {
+        SectionShape = MBColumn.Domain.Enums.SectionShapeType.Irregular,
+        Irregular = BuildSquareIrregularInput(),
+        IntegrationMethod = MBColumn.Domain.Enums.SectionIntegrationMethod.Polygon
+    };
+}
+
+static void TestIrregularPolygonIntegrationSolves()
+{
+    var result = Service().Calculate(IrregularMetricInput());
+    IsTrue(result.Surface.Points.Count > 0);
+}
+
+static void TestIrregularPmmNoNan()
+{
+    var result = Service().Calculate(IrregularMetricInput());
+    foreach (var p in result.Surface.Points)
+    {
+        IsFalse(double.IsNaN(p.Pn) || double.IsInfinity(p.Pn));
+        IsFalse(double.IsNaN(p.Mnx) || double.IsInfinity(p.Mnx));
+        IsFalse(double.IsNaN(p.Mny) || double.IsInfinity(p.Mny));
+        IsFalse(double.IsNaN(p.Phi) || double.IsInfinity(p.Phi));
+    }
+}
+
+static void TestIrregularPureCompressionPositive()
+{
+    var result = Service().Calculate(IrregularMetricInput(pu: 1000, mux: 0, muy: 0));
+    IsTrue(result.Surface.Points.Max(p => p.PhiPn) > 0);
+}
+
+static void TestIrregularPureTensionNegative()
+{
+    var result = Service().Calculate(IrregularMetricInput(pu: -100, mux: 0, muy: 0));
+    IsTrue(result.Surface.Points.Min(p => p.PhiPn) < 0);
+}
+
+static void TestIrregularRatioFinite()
+{
+    var result = Service().Calculate(IrregularMetricInput());
+    IsFalse(double.IsNaN(result.Ratio) || double.IsInfinity(result.Ratio));
+}
+
+static void TestIrregularMapperShiftsToCentroid()
+{
+    // Offset square to confirm mapper shifts to centroid.
+    var boundary = new List<MBColumn.Application.DTOs.IrregularBoundaryPointDto>
+    {
+        new(1, 1000, 1000),
+        new(2, 1000, 1700),
+        new(3, 1700, 1700),
+        new(4, 1700, 1000)
+    };
+    var bars = new List<MBColumn.Application.DTOs.IrregularRebarInputDto>
+    {
+        new("B1", 1080, 1080, null, 491.0),
+        new("B2", 1620, 1080, null, 491.0),
+        new("B3", 1620, 1620, null, 491.0),
+        new("B4", 1080, 1620, null, 491.0)
+    };
+    var dto = new MBColumn.Application.DTOs.IrregularSectionInputDto(boundary, bars, 55.0,
+        MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates);
+    var mapper = new MBColumn.Application.Mappers.IrregularSectionMapper(new MBColumn.Application.Services.IrregularSectionValidationService());
+    var result = mapper.ValidateAndMap(dto, out var section, out _);
+    IsTrue(result.IsValid);
+    IsTrue(section is not null);
+    // Centroid of the shifted boundary must be at origin (within numerical tolerance).
+    double cx = section!.BoundaryPoints.Average(p => p.X);
+    double cy = section!.BoundaryPoints.Average(p => p.Y);
+    AreClose(cx, 0.0, 1e-6);
+    AreClose(cy, 0.0, 1e-6);
+    // Original coords preserved.
+    AreClose(section.BoundaryPointsOriginalMm[0].X, 1000, 1e-9);
+    AreClose(section.BoundaryPointsOriginalMm[0].Y, 1000, 1e-9);
+}
+
+static void TestIrregularResultExposesShape()
+{
+    var result = Service().Calculate(IrregularMetricInput());
+    IsTrue(result.SectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular);
+    IsTrue(result.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Polygon);
+}
+
+static void TestIrregularIntegratorBoundaryHandled()
+{
+    // Sanity check on NeutralAxisSweepStrategy.ProjectExtreme for irregular sections.
+    var boundary = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new(-100,  100),
+        new( 100,  100),
+        new( 100, -100)
+    };
+    var layout = new MBColumn.Domain.Entities.RebarLayout("Custom", "", 40, new List<MBColumn.Domain.Entities.Rebar>
+    {
+        new("A", 25.0, 491.0, 0, 0)
+    });
+    var section = new MBColumn.Domain.Entities.IrregularSection(
+        boundary,
+        boundary,
+        new MBColumn.Domain.Entities.Point2D(0, 0),
+        new MBColumn.Domain.Entities.Rect2D(-100, -100, 100, 100),
+        40000.0,
+        layout);
+    double max = MBColumn.Infrastructure.Solvers.NeutralAxisSweepStrategy.ProjectExtreme(section, 1.0, 0.0);
+    AreClose(max, 100.0, 1e-9);
+    double maxDiag = MBColumn.Infrastructure.Solvers.NeutralAxisSweepStrategy.ProjectExtreme(section, 1.0 / Math.Sqrt(2.0), 1.0 / Math.Sqrt(2.0));
+    AreClose(maxDiag, 100.0 * Math.Sqrt(2.0), 1e-9);
 }

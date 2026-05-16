@@ -69,6 +69,19 @@ public sealed class PolygonSectionIntegrator : ISectionIntegrator
 
     private Point[] GetBoundary(ColumnSection section, SolverSettings settings)
     {
+        if (section is IrregularSection irregular)
+        {
+            // Irregular polygons are unique per section instance — cache by identity hash.
+            string irregularKey = $"I:{irregular.GetHashCode():X}:{irregular.BoundaryPoints.Count}";
+            if (boundaryCache.TryGetValue(irregularKey, out var cachedIrregular))
+            {
+                return cachedIrregular;
+            }
+            var arr = irregular.BoundaryPoints.Select(p => new Point(p.X, p.Y)).ToArray();
+            boundaryCache[irregularKey] = arr;
+            return arr;
+        }
+
         string key = section is CircularSection circular
             ? $"C:{circular.DiameterMm:G17}:{settings.CirclePolygonSegmentCount}"
             : $"R:{section.WidthMm:G17}:{section.HeightMm:G17}";
