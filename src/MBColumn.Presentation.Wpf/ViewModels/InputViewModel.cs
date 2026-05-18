@@ -244,6 +244,7 @@ public sealed class InputViewModel : ViewModelBase
         set { if (value) SelectedSectionShape = SectionShapeType.Irregular; }
     }
     public ObservableCollection<PreviewRebarPoint> PreviewRebars { get; } = [];
+    public ObservableCollection<PreviewBoundaryPoint> PreviewBoundaryPoints { get; } = [];
     public ObservableCollection<LoadCaseViewModel> LoadCases { get; } = [];
     public ICommand AddLoadCaseCommand { get; }
     public ICommand DeleteLoadCaseCommand { get; }
@@ -341,17 +342,34 @@ public sealed class InputViewModel : ViewModelBase
     public void UpdateSectionPreview()
     {
         PreviewRebars.Clear();
+        PreviewBoundaryPoints.Clear();
         ClearSideWarnings();
         RebarLayoutWarning = "";
         Raise(nameof(HasRebarLayoutWarning));
         if (SelectedSectionShape == SectionShapeType.Irregular)
         {
-            // Irregular section preview is rendered by the dedicated irregular preview surface.
-            IsSectionPreviewValid = IrregularInput.BoundaryPoints.Count >= 3;
-            SectionPreviewErrorMessage = IsSectionPreviewValid ? "" : "Add at least 3 boundary points.";
+            bool valid = IrregularInput.BoundaryPoints.Count >= 3;
+            IsSectionPreviewValid = valid;
+            SectionPreviewErrorMessage = valid ? "" : "Add at least 3 boundary points.";
             SectionPreviewLabel = $"Irregular ({IrregularInput.BoundaryPoints.Count} pts)";
             RebarPreviewLabel = $"{IrregularInput.Rebars.Count} rebars";
             CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            if (valid)
+            {
+                foreach (var pt in IrregularInput.BoundaryPoints)
+                    PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(pt.X, pt.Y));
+
+                var xs = IrregularInput.BoundaryPoints.Select(p => p.X).ToList();
+                var ys = IrregularInput.BoundaryPoints.Select(p => p.Y).ToList();
+                double bboxCx = (xs.Min() + xs.Max()) / 2.0;
+                double bboxCy = (ys.Min() + ys.Max()) / 2.0;
+                foreach (var r in IrregularInput.Rebars)
+                {
+                    double area = r.AreaMm2 ?? 0;
+                    double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : 20.0;
+                    PreviewRebars.Add(new PreviewRebarPoint(r.X - bboxCx, r.Y - bboxCy, diam, r.BarSize ?? ""));
+                }
+            }
             return;
         }
         if (SelectedSectionShape == SectionShapeType.Circular)

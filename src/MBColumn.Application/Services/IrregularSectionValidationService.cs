@@ -11,6 +11,8 @@ public sealed class IrregularSectionValidationService : IIrregularSectionValidat
     public const double DuplicateToleranceMm = 1e-6;
     public const double BoundaryAreaToleranceMm2 = 1e-3;
     public const double InsidePolygonToleranceMm = 1e-3;
+    // Absorbs ~0.007 mm of arithmetic noise from 2 d.p. rounding + OffsetPolygon FP errors.
+    public const double CoverToleranceMm = 0.5;
 
     private readonly IRebarDatabase? metricBars;
     private readonly IRebarDatabase? imperialBars;
@@ -157,7 +159,7 @@ public sealed class IrregularSectionValidationService : IIrregularSectionValidat
             }
 
             double requiredClearance = coverMm + diameter / 2.0;
-            if (dist + InsidePolygonToleranceMm < requiredClearance)
+            if (dist + CoverToleranceMm < requiredClearance)
             {
                 issues.Add(new ValidationIssue("Rebar", row,
                     $"Rebar '{bar.RebarIndex}' violates cover. Distance to boundary {dist:F2} mm, required {requiredClearance:F2} mm.",

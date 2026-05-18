@@ -235,7 +235,8 @@
                             RebarLabel="{Binding RebarPreviewLabel}"
                             CoverLabel="{Binding CoverPreviewLabel}"
                             IsValid="{Binding IsSectionPreviewValid}"
-                            ErrorMessage="{Binding SectionPreviewErrorMessage}" />
+                            ErrorMessage="{Binding SectionPreviewErrorMessage}"
+                            BoundaryPoints="{Binding PreviewBoundaryPoints}" />
                     </StackPanel>
                 </Border>
 

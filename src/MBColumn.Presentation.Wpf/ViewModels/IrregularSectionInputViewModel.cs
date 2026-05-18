@@ -25,16 +25,17 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
         ClearRebarsCommand = new RelayCommand(() => Rebars.Clear());
         ReverseBoundaryCommand = new RelayCommand(ReverseBoundary);
 
-        LoadDefaultUShape();
+        LoadDefaultLShape();
     }
 
-    private void LoadDefaultUShape()
+    private void LoadDefaultLShape()
     {
-        // 600x600 U-Shape, 200mm thick
+        // L-shape: horiz leg 1000x400mm, vert leg 300x700mm, bbox centered at (0,0)
+        // Clockwise: top-left → top-right of vert → inner corner → top-right of horiz → bottom-right → bottom-left
         var points = new[]
         {
-            (-300.0, -300.0), (-300.0, 300.0), (-100.0, 300.0), (-100.0, -100.0),
-            (100.0, -100.0), (100.0, 300.0), (300.0, 300.0), (300.0, -300.0)
+            (-500.0, 350.0), (-200.0, 350.0), (-200.0, 50.0),
+            (500.0, 50.0), (500.0, -350.0), (-500.0, -350.0)
         };
 
         for (int i = 0; i < points.Length; i++)
@@ -42,13 +43,15 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
             BoundaryPoints.Add(new IrregularBoundaryPointViewModel { PtIndex = i + 1, X = points[i].Item1, Y = points[i].Item2 });
         }
 
-        // T20 rebars, Area = 314.16, 40mm cover -> inset by 40mm
+        // T20 rebars (Area = 314.16 mm²), 65mm from edge (cover 55mm + radius 10mm)
         var rebars = new[]
         {
-            (-260.0, -260.0), (0.0, -260.0), (260.0, -260.0),
-            (260.0, 0.0), (260.0, 260.0), (140.0, 260.0),
-            (140.0, -60.0), (0.0, -60.0), (-140.0, -60.0),
-            (-140.0, 260.0), (-260.0, 260.0), (-260.0, 0.0)
+            (-435.0, 285.0), (-265.0, 285.0),
+            (-265.0, -15.0),
+            (100.0, -15.0), (435.0, -15.0),
+            (435.0, -155.0), (435.0, -285.0),
+            (100.0, -285.0), (-100.0, -285.0), (-435.0, -285.0),
+            (-435.0, -155.0), (-435.0, 155.0)
         };
 
         for (int i = 0; i < rebars.Length; i++)

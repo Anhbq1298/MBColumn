@@ -20,6 +20,7 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public static readonly DependencyProperty CoverLabelProperty = DependencyProperty.Register(nameof(CoverLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty IsValidProperty = DependencyProperty.Register(nameof(IsValid), typeof(bool), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ErrorMessageProperty = DependencyProperty.Register(nameof(ErrorMessage), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("Invalid section input", FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty BoundaryPointsProperty = DependencyProperty.Register(nameof(BoundaryPoints), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public double SectionWidth { get => (double)GetValue(SectionWidthProperty); set => SetValue(SectionWidthProperty, value); }
     public double SectionHeight { get => (double)GetValue(SectionHeightProperty); set => SetValue(SectionHeightProperty, value); }
@@ -32,13 +33,24 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public string CoverLabel { get => (string)GetValue(CoverLabelProperty); set => SetValue(CoverLabelProperty, value); }
     public bool IsValid { get => (bool)GetValue(IsValidProperty); set => SetValue(IsValidProperty, value); }
     public string ErrorMessage { get => (string)GetValue(ErrorMessageProperty); set => SetValue(ErrorMessageProperty, value); }
+    public IEnumerable? BoundaryPoints { get => (IEnumerable?)GetValue(BoundaryPointsProperty); set => SetValue(BoundaryPointsProperty, value); }
 
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
         var borderPen = new Pen(new SolidColorBrush(IsValid ? Color.FromRgb(214, 222, 230) : Color.FromRgb(245, 158, 11)), IsValid ? 1 : 2);
         dc.DrawRoundedRectangle(Brushes.White, borderPen, new Rect(0, 0, ActualWidth, ActualHeight), 5, 5);
-        if (!IsValid || SectionWidth <= 0 || SectionHeight <= 0)
+        if (!IsValid)
+        {
+            DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(18, ActualHeight / 2 - 10), FontWeights.SemiBold);
+            return;
+        }
+        if (SectionShape == SectionShapeType.Irregular)
+        {
+            DrawIrregularSection(dc);
+            return;
+        }
+        if (SectionWidth <= 0 || SectionHeight <= 0)
         {
             DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(18, ActualHeight / 2 - 10), FontWeights.SemiBold);
             return;
@@ -113,6 +125,71 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             DrawDimension(dc, new Point(section.Left, section.Bottom + 16), new Point(section.Right, section.Bottom + 16), $"b = {SectionWidth:0.###} {UnitText}", text);
             DrawDimension(dc, new Point(section.Left - 18, section.Bottom), new Point(section.Left - 18, section.Top), $"h = {SectionHeight:0.###} {UnitText}", text, vertical: true);
         }
+    }
+
+    private void DrawIrregularSection(DrawingContext dc)
+    {
+        var bpts = BoundaryPoints?.OfType<PreviewBoundaryPoint>().ToList();
+
+        if (bpts == null || bpts.Count < 3) return;
+
+        double topText = 50, leftDim = 50, bottomDim = 42, rightPad = 24;
+        double minX = bpts.Min(p => p.X), maxX = bpts.Max(p => p.X);
+        double minY = bpts.Min(p => p.Y), maxY = bpts.Max(p => p.Y);
+        double bboxW = maxX - minX, bboxH = maxY - minY;
+        if (bboxW <= 0 || bboxH <= 0) return;
+
+        double scale = Math.Min((ActualWidth - leftDim - rightPad) / bboxW, (ActualHeight - topText - bottomDim) / bboxH);
+        if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0) return;
+
+        double sw = bboxW * scale, sh = bboxH * scale;
+        double x0 = leftDim + (ActualWidth - leftDim - rightPad - sw) / 2.0;
+        double y0 = topText + (ActualHeight - topText - bottomDim - sh) / 2.0;
+
+        double ToScreenX(double x) => x0 + (x - minX) * scale;
+        double ToScreenY(double y) => y0 + (maxY - y) * scale;
+
+        var navy = new SolidColorBrush(Color.FromRgb(0, 75, 133));
+        var darkNavy = new SolidColorBrush(Color.FromRgb(0, 58, 102));
+        var grey = new SolidColorBrush(Color.FromRgb(123, 135, 148));
+        var text = new SolidColorBrush(Color.FromRgb(31, 41, 51));
+        var red = new SolidColorBrush(Color.FromRgb(227, 27, 35));
+
+        DrawText(dc, SectionLabel, 13, text, new Point(14, 10), FontWeights.SemiBold);
+        DrawText(dc, RebarLabel, 12, darkNavy, new Point(14, 28), FontWeights.Normal);
+        DrawText(dc, CoverLabel, 12, grey, new Point(Math.Max(14, ActualWidth - 145), 28), FontWeights.Normal);
+
+        var fill = new SolidColorBrush(Color.FromRgb(244, 247, 250));
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
+        {
+            ctx.BeginFigure(new Point(ToScreenX(bpts[0].X), ToScreenY(bpts[0].Y)), true, true);
+            for (int i = 1; i < bpts.Count; i++)
+                ctx.LineTo(new Point(ToScreenX(bpts[i].X), ToScreenY(bpts[i].Y)), true, false);
+        }
+        dc.DrawGeometry(fill, new Pen(navy, 2), geo);
+
+        double bboxCx = (minX + maxX) / 2.0, bboxCy = (minY + maxY) / 2.0;
+        var center = new Point(ToScreenX(bboxCx), ToScreenY(bboxCy));
+
+        dc.DrawLine(new Pen(red, 1.2), center, new Point(center.X + Math.Min(34, sw / 4), center.Y));
+        dc.DrawLine(new Pen(navy, 1.2), center, new Point(center.X, center.Y - Math.Min(34, sh / 4)));
+        DrawArrow(dc, new Point(center.X + Math.Min(34, sw / 4), center.Y), 0, red);
+        DrawArrow(dc, new Point(center.X, center.Y - Math.Min(34, sh / 4)), -Math.PI / 2, navy);
+        DrawText(dc, "x", 10, red, new Point(center.X + Math.Min(38, sw / 4) + 2, center.Y - 8), FontWeights.SemiBold);
+        DrawText(dc, "y", 10, navy, new Point(center.X + 5, center.Y - Math.Min(42, sh / 4) - 8), FontWeights.SemiBold);
+        dc.DrawLine(new Pen(text, 1), new Point(center.X - 5, center.Y), new Point(center.X + 5, center.Y));
+        dc.DrawLine(new Pen(text, 1), new Point(center.X, center.Y - 5), new Point(center.X, center.Y + 5));
+
+        foreach (var item in Rebars?.OfType<PreviewRebarPoint>() ?? [])
+        {
+            var pt = new Point(center.X + item.X * scale, center.Y - item.Y * scale);
+            double r = Math.Max(3.0, item.Diameter * scale / 2.0);
+            dc.DrawEllipse(darkNavy, new Pen(Brushes.White, 0.8), pt, r, r);
+        }
+
+        DrawDimension(dc, new Point(x0, y0 + sh + 16), new Point(x0 + sw, y0 + sh + 16), $"b = {bboxW:0.###} mm", text);
+        DrawDimension(dc, new Point(x0 - 18, y0 + sh), new Point(x0 - 18, y0), $"h = {bboxH:0.###} mm", text, vertical: true);
     }
 
     private string UnitText => UnitSystem == UnitSystem.Metric ? "mm" : "in";
