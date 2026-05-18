@@ -13,6 +13,8 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
     private IrregularRebarModeType rebarMode = IrregularRebarModeType.CustomCoordinates;
     private string boundaryValidationMessage = "";
     private string rebarValidationMessage = "";
+    private string barSize = "T25";
+    private double spacing = 150.0;
 
     public IrregularSectionInputViewModel(IIrregularSectionCsvService csv)
     {
@@ -68,7 +70,13 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
     public IrregularRebarModeType RebarMode
     {
         get => rebarMode;
-        set => Set(ref rebarMode, value);
+        set
+        {
+            if (System.Collections.Generic.EqualityComparer<IrregularRebarModeType>.Default.Equals(rebarMode, value)) return;
+            rebarMode = value;
+            Raise();
+            Raise(nameof(IsEqualSpacing));
+        }
     }
 
     public string BoundaryValidationMessage
@@ -82,6 +90,20 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
         get => rebarValidationMessage;
         set => Set(ref rebarValidationMessage, value);
     }
+
+    public string BarSize
+    {
+        get => barSize;
+        set => Set(ref barSize, value);
+    }
+
+    public double Spacing
+    {
+        get => spacing;
+        set => Set(ref spacing, value);
+    }
+
+    public bool IsEqualSpacing => RebarMode == IrregularRebarModeType.EqualSpacing;
 
     public ICommand ClearBoundaryCommand { get; }
     public ICommand ClearRebarsCommand { get; }
@@ -155,4 +177,12 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
             BoundaryPoints.Add(p);
         }
     }
+
+    public System.Collections.Generic.IReadOnlyList<IrregularRebarModeOption> RebarModeOptions { get; } =
+    [
+        new(IrregularRebarModeType.CustomCoordinates, "Custom Coordinates"),
+        new(IrregularRebarModeType.EqualSpacing, "Equal Spacing")
+    ];
 }
+
+public sealed record IrregularRebarModeOption(IrregularRebarModeType Type, string DisplayName);

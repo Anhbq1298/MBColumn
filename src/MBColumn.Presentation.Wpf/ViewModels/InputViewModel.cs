@@ -8,6 +8,9 @@ using MBColumn.Presentation.Wpf.Commands;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Linq;
+using MBColumn.Application.Services.Geometry;
+using MBColumn.Domain.Entities;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
@@ -66,9 +69,11 @@ public sealed class InputViewModel : ViewModelBase
         DeleteLoadCaseCommand = new RelayCommand<LoadCaseViewModel>(DeleteLoadCase);
         DeleteSelectedLoadCasesCommand = new RelayCommand<object>(DeleteSelectedLoadCases);
         RemoveDuplicateLoadCasesCommand = new RelayCommand(RemoveDuplicateLoadCases);
+        GenerateIrregularRebarsCommand = new RelayCommand(GenerateIrregularRebars);
     }
 
     public IReadOnlyList<UnitSystem> UnitSystems { get; } = [UnitSystem.Metric, UnitSystem.Imperial];
+    public ICommand GenerateIrregularRebarsCommand { get; }
     public IReadOnlyList<DesignCodeOption> DesignCodes { get; } =
     [
         new(DesignCodeType.Aci318Style, "ACI 318"),
@@ -628,6 +633,109 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
+    }
+
+    private void GenerateIrregularRebars()
+    {
+        if (IrregularInput.BoundaryPoints.Count < 3)
+        {
+            IrregularInput.RebarValidationMessage = "Boundary points must be defined before generating rebars.";
+            return;
+        }
+
+        if (Cover <= 0)
+        {
+            IrregularInput.RebarValidationMessage = "Clear cover must be greater than zero.";
+            return;
+        }
+
+        var available = AvailableBars;
+        var selectedBar = available.FirstOrDefault(b => string.Equals(b.Name, IrregularInput.BarSize, System.StringComparison.OrdinalIgnoreCase));
+        if (selectedBar == null)
+        {
+            IrregularInput.RebarValidationMessage = "Invalid bar size selected.";
+            return;
+        }
+
+        double spacing = IrregularInput.Spacing;
+        if (spacing <= 0)
+        {
+            IrregularInput.RebarValidationMessage = "Spacing must be greater than zero.";
+            return;
+        }
+
+        // Convert boundary points to Point2D list
+        var boundary = IrregularInput.BoundaryPoints.Select(p => new Point2D(p.X, p.Y)).ToList();
+        
+        // Compute offset distance: cover + barDiameter / 2
+        double barDiameter = selectedBar.DiameterMm;
+        
+        // Cover is in current unit system. Convert to mm if imperial.
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double coverMm = Cover * factor;
+        double spacingMm = spacing * factor;
+        double offsetMm = coverMm + barDiameter / 2.0;
+
+        // Offset the boundary polygon
+        System.Collections.Generic.IReadOnlyList<Point2D> insetPolygon;
+        try
+        {
+            insetPolygon = PolygonGeometry.OffsetPolygon(boundary, offsetMm);
+        }
+        catch (System.Exception ex)
+        {
+            IrregularInput.RebarValidationMessage = $"Failed to offset polygon: {ex.Message}";
+            return;
+        }
+
+        if (insetPolygon == null || insetPolygon.Count < 3)
+        {
+            IrregularInput.RebarValidationMessage = "Lớp bảo vệ (Cover) quá lớn làm co đa giác về rỗng hoặc không hợp lệ.";
+            return;
+        }
+
+        // Generate rebars along the inset polygon
+        IrregularInput.Rebars.Clear();
+        int rebarIndex = 1;
+
+        int n = insetPolygon.Count;
+        for (int i = 0; i < n; i++)
+        {
+            var pStart = insetPolygon[i];
+            var pEnd = insetPolygon[(i + 1) % n];
+
+            double dx = pEnd.X - pStart.X;
+            double dy = pEnd.Y - pStart.Y;
+            double len = System.Math.Sqrt(dx * dx + dy * dy);
+
+            // Number of segments to divide this edge into based on spacing
+            int segments = (int)System.Math.Max(1, System.Math.Ceiling(len / spacingMm));
+            
+            // Generate rebars along the edge, excluding the end point because it's the start of the next edge
+            for (int j = 0; j < segments; j++)
+            {
+                double t = (double)j / segments;
+                double rx = pStart.X + t * dx;
+                double ry = pStart.Y + t * dy;
+
+                // Convert back from mm to user units if imperial
+                double rxUser = rx / factor;
+                double ryUser = ry / factor;
+
+                IrregularInput.Rebars.Add(new IrregularRebarRowViewModel
+                {
+                    RebarIndex = rebarIndex.ToString(),
+                    X = System.Math.Round(rxUser, 2),
+                    Y = System.Math.Round(ryUser, 2),
+                    BarSize = selectedBar.Name,
+                    AreaMm2 = selectedBar.AreaMm2
+                });
+                rebarIndex++;
+            }
+        }
+
+        IrregularInput.RebarValidationMessage = "";
+        UpdateSectionPreview();
     }
 }
 

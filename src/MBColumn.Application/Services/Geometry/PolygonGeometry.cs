@@ -152,4 +152,71 @@ public static class PolygonGeometry
 
     private static double Cross(Point2D a, Point2D b, Point2D c)
         => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+
+    public static IReadOnlyList<Point2D> OffsetPolygon(IReadOnlyList<Point2D> polygon, double offset)
+    {
+        if (polygon.Count < 3) return [.. polygon];
+        if (SMath.Abs(offset) < 1e-6) return [.. polygon];
+
+        bool isClockwise = IsClockwise(polygon);
+        int n = polygon.Count;
+        var offsetPoints = new List<Point2D>(n);
+
+        for (int i = 0; i < n; i++)
+        {
+            int prev = (i - 1 + n) % n;
+            int next = (i + 1) % n;
+
+            var pPrev = polygon[prev];
+            var pI = polygon[i];
+            var pNext = polygon[next];
+
+            // Unit vector of edge (prev -> i)
+            double dx1 = pI.X - pPrev.X;
+            double dy1 = pI.Y - pPrev.Y;
+            double len1 = SMath.Sqrt(dx1 * dx1 + dy1 * dy1);
+            if (len1 > 1e-9) { dx1 /= len1; dy1 /= len1; }
+
+            // Unit vector of edge (i -> next)
+            double dx2 = pNext.X - pI.X;
+            double dy2 = pNext.Y - pI.Y;
+            double len2 = SMath.Sqrt(dx2 * dx2 + dy2 * dy2);
+            if (len2 > 1e-9) { dx2 /= len2; dy2 /= len2; }
+
+            // Inward normal vectors (assuming positive offset means inward)
+            double nx1, ny1, nx2, ny2;
+            if (isClockwise)
+            {
+                nx1 = dy1; ny1 = -dx1;
+                nx2 = dy2; ny2 = -dx2;
+            }
+            else
+            {
+                nx1 = -dy1; ny1 = dx1;
+                nx2 = -dy2; ny2 = dx2;
+            }
+
+            // Offset lines
+            // L1: P1 + t * D1
+            double p1x = pPrev.X + offset * nx1;
+            double p1y = pPrev.Y + offset * ny1;
+            // L2: P2 + s * D2
+            double p2x = pI.X + offset * nx2;
+            double p2y = pI.Y + offset * ny2;
+
+            double cross = dx1 * dy2 - dy1 * dx2;
+            if (SMath.Abs(cross) < 1e-6)
+            {
+                // Parallel edges, no clear intersection, just use offset point
+                offsetPoints.Add(new Point2D(pI.X + offset * nx1, pI.Y + offset * ny1));
+            }
+            else
+            {
+                double t = ((p2x - p1x) * dy2 - (p2y - p1y) * dx2) / cross;
+                offsetPoints.Add(new Point2D(p1x + t * dx1, p1y + t * dy1));
+            }
+        }
+
+        return offsetPoints;
+    }
 }
