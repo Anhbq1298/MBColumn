@@ -275,6 +275,10 @@
                                          GroupName="SectionShape"
                                          IsChecked="{Binding IsCircularSection}"
                                          Style="{StaticResource SectionShapeRadioStyle}" />
+                            <RadioButton Content="Irregular"
+                                         GroupName="SectionShape"
+                                         IsChecked="{Binding IsIrregularSection}"
+                                         Style="{StaticResource SectionShapeRadioStyle}" />
                         </DockPanel>
                     </GroupBox.Header>
 
@@ -311,6 +315,30 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Diameter D" Style="{StaticResource FieldLabelTextStyle}" />
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LengthLabel}" Style="{StaticResource UnitTextStyle}" />
                             <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Diameter, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+
+                        <Grid Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}" DataContext="{Binding IrregularInput}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Text="Boundary Points (Clockwise)" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,8"/>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding BoundaryPoints}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True" MaxHeight="200" Margin="0,0,0,8">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Pt" Binding="{Binding PtIndex, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            
+                            <WrapPanel Grid.Row="2">
+                                <Button Content="Clear" Command="{Binding ClearBoundaryCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Padding="10,4" />
+                                <Button Content="Reverse" Command="{Binding ReverseBoundaryCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Padding="10,4" />
+                                <Button Content="Import..." Click="ImportBoundary_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Padding="10,4" />
+                                <Button Content="Export..." Click="ExportBoundary_Click" Style="{StaticResource SecondaryButtonStyle}" Padding="10,4" />
+                            </WrapPanel>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -431,6 +459,31 @@
                                 <TextBox Grid.Row="3" Grid.Column="4" DataContext="{Binding RebarLayout.Right}" Text="{Binding Cover, Mode=OneWay, StringFormat=F3}" Style="{StaticResource SideReadOnlyTextBoxStyle}" />
                             </Grid>
                         </ScrollViewer>
+
+                        <Grid Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}" DataContext="{Binding IrregularInput}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Text="Rebar Coordinates" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,8"/>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding Rebars}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True" MaxHeight="200" Margin="0,0,0,8">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Index" Binding="{Binding RebarIndex, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Area" Binding="{Binding AreaMm2, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Size" Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            
+                            <WrapPanel Grid.Row="2">
+                                <Button Content="Clear" Command="{Binding ClearRebarsCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Padding="10,4" />
+                                <Button Content="Import..." Click="ImportRebar_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Padding="10,4" />
+                                <Button Content="Export..." Click="ExportRebar_Click" Style="{StaticResource SecondaryButtonStyle}" Padding="10,4" />
+                            </WrapPanel>
+                        </Grid>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
