@@ -22,6 +22,44 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
         ClearBoundaryCommand = new RelayCommand(() => BoundaryPoints.Clear());
         ClearRebarsCommand = new RelayCommand(() => Rebars.Clear());
         ReverseBoundaryCommand = new RelayCommand(ReverseBoundary);
+
+        LoadDefaultUShape();
+    }
+
+    private void LoadDefaultUShape()
+    {
+        // 600x600 U-Shape, 200mm thick
+        var points = new[]
+        {
+            (-300.0, -300.0), (-300.0, 300.0), (-100.0, 300.0), (-100.0, -100.0),
+            (100.0, -100.0), (100.0, 300.0), (300.0, 300.0), (300.0, -300.0)
+        };
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            BoundaryPoints.Add(new IrregularBoundaryPointViewModel { PtIndex = i + 1, X = points[i].Item1, Y = points[i].Item2 });
+        }
+
+        // T20 rebars, Area = 314.16, 40mm cover -> inset by 40mm
+        var rebars = new[]
+        {
+            (-260.0, -260.0), (0.0, -260.0), (260.0, -260.0),
+            (260.0, 0.0), (260.0, 260.0), (140.0, 260.0),
+            (140.0, -60.0), (0.0, -60.0), (-140.0, -60.0),
+            (-140.0, 260.0), (-260.0, 260.0), (-260.0, 0.0)
+        };
+
+        for (int i = 0; i < rebars.Length; i++)
+        {
+            Rebars.Add(new IrregularRebarRowViewModel
+            {
+                RebarIndex = (i + 1).ToString(),
+                X = rebars[i].Item1,
+                Y = rebars[i].Item2,
+                AreaMm2 = 314.16,
+                BarSize = "T20"
+            });
+        }
     }
 
     public ObservableCollection<IrregularBoundaryPointViewModel> BoundaryPoints { get; }
