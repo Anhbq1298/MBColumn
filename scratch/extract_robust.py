@@ -37,10 +37,10 @@ def extract_robust(docx_path):
     return results
 
 if __name__ == "__main__":
-    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\s-conc\Gemini_NvsM_Test_Package_v2.docx"
+    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\ref\Gemini_NvsM_Test_Package_v2.docx"
     data = extract_robust(path)
-    
-    with open(r"C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\spColumnReversed-Solution\tests\MBColumn.Tests\benchmark_multi_angle.json", "w") as f:
+
+    with open(r"C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\refReversed-Solution\tests\MBColumn.Tests\benchmark_multi_angle.json", "w") as f:
         json.dump(data, f, indent=2)
         
     print(f"Angles found: {sorted(data.keys())}")

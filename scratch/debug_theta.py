@@ -13,7 +13,7 @@ def list_all_theta(docx_path):
     return found
 
 if __name__ == "__main__":
-    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\s-conc\Gemini_NvsM_Test_Package_v2.docx"
+    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\ref\Gemini_NvsM_Test_Package_v2.docx"
     info = list_all_theta(path)
     for t, n in info:
         print(f"[{t}] -> {n}")

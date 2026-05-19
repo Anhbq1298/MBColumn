@@ -52,7 +52,7 @@ TestResult.xml
 # Project-specific ignores for GitHub visibility
 # Keep only src/ and docs/ visible; ignore others
 # The main unit test project is explicitly included.
-tests/VerifySpColumn/
+tests/VerifyRef/
 tools/
 scratch/
 reports/

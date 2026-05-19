@@ -6,15 +6,15 @@ using MBColumn.Infrastructure.Solvers;
 CultureInfo.CurrentCulture   = CultureInfo.InvariantCulture;
 CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
 
-const string SConcreteFile = @"C:\Users\NCPC\Desktop\_ReverseEngineering\NvsM-slenderness-Sconcrete.TXT";
+const string RefFile = @"C:\Users\NCPC\Desktop\_ReverseEngineering\NvsM-slenderness-ref.TXT";
 
 var root      = FindRepositoryRoot();
 var outputDir = Path.Combine(root, "docs", "validation");
 Directory.CreateDirectory(outputDir);
 
-// 1. Parse S-CONCRETE reference ------------------------------------------------
-var scBlocks = ParseSConcrete(SConcreteFile);
-Console.WriteLine($"Parsed {scBlocks.Count} theta blocks ({scBlocks.Sum(b => b.Points.Count)} points).");
+// 1. Parse ref reference ------------------------------------------------
+var refBlocks = ParseRef(RefFile);
+Console.WriteLine($"Parsed {refBlocks.Count} theta blocks ({refBlocks.Sum(b => b.Points.Count)} points).");
 
 // 2. Build section and run solver -----------------------------------------------
 var section  = BuildSection();
@@ -32,7 +32,7 @@ Console.WriteLine($"Solver done: {surface.Points.Count} points, {surface.Points.
 
 // 3. Full comparison ------------------------------------------------------------
 var rows = new List<CompRow>();
-foreach (var blk in scBlocks)
+foreach (var blk in refBlocks)
 {
     foreach (var pt in blk.Points)
     {
@@ -40,28 +40,28 @@ foreach (var blk in scBlocks)
         var ip   = InterpolateAtThetaAxial(surface, blk.ThetaDeg, mbN);
         double mbM = Math.Sqrt(ip.Mnx * ip.Mnx + ip.Mny * ip.Mny) / 1_000_000.0; // N·mm → kNm
 
-        double scM    = pt.MomentKnM;
-        double absDiff = Math.Abs(mbM - scM);
-        double pct     = scM < 1.0 ? double.NaN : absDiff / scM * 100.0;
+        double refM    = pt.MomentKnM;
+        double absDiff = Math.Abs(mbM - refM);
+        double pct     = refM < 1.0 ? double.NaN : absDiff / refM * 100.0;
 
-        rows.Add(new CompRow(blk.ThetaDeg, pt.AxialKn, mbN / 1_000.0, scM, mbM, absDiff, pct));
+        rows.Add(new CompRow(blk.ThetaDeg, pt.AxialKn, mbN / 1_000.0, refM, mbM, absDiff, pct));
     }
 }
 
 // 4. Write outputs --------------------------------------------------------------
-var reportPath = Path.Combine(outputDir, "ec2-fiber-pmm-sconcrete-verification.txt");
-WriteReport(reportPath, scBlocks, rows, SConcreteFile, section);
-WriteSurfaceCsv(Path.Combine(outputDir, "ec2-fiber-pmm-sconcrete-generated-curves.csv"), surface);
+var reportPath = Path.Combine(outputDir, "ec2-fiber-pmm-ref-verification.txt");
+WriteReport(reportPath, refBlocks, rows, RefFile, section);
+WriteSurfaceCsv(Path.Combine(outputDir, "ec2-fiber-pmm-ref-generated-curves.csv"), surface);
 Console.WriteLine($"Report   → {reportPath}");
 
 // ==============================================================================
 // Parsing
 // ==============================================================================
 
-static List<ScBlock> ParseSConcrete(string path)
+static List<RefBlock> ParseRef(string path)
 {
-    var blocks  = new List<ScBlock>();
-    ScBlock? cur = null;
+    var blocks  = new List<RefBlock>();
+    RefBlock? cur = null;
     foreach (var raw in File.ReadLines(path))
     {
         var line = raw.Trim();
@@ -70,7 +70,7 @@ static List<ScBlock> ParseSConcrete(string path)
             var toks = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
             if (int.TryParse(toks[^1], out int theta))
             {
-                cur = new ScBlock(theta);
+                cur = new RefBlock(theta);
                 blocks.Add(cur);
             }
             continue;
@@ -80,7 +80,7 @@ static List<ScBlock> ParseSConcrete(string path)
         if (parts.Length != 2) continue;
         if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double axial)) continue;
         if (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double moment)) continue;
-        cur.Points.Add(new ScPoint(axial, Math.Abs(moment)));
+        cur.Points.Add(new RefPoint(axial, Math.Abs(moment)));
     }
     return blocks;
 }
@@ -102,18 +102,18 @@ static RectangularSection BuildSection()
         (-237.5, -337.5), (-118.75, -337.5), (0.0, -337.5), (118.75, -337.5), (237.5, -337.5)
     ];
     var bars = coords.Select((p, i) => new Rebar($"B{i + 1:00}", d, a, p.X, p.Y)).ToList();
-    return new RectangularSection(600.0, 800.0, new RebarLayout("S-CONCRETE 16H25", "H25", 62.5, bars));
+    return new RectangularSection(600.0, 800.0, new RebarLayout("ref 16H25", "H25", 62.5, bars));
 }
 
 // ==============================================================================
 // Interpolation
 // ==============================================================================
 
-static InteractionPoint InterpolateAtThetaAxial(InteractionSurface surface, int scTheta, double targetN)
+static InteractionPoint InterpolateAtThetaAxial(InteractionSurface surface, int refTheta, double targetN)
 {
     const int angleCount = 72;   // 360 / 5
-    // solver_angle = (90 - SC_theta) mod 360
-    double sa    = ((90.0 - scTheta) % 360.0 + 360.0) % 360.0;
+    // solver_angle = (90 - ref_theta) mod 360
+    double sa    = ((90.0 - refTheta) % 360.0 + 360.0) % 360.0;
     double exact = sa / 5.0;
     int    lo    = (int)Math.Floor(exact) % angleCount;
     int    hi    = (lo + 1) % angleCount;
@@ -168,13 +168,13 @@ static double V(double a, double b, double t) => a + (b - a) * t;
 // Report
 // ==============================================================================
 
-static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
-                        string scFile, RectangularSection section)
+static void WriteReport(string path, List<RefBlock> refBlocks, List<CompRow> rows,
+                        string refFile, RectangularSection section)
 {
     var sb = new StringBuilder();
 
     // ---- Title ----
-    sb.AppendLine("MBColumn EC2 Fiber PMM vs S-CONCRETE – Full Curve Verification");
+    sb.AppendLine("MBColumn EC2 Fiber PMM vs ref – Full Curve Verification");
     sb.AppendLine("================================================================");
     sb.AppendLine($"Generated : {DateTime.Now:yyyy-MM-dd HH:mm}");
     sb.AppendLine();
@@ -215,33 +215,33 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine();
 
     // ---- 3. Reference file ----
-    sb.AppendLine("3. S-CONCRETE REFERENCE FILE");
+    sb.AppendLine("3. ref REFERENCE FILE");
     sb.AppendLine("-----------------------------");
-    sb.AppendLine($"  Path     : {scFile}");
-    sb.AppendLine("  Software : S-CONCRETE 2024.1.0 – Rectangular Column N vs M Diagram");
+    sb.AppendLine($"  Path     : {refFile}");
+    sb.AppendLine("  Software : ref 2024.1.0 – Rectangular Column N vs M Diagram");
     sb.AppendLine("  Date     : May 10 2026");
-    sb.AppendLine("  Nr(max)  : -12 113.26 kN  (compression NEGATIVE in S-CONCRETE)");
-    sb.AppendLine($"  Thetas   : {string.Join(", ", scBlocks.Select(b => b.ThetaDeg + "°"))}");
-    sb.AppendLine($"  Points   : {scBlocks.First().Points.Count} per theta block");
+    sb.AppendLine("  Nr(max)  : -12 113.26 kN  (compression NEGATIVE in ref)");
+    sb.AppendLine($"  Thetas   : {string.Join(", ", refBlocks.Select(b => b.ThetaDeg + "°"))}");
+    sb.AppendLine($"  Points   : {refBlocks.First().Points.Count} per theta block");
     sb.AppendLine();
 
     // ---- 4. Sign convention and angle map ----
     sb.AppendLine("4. SIGN CONVENTION AND ANGLE MAPPING");
     sb.AppendLine("-------------------------------------");
-    sb.AppendLine("  S-CONCRETE : compression N is NEGATIVE, moment M is always positive (magnitude).");
+    sb.AppendLine("  ref        : compression N is NEGATIVE, moment M is always positive (magnitude).");
     sb.AppendLine("  MBColumn   : compression N is POSITIVE internally.");
-    sb.AppendLine("  Conversion : MB_N = −SC_N  (sign flip, same magnitude).");
+    sb.AppendLine("  Conversion : MB_N = −Ref_N  (sign flip, same magnitude).");
     sb.AppendLine();
-    sb.AppendLine("  S-CONCRETE theta = angle of moment resultant (°):");
+    sb.AppendLine("  ref theta = angle of moment resultant (°):");
     sb.AppendLine("    theta=0   → pure Mx bending, neutral axis horizontal → solver_angle=90°");
     sb.AppendLine("    theta=90  → pure My bending, neutral axis vertical   → solver_angle=0°");
     sb.AppendLine("    theta=180 → symmetric to 0°                          → solver_angle=270°");
     sb.AppendLine("    theta=270 → symmetric to 90°                         → solver_angle=180°");
-    sb.AppendLine("  solver_angle = (90 − SC_theta + 360) mod 360");
+    sb.AppendLine("  solver_angle = (90 − Ref_theta + 360) mod 360");
     sb.AppendLine();
-    sb.AppendLine("  SC_theta  Solver_angle  On 5° grid  Interpolation");
-    sb.AppendLine("  --------  ------------  ----------  ---------------------------------");
-    foreach (var blk in scBlocks)
+    sb.AppendLine("  Ref_theta  Solver_angle  On 5° grid  Interpolation");
+    sb.AppendLine("  ---------  ------------  ----------  ---------------------------------");
+    foreach (var blk in refBlocks)
     {
         double sa   = ((90.0 - blk.ThetaDeg) % 360.0 + 360.0) % 360.0;
         bool aligned = sa % 5.0 < 1e-9;
@@ -259,8 +259,8 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("  MB resultant moment = sqrt(Mnx² + Mny²)  [kNm]");
     sb.AppendLine("  This equals |Mnx| for theta=0/180 and |Mny| for theta=90/270 by symmetry.");
     sb.AppendLine("  For biaxial angles (16,75,106,153,207,252,293,351°) the resultant is used");
-    sb.AppendLine("  because S-CONCRETE 'Normal Moment' is the resultant of Mx and My.");
-    sb.AppendLine("  Points with SC_M < 1 kNm (max compression row, M≈0) are excluded from");
+    sb.AppendLine("  because ref 'Normal Moment' is the resultant of Mx and My.");
+    sb.AppendLine("  Points with Ref_M < 1 kNm (max compression row, M≈0) are excluded from");
     sb.AppendLine("  percentage statistics but shown in the table.");
     sb.AppendLine();
 
@@ -269,12 +269,12 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("--------------------------");
     sb.AppendLine();
 
-    var byTheta = rows.GroupBy(r => r.ScTheta).OrderBy(g => g.Key).ToList();
+    var byTheta = rows.GroupBy(r => r.RefTheta).OrderBy(g => g.Key).ToList();
     foreach (var g in byTheta)
     {
         int    theta    = g.Key;
         var    tRows    = g.ToList();
-        var    valid    = tRows.Where(r => !double.IsNaN(r.Pct) && r.ScM >= 1.0).ToList();
+        var    valid    = tRows.Where(r => !double.IsNaN(r.Pct) && r.RefM >= 1.0).ToList();
         double maxPct   = valid.Count > 0 ? valid.Max(r => r.Pct)     : 0;
         double avgPct   = valid.Count > 0 ? valid.Average(r => r.Pct) : 0;
         double maxAbs   = valid.Count > 0 ? valid.Max(r => r.Abs)     : 0;
@@ -284,30 +284,30 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
         sb.AppendLine($"  ── Theta = {theta}°  (solver angle {sa:F1}°)  ──  Status: {status}");
         sb.AppendLine($"     Max {maxPct:F2}%  Avg {avgPct:F2}%  MaxAbs {maxAbs:F2} kNm");
         sb.AppendLine();
-        sb.AppendLine($"     {"SC_N(kN)",11}  {"SC_M(kNm)",11}  {"MB_N(kN)",11}  {"MB_M(kNm)",11}  {"Abs(kNm)",9}  {"Diff%",7}  Status");
+        sb.AppendLine($"     {"Ref_N(kN)",11}  {"Ref_M(kNm)",11}  {"MB_N(kN)",11}  {"MB_M(kNm)",11}  {"Abs(kNm)",9}  {"Diff%",7}  Status");
         sb.AppendLine($"     {new string('-',11)}  {new string('-',11)}  {new string('-',11)}  {new string('-',11)}  {new string('-',9)}  {new string('-',7)}  ------");
         foreach (var row in tRows)
         {
-            string st  = double.IsNaN(row.Pct) || row.ScM < 1.0
+            string st  = double.IsNaN(row.Pct) || row.RefM < 1.0
                 ? "skip(M≈0)"
                 : row.Pct <= 3 ? "good" : row.Pct <= 5 ? "acceptable" : "investigate";
             string pct = double.IsNaN(row.Pct) ? "      -" : $"{row.Pct,7:F2}%";
-            sb.AppendLine($"     {row.ScN,11:F3}  {row.ScM,11:F3}  {row.MbN,11:F3}  {row.MbM,11:F3}  {row.Abs,9:F3}  {pct}  {st}");
+            sb.AppendLine($"     {row.RefN,11:F3}  {row.RefM,11:F3}  {row.MbN,11:F3}  {row.MbM,11:F3}  {row.Abs,9:F3}  {pct}  {st}");
         }
         sb.AppendLine();
     }
 
     // ---- 7. Summary statistics ----
-    // Two zones: full curve and "practical design range" (SC_M >= 100 kNm)
-    // The near-max-compression tail (last ~20 pts per theta where SC_M → 0) inflates % stats
-    // because the two tools have different maximum N, causing huge % diffs at small SC_M.
+    // Two zones: full curve and "practical design range" (Ref_M >= 100 kNm)
+    // The near-max-compression tail (last ~20 pts per theta where Ref_M → 0) inflates % stats
+    // because the two tools have different maximum N, causing huge % diffs at small Ref_M.
     const double practicalMThreshold = 100.0;   // kNm
-    const double practicalNFrac      = 0.88;     // exclude top 12% of SC's Nr_max
+    const double practicalNFrac      = 0.88;     // exclude top 12% of ref's Nr_max
     double nrMax                     = 12113.26; // kN compression magnitude
 
-    var allValid  = rows.Where(r => !double.IsNaN(r.Pct) && r.ScM >= 1.0).ToList();
-    var practical = rows.Where(r => !double.IsNaN(r.Pct) && r.ScM >= practicalMThreshold
-                                                           && Math.Abs(r.ScN) <= practicalNFrac * nrMax).ToList();
+    var allValid  = rows.Where(r => !double.IsNaN(r.Pct) && r.RefM >= 1.0).ToList();
+    var practical = rows.Where(r => !double.IsNaN(r.Pct) && r.RefM >= practicalMThreshold
+                                                           && Math.Abs(r.RefN) <= practicalNFrac * nrMax).ToList();
 
     static (double maxPct, double avgPct, double maxAbs, int nGood, int nAccept, int nInvest)
         Stats(List<CompRow> v)
@@ -327,11 +327,11 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("---------------------");
     sb.AppendLine();
     sb.AppendLine("  NOTE: Two comparison zones are reported:");
-    sb.AppendLine("    FULL CURVE — all points where SC_M >= 1 kNm.");
-    sb.AppendLine("    PRACTICAL RANGE — SC_M >= 100 kNm AND |SC_N| <= 88% of Nr_max (10 660 kN).");
-    sb.AppendLine("    The near-max-compression tail (SC_M < 100 kNm) inflates the full-curve %");
+    sb.AppendLine("    FULL CURVE — all points where Ref_M >= 1 kNm.");
+    sb.AppendLine("    PRACTICAL RANGE — Ref_M >= 100 kNm AND |Ref_N| <= 88% of Nr_max (10 660 kN).");
+    sb.AppendLine("    The near-max-compression tail (Ref_M < 100 kNm) inflates the full-curve %");
     sb.AppendLine("    because the two tools have different maximum axial capacities, causing");
-    sb.AppendLine("    large % differences when SC_M is already near zero.");
+    sb.AppendLine("    large % differences when Ref_M is already near zero.");
     sb.AppendLine();
 
     sb.AppendLine("  ── FULL CURVE ──");
@@ -343,10 +343,10 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine($"  Max % diff      : {fMaxPct:F2}%");
     sb.AppendLine($"  Avg % diff      : {fAvgPct:F2}%");
     if (worstFull != null)
-        sb.AppendLine($"  Worst point     : theta={worstFull.ScTheta}°  SC_N={worstFull.ScN:F1} kN  SC_M={worstFull.ScM:F1} kNm  MB_M={worstFull.MbM:F1} kNm  ({worstFull.Pct:F2}%)");
+        sb.AppendLine($"  Worst point     : theta={worstFull.RefTheta}°  Ref_N={worstFull.RefN:F1} kN  Ref_M={worstFull.RefM:F1} kNm  MB_M={worstFull.MbM:F1} kNm  ({worstFull.Pct:F2}%)");
     sb.AppendLine();
 
-    sb.AppendLine("  ── PRACTICAL DESIGN RANGE (SC_M >= 100 kNm, |SC_N| <= 10 660 kN) ──");
+    sb.AppendLine("  ── PRACTICAL DESIGN RANGE (Ref_M >= 100 kNm, |Ref_N| <= 10 660 kN) ──");
     sb.AppendLine($"  Points analysed : {(int)pTotal}");
     sb.AppendLine($"  <= 3%   (good)       : {pGood,4}  ({pGood / pTotal * 100:F1}%)");
     sb.AppendLine($"  3–5%    (acceptable) : {pAccept,4}  ({pAccept / pTotal * 100:F1}%)");
@@ -355,7 +355,7 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine($"  Max % diff      : {pMaxPct:F2}%");
     sb.AppendLine($"  Avg % diff      : {pAvgPct:F2}%");
     if (worstPrac != null)
-        sb.AppendLine($"  Worst point     : theta={worstPrac.ScTheta}°  SC_N={worstPrac.ScN:F1} kN  SC_M={worstPrac.ScM:F1} kNm  MB_M={worstPrac.MbM:F1} kNm  ({worstPrac.Pct:F2}%)");
+        sb.AppendLine($"  Worst point     : theta={worstPrac.RefTheta}°  Ref_N={worstPrac.RefN:F1} kN  Ref_M={worstPrac.RefM:F1} kNm  MB_M={worstPrac.MbM:F1} kNm  ({worstPrac.Pct:F2}%)");
     sb.AppendLine();
 
     sb.AppendLine("  Per-theta summary (PRACTICAL RANGE):");
@@ -363,8 +363,8 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine($"  {new string('-',6)}  {new string('-',9)}  {new string('-',9)}  {new string('-',11)}  ----------");
     foreach (var g in byTheta)
     {
-        var v  = g.Where(r => !double.IsNaN(r.Pct) && r.ScM >= practicalMThreshold
-                                                    && Math.Abs(r.ScN) <= practicalNFrac * nrMax).ToList();
+        var v  = g.Where(r => !double.IsNaN(r.Pct) && r.RefM >= practicalMThreshold
+                                                    && Math.Abs(r.RefN) <= practicalNFrac * nrMax).ToList();
         double mx = v.Count > 0 ? v.Max(r => r.Pct)     : 0;
         double av = v.Count > 0 ? v.Average(r => r.Pct) : 0;
         double ma = v.Count > 0 ? v.Max(r => r.Abs)     : 0;
@@ -386,43 +386,43 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("--------------------------------------");
     sb.AppendLine("  ROOT CAUSE DIAGNOSIS");
     sb.AppendLine("  The primary systematic discrepancy is that MBColumn gives LARGER moments than");
-    sb.AppendLine("  S-CONCRETE through much of the compression range. The current MBColumn EC2 path");
+    sb.AppendLine("  ref through much of the compression range. The current MBColumn EC2 path");
     sb.AppendLine("  uses an EC2 rectangular stress block (lambda=0.8, eta=1.0) integrated through");
     sb.AppendLine("  an 80x80 fiber mesh, with displaced concrete stress subtracted at reinforcing bars.");
     sb.AppendLine("  Because the solver is already using a rectangular block, the remaining offset is");
     sb.AppendLine("  not explained by a simple parabola-rectangle versus rectangular-block selection.");
     sb.AppendLine();
-    sb.AppendLine("  a) Near-max-compression tail (|SC_N| > 88% of Nr_max, i.e., > 10 660 kN):");
+    sb.AppendLine("  a) Near-max-compression tail (|Ref_N| > 88% of Nr_max, i.e., > 10 660 kN):");
     sb.AppendLine("     At high compression, both tools' moment capacities approach zero. However,");
-    sb.AppendLine("     MBColumn's extrapolated compression branch remains larger than S-CONCRETE's");
+    sb.AppendLine("     MBColumn's extrapolated compression branch remains larger than ref's");
     sb.AppendLine("     reported Nr(max) of 12 113 kN.");
-    sb.AppendLine("     Consequence: at N=11 000–12 000 kN, S-CONCRETE moment is already near zero");
+    sb.AppendLine("     Consequence: at N=11 000–12 000 kN, ref moment is already near zero");
     sb.AppendLine("     while MBColumn still shows 200–400 kNm. This creates 100–500%+ percentage");
     sb.AppendLine("     differences. These are SPURIOUS — caused by different maximum capacities,");
     sb.AppendLine("     not by a solver error. They are excluded from the practical-range statistics.");
     sb.AppendLine();
     sb.AppendLine("  b) Mid-range systematic offset (practical design range):");
-    sb.AppendLine("     MBColumn moments exceed S-CONCRETE by roughly 5-20% in much of the");
+    sb.AppendLine("     MBColumn moments exceed ref by roughly 5-20% in much of the");
     sb.AppendLine("     3 000-10 000 kN compression range, and more near the high-compression");
-    sb.AppendLine("     end. Possible explanations are hidden S-CONCRETE assumptions such as");
+    sb.AppendLine("     end. Possible explanations are hidden ref assumptions such as");
     sb.AppendLine("     alpha_cc, member/slenderness reduction, minimum eccentricity, effective");
     sb.AppendLine("     creep/second-order settings, or a different treatment of bar-displaced");
     sb.AppendLine("     concrete and full-compression strain states.");
     sb.AppendLine();
     sb.AppendLine("  c) Maximum axial capacity:");
-    sb.AppendLine("     S-CONCRETE gives 12 113 kN. Possible reasons for a lower commercial");
+    sb.AppendLine("     ref gives 12 113 kN. Possible reasons for a lower commercial");
     sb.AppendLine("     maximum than the MBColumn generated curve include:");
-    sb.AppendLine("     (i)  S-CONCRETE uses alpha_cc = 0.80 (UK NA) rather than 0.85 (EN default).");
+    sb.AppendLine("     (i)  ref uses alpha_cc = 0.80 (UK NA) rather than 0.85 (EN default).");
     sb.AppendLine("          0.80*35/1.5 = 19.833 MPa → Nr ≈ 12 230 kN (closer to 12 113).");
-    sb.AppendLine("     (ii) S-CONCRETE may apply slenderness/member reduction before reporting the");
+    sb.AppendLine("     (ii) ref may apply slenderness/member reduction before reporting the");
     sb.AppendLine("          N-M curve; the file name includes 'slenderness' but the text export");
     sb.AppendLine("          does not expose all internal settings.");
-    sb.AppendLine("     (iii)S-CONCRETE may cap the full-compression strain state differently.");
+    sb.AppendLine("     (iii)ref may cap the full-compression strain state differently.");
     sb.AppendLine();
     sb.AppendLine("  d) Pure bending (N=0):");
     sb.AppendLine("     Agreement is good: theta=0 off by ~0.5%, theta=90 off by ~5% at N=0.");
     sb.AppendLine("     Larger biaxial offsets indicate that angle definition, hidden reduction");
-    sb.AppendLine("     settings, or S-CONCRETE's reported 'Normal Moment' convention should be");
+    sb.AppendLine("     settings, or ref's reported 'Normal Moment' convention should be");
     sb.AppendLine("     confirmed before treating this as a material-law-only difference.");
     sb.AppendLine();
     sb.AppendLine("  e) Near-peak-moment region:");
@@ -435,13 +435,13 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine("     and smooth PMM surface, error is typically < 0.3%.");
     sb.AppendLine();
     sb.AppendLine("  g) Symmetry check:");
-    sb.AppendLine("     S-CONCRETE shows identical curves at theta=0° and theta=180°, and at 90°/270°.");
+    sb.AppendLine("     ref shows identical curves at theta=0° and theta=180°, and at 90°/270°.");
     sb.AppendLine("     MBColumn reproduces this by construction (symmetric section and symmetric rebar).");
     sb.AppendLine("     MB theta=0 and 180 curves are identical, as expected. ✓");
     sb.AppendLine();
     sb.AppendLine("  h) Bar coordinate assumption:");
     sb.AppendLine("     The comparison uses the explicit 16H25 perimeter layout shown in Section 2.");
-    sb.AppendLine("     If the S-CONCRETE model spaces side bars differently, biaxial angles will");
+    sb.AppendLine("     If the ref model spaces side bars differently, biaxial angles will");
     sb.AppendLine("     move even when pure Mx/My checks remain close.");
     sb.AppendLine();
     sb.AppendLine("  i) Stress block vs fiber integration:");
@@ -464,30 +464,30 @@ static void WriteReport(string path, List<ScBlock> scBlocks, List<CompRow> rows,
     sb.AppendLine();
     if (pMaxPct <= 5)
     {
-        sb.AppendLine("  MBColumn EC2 fiber PMM agrees with S-CONCRETE within the practical design");
+        sb.AppendLine("  MBColumn EC2 fiber PMM agrees with ref within the practical design");
         sb.AppendLine("  range (N = 0 to 88% of Nr_max, M >= 100 kNm) with:");
         sb.AppendLine($"    Max difference : {pMaxPct:F1}%  |  Avg difference : {pAvgPct:F1}%");
-        sb.AppendLine("  The remaining offset should still be checked against S-CONCRETE's hidden");
+        sb.AppendLine("  The remaining offset should still be checked against ref's hidden");
         sb.AppendLine("  settings before the benchmark is treated as final calibration.");
     }
     else
     {
         sb.AppendLine($"  Practical-range max difference is {pMaxPct:F1}% — exceeds 5% threshold.");
         sb.AppendLine("  The systematic offset requires investigation. Priority actions:");
-        sb.AppendLine("  1. Confirm whether S-CONCRETE applies slenderness/member reductions in this export.");
-        sb.AppendLine("  2. Confirm S-CONCRETE alpha_cc and national-annex settings: try 0.80 vs 0.85.");
-        sb.AppendLine("  3. Confirm S-CONCRETE's reported theta and Normal Moment convention for biaxial blocks.");
+        sb.AppendLine("  1. Confirm whether ref applies slenderness/member reductions in this export.");
+        sb.AppendLine("  2. Confirm ref alpha_cc and national-annex settings: try 0.80 vs 0.85.");
+        sb.AppendLine("  3. Confirm ref's reported theta and Normal Moment convention for biaxial blocks.");
         sb.AppendLine("  4. Run a mesh/sweep sensitivity pass (for example 160x160 fibers and 200 depths).");
     }
     sb.AppendLine();
     sb.AppendLine("  Cases needing further calibration:");
-    sb.AppendLine("  - Determine S-CONCRETE's slenderness, second-order, and minimum-eccentricity settings.");
-    sb.AppendLine("  - Determine S-CONCRETE's alpha_cc value (0.80 UK NA or 0.85 EN).");
-    sb.AppendLine("  - Confirm the S-CONCRETE moment-direction convention for non-uniaxial theta blocks.");
+    sb.AppendLine("  - Determine ref's slenderness, second-order, and minimum-eccentricity settings.");
+    sb.AppendLine("  - Determine ref's alpha_cc value (0.80 UK NA or 0.85 EN).");
+    sb.AppendLine("  - Confirm the ref moment-direction convention for non-uniaxial theta blocks.");
     sb.AppendLine("  - Near-max-compression comparison excluded from practical stats: the two tools'");
     sb.AppendLine("    different maximum axial capacities make this region uncomparable by percentage.");
     sb.AppendLine();
-    sb.AppendLine("  ACI/spColumn-style solver : NOT TOUCHED by this validation.");
+    sb.AppendLine("  ACI/ref-style solver      : NOT TOUCHED by this validation.");
     sb.AppendLine("  Shared solver/chart code  : NOT MODIFIED.");
 
     File.WriteAllText(path, sb.ToString());
@@ -523,18 +523,18 @@ static string FindRepositoryRoot()
 // Records
 // ==============================================================================
 
-internal sealed record ScBlock(int ThetaDeg)
+internal sealed record RefBlock(int ThetaDeg)
 {
-    public List<ScPoint> Points { get; } = [];
+    public List<RefPoint> Points { get; } = [];
 }
 
-internal sealed record ScPoint(double AxialKn, double MomentKnM);
+internal sealed record RefPoint(double AxialKn, double MomentKnM);
 
 internal sealed record CompRow(
-    int    ScTheta,
-    double ScN,
+    int    RefTheta,
+    double RefN,
     double MbN,
-    double ScM,
+    double RefM,
     double MbM,
     double Abs,
     double Pct);
