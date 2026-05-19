@@ -6,9 +6,10 @@ using System.Text.Json;
 
 namespace MBColumn.Infrastructure.Persistence;
 
-public sealed class ProjectService : IProjectService
+public sealed class ProjectService : IProjectService, IDisposable
 {
     private string? connectionString;
+    private SqliteConnection? _keepAliveConnection; // holds named in-memory DB alive
     private bool isModified;
 
     public string? CurrentFilePath { get; private set; }
@@ -18,14 +19,29 @@ public sealed class ProjectService : IProjectService
     public event EventHandler? ProjectChanged;
     public event EventHandler? ColumnsChanged;
 
+    public void Dispose()
+    {
+        _keepAliveConnection?.Dispose();
+        _keepAliveConnection = null;
+    }
+
     public void NewProject(string name)
     {
+        _keepAliveConnection?.Dispose();
+        _keepAliveConnection = null;
         CurrentFilePath = null;
         ProjectName = name;
         connectionString = null;
         isModified = false;
         ProjectChanged?.Invoke(this, EventArgs.Empty);
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void RenameProject(string name)
+    {
+        ProjectName = name;
+        MarkModified();
+        ProjectChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void OpenProject(string filePath)
@@ -175,6 +191,16 @@ public sealed class ProjectService : IProjectService
             DatabaseSchema.EnsureCreated(conn, ProjectName);
             connectionString = newCs;
         }
+        else if (_keepAliveConnection is not null && CurrentFilePath is null)
+        {
+            // Was using in-memory DB — write schema/data to the file instead
+            var newCs = BuildConnectionString(filePath);
+            using var conn = new SqliteConnection(newCs);
+            DatabaseSchema.EnsureCreated(conn, ProjectName);
+            _keepAliveConnection.Dispose();
+            _keepAliveConnection = null;
+            connectionString = newCs;
+        }
         else if (CurrentFilePath is null || !string.Equals(CurrentFilePath, filePath, StringComparison.OrdinalIgnoreCase))
         {
             // Save As: copy current file to new path
@@ -209,9 +235,11 @@ public sealed class ProjectService : IProjectService
 
         // New unsaved project — use an in-memory db with a named cache so
         // multiple connections share the same data within this process.
+        // The keep-alive connection must stay open; closing all connections
+        // destroys a named in-memory database.
         connectionString = "Data Source=mbcolumn_new;Mode=Memory;Cache=Shared";
-        using var conn = new SqliteConnection(connectionString);
-        DatabaseSchema.EnsureCreated(conn, ProjectName);
+        _keepAliveConnection = new SqliteConnection(connectionString);
+        DatabaseSchema.EnsureCreated(_keepAliveConnection, ProjectName);
     }
 
     private static string BuildConnectionString(string filePath)

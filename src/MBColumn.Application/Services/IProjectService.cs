@@ -11,6 +11,7 @@ public interface IProjectService
     bool IsModified { get; }
 
     void NewProject(string name);
+    void RenameProject(string name);
     void OpenProject(string filePath);
     void SaveProject();
     void SaveProjectAs(string filePath);
