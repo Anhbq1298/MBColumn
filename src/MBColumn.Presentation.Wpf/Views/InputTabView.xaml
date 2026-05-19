@@ -1,7 +1,8 @@
 <UserControl x:Class="MBColumn.Presentation.Wpf.Views.InputTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls">
+             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
+             xmlns:enums="clr-namespace:MBColumn.Domain.Enums;assembly=MBColumn.Domain">
     <UserControl.Resources>
         <Style x:Key="SideBarCountTextBoxStyle" TargetType="TextBox">
             <Setter Property="Margin" Value="0,0,8,6" />
@@ -190,6 +191,14 @@
                                   MinHeight="260"
                                   MaxHeight="460"
                                   Margin="0,0,0,8">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Add Load Case" Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <MenuItem Header="Remove Selected Load Case(s)" 
+                                              Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                              CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Load&#x0a;Case" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="72" MinWidth="60" ElementStyle="{StaticResource LeftAlignText}" />
                                 <DataGridTextColumn Header="P" Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Width="*" MinWidth="64" ElementStyle="{StaticResource RightAlignText}" EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
@@ -270,10 +279,13 @@
                         <StackPanel>
                             <DockPanel Margin="0,0,0,14">
                                 <TextBlock Text="Section Shape" Style="{StaticResource FieldLabelTextStyle}" VerticalAlignment="Center" Margin="0,0,12,0" />
-                                <ComboBox VerticalAlignment="Center" Height="30">
-                                    <ComboBoxItem Content="Rectangular" IsSelected="{Binding IsRectangularSection}" />
-                                    <ComboBoxItem Content="Circular" IsSelected="{Binding IsCircularSection}" />
-                                    <ComboBoxItem Content="Irregular" IsSelected="{Binding IsIrregularSection}" />
+                                <ComboBox SelectedValue="{Binding SelectedSectionShape, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedValuePath="Tag"
+                                          VerticalAlignment="Center"
+                                          Height="30">
+                                    <ComboBoxItem Content="Rectangular" Tag="{x:Static enums:SectionShapeType.Rectangular}" />
+                                    <ComboBoxItem Content="Circular" Tag="{x:Static enums:SectionShapeType.Circular}" />
+                                    <ComboBoxItem Content="Irregular" Tag="{x:Static enums:SectionShapeType.Irregular}" />
                                 </ComboBox>
                             </DockPanel>
 
@@ -325,32 +337,6 @@
                                 <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Diameter}" />
                             </Grid>
 
-                            <Grid Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Grid DataContext="{Binding IrregularInput}">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
-                                    </Grid.RowDefinitions>
-                                    
-                                    <TextBlock Grid.Row="0" Text="Boundary Points (Clockwise)" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4" TextWrapping="Wrap" />
-                                    
-                                    <WrapPanel Grid.Row="1" Margin="0,0,0,8">
-                                        <Button Content="C" ToolTip="Clear" Command="{Binding ClearBoundaryCommand}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                        <Button Content="R" ToolTip="Reverse" Command="{Binding ReverseBoundaryCommand}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                        <Button Content="I" ToolTip="Import..." Click="ImportBoundary_Click" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                        <Button Content="E" ToolTip="Export..." Click="ExportBoundary_Click" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" />
-                                    </WrapPanel>
-
-                                    <DataGrid Grid.Row="2" ItemsSource="{Binding BoundaryPoints}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True" MaxHeight="200" Margin="0,0,0,8">
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Pt" Binding="{Binding PtIndex, UpdateSourceTrigger=PropertyChanged}" />
-                                            <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
-                                            <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </Grid>
-                            </Grid>
                         </StackPanel>
                     </GroupBox>
 
@@ -522,45 +508,150 @@
                                 </Grid>
                             </StackPanel>
 
-                            <!-- 3. ALWAYS VISIBLE REBAR COORDINATES TABLE AT THE BOTTOM (DataContext = IrregularInput) -->
-                            <Grid DataContext="{Binding IrregularInput}" Margin="0,12,0,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                
-                                <TextBlock Grid.Row="0" Text="Rebar Coordinates" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4" TextWrapping="Wrap" />
-                                
-                                <WrapPanel Grid.Row="1" Margin="0,0,0,8">
-                                    <Button Content="C" ToolTip="Clear" Command="{Binding ClearRebarsCommand}" IsEnabled="{Binding IsCustomCoordinates}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                    <Button Content="I" ToolTip="Import..." Click="ImportRebar_Click" IsEnabled="{Binding IsCustomCoordinates}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                    <Button Content="E" ToolTip="Export..." Click="ExportRebar_Click" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" />
-                                </WrapPanel>
-                                
-                                <DataGrid Grid.Row="2" ItemsSource="{Binding Rebars}" AutoGenerateColumns="False" CanUserAddRows="{Binding IsCustomCoordinates}" CanUserDeleteRows="{Binding IsCustomCoordinates}" IsReadOnly="{Binding IsAlgorithmicCoordinates}" MaxHeight="200" Margin="0,0,0,8">
-                                    <DataGrid.Style>
-                                        <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsReadOnly" Value="True">
-                                                    <Setter Property="Opacity" Value="0.65" />
-                                                    <Setter Property="Background" Value="#F2F2F2" />
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DataGrid.Style>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Index" Binding="{Binding RebarIndex, UpdateSourceTrigger=PropertyChanged}" />
-                                        <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
-                                        <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
-                                        <DataGridTextColumn Header="Area" Binding="{Binding AreaMm2, UpdateSourceTrigger=PropertyChanged}" />
-                                        <DataGridTextColumn Header="Size" Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </Grid>
                         </StackPanel>
                     </GroupBox>
                 </Grid>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <GroupBox Grid.Column="0" Header="Boundary Points (Clockwise)"
+                              Background="White" Foreground="{DynamicResource DarkNavyBrush}"
+                              BorderBrush="{DynamicResource BorderGreyBrush}" Padding="14" Margin="0,0,7,0">
+                        <GroupBox.Style>
+                            <Style TargetType="GroupBox">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsIrregularSection}" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </GroupBox.Style>
+                        <StackPanel DataContext="{Binding IrregularInput}">
+                            <WrapPanel Margin="0,0,0,8">
+                                <Button ToolTip="Import..." Click="ImportBoundary_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Foreground="{DynamicResource PrimaryNavyBrush}"
+                                        Width="26" Height="26" Padding="0" Margin="0,0,8,0">
+                                    <Viewbox Width="14" Height="14">
+                                        <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,2 L 10,13 M 6,9 L 10,13 L 14,9"
+                                              Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
+                                    </Viewbox>
+                                </Button>
+                                <Button ToolTip="Export..." Click="ExportBoundary_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Foreground="{DynamicResource PrimaryNavyBrush}"
+                                        Width="26" Height="26" Padding="0">
+                                    <Viewbox Width="14" Height="14">
+                                        <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,14 L 10,3 M 6,7 L 10,3 L 14,7"
+                                              Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
+                                    </Viewbox>
+                                </Button>
+                            </WrapPanel>
+                            <DataGrid ItemsSource="{Binding BoundaryPoints}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="True" CanUserDeleteRows="True"
+                                      MaxHeight="200">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Add Point"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.AddBoundaryRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <MenuItem Header="Remove Selected Point(s)"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.DeleteBoundaryRowsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Pt" Binding="{Binding PtIndex, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Grid.Column="1" Header="Rebar Coordinates"
+                              Background="White" Foreground="{DynamicResource DarkNavyBrush}"
+                              BorderBrush="{DynamicResource BorderGreyBrush}" Padding="14" Margin="7,0,0,0">
+                        <GroupBox.Style>
+                            <Style TargetType="GroupBox">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsIrregularSection}" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                        <Setter Property="IsEnabled" Value="False" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </GroupBox.Style>
+                        <StackPanel DataContext="{Binding IrregularInput}">
+                            <WrapPanel Margin="0,0,0,8">
+                                <Button ToolTip="Import..." Click="ImportRebar_Click"
+                                        IsEnabled="{Binding IsCustomCoordinates}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Foreground="{DynamicResource PrimaryNavyBrush}"
+                                        Width="26" Height="26" Padding="0" Margin="0,0,8,0">
+                                    <Viewbox Width="14" Height="14">
+                                        <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,2 L 10,13 M 6,9 L 10,13 L 14,9"
+                                              Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
+                                    </Viewbox>
+                                </Button>
+                                <Button ToolTip="Export..." Click="ExportRebar_Click"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Foreground="{DynamicResource PrimaryNavyBrush}"
+                                        Width="26" Height="26" Padding="0">
+                                    <Viewbox Width="14" Height="14">
+                                        <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,14 L 10,3 M 6,7 L 10,3 L 14,7"
+                                              Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
+                                    </Viewbox>
+                                </Button>
+                            </WrapPanel>
+                            <DataGrid ItemsSource="{Binding Rebars}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="{Binding IsCustomCoordinates}"
+                                      CanUserDeleteRows="{Binding IsCustomCoordinates}"
+                                      IsReadOnly="{Binding IsAlgorithmicCoordinates}"
+                                      MaxHeight="200">
+                                <DataGrid.Style>
+                                    <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsReadOnly" Value="True">
+                                                <Setter Property="Opacity" Value="0.65" />
+                                                <Setter Property="Background" Value="#F2F2F2" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.Style>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Add Rebar"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.AddRebarRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  IsEnabled="{Binding Path=PlacementTarget.DataContext.IsCustomCoordinates, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <MenuItem Header="Remove Selected Rebar(s)"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.DeleteRebarRowsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  IsEnabled="{Binding Path=PlacementTarget.DataContext.IsCustomCoordinates, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Index" Binding="{Binding RebarIndex, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Area" Binding="{Binding AreaMm2, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn Header="Size" Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </GroupBox>
+                </Grid>
+
             </StackPanel>
         </ScrollViewer>
     </Grid>

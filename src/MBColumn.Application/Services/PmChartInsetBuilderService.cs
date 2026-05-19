@@ -20,7 +20,8 @@ public sealed class PmChartInsetBuilderService(CompressionZonePolygonBuilder com
         IReadOnlyList<RebarCoordinateDto> rebarCoordinates,
         PmChartInsetSelectedStateDto? selectedState,
         double fallbackThetaDegrees,
-        SectionShapeType sectionShape = SectionShapeType.Rectangular)
+        SectionShapeType sectionShape = SectionShapeType.Rectangular,
+        IReadOnlyList<InsetPointDto>? irregularBoundaryPoints = null)
     {
         if (!IsFinite(sectionWidthMm) || !IsFinite(sectionHeightMm) || sectionWidthMm <= 0 || sectionHeightMm <= 0)
         {
@@ -36,6 +37,11 @@ public sealed class PmChartInsetBuilderService(CompressionZonePolygonBuilder com
         {
             sectionBoundary = BuildCirclePolygon(hx, 64);
             coverBoundary = BuildCircleCoverBoundary(hx, coverMm);
+        }
+        else if (sectionShape == SectionShapeType.Irregular && irregularBoundaryPoints is { Count: >= 3 })
+        {
+            sectionBoundary = [.. irregularBoundaryPoints];
+            coverBoundary = [];
         }
         else
         {

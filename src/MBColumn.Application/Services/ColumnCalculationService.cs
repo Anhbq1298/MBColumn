@@ -79,17 +79,25 @@ public sealed class ColumnCalculationService(
             var irregularSolver = solverFactory.GetIrregular(input.DesignCode, SectionIntegrationMethod.Polygon);
             section = irregular;
             surface = irregularSolver.Solve(irregular, concrete, steel);
-            var rebarDtoList = rebarCoords.Select(r => new RebarCoordinateDto(
-                r.RebarIndex,
-                r.X,
-                r.Y,
-                r.AreaMm2 is double a ? Math.Sqrt(4.0 * a / Math.PI) : 0.0,
-                r.AreaMm2 ?? 0.0,
-                r.BarSize ?? "",
-                "Irregular")).ToList();
+            // Use centroid-shifted coordinates from the solver layout so that the inset
+            // figure renders rebars consistently with the centroid-based boundary polygon.
+            var rebarDtoList = irregular.Layout.Bars
+                .Select((b, i) => new RebarCoordinateDto(
+                    (i + 1).ToString(),
+                    b.XMm,
+                    b.YMm,
+                    b.DiameterMm,
+                    b.AreaMm2,
+                    b.Name,
+                    "Irregular"))
+                .ToList();
+            var irregularBoundary = irregular.BoundaryPoints
+                .Select(p => new InsetPointDto(p.X, p.Y))
+                .ToList();
             double widthMm = irregular.BoundingBoxMm.Width;
             double heightMm = irregular.BoundingBoxMm.Height;
-            return BuildResult(input, section, surface, rebarDtoList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService);
+            return BuildResult(input, section, surface, rebarDtoList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService)
+                with { IrregularSectionBoundaryPoints = irregularBoundary };
         }
         else if (input.SectionShape == SectionShapeType.Circular)
         {

@@ -37,12 +37,15 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
     {
         BoundaryPoints.Clear();
         Rebars.Clear();
-        // L-shape: horiz leg 1000x400mm, vert leg 300x700mm, bbox centered at (0,0)
-        // Clockwise: top-left → top-right of vert → inner corner → top-right of horiz → bottom-right → bottom-left
+
         var points = new[]
         {
-            (-500.0, 350.0), (-200.0, 350.0), (-200.0, 50.0),
-            (500.0, 50.0), (500.0, -350.0), (-500.0, -350.0)
+            (-339.2857, 339.2857),
+            (-339.2857, -660.7143),
+            (-89.28571, -660.7143),
+            (-89.28571,  89.28571),
+            ( 660.7143,  89.28571),
+            ( 660.7143, 339.2857)
         };
 
         for (int i = 0; i < points.Length; i++)
@@ -50,15 +53,28 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
             BoundaryPoints.Add(new IrregularBoundaryPointViewModel { PtIndex = i + 1, X = points[i].Item1, Y = points[i].Item2 });
         }
 
-        // T20 rebars (Area = 314.16 mm²), 65mm from edge (cover 55mm + radius 10mm)
         var rebars = new[]
         {
-            (-435.0, 285.0), (-265.0, 285.0),
-            (-265.0, -15.0),
-            (100.0, -15.0), (435.0, -15.0),
-            (435.0, -155.0), (435.0, -285.0),
-            (100.0, -285.0), (-100.0, -285.0), (-435.0, -285.0),
-            (-435.0, -155.0), (-435.0, 155.0)
+            (-284.2857, -605.7143),
+            (-144.2857, -605.7143),
+            ( 605.7143,  284.2857),
+            ( 605.7143,  144.2857),
+            (-144.2857,  144.2857),
+            (-284.2857,  284.2857),
+            (-106.2857,  284.2857),
+            (  71.71429, 284.2857),
+            ( 249.7143,  284.2857),
+            ( 427.7143,  284.2857),
+            (  43.21429, 144.2857),
+            ( 230.7143,  144.2857),
+            ( 418.2143,  144.2857),
+            (-144.2857, -418.2143),
+            (-144.2857, -230.7143),
+            (-144.2857,  -43.21429),
+            (-284.2857,  106.2857),
+            (-284.2857,  -71.71429),
+            (-284.2857, -249.7143),
+            (-284.2857, -427.7143)
         };
 
         for (int i = 0; i < rebars.Length; i++)
@@ -68,7 +84,7 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
                 RebarIndex = (i + 1).ToString(),
                 X = rebars[i].Item1,
                 Y = rebars[i].Item2,
-                AreaMm2 = 314.16,
+                AreaMm2 = 314.1593,
                 BarSize = "T20"
             });
         }

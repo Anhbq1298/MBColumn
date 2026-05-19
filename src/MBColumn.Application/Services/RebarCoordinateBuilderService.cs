@@ -82,6 +82,16 @@ public sealed class RebarCoordinateBuilderService(
 
         if (layout.LayoutType == RebarLayoutType.EqualSpacing)
         {
+            if (layout.TotalBars < 4)
+            {
+                throw new InvalidOperationException("Total bars must be at least 4.");
+            }
+
+            if (layout.TotalBars % 2 != 0)
+            {
+                throw new InvalidOperationException("For Equal Spacing layout, total bars must be an even number.");
+            }
+
             double sX = widthMm - 2.0 * coverMm - barDiameterMm;
             double sY = heightMm - 2.0 * coverMm - barDiameterMm;
             if (sX <= 0 || sY <= 0)
@@ -89,16 +99,26 @@ public sealed class RebarCoordinateBuilderService(
                 throw new InvalidOperationException("Rebar centroid is outside the concrete section.");
             }
 
-            if (spacingMm <= 0)
+            int sum = layout.TotalBars / 2;
+            int bestNx = 1;
+            double minDiff = double.MaxValue;
+
+            for (int nx = 1; nx < sum; nx++)
             {
-                throw new InvalidOperationException("Spacing must be greater than zero.");
+                int ny = sum - nx;
+                double dx = sX / nx;
+                double dy = sY / ny;
+                double diff = Math.Abs(dx - dy);
+                if (diff < minDiff)
+                {
+                    minDiff = diff;
+                    bestNx = nx;
+                }
             }
 
-            int nx = (int)Math.Max(1, Math.Ceiling(sX / spacingMm));
-            int ny = (int)Math.Max(1, Math.Ceiling(sY / spacingMm));
-
-            int topBottomCount = nx + 1;
-            int leftRightInterm = ny - 1;
+            int bestNy = sum - bestNx;
+            int topBottomCount = bestNx + 1;
+            int leftRightInterm = bestNy - 1;
             return (topBottomCount, topBottomCount, leftRightInterm, leftRightInterm);
         }
 

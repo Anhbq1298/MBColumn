@@ -42,5 +42,6 @@ public sealed record CalculationResultDto(
     public double CoverMm { get; init; }
     public IReadOnlyList<RebarCoordinateDto> RebarCoordinates { get; init; } = [];
     public IReadOnlyList<CapacityDebugPointDto> CapacityDebugPoints { get; init; } = [];
+    public IReadOnlyList<InsetPointDto> IrregularSectionBoundaryPoints { get; init; } = [];
 }
 

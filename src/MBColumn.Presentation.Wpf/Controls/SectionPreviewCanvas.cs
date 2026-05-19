@@ -3,6 +3,8 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using MBColumn.Application.Services.Geometry;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.ViewModels;
 
@@ -205,15 +207,38 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         dc.DrawLine(new Pen(text, 1), new Point(center.X - 5, center.Y), new Point(center.X + 5, center.Y));
         dc.DrawLine(new Pen(text, 1), new Point(center.X, center.Y - 5), new Point(center.X, center.Y + 5));
 
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double coverMm = Cover * factor;
+        if (coverMm > 0)
+        {
+            try
+            {
+                var boundary = bpts.Select(p => new Point2D(p.X, p.Y)).ToList();
+                var coverPoly = PolygonGeometry.OffsetPolygon(boundary, coverMm);
+                if (coverPoly != null && coverPoly.Count >= 3)
+                {
+                    var coverGeo = new StreamGeometry();
+                    using (var ctx = coverGeo.Open())
+                    {
+                        ctx.BeginFigure(new Point(ToScreenX(coverPoly[0].X), ToScreenY(coverPoly[0].Y)), false, true);
+                        for (int i = 1; i < coverPoly.Count; i++)
+                            ctx.LineTo(new Point(ToScreenX(coverPoly[i].X), ToScreenY(coverPoly[i].Y)), true, false);
+                    }
+                    dc.DrawGeometry(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, coverGeo);
+                    double labelX = coverPoly.Min(p => ToScreenX(p.X)) + 4;
+                    double labelY = coverPoly.Min(p => ToScreenY(p.Y)) + 4;
+                    DrawText(dc, "cover", 10, grey, new Point(labelX, labelY), FontWeights.Normal);
+                }
+            }
+            catch { }
+        }
+
         foreach (var item in Rebars?.OfType<PreviewRebarPoint>() ?? [])
         {
             var pt = new Point(center.X + item.X * scale, center.Y - item.Y * scale);
             double r = Math.Max(3.0, item.Diameter * scale / 2.0);
             dc.DrawEllipse(darkNavy, new Pen(Brushes.White, 0.8), pt, r, r);
         }
-
-        DrawDimension(dc, new Point(x0, y0 + sh + 16), new Point(x0 + sw, y0 + sh + 16), $"b = {bboxW:0.###} mm", text);
-        DrawDimension(dc, new Point(x0 - 18, y0 + sh), new Point(x0 - 18, y0), $"h = {bboxH:0.###} mm", text, vertical: true);
     }
 
     private string UnitText => UnitSystem == UnitSystem.Metric ? "mm" : "in";

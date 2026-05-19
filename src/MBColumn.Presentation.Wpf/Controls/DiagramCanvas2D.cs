@@ -451,17 +451,24 @@ public class DiagramCanvas2D : FrameworkElement
 
         double side = Math.Clamp(Math.Min(ActualWidth, ActualHeight) * 0.21, 108.0, 154.0);
         side = Math.Min(side, Math.Max(80.0, Math.Min(plot.Width * 0.28, plot.Height * 0.34)));
-        var bounds = new Rect(plot.Left + 12, Math.Max(plot.Top + 54, plot.Bottom - side - 12), side, side);
+        double insetWidth = Math.Max(side, 160.0);
+        var bounds = new Rect(plot.Left + 12, Math.Max(plot.Top + 54, plot.Bottom - side - 12), insetWidth, side);
         dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(232, 255, 255, 255)), new Pen(new SolidColorBrush(Color.FromArgb(185, 148, 163, 184)), 0.8), bounds, 6, 6);
 
         var sectionBounds = GetInsetContentBounds(inset.SectionBoundaryPoints);
         if (sectionBounds.Width <= 0 || sectionBounds.Height <= 0) return;
 
-        double legendHeight = 38.0;
+        dc.PushClip(new RectangleGeometry(bounds, 6, 6));
+
+        double legendHeight = 42.0;
         var sketchBounds = new Rect(bounds.Left, bounds.Top, bounds.Width, Math.Max(40.0, bounds.Height - legendHeight));
         double padding = 18.0;
         double scale = Math.Min((sketchBounds.Width - 2 * padding) / sectionBounds.Width, (sketchBounds.Height - 2 * padding) / sectionBounds.Height);
-        if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0) return;
+        if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0)
+        {
+            dc.Pop();
+            return;
+        }
 
         var center = new Point(sketchBounds.Left + sketchBounds.Width / 2.0, sketchBounds.Top + sketchBounds.Height / 2.0);
         Point Map(InsetPointDto p) => new(center.X + p.X * scale, center.Y - p.Y * scale);
@@ -480,20 +487,14 @@ public class DiagramCanvas2D : FrameworkElement
         var tensionFill = new SolidColorBrush(Color.FromArgb(58, 100, 116, 139));
 
         if (tensionGeometry is not null)
-        {
             dc.DrawGeometry(tensionFill, null, tensionGeometry);
-        }
 
         if (compressionGeometry is not null)
-        {
             dc.DrawGeometry(compressionFill, null, compressionGeometry);
-        }
 
         dc.DrawGeometry(new SolidColorBrush(Color.FromArgb(35, 100, 116, 139)), sectionPen, sectionGeometry);
         if (coverGeometry is not null)
-        {
             dc.DrawGeometry(null, coverPen, coverGeometry);
-        }
 
         DrawInsetLine(dc, inset.XAxisLine, Map, axisPen, arrow: true);
         DrawInsetLine(dc, inset.YAxisLine, Map, axisPen, arrow: true);
@@ -521,16 +522,18 @@ public class DiagramCanvas2D : FrameworkElement
             ? $"\u03b8 = {inset.ThetaDegrees:0.#}\u00b0"
             : $"{inset.SelectedLoadCaseName}  \u03b8 = {inset.ThetaDegrees:0.#}\u00b0";
         DrawInsetLegend(dc, bounds, caption, compressionFill, tensionFill);
+
+        dc.Pop();
     }
 
     private static void DrawInsetLegend(DrawingContext dc, Rect bounds, string caption, Brush compressionFill, Brush tensionFill)
     {
         var textBrush = new SolidColorBrush(Color.FromRgb(71, 85, 105));
         double left = bounds.Left + 6.0;
-        double y = bounds.Bottom - 35.0;
+        double y = bounds.Bottom - 38.0;
         DrawText(dc, caption, 7.2, textBrush, new Point(left, y), FontWeights.Normal);
         DrawLegendItem(dc, new Point(left, y + 13.0), compressionFill, "Concrete in compression", textBrush);
-        DrawLegendItem(dc, new Point(left, y + 25.0), tensionFill, "Concrete in tension - ignored", textBrush);
+        DrawLegendItem(dc, new Point(left, y + 26.0), tensionFill, "Concrete in tension (ignored)", textBrush);
     }
 
     private static void DrawLegendItem(DrawingContext dc, Point origin, Brush fill, string label, Brush textBrush)

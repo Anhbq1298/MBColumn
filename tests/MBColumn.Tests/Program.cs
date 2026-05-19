@@ -188,7 +188,8 @@ var tests = new List<(string Name, Action Test)>
     ("Irregular mapper shifts boundary to centroid",                 TestIrregularMapperShiftsToCentroid),
     ("Irregular section shape exposed on result",                    TestIrregularResultExposesShape),
     ("Irregular section integrator boundary handled",                TestIrregularIntegratorBoundaryHandled),
-    ("Rectangular equal spacing optimal distribution",               TestRectangularEqualSpacingOptimalDistribution)
+    ("Rectangular equal spacing optimal distribution",               TestRectangularEqualSpacingOptimalDistribution),
+    ("Circular equal spacing and irregular ToDto mapping",           TestCircularAndIrregularToDtoMapping)
 };
 
 foreach (var (name, test) in tests)
@@ -1679,6 +1680,42 @@ static void TestRectangularEqualSpacingOptimalDistribution()
     // Invalid case: odd number of bars should throw an exception
     var layoutOdd = new RebarLayoutInputDto(RebarLayoutType.EqualSpacing, 9, "T20", 40, null!, null!, null!, null!);
     Throws(() => builder.Build(layoutOdd, 300, 600, LengthUnit.Millimeter, UnitSystem.Metric));
+}
+
+static void TestCircularAndIrregularToDtoMapping()
+{
+    var metric = new SingaporeRebarDatabase();
+    var imperial = new ImperialRebarDatabase();
+    
+    // Test Circular Equal Spacing DTO mapping
+    var vmCircular = new InputViewModel(metric, imperial)
+    {
+        UnitSystem = UnitSystem.Metric,
+        SelectedSectionShape = SectionShapeType.Circular,
+        Diameter = 600,
+        Cover = 40,
+        BarSize = "T20",
+        SelectedRebarLayoutType = RebarLayoutType.EqualSpacing,
+        Spacing = 150
+    };
+    
+    var dtoCircular = vmCircular.ToDto();
+    // Perimeter at centroid: pi * (600 - 2 * 40 - 20) = pi * 500 = 1570.796 mm
+    // Expected bar count = Math.Max(4, Math.Round(1570.796 / 150)) = 10 bars.
+    IsTrue(dtoCircular.BarCount == 10);
+    IsTrue(dtoCircular.RebarCoordinates != null && dtoCircular.RebarCoordinates.Count == 10);
+    
+    // Test Irregular DTO mapping
+    var vmIrregular = new InputViewModel(metric, imperial)
+    {
+        UnitSystem = UnitSystem.Metric,
+        SelectedSectionShape = SectionShapeType.Irregular
+    };
+    
+    var dtoIrregular = vmIrregular.ToDto();
+    int expectedCount = vmIrregular.IrregularInput.Rebars.Count;
+    IsTrue(dtoIrregular.BarCount == expectedCount);
+    IsTrue(dtoIrregular.Irregular != null && dtoIrregular.Irregular.Rebars.Count == expectedCount);
 }
 
 static (StrainCompatibilityInteractionSolver Conv, AciFiberInteractionSolver Fiber, RectangularSection Section, ConcreteMaterial Concrete, SteelMaterial Steel) AciSolverFixtures()
