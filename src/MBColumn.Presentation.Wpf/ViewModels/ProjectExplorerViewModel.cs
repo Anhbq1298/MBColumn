@@ -1,0 +1,143 @@
+using MBColumn.Application.Services;
+using MBColumn.Presentation.Wpf.Commands;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+
+namespace MBColumn.Presentation.Wpf.ViewModels;
+
+public sealed class ProjectExplorerViewModel : ViewModelBase
+{
+    private readonly IProjectService projectService;
+    private readonly Action<ColumnItemViewModel?> onColumnSelected;
+    private readonly Func<string, string?> promptColumnName;
+    private string projectName = "New Project";
+    private ColumnItemViewModel? selectedColumn;
+
+    public ProjectExplorerViewModel(
+        IProjectService projectService,
+        Action<ColumnItemViewModel?> onColumnSelected,
+        Func<string, string?> promptColumnName)
+    {
+        this.projectService = projectService;
+        this.onColumnSelected = onColumnSelected;
+        this.promptColumnName = promptColumnName;
+
+        Columns = new ObservableCollection<ColumnItemViewModel>();
+
+        AddColumnCommand = new RelayCommand(AddColumn);
+
+        projectService.ProjectChanged += (_, _) =>
+        {
+            ProjectName = projectService.ProjectName;
+        };
+
+        projectService.ColumnsChanged += (_, _) => RefreshColumns();
+
+        RefreshColumns();
+    }
+
+    public string ProjectName
+    {
+        get => projectName;
+        private set => Set(ref projectName, value);
+    }
+
+    public ObservableCollection<ColumnItemViewModel> Columns { get; }
+
+    public ColumnItemViewModel? SelectedColumn
+    {
+        get => selectedColumn;
+        private set => Set(ref selectedColumn, value);
+    }
+
+    public ICommand AddColumnCommand { get; }
+
+    public void SelectColumn(ColumnItemViewModel item)
+    {
+        if (selectedColumn is not null)
+            selectedColumn.IsSelected = false;
+
+        selectedColumn = item;
+        item.IsSelected = true;
+        Raise(nameof(SelectedColumn));
+        onColumnSelected(item);
+    }
+
+    public void CommitRename(ColumnItemViewModel item)
+    {
+        var newName = item.EditName.Trim();
+        if (string.IsNullOrWhiteSpace(newName)) newName = item.Name;
+        projectService.RenameColumn(item.Id, newName);
+        item.Name = newName;
+        item.IsRenaming = false;
+    }
+
+    public void CancelRename(ColumnItemViewModel item)
+    {
+        item.IsRenaming = false;
+    }
+
+    private void AddColumn()
+    {
+        var defaultName = $"Column {Columns.Count + 1}";
+        var name = promptColumnName(defaultName);
+        if (name is null) return;
+
+        var record = projectService.AddColumn(name);
+        var item = CreateItem(record);
+        Columns.Add(item);
+        SelectColumn(item);
+    }
+
+    private void DeleteColumn(ColumnItemViewModel item)
+    {
+        projectService.DeleteColumn(item.Id);
+        Columns.Remove(item);
+        if (selectedColumn == item)
+        {
+            var next = Columns.FirstOrDefault();
+            if (next is not null) SelectColumn(next);
+            else
+            {
+                selectedColumn = null;
+                Raise(nameof(SelectedColumn));
+                onColumnSelected(null);
+            }
+        }
+    }
+
+    private void RefreshColumns()
+    {
+        var previousId = selectedColumn?.Id;
+        Columns.Clear();
+
+        foreach (var record in projectService.GetColumns())
+        {
+            Columns.Add(CreateItem(record));
+        }
+
+        ProjectName = projectService.ProjectName;
+
+        var toReselect = previousId.HasValue
+            ? Columns.FirstOrDefault(c => c.Id == previousId.Value)
+            : null;
+
+        if (toReselect is not null)
+        {
+            SelectColumn(toReselect);
+        }
+        else if (Columns.Count > 0)
+        {
+            SelectColumn(Columns[0]);
+        }
+        else
+        {
+            selectedColumn = null;
+            Raise(nameof(SelectedColumn));
+            onColumnSelected(null);
+        }
+    }
+
+    private ColumnItemViewModel CreateItem(ColumnRecord record)
+        => new(record, SelectColumn, DeleteColumn);
+}

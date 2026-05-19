@@ -195,28 +195,6 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         }
         dc.DrawGeometry(fill, new Pen(navy, 2), geo);
 
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
-        double coverMm = Cover * factor;
-        if (coverMm > 0)
-        {
-            var userPts = bpts.Select(p => (p.X, p.Y)).ToList();
-            var inset = ComputeInsetPolygon(userPts, coverMm);
-            if (inset != null && inset.Count >= 3)
-            {
-                var coverGeo = new StreamGeometry();
-                using (var ctx = coverGeo.Open())
-                {
-                    ctx.BeginFigure(new Point(ToScreenX(inset[0].X), ToScreenY(inset[0].Y)), false, true);
-                    for (int i = 1; i < inset.Count; i++)
-                        ctx.LineTo(new Point(ToScreenX(inset[i].X), ToScreenY(inset[i].Y)), true, false);
-                }
-                dc.DrawGeometry(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, coverGeo);
-                double labelX = ToScreenX(inset.Min(p => p.X)) + 4;
-                double labelY = ToScreenY(inset.Max(p => p.Y)) + 4;
-                DrawText(dc, "cover", 10, grey, new Point(labelX, labelY), FontWeights.Normal);
-            }
-        }
-
         double bboxCx = (minX + maxX) / 2.0, bboxCy = (minY + maxY) / 2.0;
         var center = new Point(ToScreenX(bboxCx), ToScreenY(bboxCy));
 

@@ -1,8 +1,10 @@
-﻿using System.Windows;
+using System.Windows;
+using System.Windows.Input;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
+using MBColumn.Infrastructure.Persistence;
 using MBColumn.Infrastructure.Rebar;
 using MBColumn.Infrastructure.Solvers;
 using MBColumn.Presentation.Wpf.ViewModels;
@@ -14,7 +16,14 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = BuildViewModel();
+        var vm = BuildViewModel();
+        DataContext = vm;
+
+        // Keyboard shortcuts
+        InputBindings.Add(new KeyBinding(vm.NewProjectCommand, Key.N, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(vm.OpenProjectCommand, Key.O, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(vm.SaveProjectCommand, Key.S, ModifierKeys.Control));
+        InputBindings.Add(new KeyBinding(vm.CalculateCommand, Key.F5, ModifierKeys.None));
     }
 
     private static MainWindowViewModel BuildViewModel()
@@ -32,7 +41,10 @@ public partial class MainWindow : Window
         var validation = new InputValidationService();
         IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
         var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
-        return new MainWindowViewModel(calculation, new InputViewModel(metricBars, imperialBars, rebarCoordinates));
+
+        IProjectService projectService = new ProjectService();
+
+        var input = new InputViewModel(metricBars, imperialBars, rebarCoordinates);
+        return new MainWindowViewModel(calculation, projectService, input);
     }
 }
-

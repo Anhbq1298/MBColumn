@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Application.Services.ImportExport;
 using MBColumn.Domain.Enums;
@@ -33,7 +34,6 @@ public sealed class InputViewModel : ViewModelBase
     private string layoutPreset = "Perimeter bars";
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
-    private double rectSpacing = 150.0;
     private double fc;
     private double fy;
     private double es;
@@ -324,6 +324,9 @@ public sealed class InputViewModel : ViewModelBase
     public bool IsAllSidesEqualLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
     public bool IsSidesDifferentLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.SidesDifferent;
     public bool IsCircularEqualSpacingLayout => IsCircularSection;
+    public bool IsRectangularEqualSpacingLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
+    public bool IsCustomRebarCoordinates => SelectedRebarLayoutType == RebarLayoutType.CustomCoordinates;
+    public bool IsAlgorithmicRebarCoordinates => !IsCustomRebarCoordinates;
     public RebarLayoutViewModel RebarLayout { get; }
     public IrregularSectionInputViewModel IrregularInput { get; }
     public bool IsIrregularSection
@@ -1021,6 +1024,95 @@ public sealed class InputViewModel : ViewModelBase
 
     private void RebarRow_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        UpdateSectionPreview();
+    }
+
+    public ColumnInputSnapshot ToSnapshot() => new()
+    {
+        UnitSystem = unitSystem.ToString(),
+        DesignCode = selectedDesignCode.ToString(),
+        Ec2Solver = selectedEc2Solver.ToString(),
+        IntegrationMethod = selectedIntegrationMethod.ToString(),
+        AlphaCc = alphaCc,
+        SectionShape = selectedSectionShape.ToString(),
+        Width = width, Height = height, Diameter = diameter, Cover = cover,
+        Fc = fc, Fy = fy, Es = es,
+        BarSize = barSize, BarCount = barCount, Spacing = spacing,
+        RebarLayoutType = selectedRebarLayoutType.ToString(),
+        TopBarCount = RebarLayout.Top.BarCount,
+        BottomBarCount = RebarLayout.Bottom.BarCount,
+        LeftBarCount = RebarLayout.Left.BarCount,
+        RightBarCount = RebarLayout.Right.BarCount,
+        IrregularBarSize = IrregularInput.BarSize,
+        IrregularSpacing = IrregularInput.Spacing,
+        IrregularRebarMode = IrregularInput.RebarMode.ToString(),
+        BoundaryPoints = IrregularInput.BoundaryPoints
+            .Select(p => new SnapshotBoundaryPoint { PtIndex = p.PtIndex, X = p.X, Y = p.Y })
+            .ToList(),
+        Rebars = IrregularInput.Rebars
+            .Select(r => new SnapshotRebar { RebarIndex = r.RebarIndex, X = r.X, Y = r.Y, BarSize = r.BarSize, AreaMm2 = r.AreaMm2 })
+            .ToList(),
+        Pu = pu, Mux = mux, Muy = muy,
+        PmAngleDegrees = selectedPmAngleDegrees,
+        AxialLoad = selectedAxialLoad,
+        LoadCases = LoadCases
+            .Select(lc => new SnapshotLoadCase { Id = lc.Id, Label = lc.Name, Pu = lc.Pu, Mux = lc.Mux, Muy = lc.Muy, IsActive = lc.IsActive })
+            .ToList()
+    };
+
+    public void LoadFromSnapshot(ColumnInputSnapshot s)
+    {
+        unitSystem = Enum.TryParse<UnitSystem>(s.UnitSystem, out var us) ? us : UnitSystem.Metric;
+        selectedDesignCode = Enum.TryParse<DesignCodeType>(s.DesignCode, out var dc) ? dc : DesignCodeType.Aci318Style;
+        selectedEc2Solver = Enum.TryParse<Ec2SolverType>(s.Ec2Solver, out var ec2) ? ec2 : Ec2SolverType.Fiber;
+        selectedIntegrationMethod = Enum.TryParse<SectionIntegrationMethod>(s.IntegrationMethod, out var im) ? im : SectionIntegrationMethod.Fiber;
+        alphaCc = s.AlphaCc;
+        selectedSectionShape = Enum.TryParse<SectionShapeType>(s.SectionShape, out var ss) ? ss : SectionShapeType.Rectangular;
+        width = s.Width; height = s.Height; diameter = s.Diameter; cover = s.Cover;
+        fc = s.Fc; fy = s.Fy; es = s.Es;
+        barSize = s.BarSize; barCount = s.BarCount; spacing = s.Spacing;
+        selectedRebarLayoutType = Enum.TryParse<RebarLayoutType>(s.RebarLayoutType, out var rlt) ? rlt : RebarLayoutType.AllSidesEqual;
+        pu = s.Pu; mux = s.Mux; muy = s.Muy;
+        selectedPmAngleDegrees = s.PmAngleDegrees;
+        selectedAxialLoad = s.AxialLoad;
+
+        RebarLayout.Top.SetBarCountSilently(s.TopBarCount);
+        RebarLayout.Bottom.SetBarCountSilently(s.BottomBarCount);
+        RebarLayout.Left.SetBarCountSilently(s.LeftBarCount);
+        RebarLayout.Right.SetBarCountSilently(s.RightBarCount);
+        SyncSideGlobalInputs();
+
+        LoadCases.Clear();
+        nextLoadCaseIndex = 2;
+        foreach (var lc in s.LoadCases)
+        {
+            LoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive));
+            if (int.TryParse(lc.Label.Replace("LC", ""), out var n) && n >= nextLoadCaseIndex)
+                nextLoadCaseIndex = n + 1;
+        }
+
+        if (LoadCases.Count == 0) AddPrimaryLoadCase();
+
+        _isGeneratingRebars = true;
+        try
+        {
+            IrregularInput.BarSize = s.IrregularBarSize;
+            IrregularInput.Spacing = s.IrregularSpacing;
+            IrregularInput.RebarMode = Enum.TryParse<IrregularRebarModeType>(s.IrregularRebarMode, out var irm)
+                ? irm : IrregularRebarModeType.EqualSpacing;
+            IrregularInput.BoundaryPoints.Clear();
+            foreach (var pt in s.BoundaryPoints)
+                IrregularInput.BoundaryPoints.Add(new IrregularBoundaryPointViewModel { PtIndex = pt.PtIndex, X = pt.X, Y = pt.Y });
+            IrregularInput.Rebars.Clear();
+            foreach (var r in s.Rebars)
+                IrregularInput.Rebars.Add(new IrregularRebarRowViewModel { RebarIndex = r.RebarIndex, X = r.X, Y = r.Y, BarSize = r.BarSize ?? "", AreaMm2 = r.AreaMm2 });
+        }
+        finally
+        {
+            _isGeneratingRebars = false;
+        }
+
+        RaiseDefaults();
         UpdateSectionPreview();
     }
 

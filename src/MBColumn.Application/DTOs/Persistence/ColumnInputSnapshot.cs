@@ -1,0 +1,68 @@
+namespace MBColumn.Application.DTOs.Persistence;
+
+public sealed class ColumnInputSnapshot
+{
+    public string UnitSystem { get; set; } = "Metric";
+    public string DesignCode { get; set; } = "Aci318Style";
+    public string Ec2Solver { get; set; } = "Fiber";
+    public string IntegrationMethod { get; set; } = "Fiber";
+    public double AlphaCc { get; set; } = 0.85;
+
+    public string SectionShape { get; set; } = "Rectangular";
+    public double Width { get; set; } = 700;
+    public double Height { get; set; } = 700;
+    public double Diameter { get; set; } = 700;
+    public double Cover { get; set; } = 55;
+
+    public double Fc { get; set; } = 28;
+    public double Fy { get; set; } = 420;
+    public double Es { get; set; } = 200000;
+
+    public string BarSize { get; set; } = "T25";
+    public int BarCount { get; set; } = 28;
+    public double Spacing { get; set; } = 150;
+    public string RebarLayoutType { get; set; } = "AllSidesEqual";
+    public int TopBarCount { get; set; } = 8;
+    public int BottomBarCount { get; set; } = 8;
+    public int LeftBarCount { get; set; } = 6;
+    public int RightBarCount { get; set; } = 6;
+
+    public string IrregularBarSize { get; set; } = "T25";
+    public double IrregularSpacing { get; set; } = 150;
+    public string IrregularRebarMode { get; set; } = "EqualSpacing";
+    public List<SnapshotBoundaryPoint> BoundaryPoints { get; set; } = [];
+    public List<SnapshotRebar> Rebars { get; set; } = [];
+
+    public double Pu { get; set; }
+    public double Mux { get; set; }
+    public double Muy { get; set; }
+    public double PmAngleDegrees { get; set; }
+    public double AxialLoad { get; set; }
+    public List<SnapshotLoadCase> LoadCases { get; set; } = [];
+}
+
+public sealed class SnapshotBoundaryPoint
+{
+    public int PtIndex { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
+}
+
+public sealed class SnapshotRebar
+{
+    public string RebarIndex { get; set; } = "";
+    public double X { get; set; }
+    public double Y { get; set; }
+    public string? BarSize { get; set; }
+    public double? AreaMm2 { get; set; }
+}
+
+public sealed class SnapshotLoadCase
+{
+    public string Id { get; set; } = "";
+    public string Label { get; set; } = "";
+    public double Pu { get; set; }
+    public double Mux { get; set; }
+    public double Muy { get; set; }
+    public bool IsActive { get; set; } = true;
+}
