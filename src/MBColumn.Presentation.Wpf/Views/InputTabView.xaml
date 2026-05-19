@@ -381,6 +381,10 @@
                                         <TextBlock Text="Total number of bars" Style="{StaticResource FieldLabelTextStyle}" TextWrapping="Wrap" />
                                         <TextBox Text="{Binding BarCount, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
+                                    <StackPanel Grid.Column="2" Visibility="{Binding IsRectangularEqualSpacingLayout, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock Text="{Binding LengthLabel, StringFormat=Bar spacing ({0})}" Style="{StaticResource FieldLabelTextStyle}" TextWrapping="Wrap" />
+                                        <TextBox Text="{Binding RectSpacing, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
                                 </Grid>
 
                                 <Grid Visibility="{Binding IsCircularEqualSpacingLayout, Converter={StaticResource BoolToVisibilityConverter}}">

@@ -3,6 +3,7 @@
 public enum RebarLayoutType
 {
     AllSidesEqual,
-    SidesDifferent
+    SidesDifferent,
+    EqualSpacing
 }
 

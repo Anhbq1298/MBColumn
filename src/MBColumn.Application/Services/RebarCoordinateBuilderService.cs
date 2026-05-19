@@ -34,6 +34,23 @@ public sealed class RebarCoordinateBuilderService(
             throw new InvalidOperationException("Rebar centroid is outside the concrete section.");
         }
 
+        if (layout.LayoutType == RebarLayoutType.EqualSpacing)
+        {
+            double spacingMm = units.LengthToMm(layout.Spacing, lengthUnit);
+            if (spacingMm <= 0) throw new InvalidOperationException("Spacing must be greater than zero.");
+            int nTop = Math.Max(2, (int)Math.Round(2.0 * x / spacingMm) + 1);
+            int nInterm = Math.Max(0, (int)Math.Round(2.0 * y / spacingMm) - 1);
+            ValidateSpacing(nTop, 2.0 * x, bar.DiameterMm, "Top/Bottom");
+            ValidateSpacing(nInterm + 2, 2.0 * y, bar.DiameterMm, "Left/Right");
+            var equalBars = new List<RebarCoordinateDto>();
+            AddSide(equalBars, "Top", nTop, -x, y, x, y, bar);
+            AddSide(equalBars, "Bottom", nTop, -x, -y, x, -y, bar);
+            AddIntermediateBars(equalBars, "Left", nInterm, -x, -y, -x, y, bar);
+            AddIntermediateBars(equalBars, "Right", nInterm, x, -y, x, y, bar);
+            if (equalBars.Count == 0) throw new InvalidOperationException("At least one physical rebar coordinate is required.");
+            return equalBars;
+        }
+
         var sideCounts = GetSideCounts(layout);
         ValidateSideCounts(sideCounts, layout.LayoutType);
         ValidateSpacing(sideCounts.Top, 2.0 * x, bar.DiameterMm, "Top");

@@ -32,6 +32,7 @@ public sealed class InputViewModel : ViewModelBase
     private string layoutPreset = "Perimeter bars";
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+    private double rectSpacing = 150.0;
     private double fc;
     private double fy;
     private double es;
@@ -125,7 +126,8 @@ public sealed class InputViewModel : ViewModelBase
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
     [
         new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
-        new(RebarLayoutType.SidesDifferent, "Sides Different")
+        new(RebarLayoutType.SidesDifferent, "Sides Different"),
+        new(RebarLayoutType.EqualSpacing, "Equal Spacing")
     ];
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
@@ -175,6 +177,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(IsCircularEqualSpacingLayout));
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
+            Raise(nameof(IsRectangularEqualSpacingLayout));
             Raise(nameof(SectionWidth));
             Raise(nameof(SectionHeight));
             UpdateSectionPreview();
@@ -204,7 +207,12 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (selectedRebarLayoutType == value) return;
             selectedRebarLayoutType = value;
-            layoutPreset = value == RebarLayoutType.AllSidesEqual ? "All Sides Equal" : "Sides Different";
+            layoutPreset = value switch
+            {
+                RebarLayoutType.AllSidesEqual => "All Sides Equal",
+                RebarLayoutType.EqualSpacing => "Equal Spacing",
+                _ => "Sides Different"
+            };
             if (selectedRebarLayoutType == RebarLayoutType.SidesDifferent)
             {
                 SeedSideCountsFromTotalBars();
@@ -213,6 +221,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise();
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
+            Raise(nameof(IsRectangularEqualSpacingLayout));
             Raise(nameof(LayoutPreset));
             Raise(nameof(SelectedRebarLayout));
             UpdateSectionPreview();
@@ -235,7 +244,9 @@ public sealed class InputViewModel : ViewModelBase
     public UnitSystem SelectedUnitSystem { get => UnitSystem; set => UnitSystem = value; }
     public bool IsAllSidesEqualLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
     public bool IsSidesDifferentLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.SidesDifferent;
+    public bool IsRectangularEqualSpacingLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
     public bool IsCircularEqualSpacingLayout => IsCircularSection;
+    public double RectSpacing { get => rectSpacing; set { Set(ref rectSpacing, value); UpdateSectionPreview(); } }
     public RebarLayoutViewModel RebarLayout { get; }
     public IrregularSectionInputViewModel IrregularInput { get; }
     public bool IsIrregularSection
@@ -496,7 +507,8 @@ public sealed class InputViewModel : ViewModelBase
             RebarLayout.Top.ToDto(BarSize, Cover),
             RebarLayout.Bottom.ToDto(BarSize, Cover),
             RebarLayout.Left.ToDto(BarSize, Cover),
-            RebarLayout.Right.ToDto(BarSize, Cover));
+            RebarLayout.Right.ToDto(BarSize, Cover))
+        { Spacing = RectSpacing };
 
     private void SyncSideGlobalInputs()
     {
@@ -648,7 +660,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(Width)); Raise(nameof(Height)); Raise(nameof(Diameter)); Raise(nameof(Cover)); Raise(nameof(BarSize)); Raise(nameof(BarCount)); Raise(nameof(LayoutPreset));
         Raise(nameof(Fc)); Raise(nameof(Fy)); Raise(nameof(Es)); Raise(nameof(Pu)); Raise(nameof(Mux)); Raise(nameof(Muy)); Raise(nameof(SelectedAxialLoad));
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
-        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
+        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(IsRectangularEqualSpacingLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
     }

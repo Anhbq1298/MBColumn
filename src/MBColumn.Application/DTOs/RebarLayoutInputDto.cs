@@ -8,5 +8,8 @@ public sealed record RebarLayoutInputDto(
     RebarSideInputDto Top,
     RebarSideInputDto Bottom,
     RebarSideInputDto Left,
-    RebarSideInputDto Right);
+    RebarSideInputDto Right)
+{
+    public double Spacing { get; init; } = 0.0;
+}
 
