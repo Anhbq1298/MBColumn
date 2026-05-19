@@ -39,7 +39,7 @@ def extract_benchmark_data(docx_path):
     return data
 
 if __name__ == "__main__":
-    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\s-conc\Gemini_NvsM_Test_Package_v2.docx"
+    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\ref\Gemini_NvsM_Test_Package_v2.docx"
     all_data = extract_benchmark_data(path)
     for angle in sorted(all_data.keys()):
         print(f"--- Angle {angle} ---")

@@ -12,5 +12,5 @@ def dump_docx(docx_path):
             print(" | ".join(cell.text.strip() for cell in row.cells))
 
 if __name__ == "__main__":
-    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\s-conc\Gemini_NvsM_Test_Package_v2.docx"
+    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\ref\Gemini_NvsM_Test_Package_v2.docx"
     dump_docx(path)
