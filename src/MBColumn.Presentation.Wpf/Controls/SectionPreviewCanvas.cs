@@ -195,6 +195,28 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         }
         dc.DrawGeometry(fill, new Pen(navy, 2), geo);
 
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double coverMm = Cover * factor;
+        if (coverMm > 0)
+        {
+            var userPts = bpts.Select(p => (p.X, p.Y)).ToList();
+            var inset = ComputeInsetPolygon(userPts, coverMm);
+            if (inset != null && inset.Count >= 3)
+            {
+                var coverGeo = new StreamGeometry();
+                using (var ctx = coverGeo.Open())
+                {
+                    ctx.BeginFigure(new Point(ToScreenX(inset[0].X), ToScreenY(inset[0].Y)), false, true);
+                    for (int i = 1; i < inset.Count; i++)
+                        ctx.LineTo(new Point(ToScreenX(inset[i].X), ToScreenY(inset[i].Y)), true, false);
+                }
+                dc.DrawGeometry(null, new Pen(grey, 1) { DashStyle = DashStyles.Dash }, coverGeo);
+                double labelX = ToScreenX(inset.Min(p => p.X)) + 4;
+                double labelY = ToScreenY(inset.Max(p => p.Y)) + 4;
+                DrawText(dc, "cover", 10, grey, new Point(labelX, labelY), FontWeights.Normal);
+            }
+        }
+
         double bboxCx = (minX + maxX) / 2.0, bboxCy = (minY + maxY) / 2.0;
         var center = new Point(ToScreenX(bboxCx), ToScreenY(bboxCy));
 
@@ -239,6 +261,37 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             double r = Math.Max(3.0, item.Diameter * scale / 2.0);
             dc.DrawEllipse(darkNavy, new Pen(Brushes.White, 0.8), pt, r, r);
         }
+    }
+
+    private static List<(double X, double Y)>? ComputeInsetPolygon(IReadOnlyList<(double X, double Y)> pts, double offset)
+    {
+        int n = pts.Count;
+        if (n < 3 || offset <= 0) return null;
+        double area2 = 0;
+        for (int i = 0; i < n; i++) { var a = pts[i]; var b = pts[(i + 1) % n]; area2 += a.X * b.Y - b.X * a.Y; }
+        bool cw = area2 < 0;
+        var result = new List<(double X, double Y)>(n);
+        for (int i = 0; i < n; i++)
+        {
+            var pP = pts[(i - 1 + n) % n]; var pI = pts[i]; var pN = pts[(i + 1) % n];
+            double dx1 = pI.X - pP.X, dy1 = pI.Y - pP.Y, len1 = Math.Sqrt(dx1 * dx1 + dy1 * dy1);
+            if (len1 > 1e-9) { dx1 /= len1; dy1 /= len1; }
+            double dx2 = pN.X - pI.X, dy2 = pN.Y - pI.Y, len2 = Math.Sqrt(dx2 * dx2 + dy2 * dy2);
+            if (len2 > 1e-9) { dx2 /= len2; dy2 /= len2; }
+            double nx1 = cw ? dy1 : -dy1, ny1 = cw ? -dx1 : dx1;
+            double nx2 = cw ? dy2 : -dy2, ny2 = cw ? -dx2 : dx2;
+            double p1x = pP.X + offset * nx1, p1y = pP.Y + offset * ny1;
+            double p2x = pI.X + offset * nx2, p2y = pI.Y + offset * ny2;
+            double cross = dx1 * dy2 - dy1 * dx2;
+            if (Math.Abs(cross) < 1e-6)
+                result.Add((pI.X + offset * nx1, pI.Y + offset * ny1));
+            else
+            {
+                double t = ((p2x - p1x) * dy2 - (p2y - p1y) * dx2) / cross;
+                result.Add((p1x + t * dx1, p1y + t * dy1));
+            }
+        }
+        return result;
     }
 
     private string UnitText => UnitSystem == UnitSystem.Metric ? "mm" : "in";

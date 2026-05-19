@@ -1,7 +1,7 @@
 import os
 
-input_path = r'C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\spColumnReversed-Solution\final_validation_data_v2.txt'
-output_path = r'C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\spColumnReversed-Solution\detailed_validation_report.html'
+input_path = r'C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\refReversed-Solution\final_validation_data_v2.txt'
+output_path = r'C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\refReversed-Solution\detailed_validation_report.html'
 
 def parse_data():
     # Use utf-16 as it was detected as UTF-16LE previously
@@ -17,8 +17,8 @@ def parse_data():
     
     for line in lines:
         line = line.strip()
-        if "Validating S-CONCRETE Angle" in line:
-            # Format: Validating S-CONCRETE Angle 0 (MB Angle 90)
+        if "Validating ref Angle" in line:
+            # Format: Validating ref Angle 0 (MB Angle 90)
             try:
                 angle_part = line.split("Angle")[1].split("(")[0].strip()
                 current_angle = angle_part
@@ -71,7 +71,7 @@ html = """
     <div class="summary">
         <strong>Validation Scope:</strong> 5 Biaxial Angles x 100 Points per Angle <br>
         <strong>Core Configuration:</strong> &alpha;<sub>cc</sub> = 0.80, Enforced Rebar Yield at Pure Axial <br>
-        <strong>Reference Benchmark:</strong> S-CONCRETE (EN 1992-1-1)
+        <strong>Reference Benchmark:</strong> ref (EN 1992-1-1)
     </div>
 """
 

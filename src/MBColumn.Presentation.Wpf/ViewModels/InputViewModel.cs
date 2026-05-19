@@ -33,6 +33,7 @@ public sealed class InputViewModel : ViewModelBase
     private string layoutPreset = "Perimeter bars";
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+    private double rectSpacing = 150.0;
     private double fc;
     private double fy;
     private double es;
@@ -136,30 +137,11 @@ public sealed class InputViewModel : ViewModelBase
         set => Set(ref selectedIntegrationMethod, value);
     }
 
-    public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes
-    {
-        get
-        {
-            if (SelectedSectionShape == SectionShapeType.Rectangular)
-            {
-                return
-                [
-                    new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
-                    new(RebarLayoutType.EqualSpacing, "Equal Spacing"),
-                    new(RebarLayoutType.SidesDifferent, "Side Different"),
-                    new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
-                ];
-            }
-            else
-            {
-                return
-                [
-                    new(RebarLayoutType.EqualSpacing, "Equal Spacing"),
-                    new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
-                ];
-            }
-        }
-    }
+    public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
+    [
+        new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
+        new(RebarLayoutType.SidesDifferent, "Sides Different")
+    ];
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
@@ -206,6 +188,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(IsEqualSpacingLayout));
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
+            Raise(nameof(IsRectangularEqualSpacingLayout));
             Raise(nameof(SectionWidth));
             Raise(nameof(SectionHeight));
             Raise(nameof(RebarLayoutTypes));
@@ -294,16 +277,7 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (selectedRebarLayoutType == value) return;
             selectedRebarLayoutType = value;
-            
-            if (value == RebarLayoutType.AllSidesEqual)
-                layoutPreset = "All Sides Equal";
-            else if (value == RebarLayoutType.SidesDifferent)
-                layoutPreset = "Sides Different";
-            else if (value == RebarLayoutType.EqualSpacing)
-                layoutPreset = "Equal Spacing";
-            else if (value == RebarLayoutType.CustomCoordinates)
-                layoutPreset = "Custom Coordinates";
-
+            layoutPreset = value == RebarLayoutType.AllSidesEqual ? "All Sides Equal" : "Sides Different";
             if (selectedRebarLayoutType == RebarLayoutType.SidesDifferent)
             {
                 SeedSideCountsFromTotalBars();
@@ -322,8 +296,6 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(IsEqualSpacingLayout));
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
-            Raise(nameof(IsCircularEqualSpacingLayout));
-            Raise(nameof(ShowTotalBarsInput));
             Raise(nameof(LayoutPreset));
             Raise(nameof(SelectedRebarLayout));
             Raise(nameof(IsCustomRebarCoordinates));
@@ -351,9 +323,7 @@ public sealed class InputViewModel : ViewModelBase
     public bool IsEqualSpacingLayout => (IsRectangularSection || IsCircularSection) && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
     public bool IsAllSidesEqualLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
     public bool IsSidesDifferentLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.SidesDifferent;
-    public bool IsCircularEqualSpacingLayout => IsCircularSection && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
-    public bool IsCustomRebarCoordinates => SelectedRebarLayoutType == RebarLayoutType.CustomCoordinates;
-    public bool IsAlgorithmicRebarCoordinates => !IsCustomRebarCoordinates;
+    public bool IsCircularEqualSpacingLayout => IsCircularSection;
     public RebarLayoutViewModel RebarLayout { get; }
     public IrregularSectionInputViewModel IrregularInput { get; }
     public bool IsIrregularSection
@@ -803,8 +773,7 @@ public sealed class InputViewModel : ViewModelBase
             RebarLayout.Top.ToDto(BarSize, Cover),
             RebarLayout.Bottom.ToDto(BarSize, Cover),
             RebarLayout.Left.ToDto(BarSize, Cover),
-            RebarLayout.Right.ToDto(BarSize, Cover),
-            Spacing);
+            RebarLayout.Right.ToDto(BarSize, Cover));
 
     private void SyncSideGlobalInputs()
     {
@@ -956,7 +925,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(Width)); Raise(nameof(Height)); Raise(nameof(Diameter)); Raise(nameof(Cover)); Raise(nameof(BarSize)); Raise(nameof(BarCount)); Raise(nameof(LayoutPreset));
         Raise(nameof(Fc)); Raise(nameof(Fy)); Raise(nameof(Es)); Raise(nameof(Pu)); Raise(nameof(Mux)); Raise(nameof(Muy)); Raise(nameof(SelectedAxialLoad));
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
-        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(ShowTotalBarsInput));
+        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
     }

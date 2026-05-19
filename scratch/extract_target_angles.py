@@ -39,12 +39,12 @@ def extract_target_angles(docx_path, target_angles):
     return all_data
 
 if __name__ == "__main__":
-    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\s-conc\Gemini_NvsM_Test_Package_v2.docx"
+    path = r"C:\Users\NCPC\Desktop\_ReverseEngineering\ref\Gemini_NvsM_Test_Package_v2.docx"
     targets = [0, 16, 75, 90, 135]
     data = extract_target_angles(path, targets)
     
     # Save to JSON for C# to read
-    with open(r"C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\spColumnReversed-Solution\tests\MBColumn.Tests\benchmark_multi_angle.json", "w") as f:
+    with open(r"C:\Users\NCPC\OneDrive - Meinhardt Singapore Pte Ltd\_ReverseEngineering\refReversed-Solution\tests\MBColumn.Tests\benchmark_multi_angle.json", "w") as f:
         json.dump(data, f, indent=2)
         
     for angle in targets:
