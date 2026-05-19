@@ -88,13 +88,6 @@ public sealed class IrregularSectionValidationService : IIrregularSectionValidat
                 "Polygon area is zero or near-zero.", ValidationSeverity.Error));
         }
 
-        if (!PolygonGeometry.IsClockwise(points) && area >= BoundaryAreaToleranceMm2)
-        {
-            issues.Add(new ValidationIssue("Boundary", null,
-                "Boundary points must be entered in clockwise order.",
-                ValidationSeverity.Error));
-        }
-
         if (PolygonGeometry.IsSelfIntersecting(points))
         {
             issues.Add(new ValidationIssue("Boundary", null,

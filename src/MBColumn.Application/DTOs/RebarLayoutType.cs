@@ -1,8 +1,10 @@
-﻿namespace MBColumn.Application.DTOs;
+namespace MBColumn.Application.DTOs;
 
 public enum RebarLayoutType
 {
     AllSidesEqual,
-    SidesDifferent
+    SidesDifferent,
+    EqualSpacing,
+    CustomCoordinates
 }
 

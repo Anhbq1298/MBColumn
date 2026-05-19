@@ -165,7 +165,7 @@ var tests = new List<(string Name, Action Test)>
     ("Irregular boundary rejects duplicate points",                  TestIrregularBoundaryRejectsDuplicate),
     ("Irregular boundary rejects duplicate consecutive points",      TestIrregularBoundaryRejectsDuplicateConsecutive),
     ("Irregular boundary rejects repeated first/last",               TestIrregularBoundaryRejectsRepeatedFirstLast),
-    ("Irregular boundary rejects counter-clockwise polygon",         TestIrregularBoundaryRejectsCcw),
+    ("Irregular boundary accepts counter-clockwise polygon",         TestIrregularBoundaryAcceptsCcw),
     ("Irregular boundary rejects self-intersecting polygon",         TestIrregularBoundaryRejectsSelfIntersecting),
     ("Irregular boundary rejects zero-area polygon",                 TestIrregularBoundaryRejectsZeroArea),
     ("Irregular rebar accepts inside rebar",                         TestIrregularRebarAcceptsInside),
@@ -187,7 +187,8 @@ var tests = new List<(string Name, Action Test)>
     ("Irregular section ratio is finite",                            TestIrregularRatioFinite),
     ("Irregular mapper shifts boundary to centroid",                 TestIrregularMapperShiftsToCentroid),
     ("Irregular section shape exposed on result",                    TestIrregularResultExposesShape),
-    ("Irregular section integrator boundary handled",                TestIrregularIntegratorBoundaryHandled)
+    ("Irregular section integrator boundary handled",                TestIrregularIntegratorBoundaryHandled),
+    ("Rectangular equal spacing optimal distribution",               TestRectangularEqualSpacingOptimalDistribution)
 };
 
 foreach (var (name, test) in tests)
@@ -1663,6 +1664,23 @@ static void TestAllSidesEqualRule()
     }
 }
 
+static void TestRectangularEqualSpacingOptimalDistribution()
+{
+    var units = new UnitConversionService();
+    var metric = new SingaporeRebarDatabase();
+    var imperial = new ImperialRebarDatabase();
+    var builder = new RebarCoordinateBuilderService(units, metric, imperial);
+
+    // Valid case: even number of bars >= 4
+    var layout = new RebarLayoutInputDto(RebarLayoutType.EqualSpacing, 10, "T20", 40, null!, null!, null!, null!);
+    var bars = builder.Build(layout, 300, 600, LengthUnit.Millimeter, UnitSystem.Metric);
+    IsTrue(bars.Count == 10);
+
+    // Invalid case: odd number of bars should throw an exception
+    var layoutOdd = new RebarLayoutInputDto(RebarLayoutType.EqualSpacing, 9, "T20", 40, null!, null!, null!, null!);
+    Throws(() => builder.Build(layoutOdd, 300, 600, LengthUnit.Millimeter, UnitSystem.Metric));
+}
+
 static (StrainCompatibilityInteractionSolver Conv, AciFiberInteractionSolver Fiber, RectangularSection Section, ConcreteMaterial Concrete, SteelMaterial Steel) AciSolverFixtures()
 {
     var aci = new Aci318DesignCodeService();
@@ -2212,7 +2230,7 @@ static void TestIrregularBoundaryRejectsRepeatedFirstLast()
     IsFalse(result.IsValid);
 }
 
-static void TestIrregularBoundaryRejectsCcw()
+static void TestIrregularBoundaryAcceptsCcw()
 {
     var pts = new List<MBColumn.Domain.Entities.Point2D>
     {
@@ -2222,7 +2240,7 @@ static void TestIrregularBoundaryRejectsCcw()
         new(-100,  100)
     };
     var result = IrregularValidator().ValidateBoundary(pts);
-    IsFalse(result.IsValid);
+    IsTrue(result.IsValid);
 }
 
 static void TestIrregularBoundaryRejectsSelfIntersecting()

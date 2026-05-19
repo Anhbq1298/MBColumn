@@ -1,4 +1,4 @@
-﻿namespace MBColumn.Application.DTOs;
+namespace MBColumn.Application.DTOs;
 
 public sealed record RebarLayoutInputDto(
     RebarLayoutType LayoutType,
@@ -8,5 +8,6 @@ public sealed record RebarLayoutInputDto(
     RebarSideInputDto Top,
     RebarSideInputDto Bottom,
     RebarSideInputDto Left,
-    RebarSideInputDto Right);
+    RebarSideInputDto Right,
+    double Spacing = 150.0);
 

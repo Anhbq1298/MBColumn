@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
@@ -14,13 +15,13 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public static readonly DependencyProperty SectionShapeProperty = DependencyProperty.Register(nameof(SectionShape), typeof(SectionShapeType), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(SectionShapeType.Rectangular, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty CoverProperty = DependencyProperty.Register(nameof(Cover), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty UnitSystemProperty = DependencyProperty.Register(nameof(UnitSystem), typeof(UnitSystem), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(UnitSystem.Metric, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty RebarsProperty = DependencyProperty.Register(nameof(Rebars), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty RebarsProperty = DependencyProperty.Register(nameof(Rebars), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnPreviewCollectionPropertyChanged));
     public static readonly DependencyProperty SectionLabelProperty = DependencyProperty.Register(nameof(SectionLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty RebarLabelProperty = DependencyProperty.Register(nameof(RebarLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty CoverLabelProperty = DependencyProperty.Register(nameof(CoverLabel), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty IsValidProperty = DependencyProperty.Register(nameof(IsValid), typeof(bool), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ErrorMessageProperty = DependencyProperty.Register(nameof(ErrorMessage), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("Invalid section input", FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty BoundaryPointsProperty = DependencyProperty.Register(nameof(BoundaryPoints), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty BoundaryPointsProperty = DependencyProperty.Register(nameof(BoundaryPoints), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnPreviewCollectionPropertyChanged));
 
     public double SectionWidth { get => (double)GetValue(SectionWidthProperty); set => SetValue(SectionWidthProperty, value); }
     public double SectionHeight { get => (double)GetValue(SectionHeightProperty); set => SetValue(SectionHeightProperty, value); }
@@ -34,6 +35,29 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public bool IsValid { get => (bool)GetValue(IsValidProperty); set => SetValue(IsValidProperty, value); }
     public string ErrorMessage { get => (string)GetValue(ErrorMessageProperty); set => SetValue(ErrorMessageProperty, value); }
     public IEnumerable? BoundaryPoints { get => (IEnumerable?)GetValue(BoundaryPointsProperty); set => SetValue(BoundaryPointsProperty, value); }
+
+    private static void OnPreviewCollectionPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not SectionPreviewCanvas canvas)
+        {
+            return;
+        }
+
+        if (e.OldValue is INotifyCollectionChanged oldCollection)
+        {
+            oldCollection.CollectionChanged -= canvas.OnPreviewCollectionChanged;
+        }
+
+        if (e.NewValue is INotifyCollectionChanged newCollection)
+        {
+            newCollection.CollectionChanged += canvas.OnPreviewCollectionChanged;
+        }
+
+        canvas.InvalidateVisual();
+    }
+
+    private void OnPreviewCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => InvalidateVisual();
 
     protected override void OnRender(DrawingContext dc)
     {

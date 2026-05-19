@@ -29,6 +29,7 @@ public sealed class InputViewModel : ViewModelBase
     private double cover;
     private string barSize = "";
     private int barCount;
+    private double spacing = 150.0;
     private string layoutPreset = "Perimeter bars";
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
@@ -62,7 +63,16 @@ public sealed class InputViewModel : ViewModelBase
         RebarLayout = new RebarLayoutViewModel(UpdateSectionPreview);
         IrregularInput = new IrregularSectionInputViewModel(new IrregularSectionCsvService());
         IrregularInput.BoundaryPoints.CollectionChanged += (_, _) => UpdateSectionPreview();
-        IrregularInput.Rebars.CollectionChanged += (_, _) => UpdateSectionPreview();
+        IrregularInput.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName == nameof(IrregularSectionInputViewModel.Spacing) ||
+                args.PropertyName == nameof(IrregularSectionInputViewModel.BarSize) ||
+                args.PropertyName == nameof(IrregularSectionInputViewModel.RebarMode))
+            {
+                UpdateSectionPreview();
+            }
+        };
+        WireRebarsCollectionChanged();
         ApplyMetricDefaults();
         UpdateSectionPreview();
         AddLoadCaseCommand = new RelayCommand(AddLoadCase);
@@ -70,10 +80,12 @@ public sealed class InputViewModel : ViewModelBase
         DeleteSelectedLoadCasesCommand = new RelayCommand<object>(DeleteSelectedLoadCases);
         RemoveDuplicateLoadCasesCommand = new RelayCommand(RemoveDuplicateLoadCases);
         GenerateIrregularRebarsCommand = new RelayCommand(GenerateIrregularRebars);
+        GenerateEqualSpacingRebarsCommand = new RelayCommand(GenerateEqualSpacingRebars);
     }
 
     public IReadOnlyList<UnitSystem> UnitSystems { get; } = [UnitSystem.Metric, UnitSystem.Imperial];
     public ICommand GenerateIrregularRebarsCommand { get; }
+    public ICommand GenerateEqualSpacingRebarsCommand { get; }
     public IReadOnlyList<DesignCodeOption> DesignCodes { get; } =
     [
         new(DesignCodeType.Aci318Style, "ACI 318"),
@@ -122,11 +134,30 @@ public sealed class InputViewModel : ViewModelBase
         set => Set(ref selectedIntegrationMethod, value);
     }
 
-    public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
-    [
-        new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
-        new(RebarLayoutType.SidesDifferent, "Sides Different")
-    ];
+    public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes
+    {
+        get
+        {
+            if (SelectedSectionShape == SectionShapeType.Rectangular)
+            {
+                return
+                [
+                    new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
+                    new(RebarLayoutType.EqualSpacing, "Equal Spacing"),
+                    new(RebarLayoutType.SidesDifferent, "Side Different"),
+                    new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
+                ];
+            }
+            else
+            {
+                return
+                [
+                    new(RebarLayoutType.EqualSpacing, "Equal Spacing"),
+                    new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
+                ];
+            }
+        }
+    }
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
@@ -162,22 +193,71 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (selectedSectionShape == value) return;
             selectedSectionShape = value;
-            if (selectedSectionShape == SectionShapeType.Circular && Diameter <= 0)
-            {
-                diameter = Math.Min(Width, Height);
-                Raise(nameof(Diameter));
-            }
+            
+            ResetShapeDefaults(value);
 
             Raise();
             Raise(nameof(IsRectangularSection));
             Raise(nameof(IsCircularSection));
             Raise(nameof(IsIrregularSection));
             Raise(nameof(IsCircularEqualSpacingLayout));
+            Raise(nameof(IsEqualSpacingLayout));
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
             Raise(nameof(SectionWidth));
             Raise(nameof(SectionHeight));
+            Raise(nameof(RebarLayoutTypes));
+            Raise(nameof(Diameter));
+            Raise(nameof(Width));
+            Raise(nameof(Height));
+            Raise(nameof(Cover));
+            Raise(nameof(BarSize));
+            Raise(nameof(BarCount));
+            Raise(nameof(LayoutPreset));
+            Raise(nameof(SelectedRebarLayout));
+            Raise(nameof(SelectedRebarLayoutType));
+            Raise(nameof(ShowTotalBarsInput));
+            Raise(nameof(Spacing));
             UpdateSectionPreview();
+        }
+    }
+
+    private void ResetShapeDefaults(SectionShapeType shape)
+    {
+        bool isMetric = UnitSystem == UnitSystem.Metric;
+        if (shape == SectionShapeType.Rectangular)
+        {
+            width = isMetric ? 700 : 28;
+            height = isMetric ? 700 : 28;
+            cover = isMetric ? 55 : 2.2;
+            barSize = isMetric ? "T25" : "#8";
+            barCount = 28;
+            selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+            layoutPreset = "All Sides Equal";
+            SyncSideGlobalInputs();
+            SeedSideCountsFromTotalBars();
+        }
+        else if (shape == SectionShapeType.Circular)
+        {
+            diameter = isMetric ? 700 : 28;
+            cover = isMetric ? 55 : 2.2;
+            barSize = isMetric ? "T25" : "#8";
+            barCount = 28;
+            selectedRebarLayoutType = RebarLayoutType.EqualSpacing;
+            layoutPreset = "Equal Spacing";
+            spacing = isMetric ? 150 : 6;
+            GenerateEqualSpacingRebars();
+        }
+        else if (shape == SectionShapeType.Irregular)
+        {
+            cover = isMetric ? 55 : 2.2;
+            selectedRebarLayoutType = RebarLayoutType.EqualSpacing;
+            layoutPreset = "Equal Spacing";
+            IrregularInput.BarSize = isMetric ? "T25" : "#8";
+            IrregularInput.Spacing = isMetric ? 150 : 6;
+            IrregularInput.RebarMode = IrregularRebarModeType.EqualSpacing;
+            IrregularInput.LoadDefaultLShape();
+            GenerateIrregularRebars();
         }
     }
     public bool IsRectangularSection
@@ -204,17 +284,40 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (selectedRebarLayoutType == value) return;
             selectedRebarLayoutType = value;
-            layoutPreset = value == RebarLayoutType.AllSidesEqual ? "All Sides Equal" : "Sides Different";
+            
+            if (value == RebarLayoutType.AllSidesEqual)
+                layoutPreset = "All Sides Equal";
+            else if (value == RebarLayoutType.SidesDifferent)
+                layoutPreset = "Sides Different";
+            else if (value == RebarLayoutType.EqualSpacing)
+                layoutPreset = "Equal Spacing";
+            else if (value == RebarLayoutType.CustomCoordinates)
+                layoutPreset = "Custom Coordinates";
+
             if (selectedRebarLayoutType == RebarLayoutType.SidesDifferent)
             {
                 SeedSideCountsFromTotalBars();
             }
 
+            if (value == RebarLayoutType.CustomCoordinates)
+            {
+                IrregularInput.RebarMode = IrregularRebarModeType.CustomCoordinates;
+            }
+            else
+            {
+                IrregularInput.RebarMode = IrregularRebarModeType.EqualSpacing;
+            }
+
             Raise();
+            Raise(nameof(IsEqualSpacingLayout));
             Raise(nameof(IsAllSidesEqualLayout));
             Raise(nameof(IsSidesDifferentLayout));
+            Raise(nameof(IsCircularEqualSpacingLayout));
+            Raise(nameof(ShowTotalBarsInput));
             Raise(nameof(LayoutPreset));
             Raise(nameof(SelectedRebarLayout));
+            Raise(nameof(IsCustomRebarCoordinates));
+            Raise(nameof(IsAlgorithmicRebarCoordinates));
             UpdateSectionPreview();
         }
     }
@@ -233,9 +336,14 @@ public sealed class InputViewModel : ViewModelBase
     public int NumberOfBars { get => BarCount; set => BarCount = value; }
     public string SelectedRebarLayout { get => LayoutPreset; set => LayoutPreset = value; }
     public UnitSystem SelectedUnitSystem { get => UnitSystem; set => UnitSystem = value; }
+    public double Spacing { get => spacing; set { Set(ref spacing, value); UpdateSectionPreview(); } }
+    public bool ShowTotalBarsInput => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
+    public bool IsEqualSpacingLayout => (IsRectangularSection || IsCircularSection) && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
     public bool IsAllSidesEqualLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
     public bool IsSidesDifferentLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.SidesDifferent;
-    public bool IsCircularEqualSpacingLayout => IsCircularSection;
+    public bool IsCircularEqualSpacingLayout => IsCircularSection && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
+    public bool IsCustomRebarCoordinates => SelectedRebarLayoutType == RebarLayoutType.CustomCoordinates;
+    public bool IsAlgorithmicRebarCoordinates => !IsCustomRebarCoordinates;
     public RebarLayoutViewModel RebarLayout { get; }
     public IrregularSectionInputViewModel IrregularInput { get; }
     public bool IsIrregularSection
@@ -297,7 +405,9 @@ public sealed class InputViewModel : ViewModelBase
             IReadOnlyList<RebarCoordinateDto>? circularCoords = null;
             try
             {
-                circularCoords = rebarCoordinateBuilder.BuildCircular(Diameter, Cover, BarCount, BarSize, layoutLengthUnit, UnitSystem);
+                circularCoords = IsCustomRebarCoordinates
+                    ? BuildCustomRebarCoordinates()
+                    : rebarCoordinateBuilder.BuildCircular(Diameter, Cover, BarCount, BarSize, layoutLengthUnit, UnitSystem);
             }
             catch
             {
@@ -319,7 +429,18 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         var layout = CreateRebarLayoutInput();
-        var generatedCoordinates = rebarCoordinateBuilder.Build(layout, Width, Height, layoutLengthUnit, UnitSystem);
+        IReadOnlyList<RebarCoordinateDto>? generatedCoordinates = null;
+        try
+        {
+            generatedCoordinates = IsCustomRebarCoordinates
+                ? BuildCustomRebarCoordinates()
+                : rebarCoordinateBuilder.Build(layout, Width, Height, layoutLengthUnit, UnitSystem);
+        }
+        catch
+        {
+            // Validation will surface the error before Calculate() is reached
+        }
+
         return new(UnitSystem, Width, Height, Cover, BarSize, BarCount, LayoutPreset, Fc, Fy, Es, Pu, Mux, Muy,
             forceUnit, layoutLengthUnit, momentUnit, stressUnit, SelectedPmAngleDegrees, SelectedAxialLoad)
         {
@@ -346,6 +467,28 @@ public sealed class InputViewModel : ViewModelBase
         ClearSideWarnings();
         RebarLayoutWarning = "";
         Raise(nameof(HasRebarLayoutWarning));
+
+        if (SelectedSectionShape != SectionShapeType.Irregular)
+        {
+            IrregularInput.IsCustomCoordinatesOverride = IsCustomRebarCoordinates;
+        }
+        else
+        {
+            IrregularInput.IsCustomCoordinatesOverride = false;
+        }
+
+        if (SelectedRebarLayoutType == RebarLayoutType.EqualSpacing)
+        {
+            if (SelectedSectionShape == SectionShapeType.Rectangular || SelectedSectionShape == SectionShapeType.Circular)
+            {
+                GenerateEqualSpacingRebarsInternal();
+            }
+            else if (SelectedSectionShape == SectionShapeType.Irregular && IrregularInput.RebarMode == IrregularRebarModeType.EqualSpacing)
+            {
+                GenerateIrregularRebarsInternal();
+            }
+        }
+
         if (SelectedSectionShape == SectionShapeType.Irregular)
         {
             bool valid = IrregularInput.BoundaryPoints.Count >= 3;
@@ -372,6 +515,68 @@ public sealed class InputViewModel : ViewModelBase
             }
             return;
         }
+
+        if (IsCustomRebarCoordinates)
+        {
+            IReadOnlyList<RebarCoordinateDto> customCoordinates;
+            try
+            {
+                customCoordinates = BuildCustomRebarCoordinates();
+            }
+            catch (Exception ex)
+            {
+                IsSectionPreviewValid = false;
+                SectionPreviewErrorMessage = ex.Message;
+                SectionPreviewLabel = IsCircularSection ? $"D = {Diameter:0.###} {LengthLabel}" : $"{Width:0.###} x {Height:0.###} {LengthLabel}";
+                RebarPreviewLabel = "";
+                CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+                return;
+            }
+
+            foreach (var b in customCoordinates)
+            {
+                PreviewRebars.Add(new PreviewRebarPoint(b.X, b.Y, b.Diameter, b.BarSizeLabel));
+            }
+
+            IsSectionPreviewValid = true;
+            SectionPreviewErrorMessage = "";
+            SectionPreviewLabel = IsCircularSection ? $"D = {Diameter:0.###} {LengthLabel}" : $"{Width:0.###} x {Height:0.###} {LengthLabel}";
+            RebarPreviewLabel = $"{PreviewRebars.Count} custom rebars";
+            CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            return;
+        }
+        if (SelectedRebarLayoutType == RebarLayoutType.EqualSpacing && IsRectangularSection)
+        {
+            if (Width <= 0 || Height <= 0 || Cover <= 0)
+            {
+                IsSectionPreviewValid = false;
+                SectionPreviewErrorMessage = "Invalid section input";
+                SectionPreviewLabel = "";
+                RebarPreviewLabel = "";
+                CoverPreviewLabel = "";
+                return;
+            }
+
+            double uFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+            var uBars = AvailableBars;
+            var uBar = uBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase)) ?? uBars.FirstOrDefault();
+            double uBarDiameterMm = uBar?.DiameterMm ?? 20.0;
+
+            foreach (var r in IrregularInput.Rebars)
+            {
+                double area = r.AreaMm2 ?? 0;
+                double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : uBarDiameterMm;
+                PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam / uFactor, r.BarSize ?? ""));
+            }
+
+            IsSectionPreviewValid = true;
+            SectionPreviewErrorMessage = "";
+            SectionPreviewLabel = $"{Width:0.###} x {Height:0.###} {LengthLabel}";
+            RebarPreviewLabel = $"{IrregularInput.Rebars.Count}-{BarSize}";
+            CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            return;
+        }
+
         if (SelectedSectionShape == SectionShapeType.Circular)
         {
             UpdateCircularSectionPreview();
@@ -409,6 +614,8 @@ public sealed class InputViewModel : ViewModelBase
             PreviewRebars.Add(new PreviewRebarPoint(b.X, b.Y, b.Diameter, b.BarSizeLabel));
         }
 
+        SyncRebarsToTable(bars);
+
         IsSectionPreviewValid = true;
         SectionPreviewErrorMessage = "";
         SectionPreviewLabel = $"{Width:0.###} x {Height:0.###} {LengthLabel}";
@@ -426,7 +633,39 @@ public sealed class InputViewModel : ViewModelBase
 
     private void UpdateCircularSectionPreview()
     {
-        if (Diameter <= 0 || Cover <= 0 || BarCount < 1)
+        if (Diameter <= 0 || Cover <= 0)
+        {
+            IsSectionPreviewValid = false;
+            SectionPreviewErrorMessage = "Invalid circular section input";
+            SectionPreviewLabel = Diameter > 0 ? $"D = {Diameter:0.###} {LengthLabel}" : "";
+            RebarPreviewLabel = "";
+            CoverPreviewLabel = Cover > 0 ? $"Cover = {Cover:0.###} {LengthLabel}" : "";
+            return;
+        }
+
+        if (SelectedRebarLayoutType == RebarLayoutType.EqualSpacing)
+        {
+            double cFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+            var cBars = AvailableBars;
+            var cBar = cBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase)) ?? cBars.FirstOrDefault();
+            double cBarDiameterMm = cBar?.DiameterMm ?? 20.0;
+
+            foreach (var r in IrregularInput.Rebars)
+            {
+                double area = r.AreaMm2 ?? 0;
+                double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : cBarDiameterMm;
+                PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam / cFactor, r.BarSize ?? ""));
+            }
+
+            IsSectionPreviewValid = true;
+            SectionPreviewErrorMessage = "";
+            SectionPreviewLabel = $"D = {Diameter:0.###} {LengthLabel}";
+            RebarPreviewLabel = $"{IrregularInput.Rebars.Count}-{BarSize}";
+            CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            return;
+        }
+
+        if (BarCount < 1)
         {
             IsSectionPreviewValid = false;
             SectionPreviewErrorMessage = "Invalid circular section input";
@@ -463,27 +702,51 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
+        int effectiveBarCount = BarCount;
+        if (SelectedRebarLayoutType == RebarLayoutType.EqualSpacing)
+        {
+            double spacingMm = Spacing * factor;
+            if (spacingMm <= 0)
+            {
+                IsSectionPreviewValid = false;
+                SectionPreviewErrorMessage = "Spacing must be greater than zero.";
+                return;
+            }
+            double perimeterMm = 2.0 * Math.PI * radiusMm;
+            effectiveBarCount = (int)Math.Max(4, Math.Round(perimeterMm / spacingMm));
+        }
+
         double previewRadius = radiusMm / factor;
         double previewBarDiameter = barDiameterMm / factor;
-        for (int i = 0; i < BarCount; i++)
+        var circularCoords = new List<RebarCoordinateDto>(effectiveBarCount);
+        for (int i = 0; i < effectiveBarCount; i++)
         {
-            double angle = 2.0 * Math.PI * i / BarCount + Math.PI / 2.0;
-            PreviewRebars.Add(new PreviewRebarPoint(
-                previewRadius * Math.Cos(angle),
-                previewRadius * Math.Sin(angle),
-                previewBarDiameter,
-                bar.DisplayLabel));
+            double angle = 2.0 * Math.PI * i / effectiveBarCount + Math.PI / 2.0;
+            double x = previewRadius * Math.Cos(angle);
+            double y = previewRadius * Math.Sin(angle);
+            PreviewRebars.Add(new PreviewRebarPoint(x, y, previewBarDiameter, bar.DisplayLabel));
+            
+            circularCoords.Add(new RebarCoordinateDto(
+                $"B{i + 1}",
+                x,
+                y,
+                barDiameterMm / factor,
+                bar.AreaMm2,
+                bar.Name,
+                "Circular"));
         }
+
+        SyncRebarsToTable(circularCoords);
 
         IsSectionPreviewValid = true;
         SectionPreviewErrorMessage = "";
         SectionPreviewLabel = $"D = {Diameter:0.###} {LengthLabel}";
 
-        double totalAsMm2 = BarCount * bar.AreaMm2;
+        double totalAsMm2 = effectiveBarCount * bar.AreaMm2;
         double agMm2 = Math.PI * Math.Pow(diameterMm / 2.0, 2);
         double rho = agMm2 > 0 ? (totalAsMm2 / agMm2) : 0;
 
-        RebarPreviewLabel = $"{BarCount}-{BarSize} (\u03c1 = {rho * 100:F2}%)";
+        RebarPreviewLabel = $"{effectiveBarCount}-{BarSize} (\u03c1 = {rho * 100:F2}%)";
         CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
     }
 
@@ -648,12 +911,111 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(Width)); Raise(nameof(Height)); Raise(nameof(Diameter)); Raise(nameof(Cover)); Raise(nameof(BarSize)); Raise(nameof(BarCount)); Raise(nameof(LayoutPreset));
         Raise(nameof(Fc)); Raise(nameof(Fy)); Raise(nameof(Es)); Raise(nameof(Pu)); Raise(nameof(Mux)); Raise(nameof(Muy)); Raise(nameof(SelectedAxialLoad));
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
-        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
+        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(ShowTotalBarsInput));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
     }
 
+    private IReadOnlyList<RebarCoordinateDto> BuildCustomRebarCoordinates()
+    {
+        if (IrregularInput.Rebars.Count == 0)
+        {
+            throw new InvalidOperationException("At least one custom rebar coordinate is required.");
+        }
+
+        var result = new List<RebarCoordinateDto>(IrregularInput.Rebars.Count);
+        var bars = AvailableBars;
+        for (int i = 0; i < IrregularInput.Rebars.Count; i++)
+        {
+            var row = IrregularInput.Rebars[i];
+            var bar = bars.FirstOrDefault(b => string.Equals(b.Name, row.BarSize, StringComparison.OrdinalIgnoreCase));
+            double area = row.AreaMm2 is > 0 ? row.AreaMm2.Value : bar?.AreaMm2 ?? 0.0;
+            double diameter = area > 0.0 ? 2.0 * Math.Sqrt(area / Math.PI) : bar?.DiameterMm ?? 0.0;
+            if (area <= 0.0 || diameter <= 0.0)
+            {
+                throw new InvalidOperationException($"Custom rebar row {i + 1} must provide a valid Area or Size.");
+            }
+
+            string label = !string.IsNullOrWhiteSpace(row.BarSize) ? row.BarSize : bar?.Name ?? $"A={area:0.###}";
+            result.Add(new RebarCoordinateDto(
+                string.IsNullOrWhiteSpace(row.RebarIndex) ? (i + 1).ToString() : row.RebarIndex,
+                row.X,
+                row.Y,
+                diameter,
+                area,
+                label,
+                "Custom"));
+        }
+
+        return result;
+    }
+
+    private bool _isSyncingRebars = false;
+    private void SyncRebarsToTable(IReadOnlyList<RebarCoordinateDto> coords)
+    {
+        if (_isSyncingRebars || IsCustomRebarCoordinates) return;
+        _isSyncingRebars = true;
+        try
+        {
+            IrregularInput.Rebars.Clear();
+            for (int i = 0; i < coords.Count; i++)
+            {
+                var c = coords[i];
+                IrregularInput.Rebars.Add(new IrregularRebarRowViewModel
+                {
+                    RebarIndex = string.IsNullOrWhiteSpace(c.Id) ? (i + 1).ToString() : c.Id,
+                    X = Math.Round(c.X, 3),
+                    Y = Math.Round(c.Y, 3),
+                    AreaMm2 = Math.Round(c.Area, 3),
+                    BarSize = c.BarSizeLabel
+                });
+            }
+        }
+        finally
+        {
+            _isSyncingRebars = false;
+        }
+    }
+
+    private void WireRebarsCollectionChanged()
+    {
+        IrregularInput.Rebars.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems is not null)
+            {
+                foreach (IrregularRebarRowViewModel item in e.NewItems)
+                {
+                    item.PropertyChanged += RebarRow_PropertyChanged;
+                }
+            }
+            if (e.OldItems is not null)
+            {
+                foreach (IrregularRebarRowViewModel item in e.OldItems)
+                {
+                    item.PropertyChanged -= RebarRow_PropertyChanged;
+                }
+            }
+            UpdateSectionPreview();
+        };
+
+        foreach (var item in IrregularInput.Rebars)
+        {
+            item.PropertyChanged += RebarRow_PropertyChanged;
+        }
+    }
+
+    private void RebarRow_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        UpdateSectionPreview();
+    }
+
     private void GenerateIrregularRebars()
+    {
+        GenerateIrregularRebarsInternal();
+        UpdateSectionPreview();
+    }
+
+    private void GenerateIrregularRebarsInternal()
     {
         if (IrregularInput.BoundaryPoints.Count < 3)
         {
@@ -753,7 +1115,130 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         IrregularInput.RebarValidationMessage = "";
+    }
+
+    private void GenerateEqualSpacingRebars()
+    {
+        GenerateEqualSpacingRebarsInternal();
         UpdateSectionPreview();
+    }
+
+    private void GenerateEqualSpacingRebarsInternal()
+    {
+        if (Cover <= 0)
+        {
+            return;
+        }
+
+        var available = AvailableBars;
+        var selectedBar = available.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase)) ?? available.FirstOrDefault();
+        if (selectedBar == null)
+        {
+            return;
+        }
+
+        double spacing = Spacing;
+        if (spacing <= 0)
+        {
+            return;
+        }
+
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double coverMm = Cover * factor;
+        double spacingMm = spacing * factor;
+        double barDiameter = selectedBar.DiameterMm;
+
+        if (IsCircularSection)
+        {
+            double diameterMm = Diameter * factor;
+            double radiusMm = diameterMm / 2.0 - coverMm - barDiameter / 2.0;
+            if (radiusMm <= 0) return;
+
+            double perimeterMm = 2.0 * Math.PI * radiusMm;
+            int effectiveBarCount = (int)Math.Max(4, Math.Round(perimeterMm / spacingMm));
+
+            double previewRadius = radiusMm / factor;
+            IrregularInput.Rebars.Clear();
+            for (int i = 0; i < effectiveBarCount; i++)
+            {
+                double angle = 2.0 * Math.PI * i / effectiveBarCount + Math.PI / 2.0;
+                double x = previewRadius * Math.Cos(angle);
+                double y = previewRadius * Math.Sin(angle);
+
+                IrregularInput.Rebars.Add(new IrregularRebarRowViewModel
+                {
+                    RebarIndex = (i + 1).ToString(),
+                    X = Math.Round(x, 2),
+                    Y = Math.Round(y, 2),
+                    BarSize = selectedBar.Name,
+                    AreaMm2 = selectedBar.AreaMm2
+                });
+            }
+        }
+        else if (IsRectangularSection)
+        {
+            double w = Width;
+            double h = Height;
+            var boundary = new List<Point2D>
+            {
+                new Point2D(-w / 2.0, h / 2.0),
+                new Point2D(w / 2.0, h / 2.0),
+                new Point2D(w / 2.0, -h / 2.0),
+                new Point2D(-w / 2.0, -h / 2.0)
+            };
+
+            var boundaryMm = boundary.Select(p => new Point2D(p.X * factor, p.Y * factor)).ToList();
+            double offsetMm = coverMm + barDiameter / 2.0;
+
+            System.Collections.Generic.IReadOnlyList<Point2D> insetPolygon;
+            try
+            {
+                insetPolygon = PolygonGeometry.OffsetPolygon(boundaryMm, offsetMm);
+            }
+            catch
+            {
+                return;
+            }
+
+            if (insetPolygon == null || insetPolygon.Count < 3)
+            {
+                return;
+            }
+
+            IrregularInput.Rebars.Clear();
+            int rebarIndex = 1;
+            int n = insetPolygon.Count;
+            for (int i = 0; i < n; i++)
+            {
+                var pStart = insetPolygon[i];
+                var pEnd = insetPolygon[(i + 1) % n];
+
+                double dx = pEnd.X - pStart.X;
+                double dy = pEnd.Y - pStart.Y;
+                double len = System.Math.Sqrt(dx * dx + dy * dy);
+
+                int segments = (int)System.Math.Max(1, System.Math.Ceiling(len / spacingMm));
+                for (int j = 0; j < segments; j++)
+                {
+                    double t = (double)j / segments;
+                    double rx = pStart.X + t * dx;
+                    double ry = pStart.Y + t * dy;
+
+                    double rxUser = rx / factor;
+                    double ryUser = ry / factor;
+
+                    IrregularInput.Rebars.Add(new IrregularRebarRowViewModel
+                    {
+                        RebarIndex = rebarIndex.ToString(),
+                        X = System.Math.Round(rxUser, 2),
+                        Y = System.Math.Round(ryUser, 2),
+                        BarSize = selectedBar.Name,
+                        AreaMm2 = selectedBar.AreaMm2
+                    });
+                    rebarIndex++;
+                }
+            }
+        }
     }
 }
 

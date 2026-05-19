@@ -8,6 +8,17 @@ namespace MBColumn.Presentation.Wpf.Views;
 
 public partial class InputTabView : UserControl
 {
+    protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == System.Windows.Input.Key.Enter && System.Windows.Input.Keyboard.FocusedElement is TextBox textBox)
+        {
+            var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+            binding?.UpdateSource();
+            textBox.MoveFocus(new System.Windows.Input.TraversalRequest(System.Windows.Input.FocusNavigationDirection.Next));
+            e.Handled = true;
+        }
+    }
     public InputTabView() => InitializeComponent();
 
     private void ImportBoundary_Click(object sender, RoutedEventArgs e)

@@ -34,7 +34,7 @@ public sealed class RebarCoordinateBuilderService(
             throw new InvalidOperationException("Rebar centroid is outside the concrete section.");
         }
 
-        var sideCounts = GetSideCounts(layout);
+        var sideCounts = GetSideCounts(layout, widthMm, heightMm, coverMm, bar.DiameterMm, units.LengthToMm(layout.Spacing, lengthUnit));
         ValidateSideCounts(sideCounts, layout.LayoutType);
         ValidateSpacing(sideCounts.Top, 2.0 * x, bar.DiameterMm, "Top");
         ValidateSpacing(sideCounts.Bottom, 2.0 * x, bar.DiameterMm, "Bottom");
@@ -55,7 +55,13 @@ public sealed class RebarCoordinateBuilderService(
         return bars;
     }
 
-    private static (int Top, int Bottom, int LeftInterm, int RightInterm) GetSideCounts(RebarLayoutInputDto layout)
+    private static (int Top, int Bottom, int LeftInterm, int RightInterm) GetSideCounts(
+        RebarLayoutInputDto layout,
+        double widthMm,
+        double heightMm,
+        double coverMm,
+        double barDiameterMm,
+        double spacingMm)
     {
         if (layout.LayoutType == RebarLayoutType.AllSidesEqual)
         {
@@ -72,6 +78,28 @@ public sealed class RebarCoordinateBuilderService(
             int n = (layout.TotalBars - 4) / 4;
             int perSide = n + 2;
             return (perSide, perSide, n, n);
+        }
+
+        if (layout.LayoutType == RebarLayoutType.EqualSpacing)
+        {
+            double sX = widthMm - 2.0 * coverMm - barDiameterMm;
+            double sY = heightMm - 2.0 * coverMm - barDiameterMm;
+            if (sX <= 0 || sY <= 0)
+            {
+                throw new InvalidOperationException("Rebar centroid is outside the concrete section.");
+            }
+
+            if (spacingMm <= 0)
+            {
+                throw new InvalidOperationException("Spacing must be greater than zero.");
+            }
+
+            int nx = (int)Math.Max(1, Math.Ceiling(sX / spacingMm));
+            int ny = (int)Math.Max(1, Math.Ceiling(sY / spacingMm));
+
+            int topBottomCount = nx + 1;
+            int leftRightInterm = ny - 1;
+            return (topBottomCount, topBottomCount, leftRightInterm, leftRightInterm);
         }
 
         return (

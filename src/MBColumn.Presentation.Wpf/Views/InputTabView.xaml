@@ -288,7 +288,7 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding LengthLabel, StringFormat=Clear cover ({0})}" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LengthLabel}" Style="{StaticResource UnitTextStyle}" />
-                                <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Cover, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Cover}" />
                             </Grid>
 
                             <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -305,10 +305,10 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Width b" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LengthLabel}" Style="{StaticResource UnitTextStyle}" />
-                                <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Width}" />
                                 <TextBlock Grid.Row="0" Grid.Column="3" Text="Height h" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0" Grid.Column="4" Text="{Binding LengthLabel}" Style="{StaticResource UnitTextStyle}" />
-                                <TextBox Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" Text="{Binding Height}" />
                             </Grid>
 
                             <Grid Visibility="{Binding IsCircularSection, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -322,7 +322,7 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Diameter D" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LengthLabel}" Style="{StaticResource UnitTextStyle}" />
-                                <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Diameter, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Diameter}" />
                             </Grid>
 
                             <Grid Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -356,54 +356,65 @@
 
                     <GroupBox Grid.Column="1" Header="Rebar Configuration" Background="White" Foreground="{DynamicResource DarkNavyBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" Padding="14" Margin="7,0,0,14">
                         <StackPanel>
+                            <!-- 1. Algorithmic / Shape-Specific Top Panel (Visible for Rectangular/Circular) -->
                             <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    
+                                    <!-- Row 0: Layout Type ComboBox and standard inputs -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,0">
                                         <TextBlock Text="Layout Type" Style="{StaticResource FieldLabelTextStyle}" />
                                         <ComboBox ItemsSource="{Binding RebarLayoutTypes}"
                                                   DisplayMemberPath="DisplayName"
                                                   SelectedValuePath="LayoutType"
                                                   SelectedValue="{Binding SelectedRebarLayoutType}" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                    
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,0" Visibility="{Binding ShowTotalBarsInput, Converter={StaticResource BoolToVisibilityConverter}}">
                                         <TextBlock Text="Bar size" Style="{StaticResource FieldLabelTextStyle}" />
                                         <ComboBox ItemsSource="{Binding AvailableBars}"
                                                   DisplayMemberPath="DisplayLabel"
                                                   SelectedValuePath="Name"
                                                   SelectedValue="{Binding BarSize}" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2" Visibility="{Binding IsAllSidesEqualLayout, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    
+                                    <StackPanel Grid.Row="0" Grid.Column="2" Visibility="{Binding ShowTotalBarsInput, Converter={StaticResource BoolToVisibilityConverter}}">
                                         <TextBlock Text="Total number of bars" Style="{StaticResource FieldLabelTextStyle}" TextWrapping="Wrap" />
-                                        <TextBox Text="{Binding BarCount, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBox Text="{Binding BarCount}" />
                                     </StackPanel>
-                                </Grid>
 
-                                <Grid Visibility="{Binding IsCircularEqualSpacingLayout, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                        <TextBlock Text="Layout Type" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Text="Equal spacing" IsReadOnly="True" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                                        <TextBlock Text="Bar size" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <ComboBox ItemsSource="{Binding AvailableBars}"
-                                                  DisplayMemberPath="DisplayLabel"
-                                                  SelectedValuePath="Name"
-                                                  SelectedValue="{Binding BarSize}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Total number of bars" Style="{StaticResource FieldLabelTextStyle}" TextWrapping="Wrap" />
-                                        <TextBox Text="{Binding BarCount, UpdateSourceTrigger=PropertyChanged}" />
-                                    </StackPanel>
+                                    <!-- Row 1: Equal Spacing Layout Panel -->
+                                    <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,8,0,0" Visibility="{Binding IsEqualSpacingLayout, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="Bar size" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <ComboBox ItemsSource="{Binding AvailableBars}"
+                                                      DisplayMemberPath="DisplayLabel"
+                                                      SelectedValuePath="Name"
+                                                      SelectedValue="{Binding BarSize}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Margin="0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="Spacing (" Style="{StaticResource FieldLabelTextStyle}" />
+                                                <TextBlock Text="{Binding LengthLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                                <TextBlock Text=")" Style="{StaticResource FieldLabelTextStyle}" />
+                                            </StackPanel>
+                                            <TextBox Text="{Binding Spacing}" />
+                                        </StackPanel>
+                                    </Grid>
                                 </Grid>
 
                                 <TextBlock Text="{Binding RebarLayoutWarning}"
@@ -415,7 +426,8 @@
 
                                 <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                               VerticalScrollBarVisibility="Disabled"
-                                              Visibility="{Binding IsSidesDifferentLayout, Converter={StaticResource BoolToVisibilityConverter}}">
+                                              Visibility="{Binding IsSidesDifferentLayout, Converter={StaticResource BoolToVisibilityConverter}}"
+                                              Margin="0,0,0,10">
                                     <Grid MinWidth="620">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="120" />
@@ -457,36 +469,35 @@
                                 </ScrollViewer>
                             </StackPanel>
 
-                             <Grid Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                                 <Grid DataContext="{Binding IrregularInput}">
-                                     <Grid.RowDefinitions>
-                                         <RowDefinition Height="Auto" />
-                                         <RowDefinition Height="Auto" />
-                                         <RowDefinition Height="Auto" />
-                                         <RowDefinition Height="*" />
-                                     </Grid.RowDefinitions>
+                            <!-- 2. Irregular Section-Specific Spacing/Generate Panel (Visible only for Irregular Section) -->
+                            <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid DataContext="{Binding IrregularInput}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                                     <!-- Row 0: Layout Type Selector -->
-                                     <Grid Grid.Row="0" Margin="0,0,0,8">
-                                         <Grid.ColumnDefinitions>
-                                             <ColumnDefinition Width="*" />
-                                             <ColumnDefinition Width="*" />
-                                         </Grid.ColumnDefinitions>
-                                         <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                             <TextBlock Text="Layout Type" Style="{StaticResource FieldLabelTextStyle}" />
-                                             <ComboBox ItemsSource="{Binding RebarModeOptions}"
-                                                       SelectedValue="{Binding RebarMode}"
-                                                       SelectedValuePath="Type"
-                                                       DisplayMemberPath="DisplayName" />
-                                         </StackPanel>
-                                     </Grid>
+                                    <!-- Row 0: Layout Type Selector for Irregular -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <TextBlock Text="Layout Type" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <ComboBox ItemsSource="{Binding RebarModeOptions}"
+                                                      SelectedValue="{Binding RebarMode}"
+                                                      SelectedValuePath="Type"
+                                                      DisplayMemberPath="DisplayName" />
+                                        </StackPanel>
+                                    </Grid>
 
                                      <!-- Row 1: Equal Spacing Inputs (Visible only when RebarMode is EqualSpacing) -->
                                      <Grid Grid.Row="1" Margin="0,0,0,12" Visibility="{Binding IsEqualSpacing, Converter={StaticResource BoolToVisibilityConverter}}">
                                          <Grid.ColumnDefinitions>
                                              <ColumnDefinition Width="*" />
                                              <ColumnDefinition Width="*" />
-                                             <ColumnDefinition Width="Auto" />
                                          </Grid.ColumnDefinitions>
                                          
                                          <StackPanel Grid.Column="0" Margin="0,0,8,0">
@@ -496,51 +507,57 @@
                                                        SelectedValue="{Binding BarSize}" />
                                          </StackPanel>
                                          
-                                         <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                         <StackPanel Grid.Column="1" Margin="0">
                                              <StackPanel Orientation="Horizontal">
                                                  <TextBlock Text="Spacing (" Style="{StaticResource FieldLabelTextStyle}" />
                                                  <TextBlock Text="{Binding DataContext.LengthLabel, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource FieldLabelTextStyle}" />
                                                  <TextBlock Text=")" Style="{StaticResource FieldLabelTextStyle}" />
                                              </StackPanel>
-                                             <TextBox Text="{Binding Spacing, UpdateSourceTrigger=PropertyChanged}" />
+                                             <TextBox Text="{Binding Spacing}" />
                                          </StackPanel>
-                                         
-                                         <Button Grid.Column="2" Content="Generate" VerticalAlignment="Bottom" Height="32" Padding="12,0"
-                                                 Style="{StaticResource PrimaryButtonStyle}"
-                                                 Command="{Binding DataContext.GenerateIrregularRebarsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                                      </Grid>
 
-                                     <!-- Row 2: Validation Messages -->
-                                     <TextBlock Grid.Row="2" Text="{Binding RebarValidationMessage}" Foreground="Red" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+                                    <!-- Row 2: Validation Messages -->
+                                    <TextBlock Grid.Row="2" Text="{Binding RebarValidationMessage}" Foreground="Red" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap" />
+                                </Grid>
+                            </StackPanel>
 
-                                     <!-- Row 3: Rebar Coordinates Table -->
-                                     <Grid Grid.Row="3">
-                                         <Grid.RowDefinitions>
-                                             <RowDefinition Height="Auto" />
-                                             <RowDefinition Height="Auto" />
-                                             <RowDefinition Height="*" />
-                                         </Grid.RowDefinitions>
-                                         
-                                         <TextBlock Grid.Row="0" Text="Rebar Coordinates" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4" TextWrapping="Wrap" />
-                                         
-                                         <WrapPanel Grid.Row="1" Margin="0,0,0,8">
-                                             <Button Content="C" ToolTip="Clear" Command="{Binding ClearRebarsCommand}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                             <Button Content="I" ToolTip="Import..." Click="ImportRebar_Click" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
-                                             <Button Content="E" ToolTip="Export..." Click="ExportRebar_Click" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" />
-                                         </WrapPanel>
-                                         
-                                         <DataGrid Grid.Row="2" ItemsSource="{Binding Rebars}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True" MaxHeight="200" Margin="0,0,0,8">
-                                             <DataGrid.Columns>
-                                                 <DataGridTextColumn Header="Index" Binding="{Binding RebarIndex, UpdateSourceTrigger=PropertyChanged}" />
-                                                 <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
-                                                 <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
-                                                 <DataGridTextColumn Header="Area" Binding="{Binding AreaMm2, UpdateSourceTrigger=PropertyChanged}" />
-                                                 <DataGridTextColumn Header="Size" Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" />
-                                             </DataGrid.Columns>
-                                         </DataGrid>
-                                     </Grid>
-                                 </Grid>
-                             </Grid>
+                            <!-- 3. ALWAYS VISIBLE REBAR COORDINATES TABLE AT THE BOTTOM (DataContext = IrregularInput) -->
+                            <Grid DataContext="{Binding IrregularInput}" Margin="0,12,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Text="Rebar Coordinates" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4" TextWrapping="Wrap" />
+                                
+                                <WrapPanel Grid.Row="1" Margin="0,0,0,8">
+                                    <Button Content="C" ToolTip="Clear" Command="{Binding ClearRebarsCommand}" IsEnabled="{Binding IsCustomCoordinates}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
+                                    <Button Content="I" ToolTip="Import..." Click="ImportRebar_Click" IsEnabled="{Binding IsCustomCoordinates}" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" Margin="0,0,8,0" />
+                                    <Button Content="E" ToolTip="Export..." Click="ExportRebar_Click" Style="{StaticResource SecondaryButtonStyle}" Foreground="{DynamicResource PrimaryNavyBrush}" FontWeight="Bold" Width="26" Height="26" Padding="0" />
+                                </WrapPanel>
+                                
+                                <DataGrid Grid.Row="2" ItemsSource="{Binding Rebars}" AutoGenerateColumns="False" CanUserAddRows="{Binding IsCustomCoordinates}" CanUserDeleteRows="{Binding IsCustomCoordinates}" IsReadOnly="{Binding IsAlgorithmicCoordinates}" MaxHeight="200" Margin="0,0,0,8">
+                                    <DataGrid.Style>
+                                        <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsReadOnly" Value="True">
+                                                    <Setter Property="Opacity" Value="0.65" />
+                                                    <Setter Property="Background" Value="#F2F2F2" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.Style>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Index" Binding="{Binding RebarIndex, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Header="Area" Binding="{Binding AreaMm2, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Header="Size" Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
                         </StackPanel>
                     </GroupBox>
                 </Grid>

@@ -27,8 +27,15 @@ public sealed class ColumnInputValidator
             if (input.Cover <= 0) errors.Add("Concrete cover must be positive.");
             if (input.Diameter > 0 && input.Cover >= input.Diameter / 2.0)
                 errors.Add("Cover must be less than the section radius (D/2).");
-            if (input.BarCount < 4) errors.Add("Circular sections require at least 4 longitudinal bars.");
-            if (string.IsNullOrWhiteSpace(input.BarSize)) errors.Add("A rebar size is required.");
+            if (input.RebarCoordinates is { Count: > 0 })
+            {
+                ValidateCustomRebarCoordinates(input.RebarCoordinates, errors);
+            }
+            else
+            {
+                if (input.BarCount < 4) errors.Add("Circular sections require at least 4 longitudinal bars.");
+                if (string.IsNullOrWhiteSpace(input.BarSize)) errors.Add("A rebar size is required.");
+            }
         }
         else
         {
@@ -36,7 +43,11 @@ public sealed class ColumnInputValidator
             if (input.Height <= 0) errors.Add("Section height must be positive.");
             if (input.Cover <= 0) errors.Add("Concrete cover must be positive.");
             if (input.Cover * 2 >= Math.Min(input.Width, input.Height)) errors.Add("Cover places bars outside the section.");
-            if (input.RebarLayoutType == RebarLayoutType.AllSidesEqual)
+            if (input.RebarCoordinates is { Count: > 0 })
+            {
+                ValidateCustomRebarCoordinates(input.RebarCoordinates, errors);
+            }
+            else if (input.RebarLayoutType == RebarLayoutType.AllSidesEqual)
             {
                 if (input.BarCount < 4) errors.Add("Total bars must be at least 4.");
                 if (input.BarCount % 4 != 0) errors.Add("Total bars must be divisible by 4 for All Sides Equal layout.");
@@ -53,7 +64,7 @@ public sealed class ColumnInputValidator
                 if (sides.Any(count => count < 0)) errors.Add("Side bar counts must be non-negative.");
                 if (sides.Sum() == 0) errors.Add("At least one side must contain bars.");
             }
-            if (string.IsNullOrWhiteSpace(input.BarSize)) errors.Add("A rebar size is required.");
+            if (input.RebarCoordinates is not { Count: > 0 } && string.IsNullOrWhiteSpace(input.BarSize)) errors.Add("A rebar size is required.");
         }
 
         if (input.Fc <= 0) errors.Add("Concrete strength must be positive.");
@@ -61,5 +72,27 @@ public sealed class ColumnInputValidator
         if (input.Es <= 0) errors.Add("Steel modulus must be positive.");
 
         return errors.Count == 0 ? ValidationResultDto.Valid : new ValidationResultDto(false, errors);
+    }
+
+    private static void ValidateCustomRebarCoordinates(IReadOnlyList<RebarCoordinateDto> coordinates, List<string> errors)
+    {
+        if (coordinates.Count == 0)
+        {
+            errors.Add("At least one custom rebar coordinate is required.");
+            return;
+        }
+
+        for (int i = 0; i < coordinates.Count; i++)
+        {
+            var row = coordinates[i];
+            if (!double.IsFinite(row.X) || !double.IsFinite(row.Y))
+            {
+                errors.Add($"Custom rebar row {i + 1} has invalid coordinates.");
+            }
+            if (row.Area <= 0.0 || row.Diameter <= 0.0)
+            {
+                errors.Add($"Custom rebar row {i + 1} must provide positive area and diameter.");
+            }
+        }
     }
 }
