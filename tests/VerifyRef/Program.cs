@@ -22,7 +22,7 @@ var validation = new InputValidationService();
 IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
 var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
 
-// spColumn reference test case 2: 900Ã—400 mm, fc=32, fy=500, 16-T20 (314mm2), cover=55, ACI 318-19 biaxial tied
+// ref reference test case 2: 900Ã—400 mm, fc=32, fy=500, 16-T20 (314mm2), cover=55, ACI 318-19 biaxial tied
 var input = new ColumnInputDto(
     UnitSystem: UnitSystem.Metric,
     Width: 900,
@@ -51,7 +51,7 @@ var input = new ColumnInputDto(
 var result = calculation.Calculate(input);
 var table  = result.ControlPointTable!;
 
-// Reference (spColumn) â€” Axis X bends about X-axis (depth=400), reports Mx
+// Reference (ref) â€” Axis X bends about X-axis (depth=400), reports Mx
 var refX = new (string Label, double P, double M, double C, double Eps, double Phi)[]
 {
     ("Max compression",  7908.8,    0.00, 2010, -0.00250, 0.65000),

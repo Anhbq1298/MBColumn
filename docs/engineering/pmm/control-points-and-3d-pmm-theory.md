@@ -431,4 +431,4 @@ When validating MBColumn against reference software:
 6. Compare named table control points separately from dense curve samples.
 7. Use the same selected PM angle or axial-load slice when comparing chart data.
 
-The ACI spColumn validation compares the named control point table. The Eurocode S-Concrete validation compares generated PMM/PM curve data. Both are downstream validations of the same MBColumn principle: solve once, then derive tables and charts from the solved surface.
+The ACI ref validation compares the named control point table. The Eurocode ref validation compares generated PMM/PM curve data. Both are downstream validations of the same MBColumn principle: solve once, then derive tables and charts from the solved surface.

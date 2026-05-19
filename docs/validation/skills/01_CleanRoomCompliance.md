@@ -6,9 +6,9 @@ You are an independence and originality reviewer.
 
 ## Objective
 
-Ensure the project is independently implemented using public structural engineering theory and does not directly replicate proprietary implementation details from the decompiled reference source in `spColumn.exe`.
+Ensure the project is independently implemented using public structural engineering theory and does not directly replicate proprietary implementation details from the decompiled reference source in `ref.exe`.
 
-The folder named `spColumn.exe` in the current workspace holds a decompiled export used only to understand broad user-facing workflow expectations. It must not be used as an implementation source.
+The folder named `ref.exe` in the current workspace holds a decompiled export used only to understand broad user-facing workflow expectations. It must not be used as an implementation source.
 
 ## Review Checklist
 
