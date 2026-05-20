@@ -115,6 +115,42 @@ public sealed class ProjectService : IProjectService, IDisposable
         return new ColumnRecord(id, normalizedName, sortOrder);
     }
 
+    public ColumnRecord DuplicateColumn(int sourceColumnId, string name)
+    {
+        var normalizedName = name.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new InvalidOperationException("Column name cannot be empty.");
+
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
+
+        EnsureUniqueColumnName(conn, projectId, normalizedName);
+
+        var source = conn.QuerySingleOrDefault<ColumnInputRow>(
+            "SELECT InputJson FROM Column WHERE Id = @id AND ProjectId = @pid",
+            new { id = sourceColumnId, pid = projectId });
+        if (source is null)
+            throw new InvalidOperationException("Source column no longer exists.");
+
+        var now = DateTime.UtcNow.ToString("O");
+        var sortOrder = conn.ExecuteScalar<int>(
+            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM Column WHERE ProjectId = @pid",
+            new { pid = projectId });
+
+        var id = conn.ExecuteScalar<int>("""
+            INSERT INTO Column (ProjectId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt)
+            VALUES (@pid, @name, @sort, @json, @now, @now);
+            SELECT last_insert_rowid();
+            """,
+            new { pid = projectId, name = normalizedName, sort = sortOrder, json = source.InputJson, now });
+
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+        return new ColumnRecord(id, normalizedName, sortOrder);
+    }
+
     public void RenameColumn(int columnId, string newName)
     {
         var normalizedName = newName.Trim();
@@ -272,4 +308,5 @@ public sealed class ProjectService : IProjectService, IDisposable
 
     private sealed class ProjectRow { public string Name { get; set; } = ""; }
     private sealed class ColumnRow { public int Id { get; set; } public string Name { get; set; } = ""; public int SortOrder { get; set; } }
+    private sealed class ColumnInputRow { public string InputJson { get; set; } = "{}"; }
 }

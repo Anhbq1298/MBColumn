@@ -18,6 +18,7 @@ public interface IProjectService
 
     IReadOnlyList<ColumnRecord> GetColumns();
     ColumnRecord AddColumn(string name);
+    ColumnRecord DuplicateColumn(int sourceColumnId, string name);
     void RenameColumn(int columnId, string newName);
     void DeleteColumn(int columnId);
     void ReorderColumns(IEnumerable<(int Id, int SortOrder)> orders);

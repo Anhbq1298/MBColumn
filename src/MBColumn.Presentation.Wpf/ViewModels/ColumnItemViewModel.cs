@@ -11,13 +11,18 @@ public sealed class ColumnItemViewModel : ViewModelBase
     private bool isRenaming;
     private string editName;
 
-    public ColumnItemViewModel(ColumnRecord record, Action<ColumnItemViewModel> onSelect, Action<ColumnItemViewModel> onDelete)
+    public ColumnItemViewModel(
+        ColumnRecord record,
+        Action<ColumnItemViewModel> onSelect,
+        Action<ColumnItemViewModel> onDuplicate,
+        Action<ColumnItemViewModel> onDelete)
     {
         Id = record.Id;
         name = record.Name;
         editName = record.Name;
         SelectCommand = new RelayCommand(() => onSelect(this));
         BeginRenameCommand = new RelayCommand(() => { EditName = Name; IsRenaming = true; });
+        DuplicateCommand = new RelayCommand(() => onDuplicate(this));
         DeleteCommand = new RelayCommand(() => onDelete(this));
     }
 
@@ -49,5 +54,6 @@ public sealed class ColumnItemViewModel : ViewModelBase
 
     public ICommand SelectCommand { get; }
     public ICommand BeginRenameCommand { get; }
+    public ICommand DuplicateCommand { get; }
     public ICommand DeleteCommand { get; }
 }

@@ -15,8 +15,6 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     private readonly Func<string, string?> promptColumnName;
     private readonly IMessageService messageService;
     private string projectName = "New Project";
-    private bool isRenamingProject;
-    private string editProjectName = "New Project";
     private ColumnItemViewModel? selectedColumn;
 
     public ProjectExplorerViewModel(
@@ -33,11 +31,6 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         Columns = new ObservableCollection<ColumnItemViewModel>();
 
         AddColumnCommand = new RelayCommand(AddColumn);
-        BeginRenameProjectCommand = new RelayCommand(() =>
-        {
-            EditProjectName = ProjectName;
-            IsRenamingProject = true;
-        });
 
         projectService.ProjectChanged += (_, _) =>
         {
@@ -55,18 +48,6 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         private set => Set(ref projectName, value);
     }
 
-    public bool IsRenamingProject
-    {
-        get => isRenamingProject;
-        set => Set(ref isRenamingProject, value);
-    }
-
-    public string EditProjectName
-    {
-        get => editProjectName;
-        set => Set(ref editProjectName, value);
-    }
-
     public ObservableCollection<ColumnItemViewModel> Columns { get; }
 
     public ColumnItemViewModel? SelectedColumn
@@ -76,7 +57,6 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     }
 
     public ICommand AddColumnCommand { get; }
-    public ICommand BeginRenameProjectCommand { get; }
 
     public void SelectColumn(ColumnItemViewModel item)
     {
@@ -87,19 +67,6 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         item.IsSelected = true;
         Raise(nameof(SelectedColumn));
         onColumnSelected(item);
-    }
-
-    public void CommitRenameProject()
-    {
-        var newName = EditProjectName.Trim();
-        if (string.IsNullOrWhiteSpace(newName)) newName = ProjectName;
-        projectService.RenameProject(newName);
-        IsRenamingProject = false;
-    }
-
-    public void CancelRenameProject()
-    {
-        IsRenamingProject = false;
     }
 
     public void CommitRename(ColumnItemViewModel item)
@@ -148,8 +115,28 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         }
     }
 
+    private void DuplicateColumn(ColumnItemViewModel item)
+    {
+        var name = NextDuplicateName(item.Name);
+
+        try
+        {
+            var record = projectService.DuplicateColumn(item.Id, name);
+            RefreshColumns();
+            var duplicated = Columns.FirstOrDefault(c => c.Id == record.Id);
+            if (duplicated is not null) SelectColumn(duplicated);
+        }
+        catch (InvalidOperationException ex)
+        {
+            messageService.ShowWarning(ex.Message, "Duplicate Column");
+        }
+    }
+
     private void DeleteColumn(ColumnItemViewModel item)
     {
+        if (!messageService.ConfirmWarning($"Delete column '{item.Name}'?", "Delete Column"))
+            return;
+
         projectService.DeleteColumn(item.Id);
         Columns.Remove(item);
         if (selectedColumn == item)
@@ -198,7 +185,21 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     }
 
     private ColumnItemViewModel CreateItem(ColumnRecord record)
-        => new(record, SelectColumn, DeleteColumn);
+        => new(record, SelectColumn, DuplicateColumn, DeleteColumn);
+
+    private string NextDuplicateName(string sourceName)
+    {
+        var existing = Columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var baseName = $"{sourceName} Copy";
+        if (!existing.Contains(baseName))
+            return baseName;
+
+        var index = 2;
+        while (existing.Contains($"{baseName} {index}"))
+            index++;
+
+        return $"{baseName} {index}";
+    }
 
     private void UpdateProjectName()
     {
