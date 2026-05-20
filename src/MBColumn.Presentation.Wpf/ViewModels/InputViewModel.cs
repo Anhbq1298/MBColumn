@@ -59,7 +59,8 @@ public sealed class InputViewModel : ViewModelBase
     private string previewRebarPercentageText = "—";
     private string previewShapeSummaryText = "";
     private string previewRebarLayoutText = "";
-    private bool _isGeneratingRebars = false;
+    private int _generatingRebarsDepth = 0;
+    private bool _isGeneratingRebars => _generatingRebarsDepth > 0;
     private bool isDxfImportedSection = false;
     private int nextLoadCaseIndex = 2;
 
@@ -272,14 +273,14 @@ public sealed class InputViewModel : ViewModelBase
             IrregularInput.BarSize = isMetric ? "T25" : "#8";
             IrregularInput.Spacing = isMetric ? 150 : 6;
             IrregularInput.RebarMode = IrregularRebarModeType.EqualSpacing;
-            _isGeneratingRebars = true;
+            _generatingRebarsDepth++;
             try
             {
                 IrregularInput.LoadDefaultLShape();
             }
             finally
             {
-                _isGeneratingRebars = false;
+                _generatingRebarsDepth--;
             }
             GenerateIrregularRebars();
         }
@@ -1122,7 +1123,7 @@ public sealed class InputViewModel : ViewModelBase
         layoutPreset = "Custom Coordinates";
         isDxfImportedSection = true;
 
-        _isGeneratingRebars = true;
+        _generatingRebarsDepth++;
         try
         {
             IrregularInput.BoundaryPoints.Clear();
@@ -1156,7 +1157,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         finally
         {
-            _isGeneratingRebars = false;
+            _generatingRebarsDepth--;
         }
 
         Raise(nameof(SelectedSectionShape));
@@ -1408,7 +1409,7 @@ public sealed class InputViewModel : ViewModelBase
 
         if (LoadCases.Count == 0) AddPrimaryLoadCase();
 
-        _isGeneratingRebars = true;
+        _generatingRebarsDepth++;
         try
         {
             IrregularInput.BarSize = s.IrregularBarSize;
@@ -1424,7 +1425,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         finally
         {
-            _isGeneratingRebars = false;
+            _generatingRebarsDepth--;
         }
 
         RaiseDefaults();
@@ -1528,7 +1529,7 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         // Generate rebars along the inset polygon
-        _isGeneratingRebars = true;
+        _generatingRebarsDepth++;
         try
         {
             IrregularInput.Rebars.Clear();
@@ -1570,7 +1571,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         finally
         {
-            _isGeneratingRebars = false;
+            _generatingRebarsDepth--;
         }
     }
 
@@ -1605,7 +1606,7 @@ public sealed class InputViewModel : ViewModelBase
         double spacingMm = spacing * factor;
         double barDiameter = selectedBar.DiameterMm;
 
-        _isGeneratingRebars = true;
+        _generatingRebarsDepth++;
         try
         {
             if (IsCircularSection)
@@ -1702,7 +1703,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         finally
         {
-            _isGeneratingRebars = false;
+            _generatingRebarsDepth--;
         }
     }
 }
