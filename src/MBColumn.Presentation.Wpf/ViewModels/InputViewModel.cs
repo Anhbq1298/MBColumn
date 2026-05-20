@@ -137,11 +137,13 @@ public sealed class InputViewModel : ViewModelBase
         set => Set(ref selectedIntegrationMethod, value);
     }
 
-    public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes { get; } =
-    [
-        new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
-        new(RebarLayoutType.SidesDifferent, "Sides Different")
-    ];
+    public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes =>
+        IsCircularSection
+            ? [new(RebarLayoutType.EqualSpacing, "Equal Spacing")]
+            : [
+                new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
+                new(RebarLayoutType.SidesDifferent, "Sides Different")
+            ];
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
