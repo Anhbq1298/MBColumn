@@ -1,9 +1,10 @@
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
+using MBColumn.Presentation.Wpf.Services;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -12,26 +13,42 @@ public sealed class MainWindowViewModel : ViewModelBase
 {
     private readonly ColumnCalculationService calculationService;
     private readonly IProjectService projectService;
+    private readonly IMessageService messageService;
+    private readonly IProjectFileDialogService projectFileDialogService;
+    private readonly IProjectNameDialogService projectNameDialogService;
+    private readonly ProjectSession projectSession;
     private string validationMessage = "";
     private bool isCalculationOutdated;
-    private bool hasSuccessfulCalculation;
     private ColumnItemViewModel? currentColumn;
     private string windowTitle = "MBColumn";
+    private bool isCalculating;
+    private string calculationStatus = "";
+    private int selectedMainTabIndex;
     private bool suppressModified;
 
     public MainWindowViewModel(
         ColumnCalculationService calculationService,
         IProjectService projectService,
-        InputViewModel input)
+        InputViewModel input,
+        IMessageService messageService,
+        IProjectFileDialogService projectFileDialogService,
+        IProjectNameDialogService projectNameDialogService,
+        ProjectSession projectSession)
     {
         this.calculationService = calculationService;
         this.projectService = projectService;
+        this.messageService = messageService;
+        this.projectFileDialogService = projectFileDialogService;
+        this.projectNameDialogService = projectNameDialogService;
+        this.projectSession = projectSession;
         Input = input;
         Result = new ResultViewModel();
 
-        Explorer = new ProjectExplorerViewModel(projectService, OnColumnSelected, PromptColumnName);
+        Explorer = new ProjectExplorerViewModel(projectService, OnColumnSelected, projectNameDialogService.PromptColumnName, messageService);
 
-        CalculateCommand = new RelayCommand(Calculate);
+        CalculateCommand = new AsyncRelayCommand(CalculateCurrentColumnAsync, () => !IsCalculating);
+        CalculateCurrentColumnCommand = CalculateCommand;
+        CalculateAllColumnsCommand = new AsyncRelayCommand(CalculateAllColumnsAsync, () => !IsCalculating);
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveProjectCommand = new RelayCommand(SaveProject);
@@ -48,6 +65,8 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ProjectExplorerViewModel Explorer { get; }
 
     public ICommand CalculateCommand { get; }
+    public ICommand CalculateCurrentColumnCommand { get; }
+    public ICommand CalculateAllColumnsCommand { get; }
     public ICommand NewProjectCommand { get; }
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
@@ -55,6 +74,20 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public string ValidationMessage { get => validationMessage; set => Set(ref validationMessage, value); }
     public string WindowTitle { get => windowTitle; private set => Set(ref windowTitle, value); }
+    public string CalculationStatus { get => calculationStatus; private set => Set(ref calculationStatus, value); }
+    public int SelectedMainTabIndex { get => selectedMainTabIndex; set => Set(ref selectedMainTabIndex, value); }
+
+    public bool IsCalculating
+    {
+        get => isCalculating;
+        private set
+        {
+            if (isCalculating == value) return;
+            isCalculating = value;
+            Raise();
+            RaiseCommandStates();
+        }
+    }
 
     public bool IsCalculationOutdated
     {
@@ -66,16 +99,46 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public bool IsResultsTabAvailable => Result.HasResult && !IsCalculationOutdated;
+    public bool IsResultsTabAvailable => Result.HasResult;
 
-    private void Calculate()
+    private async Task CalculateCurrentColumnAsync()
+        => await RunWithProgressAsync("Calculating this column...", CalculateCurrentColumn);
+
+    private async Task CalculateAllColumnsAsync()
+        => await RunWithProgressAsync("Calculating all columns...", CalculateAllColumns);
+
+    private async Task RunWithProgressAsync(string status, Action calculate)
+    {
+        IsCalculating = true;
+        CalculationStatus = status;
+        var elapsed = Stopwatch.StartNew();
+
+        try
+        {
+            await Task.Yield();
+            calculate();
+        }
+        finally
+        {
+            var remaining = TimeSpan.FromSeconds(1) - elapsed.Elapsed;
+            if (remaining > TimeSpan.Zero)
+                await Task.Delay(remaining);
+
+            CalculationStatus = "";
+            IsCalculating = false;
+        }
+    }
+
+    private void CalculateCurrentColumn()
     {
         try
         {
             ValidationMessage = "";
-            Result.Result = calculationService.Calculate(Input.ToDto());
-            hasSuccessfulCalculation = true;
+            var result = calculationService.Calculate(Input.ToDto());
+            projectSession.StoreCurrentColumnResult(result);
+            Result.Result = result;
             IsCalculationOutdated = false;
+            SelectedMainTabIndex = 1;
             Raise(nameof(IsResultsTabAvailable));
 
             // Auto-save column input after successful calculation
@@ -85,24 +148,88 @@ public sealed class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             ValidationMessage = ex.Message;
-            MessageBox.Show(ex.Message, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            messageService.ShowWarning(ex.Message, "Validation");
         }
+    }
+
+    private void CalculateAllColumns()
+    {
+        var columns = projectService.GetColumns();
+        if (columns.Count == 0)
+        {
+            CalculateCurrentColumn();
+            return;
+        }
+
+        SaveCurrentColumnInput();
+
+        var selectedId = currentColumn?.Id;
+        var failedColumns = new List<string>();
+
+        suppressModified = true;
+        try
+        {
+            foreach (var column in columns)
+            {
+                var snapshot = projectService.LoadColumnInput(column.Id);
+                if (snapshot is null)
+                    continue;
+
+                try
+                {
+                    Input.LoadFromSnapshot(snapshot);
+                    var result = calculationService.Calculate(Input.ToDto());
+                    projectSession.StoreColumnResult(column.Id, result);
+                }
+                catch (Exception ex)
+                {
+                    failedColumns.Add($"{column.Name}: {ex.Message}");
+                }
+            }
+
+            if (selectedId is not null)
+            {
+                var selectedSnapshot = projectService.LoadColumnInput(selectedId.Value);
+                if (selectedSnapshot is not null)
+                    Input.LoadFromSnapshot(selectedSnapshot);
+            }
+        }
+        finally
+        {
+            suppressModified = false;
+        }
+
+        if (failedColumns.Count > 0)
+        {
+            ValidationMessage = string.Join(Environment.NewLine, failedColumns);
+            messageService.ShowWarning(
+                $"Some columns could not be calculated:\n\n{ValidationMessage}",
+                "Validation");
+            return;
+        }
+
+        ValidationMessage = "";
+        ApplyCurrentColumnResult();
+        SelectedMainTabIndex = 1;
+        Raise(nameof(IsResultsTabAvailable));
     }
 
     private void NewProject()
     {
         if (!ConfirmDiscardChanges()) return;
 
-        var name = PromptProjectName("New Project");
+        var name = projectNameDialogService.PromptProjectName("New Project");
         if (name is null) return;
 
         // Save + detach before firing any project events
         SaveCurrentColumnInput();
         currentColumn = null;
+        projectSession.SelectColumn(null);
 
         projectService.NewProject(name);
-        hasSuccessfulCalculation = false;
+        ClearResults();
         isCalculationOutdated = false;
+        SelectedMainTabIndex = 0;
         Raise(nameof(IsResultsTabAvailable));
     }
 
@@ -110,30 +237,25 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         if (!ConfirmDiscardChanges()) return;
 
-        var dlg = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "Open MBColumn Project",
-            Filter = "MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*",
-            DefaultExt = ".msd"
-        };
-
-        if (dlg.ShowDialog() != true) return;
+        var filePath = projectFileDialogService.ShowOpenProjectDialog();
+        if (filePath is null) return;
 
         try
         {
             // Save + detach before firing any project events
             SaveCurrentColumnInput();
             currentColumn = null;
+            projectSession.SelectColumn(null);
 
-            projectService.OpenProject(dlg.FileName);
-            hasSuccessfulCalculation = false;
+            projectService.OpenProject(filePath);
+            ClearResults();
             isCalculationOutdated = false;
+            SelectedMainTabIndex = 0;
             Raise(nameof(IsResultsTabAvailable));
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to open project:\n{ex.Message}", "Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            messageService.ShowError($"Failed to open project:\n{ex.Message}");
         }
     }
 
@@ -155,8 +277,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to save project:\n{ex.Message}", "Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            messageService.ShowError($"Failed to save project:\n{ex.Message}");
         }
     }
 
@@ -165,25 +286,17 @@ public sealed class MainWindowViewModel : ViewModelBase
         if (!ValidateColumnNamesBeforeSave())
             return;
 
-        var dlg = new Microsoft.Win32.SaveFileDialog
-        {
-            Title = "Save MBColumn Project As",
-            Filter = "MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*",
-            DefaultExt = ".msd",
-            FileName = projectService.ProjectName
-        };
-
-        if (dlg.ShowDialog() != true) return;
+        var filePath = projectFileDialogService.ShowSaveProjectAsDialog(projectService.ProjectName);
+        if (filePath is null) return;
 
         try
         {
             SaveCurrentColumnInput();
-            projectService.SaveProjectAs(dlg.FileName);
+            projectService.SaveProjectAs(filePath);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to save project:\n{ex.Message}", "Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            messageService.ShowError($"Failed to save project:\n{ex.Message}");
         }
     }
 
@@ -194,6 +307,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             SaveCurrentColumnInput();
 
         currentColumn = column;
+        projectSession.SelectColumn(column?.Id);
 
         if (column is not null)
         {
@@ -203,11 +317,17 @@ public sealed class MainWindowViewModel : ViewModelBase
                 var snapshot = projectService.LoadColumnInput(column.Id);
                 if (snapshot is not null)
                     Input.LoadFromSnapshot(snapshot);
+
+                ApplyCurrentColumnResult();
             }
             finally
             {
                 suppressModified = false;
             }
+        }
+        else
+        {
+            ApplyCurrentColumnResult();
         }
     }
 
@@ -229,12 +349,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     private bool ConfirmDiscardChanges()
     {
         if (!projectService.IsModified) return true;
-        var result = MessageBox.Show(
+        return messageService.ConfirmWarning(
             "The current project has unsaved changes. Discard and continue?",
-            "Unsaved Changes",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-        return result == MessageBoxResult.Yes;
+            "Unsaved Changes");
     }
 
     private bool ValidateColumnNamesBeforeSave()
@@ -249,25 +366,11 @@ public sealed class MainWindowViewModel : ViewModelBase
             return true;
 
         var duplicateList = string.Join(", ", duplicates.Select(name => $"'{name}'"));
-        MessageBox.Show(
+        messageService.ShowWarning(
             $"Cannot save project because duplicate column names exist: {duplicateList}. Each column name must be unique.",
-            "Duplicate Column Names",
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
+            "Duplicate Column Names");
 
         return false;
-    }
-
-    private static string? PromptProjectName(string defaultName)
-        => Prompt(defaultName, "New Project");
-
-    private static string? PromptColumnName(string defaultName)
-        => Prompt(defaultName, "New Column");
-
-    private static string? Prompt(string defaultName, string title)
-    {
-        var dialog = new Views.ProjectNameDialog(defaultName, title);
-        return dialog.ShowDialog() == true ? dialog.ProjectName : null;
     }
 
     private void SubscribeToInputChanges()
@@ -305,7 +408,17 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void MarkCalculationOutdated()
     {
-        if (!hasSuccessfulCalculation) return;
+        if (suppressModified) return;
+
+        if (currentColumn is null)
+        {
+            if (!Result.HasResult) return;
+            IsCalculationOutdated = true;
+            return;
+        }
+
+        if (!projectSession.CurrentColumnHasResult()) return;
+        projectSession.MarkCurrentColumnOutdated();
         IsCalculationOutdated = true;
     }
 
@@ -313,5 +426,37 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         if (!suppressModified && currentColumn is not null)
             projectService.MarkModified();
+    }
+
+    private void RaiseCommandStates()
+    {
+        if (CalculateCommand is AsyncRelayCommand calculate)
+            calculate.RaiseCanExecuteChanged();
+        if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)
+            calculateAll.RaiseCanExecuteChanged();
+    }
+
+    private void ApplyCurrentColumnResult()
+    {
+        if (projectSession.TryGetCurrentColumnResult(out var cachedResult))
+        {
+            Result.Result = cachedResult;
+            IsCalculationOutdated = projectSession.IsCurrentColumnOutdated();
+        }
+        else
+        {
+            Result.Result = null;
+            IsCalculationOutdated = false;
+            if (SelectedMainTabIndex == 1)
+                SelectedMainTabIndex = 0;
+        }
+
+        Raise(nameof(IsResultsTabAvailable));
+    }
+
+    private void ClearResults()
+    {
+        projectSession.ClearResults();
+        Result.Result = null;
     }
 }

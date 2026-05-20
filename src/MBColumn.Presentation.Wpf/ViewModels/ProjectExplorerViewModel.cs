@@ -1,8 +1,9 @@
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
+using MBColumn.Presentation.Wpf.Services;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -12,6 +13,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     private readonly IProjectService projectService;
     private readonly Action<ColumnItemViewModel?> onColumnSelected;
     private readonly Func<string, string?> promptColumnName;
+    private readonly IMessageService messageService;
     private string projectName = "New Project";
     private bool isRenamingProject;
     private string editProjectName = "New Project";
@@ -20,11 +22,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     public ProjectExplorerViewModel(
         IProjectService projectService,
         Action<ColumnItemViewModel?> onColumnSelected,
-        Func<string, string?> promptColumnName)
+        Func<string, string?> promptColumnName,
+        IMessageService messageService)
     {
         this.projectService = projectService;
         this.onColumnSelected = onColumnSelected;
         this.promptColumnName = promptColumnName;
+        this.messageService = messageService;
 
         Columns = new ObservableCollection<ColumnItemViewModel>();
 
@@ -37,7 +41,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
         projectService.ProjectChanged += (_, _) =>
         {
-            ProjectName = projectService.ProjectName;
+            UpdateProjectName();
         };
 
         projectService.ColumnsChanged += (_, _) => RefreshColumns();
@@ -111,7 +115,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            MessageBox.Show(ex.Message, "Duplicate Column Name", MessageBoxButton.OK, MessageBoxImage.Warning);
+            messageService.ShowWarning(ex.Message, "Duplicate Column Name");
             item.IsRenaming = true;
         }
     }
@@ -140,7 +144,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            MessageBox.Show(ex.Message, "Duplicate Column Name", MessageBoxButton.OK, MessageBoxImage.Warning);
+            messageService.ShowWarning(ex.Message, "Duplicate Column Name");
         }
     }
 
@@ -171,7 +175,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
             Columns.Add(CreateItem(record));
         }
 
-        ProjectName = projectService.ProjectName;
+        UpdateProjectName();
 
         var toReselect = previousId.HasValue
             ? Columns.FirstOrDefault(c => c.Id == previousId.Value)
@@ -195,4 +199,11 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
     private ColumnItemViewModel CreateItem(ColumnRecord record)
         => new(record, SelectColumn, DeleteColumn);
+
+    private void UpdateProjectName()
+    {
+        ProjectName = projectService.CurrentFilePath is null
+            ? projectService.ProjectName
+            : Path.GetFileName(projectService.CurrentFilePath);
+    }
 }

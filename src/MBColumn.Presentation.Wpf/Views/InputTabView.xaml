@@ -384,10 +384,6 @@
                 </Border>
                 <StackPanel HorizontalAlignment="Center"
                             Margin="0,0,0,12">
-                    <Button Content="Calculate PMM Capacity"
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            Command="{Binding DataContext.CalculateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            MinWidth="210" />
                     <TextBlock Text="Changes made, recalculation required."
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource AccentRedBrush}"

@@ -1,4 +1,7 @@
-﻿namespace MBColumn.Presentation.Wpf;
+using MBColumn.Presentation.Wpf.Composition;
+using MBColumn.Presentation.Wpf.Views;
+
+namespace MBColumn.Presentation.Wpf;
 
 public partial class App : System.Windows.Application
 {
@@ -6,6 +9,26 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
         DispatcherUnhandledException += OnUnhandledException;
+        ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
+
+        RunShell();
+    }
+
+    private static void RunShell()
+    {
+        while (true)
+        {
+            using var composition = AppComposition.Create();
+            var startup = new StartUpWindow(composition.ProjectService);
+            if (startup.ShowDialog() != true)
+                break;
+
+            var mainWindow = new MainWindow(composition.CreateMainWindowViewModel());
+            Current.MainWindow = mainWindow;
+            mainWindow.ShowDialog();
+        }
+
+        Current.Shutdown();
     }
 
     private static void OnUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
@@ -16,4 +39,3 @@ public partial class App : System.Windows.Application
         e.Handled = true;
     }
 }
-

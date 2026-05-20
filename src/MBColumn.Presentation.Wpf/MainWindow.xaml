@@ -70,15 +70,38 @@
                     </StackPanel>
                 </Button>
                 <Separator Margin="0,4,12,4" />
-                <Button Command="{Binding CalculateCommand}"
-                        ToolTip="Run Calculation (F5)"
+                <Button Click="CalculateButton_Click"
+                        ToolTip="Choose calculation scope"
                         Style="{StaticResource PrimaryButtonStyle}"
                         MinHeight="30" Padding="14,4">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
                         <TextBlock Text="Calculate" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="8,1,0,0" VerticalAlignment="Center" />
                     </StackPanel>
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Calculate This Column"
+                                      Command="{Binding Path=PlacementTarget.DataContext.CalculateCurrentColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                            <MenuItem Header="Calculate All Project"
+                                      Command="{Binding Path=PlacementTarget.DataContext.CalculateAllColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
                 </Button>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="10,0,0,0"
+                            Visibility="{Binding IsCalculating, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ProgressBar Width="130"
+                                 Height="12"
+                                 IsIndeterminate="True"
+                                 VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding CalculationStatus}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextDarkBrush}"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0" />
+                </StackPanel>
             </StackPanel>
         </Border>
 
@@ -201,6 +224,7 @@
 
             <!-- Tabs -->
             <TabControl Grid.Column="2" Margin="14,14,18,18"
+                        SelectedIndex="{Binding SelectedMainTabIndex, Mode=TwoWay}"
                         Background="{DynamicResource LightBackgroundBrush}"
                         Foreground="{DynamicResource TextDarkBrush}">
                 <TabItem Header="Input"
