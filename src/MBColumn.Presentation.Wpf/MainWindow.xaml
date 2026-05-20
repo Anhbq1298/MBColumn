@@ -184,8 +184,14 @@
                                 <DataTemplate>
                                     <Border Padding="10,6"
                                             Cursor="Hand">
+                                        <Border.InputBindings>
+                                            <MouseBinding MouseAction="LeftClick" Command="{Binding SelectCommand}" />
+                                        </Border.InputBindings>
                                         <Border.ContextMenu>
                                             <ContextMenu>
+                                                <MenuItem Header="Rename Section"
+                                                          Command="{Binding Path=PlacementTarget.DataContext.BeginRenameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <Separator />
                                                 <MenuItem Header="Duplicate Section"
                                                           Command="{Binding Path=PlacementTarget.DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                                 <MenuItem Header="Delete Section"
@@ -207,11 +213,11 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
-                                            <!-- Normal label (double-click to rename) -->
+                                            <!-- Normal label -->
                                             <TextBlock Text="{Binding Name}"
                                                        FontSize="12"
                                                        TextTrimming="CharacterEllipsis"
-                                                       ToolTip="Double-click to rename"
+                                                       ToolTip="Right-click for section actions"
                                                        Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
@@ -224,10 +230,6 @@
                                                         </Style.Triggers>
                                                     </Style>
                                                 </TextBlock.Style>
-                                                <TextBlock.InputBindings>
-                                                    <MouseBinding MouseAction="LeftClick" Command="{Binding SelectCommand}" />
-                                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding BeginRenameCommand}" />
-                                                </TextBlock.InputBindings>
                                             </TextBlock>
                                             <Border Grid.Row="1"
                                                     Style="{StaticResource ExplorerStatusBadgeStyle}"

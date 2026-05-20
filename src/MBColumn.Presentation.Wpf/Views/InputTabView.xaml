@@ -438,67 +438,28 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- Header row: title + helper text + DXF import button -->
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Section Preview"
-                                           FontSize="15"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource PrimaryNavyBrush}"
-                                           Margin="0,0,0,4" />
-                            </StackPanel>
-                            <Button Grid.Column="1"
-                                    Command="{Binding ImportDxfCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Width="58"
-                                    Height="54"
-                                    Padding="4"
-                                    Margin="12,0,0,0"
-                                    ToolTip="Import .DXF">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <Viewbox Width="22"
-                                             Height="22"
-                                             Margin="0,1,0,2">
-                                        <Canvas Width="24"
-                                                Height="24">
-                                            <Path Data="M 6,3 L 15,3 L 20,8 L 20,21 L 6,21 Z M 15,3 L 15,8 L 20,8"
-                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="1.7"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Fill="Transparent" />
-                                            <Path Data="M 12,9 L 12,16 M 8.8,13 L 12,16.2 L 15.2,13"
-                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="1.9"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Fill="Transparent" />
-                                        </Canvas>
-                                    </Viewbox>
-                                    <TextBlock Text=".dxf"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               HorizontalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
+                        <!-- Header row -->
+                        <TextBlock Text="Section Preview"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="0,0,0,10" />
 
                         <!-- Two-column content -->
                         <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="220" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Left: CAD-style 2D preview -->
-                            <StackPanel Grid.Column="0"
-                                        Margin="0,0,10,0">
+                            <StackPanel Grid.Row="0"
+                                        Grid.Column="0"
+                                        Margin="0,0,0,4">
                                 <TextBlock Text="SECTION PREVIEW"
                                            FontSize="9"
                                            FontWeight="SemiBold"
@@ -510,6 +471,19 @@
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,0,0,4"
                                            />
+                            </StackPanel>
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="2"
+                                       Text="SECTION PROPERTIES"
+                                       FontSize="9"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Margin="12,0,0,4"
+                                       VerticalAlignment="Bottom" />
+
+                            <!-- Left: CAD-style 2D preview + actions -->
+                            <StackPanel Grid.Row="1"
+                                        Grid.Column="0">
                                 <controls:SectionPreviewCanvas Height="200"
                                                                MinHeight="160"
                                                                HorizontalAlignment="Stretch"
@@ -525,22 +499,55 @@
                                                                IsValid="{Binding IsSectionPreviewValid}"
                                                                ErrorMessage="{Binding SectionPreviewErrorMessage}"
                                                                BoundaryPoints="{Binding PreviewBoundaryPoints}" />
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,8,0,0">
+                                    <Button Command="{Binding ImportDxfCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Width="58"
+                                            Height="54"
+                                            Padding="4"
+                                            ToolTip="Import .DXF">
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <Viewbox Width="22"
+                                                     Height="22"
+                                                     Margin="0,1,0,2">
+                                                <Canvas Width="24"
+                                                        Height="24">
+                                                    <Path Data="M 6,3 L 15,3 L 20,8 L 20,21 L 6,21 Z M 15,3 L 15,8 L 20,8"
+                                                          Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                          StrokeThickness="1.7"
+                                                          StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round"
+                                                          StrokeLineJoin="Round"
+                                                          Fill="Transparent" />
+                                                    <Path Data="M 12,9 L 12,16 M 8.8,13 L 12,16.2 L 15.2,13"
+                                                          Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                          StrokeThickness="1.9"
+                                                          StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round"
+                                                          StrokeLineJoin="Round"
+                                                          Fill="Transparent" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text=".dxf"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
                             </StackPanel>
 
                             <!-- Right: Section properties panel -->
-                            <Border Grid.Column="1"
+                            <Border Grid.Row="1"
+                                    Grid.Column="2"
                                     Background="{DynamicResource PanelBackgroundBrush}"
                                     BorderBrush="{DynamicResource BorderGreyBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     Padding="12,10">
                                 <StackPanel>
-                                    <TextBlock Text="SECTION PROPERTIES"
-                                               FontSize="9"
-                                               FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               Margin="0,0,0,10" />
-
                                     <!-- Shape type -->
                                     <Grid Margin="0,0,0,5">
                                         <Grid.ColumnDefinitions>
