@@ -7,10 +7,11 @@ public partial class ProjectNameDialog : Window
 {
     public string ProjectName { get; private set; } = "";
 
-    public ProjectNameDialog(string defaultName, string title = "New Project")
+    public ProjectNameDialog(string defaultName, string title = "New Project", string label = "Project name:")
     {
         InitializeComponent();
         Title = title;
+        NameLabel.Text = label;
         NameBox.Text = defaultName;
         Loaded += (_, _) =>
         {

@@ -89,7 +89,7 @@ public sealed class ProjectService : IProjectService, IDisposable
     {
         var normalizedName = name.Trim();
         if (string.IsNullOrWhiteSpace(normalizedName))
-            throw new InvalidOperationException("Column name cannot be empty.");
+            throw new InvalidOperationException("Section name cannot be empty.");
 
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
@@ -119,7 +119,7 @@ public sealed class ProjectService : IProjectService, IDisposable
     {
         var normalizedName = name.Trim();
         if (string.IsNullOrWhiteSpace(normalizedName))
-            throw new InvalidOperationException("Column name cannot be empty.");
+            throw new InvalidOperationException("Section name cannot be empty.");
 
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
@@ -132,7 +132,7 @@ public sealed class ProjectService : IProjectService, IDisposable
             "SELECT InputJson FROM Column WHERE Id = @id AND ProjectId = @pid",
             new { id = sourceColumnId, pid = projectId });
         if (source is null)
-            throw new InvalidOperationException("Source column no longer exists.");
+            throw new InvalidOperationException("Source section no longer exists.");
 
         var now = DateTime.UtcNow.ToString("O");
         var sortOrder = conn.ExecuteScalar<int>(
@@ -155,7 +155,7 @@ public sealed class ProjectService : IProjectService, IDisposable
     {
         var normalizedName = newName.Trim();
         if (string.IsNullOrWhiteSpace(normalizedName))
-            throw new InvalidOperationException("Column name cannot be empty.");
+            throw new InvalidOperationException("Section name cannot be empty.");
 
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
@@ -300,7 +300,7 @@ public sealed class ProjectService : IProjectService, IDisposable
             "AND (@exclude IS NULL OR Id != @exclude)",
             new { projectId, name = lowerName, exclude = excludingColumnId });
         if (count > 0)
-            throw new InvalidOperationException($"A column named '{name}' already exists. Column names must be unique.");
+            throw new InvalidOperationException($"A section named '{name}' already exists. Section names must be unique.");
     }
 
     private static string BuildConnectionString(string filePath)

@@ -110,7 +110,7 @@ public partial class StartUpWindow : Window
             TxtPreviewFileSize.Text = $"{sizeInKb} KB";
 
             PreviewColumnsList.ItemsSource = columns;
-            TxtPreviewColCount.Text = $"Columns ({columns.Count})";
+            TxtPreviewColCount.Text = $"Sections ({columns.Count})";
         }
         catch (Exception ex)
         {
@@ -124,7 +124,7 @@ public partial class StartUpWindow : Window
     {
         PreviewPanel.Visibility = Visibility.Collapsed;
         NoSelectionText.Visibility = Visibility.Visible;
-        NoSelectionText.Text = "Select a recent project to preview its details and columns.";
+        NoSelectionText.Text = "Select a recent project to preview its details and sections.";
     }
 
     private void BtnNew_Click(object? sender, RoutedEventArgs e)
@@ -154,8 +154,8 @@ public partial class StartUpWindow : Window
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Open MBColumn Project",
-            Filter = "MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*",
-            DefaultExt = ".msd"
+            Filter = "MBColumn Project (*.mbc;*.msd)|*.mbc;*.msd|Legacy MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*",
+            DefaultExt = ".mbc"
         };
 
         if (dlg.ShowDialog() != true) return;

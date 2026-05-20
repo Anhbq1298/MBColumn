@@ -15,6 +15,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     private readonly Action saveCurrentColumnInput;
     private readonly Func<string, string?> promptColumnName;
     private readonly IMessageService messageService;
+    private readonly Dictionary<int, SectionStatus> sectionStatuses = [];
     private string projectName = "New Project";
     private ColumnItemViewModel? selectedColumn;
 
@@ -61,6 +62,21 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
     public ICommand AddColumnCommand { get; }
 
+    public void SetSectionStatus(int sectionId, SectionStatus status)
+    {
+        sectionStatuses[sectionId] = status;
+        var section = Columns.FirstOrDefault(c => c.Id == sectionId);
+        if (section is not null)
+            section.Status = status;
+    }
+
+    public void ClearSectionStatuses()
+    {
+        sectionStatuses.Clear();
+        foreach (var section in Columns)
+            section.Status = SectionStatus.NotCalculated;
+    }
+
     public void SelectColumn(ColumnItemViewModel item)
     {
         if (selectedColumn is not null)
@@ -85,7 +101,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            messageService.ShowWarning(ex.Message, "Duplicate Column Name");
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Section Name");
             item.IsRenaming = true;
         }
     }
@@ -97,7 +113,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
     private void AddColumn()
     {
-        var defaultName = $"Column {Columns.Count + 1}";
+        var defaultName = $"Section {Columns.Count + 1}";
         var name = promptColumnName(defaultName);
         if (name is null) return;
 
@@ -114,7 +130,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            messageService.ShowWarning(ex.Message, "Duplicate Column Name");
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Section Name");
         }
     }
 
@@ -132,16 +148,17 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            messageService.ShowWarning(ex.Message, "Duplicate Column");
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Section");
         }
     }
 
     private void DeleteColumn(ColumnItemViewModel item)
     {
-        if (!messageService.ConfirmWarning($"Delete column '{item.Name}'?", "Delete Column"))
+        if (!messageService.ConfirmWarning($"Delete section '{item.Name}'?", "Delete Section"))
             return;
 
         projectService.DeleteColumn(item.Id);
+        sectionStatuses.Remove(item.Id);
         Columns.Remove(item);
         if (selectedColumn == item)
         {
@@ -166,6 +183,10 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
             Columns.Add(CreateItem(record));
         }
 
+        var currentIds = Columns.Select(c => c.Id).ToHashSet();
+        foreach (var removedId in sectionStatuses.Keys.Where(id => !currentIds.Contains(id)).ToList())
+            sectionStatuses.Remove(removedId);
+
         UpdateProjectName();
 
         var toReselect = previousId.HasValue
@@ -189,7 +210,12 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     }
 
     private ColumnItemViewModel CreateItem(ColumnRecord record)
-        => new(record, SelectColumn, DuplicateColumn, DeleteColumn);
+    {
+        var item = new ColumnItemViewModel(record, SelectColumn, DuplicateColumn, DeleteColumn);
+        if (sectionStatuses.TryGetValue(record.Id, out var status))
+            item.Status = status;
+        return item;
+    }
 
     private string NextDuplicateName(string sourceName)
     {
@@ -211,4 +237,9 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
             ? projectService.ProjectName
             : Path.GetFileName(projectService.CurrentFilePath);
     }
+
+    private static string ToSectionWording(string message)
+        => message
+            .Replace("Column", "Section", StringComparison.Ordinal)
+            .Replace("column", "section", StringComparison.Ordinal);
 }

@@ -191,9 +191,6 @@
                                    Style="{StaticResource FieldLabelTextStyle}" />
                         <ComboBox ItemsSource="{Binding UnitSystems}"
                                   SelectedItem="{Binding UnitSystem}" />
-                        <TextBlock Text="Changing workflow resets defaults - values are not silently reinterpreted."
-                                   Style="{StaticResource HelperTextStyle}"
-                                   TextWrapping="Wrap" />
                         <TextBlock Text="Design Code"
                                    Style="{StaticResource FieldLabelTextStyle}"
                                    Margin="0,10,0,0" />
@@ -219,8 +216,6 @@
                                        Style="{StaticResource FieldLabelTextStyle}"
                                        Margin="0,10,0,0" />
                             <TextBox Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBlock Text="Concrete strength coefficient (NDP). UK/Singapore standard = 0.85. Columns often use 0.80."
-                                       Style="{StaticResource HelperTextStyle}" />
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
@@ -299,22 +294,71 @@
                         <TextBlock Text="Moment Sign Convention"
                                    Style="{StaticResource FieldLabelTextStyle}"
                                    Margin="0,0,0,8" />
-                        <Border Background="{DynamicResource PanelBackgroundBrush}"
+                        <Border Background="White"
                                 BorderBrush="{DynamicResource BorderSoftBrush}"
                                 BorderThickness="1"
                                 CornerRadius="6"
-                                Padding="8"
+                                Padding="10,8"
                                 Margin="0,0,0,14">
-                            <Image Source="/MBColumn;component/Resources/MomentSignConvention.png"
-                                   Stretch="Uniform"
-                                   MaxHeight="180"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
+                            <!-- Moment sign convention diagram — XAML vector, blue theme -->
+                            <Viewbox Stretch="Uniform"
+                                     HorizontalAlignment="Stretch"
+                                     VerticalAlignment="Top">
+                                <Canvas Width="200" Height="165">
+
+                                    <!-- Column: top face -->
+                                    <Polygon Points="35,44 92,44 122,26 65,26"
+                                             Fill="#BAD4F0" Stroke="#004B85" StrokeThickness="1" />
+                                    <!-- Column: right face -->
+                                    <Polygon Points="92,44 122,26 122,148 92,166"
+                                             Fill="#9DC0E8" Stroke="#004B85" StrokeThickness="1" />
+                                    <!-- Column: front face -->
+                                    <Polygon Points="35,44 92,44 92,166 35,166"
+                                             Fill="#D6E8FA" Stroke="#004B85" StrokeThickness="1" />
+
+                                    <!-- Muy arrow (rotation about Y / vertical axis) -->
+                                    <Path Stroke="#004B85" StrokeThickness="1.4"
+                                          Data="M 25,100 C 15,45 60,18 105,34" />
+                                    <Polygon Points="105,34 97,35 99,29" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="107" Canvas.Top="20"
+                                               Text="Muy" FontSize="10"
+                                               FontWeight="SemiBold" FontStyle="Italic"
+                                               Foreground="#004B85" />
+
+                                    <!-- Mux arrow (rotation about X / horizontal axis) -->
+                                    <Path Stroke="#004B85" StrokeThickness="1.4"
+                                          Data="M 108,62 C 145,68 142,115 102,124" />
+                                    <Polygon Points="102,124 108,120 109,126" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="130" Canvas.Top="80"
+                                               Text="Mux" FontSize="10"
+                                               FontWeight="SemiBold" FontStyle="Italic"
+                                               Foreground="#004B85" />
+
+                                    <!-- XYZ axes (bottom right) -->
+                                    <!-- z axis (oblique / depth) -->
+                                    <Line X1="165" Y1="155" X2="180" Y2="146"
+                                          Stroke="#004B85" StrokeThickness="0.9" />
+                                    <Polygon Points="180,146 177,151 174,147" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="181" Canvas.Top="140"
+                                               Text="z" FontSize="9" FontStyle="Italic"
+                                               Foreground="#004B85" />
+                                    <!-- y axis (vertical) -->
+                                    <Line X1="165" Y1="155" X2="165" Y2="138"
+                                          Stroke="#004B85" StrokeThickness="0.9" />
+                                    <Polygon Points="165,138 167,143 163,143" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="157" Canvas.Top="131"
+                                               Text="y" FontSize="9" FontStyle="Italic"
+                                               Foreground="#004B85" />
+                                    <!-- x axis (horizontal) -->
+                                    <Line X1="165" Y1="155" X2="183" Y2="155"
+                                          Stroke="#004B85" StrokeThickness="0.9" />
+                                    <Polygon Points="183,155 178,157 178,152" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="185" Canvas.Top="150"
+                                               Text="x" FontSize="9" FontStyle="Italic"
+                                               Foreground="#004B85" />
+                                </Canvas>
+                            </Viewbox>
                         </Border>
-                        <TextBlock Style="{StaticResource HelperTextStyle}"
-                                   Margin="0,0,0,8"
-                                   TextWrapping="Wrap"
-                                   Text="P: compression (+). Mx: moment about X-axis. My: moment about Y-axis." />
                         <DataGrid x:Name="LoadCasesGrid"
                                   ItemsSource="{Binding LoadCases}"
                                   AutoGenerateColumns="False"
@@ -406,9 +450,6 @@
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource PrimaryNavyBrush}"
                                            Margin="0,0,0,4" />
-                                <TextBlock Style="{StaticResource HelperTextStyle}"
-                                           TextWrapping="Wrap"
-                                           Text="Compression (+). Internal units: N, mm, MPa. Slenderness excluded." />
                             </StackPanel>
                             <Button Grid.Column="1"
                                     Command="{Binding ImportDxfCommand}"

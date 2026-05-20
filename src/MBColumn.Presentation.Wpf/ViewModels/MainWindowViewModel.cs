@@ -51,9 +51,9 @@ public sealed class MainWindowViewModel : ViewModelBase
             projectNameDialogService.PromptColumnName,
             messageService);
 
-        CalculateCommand = new AsyncRelayCommand(CalculateCurrentColumnAsync, () => !IsCalculating);
+        CalculateCommand = new AsyncRelayCommand(CalculateCurrentColumnAsync, () => !IsCalculating && HasCurrentSection);
         CalculateCurrentColumnCommand = CalculateCommand;
-        CalculateAllColumnsCommand = new AsyncRelayCommand(CalculateAllColumnsAsync, () => !IsCalculating);
+        CalculateAllColumnsCommand = new AsyncRelayCommand(CalculateAllColumnsAsync, () => !IsCalculating && HasSections);
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveProjectCommand = new RelayCommand(SaveProject);
@@ -62,7 +62,18 @@ public sealed class MainWindowViewModel : ViewModelBase
         SubscribeToInputChanges();
         UpdateWindowTitle();
 
-        projectService.ProjectChanged += (_, _) => UpdateWindowTitle();
+        Explorer.Columns.CollectionChanged += (_, _) =>
+        {
+            Raise(nameof(HasSections));
+            RaiseCommandStates();
+            RaiseStatusProperties();
+        };
+
+        projectService.ProjectChanged += (_, _) =>
+        {
+            UpdateWindowTitle();
+            RaiseStatusProperties();
+        };
     }
 
     public InputViewModel Input { get; }
@@ -79,8 +90,41 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public string ValidationMessage { get => validationMessage; set => Set(ref validationMessage, value); }
     public string WindowTitle { get => windowTitle; private set => Set(ref windowTitle, value); }
-    public string CalculationStatus { get => calculationStatus; private set => Set(ref calculationStatus, value); }
+    public string CalculationStatus
+    {
+        get => calculationStatus;
+        private set
+        {
+            if (calculationStatus == value) return;
+            calculationStatus = value;
+            Raise();
+            Raise(nameof(AppStatusText));
+        }
+    }
     public int SelectedMainTabIndex { get => selectedMainTabIndex; set => Set(ref selectedMainTabIndex, value); }
+    public bool HasCurrentSection => currentColumn is not null;
+    public bool HasSections => Explorer is not null && Explorer.Columns.Count > 0;
+    public bool HasCurrentResult => Result.HasResult;
+    public bool ShowInputEmptyState => !HasCurrentSection;
+    public bool ShowResultContent => HasCurrentSection && HasCurrentResult && !IsCalculationOutdated;
+    public bool ShowNoSectionResultEmptyState => !HasCurrentSection;
+    public bool ShowNoResultEmptyState => HasCurrentSection && !HasCurrentResult;
+    public bool ShowOutdatedResultEmptyState => HasCurrentSection && HasCurrentResult && IsCalculationOutdated;
+    public bool IsProjectModified => projectService.IsModified;
+    public bool IsCurrentResultOutdated => IsCalculationOutdated;
+    public string AppStatusText => IsCalculating
+        ? (string.IsNullOrWhiteSpace(CalculationStatus) ? "Calculating..." : CalculationStatus)
+        : IsCalculationOutdated ? "Result outdated" : "Ready";
+    public string ProjectStatusText => projectService.CurrentFilePath is null
+        ? $"Project: {projectService.ProjectName}"
+        : $"Project: {System.IO.Path.GetFileName(projectService.CurrentFilePath)}";
+    public string CurrentSectionStatusText => currentColumn is null
+        ? "No section selected"
+        : $"Section: {currentColumn.Name}";
+    public string ModifiedStatusText => projectService.IsModified ? "Modified" : "Saved";
+    public string ResultFreshnessStatusText => IsCalculationOutdated
+        ? "Input changed after last calculation"
+        : HasCurrentResult ? "Result current" : "No result";
 
     public bool IsCalculating
     {
@@ -90,6 +134,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             if (isCalculating == value) return;
             isCalculating = value;
             Raise();
+            RaiseStatusProperties();
             RaiseCommandStates();
         }
     }
@@ -101,16 +146,18 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             Set(ref isCalculationOutdated, value);
             Raise(nameof(IsResultsTabAvailable));
+            RaiseResultStateProperties();
+            RaiseStatusProperties();
         }
     }
 
-    public bool IsResultsTabAvailable => Result.HasResult;
+    public bool IsResultsTabAvailable => true;
 
     private async Task CalculateCurrentColumnAsync()
-        => await RunWithProgressAsync("Calculating this column...", CalculateCurrentColumn);
+        => await RunWithProgressAsync("Calculating this section...", CalculateCurrentColumn);
 
     private async Task CalculateAllColumnsAsync()
-        => await RunWithProgressAsync("Calculating all columns...", CalculateAllColumns);
+        => await RunWithProgressAsync("Calculating all sections...", CalculateAllColumns);
 
     private async Task RunWithProgressAsync(string status, Action calculate)
     {
@@ -143,8 +190,10 @@ public sealed class MainWindowViewModel : ViewModelBase
             projectSession.StoreCurrentColumnResult(result);
             Result.Result = result;
             IsCalculationOutdated = false;
+            if (Explorer is not null && currentColumn is not null)
+                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
             SelectedMainTabIndex = 1;
-            Raise(nameof(IsResultsTabAvailable));
+            RaiseResultStateProperties();
 
             // Auto-save column input after successful calculation
             if (currentColumn is not null)
@@ -153,6 +202,9 @@ public sealed class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             ValidationMessage = ex.Message;
+            if (Explorer is not null && currentColumn is not null)
+                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Error);
+            RaiseStatusProperties();
             messageService.ShowWarning(ex.Message, "Validation");
         }
     }
@@ -162,7 +214,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         var columns = projectService.GetColumns();
         if (columns.Count == 0)
         {
-            CalculateCurrentColumn();
             return;
         }
 
@@ -185,9 +236,11 @@ public sealed class MainWindowViewModel : ViewModelBase
                     Input.LoadFromSnapshot(snapshot);
                     var result = calculationService.Calculate(Input.ToDto());
                     projectSession.StoreColumnResult(column.Id, result);
+                    Explorer.SetSectionStatus(column.Id, SectionStatus.Calculated);
                 }
                 catch (Exception ex)
                 {
+                    Explorer.SetSectionStatus(column.Id, SectionStatus.Error);
                     failedColumns.Add($"{column.Name}: {ex.Message}");
                 }
             }
@@ -208,7 +261,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             ValidationMessage = string.Join(Environment.NewLine, failedColumns);
             messageService.ShowWarning(
-                $"Some columns could not be calculated:\n\n{ValidationMessage}",
+                $"Some sections could not be calculated:\n\n{ValidationMessage}",
                 "Validation");
             return;
         }
@@ -216,7 +269,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         ValidationMessage = "";
         ApplyCurrentColumnResult();
         SelectedMainTabIndex = 1;
-        Raise(nameof(IsResultsTabAvailable));
+        RaiseResultStateProperties();
     }
 
     private void NewProject()
@@ -233,9 +286,11 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         projectService.NewProject(name);
         ClearResults();
-        isCalculationOutdated = false;
+        Explorer.ClearSectionStatuses();
+        IsCalculationOutdated = false;
         SelectedMainTabIndex = 0;
-        Raise(nameof(IsResultsTabAvailable));
+        RaiseResultStateProperties();
+        RaiseStatusProperties();
     }
 
     private void OpenProject()
@@ -254,9 +309,11 @@ public sealed class MainWindowViewModel : ViewModelBase
 
             projectService.OpenProject(filePath);
             ClearResults();
-            isCalculationOutdated = false;
+            Explorer.ClearSectionStatuses();
+            IsCalculationOutdated = false;
             SelectedMainTabIndex = 0;
-            Raise(nameof(IsResultsTabAvailable));
+            RaiseResultStateProperties();
+            RaiseStatusProperties();
         }
         catch (Exception ex)
         {
@@ -313,6 +370,8 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         currentColumn = column;
         projectSession.SelectColumn(column?.Id);
+        RaiseStatusProperties();
+        RaiseCommandStates();
 
         if (column is not null)
         {
@@ -334,6 +393,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             ApplyCurrentColumnResult();
         }
+
+        RaiseResultStateProperties();
     }
 
     private void SaveCurrentColumnInput()
@@ -372,8 +433,8 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         var duplicateList = string.Join(", ", duplicates.Select(name => $"'{name}'"));
         messageService.ShowWarning(
-            $"Cannot save project because duplicate column names exist: {duplicateList}. Each column name must be unique.",
-            "Duplicate Column Names");
+            $"Cannot save project because duplicate section names exist: {duplicateList}. Each section name must be unique.",
+            "Duplicate Section Names");
 
         return false;
     }
@@ -424,6 +485,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         if (!projectSession.CurrentColumnHasResult()) return;
         projectSession.MarkCurrentColumnOutdated();
+        Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Outdated);
         IsCalculationOutdated = true;
     }
 
@@ -441,27 +503,62 @@ public sealed class MainWindowViewModel : ViewModelBase
             calculateAll.RaiseCanExecuteChanged();
     }
 
+    private void RaiseStatusProperties()
+    {
+        Raise(nameof(HasCurrentSection));
+        Raise(nameof(HasSections));
+        Raise(nameof(IsProjectModified));
+        Raise(nameof(IsCurrentResultOutdated));
+        Raise(nameof(AppStatusText));
+        Raise(nameof(ProjectStatusText));
+        Raise(nameof(CurrentSectionStatusText));
+        Raise(nameof(ModifiedStatusText));
+        Raise(nameof(ResultFreshnessStatusText));
+        RaiseResultStateProperties();
+    }
+
+    private void RaiseResultStateProperties()
+    {
+        Raise(nameof(IsResultsTabAvailable));
+        Raise(nameof(HasCurrentResult));
+        Raise(nameof(ShowInputEmptyState));
+        Raise(nameof(ShowResultContent));
+        Raise(nameof(ShowNoSectionResultEmptyState));
+        Raise(nameof(ShowNoResultEmptyState));
+        Raise(nameof(ShowOutdatedResultEmptyState));
+    }
+
     private void ApplyCurrentColumnResult()
     {
         if (projectSession.TryGetCurrentColumnResult(out var cachedResult))
         {
             Result.Result = cachedResult;
             IsCalculationOutdated = projectSession.IsCurrentColumnOutdated();
+            if (Explorer is not null && currentColumn is not null)
+            {
+                Explorer.SetSectionStatus(
+                    currentColumn.Id,
+                    IsCalculationOutdated ? SectionStatus.Outdated : SectionStatus.Calculated);
+            }
         }
         else
         {
             Result.Result = null;
             IsCalculationOutdated = false;
+            if (Explorer is not null && currentColumn is not null)
+                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.NotCalculated);
             if (SelectedMainTabIndex == 1)
                 SelectedMainTabIndex = 0;
         }
 
-        Raise(nameof(IsResultsTabAvailable));
+        RaiseResultStateProperties();
+        RaiseStatusProperties();
     }
 
     private void ClearResults()
     {
         projectSession.ClearResults();
         Result.Result = null;
+        RaiseResultStateProperties();
     }
 }

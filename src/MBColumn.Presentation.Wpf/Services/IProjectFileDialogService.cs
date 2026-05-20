@@ -8,15 +8,16 @@ public interface IProjectFileDialogService
 
 public sealed class ProjectFileDialogService : IProjectFileDialogService
 {
-    private const string ProjectFilter = "MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*";
+    private const string OpenProjectFilter = "MBColumn Project (*.mbc;*.msd)|*.mbc;*.msd|Legacy MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*";
+    private const string SaveProjectFilter = "MBColumn Project (*.mbc)|*.mbc|Legacy MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*";
 
     public string? ShowOpenProjectDialog()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Open MBColumn Project",
-            Filter = ProjectFilter,
-            DefaultExt = ".msd"
+            Filter = OpenProjectFilter,
+            DefaultExt = ".mbc"
         };
 
         return dialog.ShowDialog() == true ? dialog.FileName : null;
@@ -27,8 +28,9 @@ public sealed class ProjectFileDialogService : IProjectFileDialogService
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Save MBColumn Project As",
-            Filter = ProjectFilter,
-            DefaultExt = ".msd",
+            Filter = SaveProjectFilter,
+            DefaultExt = ".mbc",
+            AddExtension = true,
             FileName = defaultFileName
         };
 
