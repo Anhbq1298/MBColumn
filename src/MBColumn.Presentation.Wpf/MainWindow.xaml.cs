@@ -43,16 +43,6 @@ public partial class MainWindow : Window
             Explorer().CommitRename(item);
     }
 
-    // Project rename handlers
-    private void ProjectRenameBox_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter) { Explorer().CommitRenameProject(); e.Handled = true; }
-        else if (e.Key == Key.Escape) { Explorer().CancelRenameProject(); e.Handled = true; }
-    }
-
-    private void ProjectRenameBox_LostFocus(object sender, RoutedEventArgs e)
-        => Explorer().CommitRenameProject();
-
     private void CalculateButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.ContextMenu is null) return;

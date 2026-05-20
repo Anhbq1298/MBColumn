@@ -44,7 +44,12 @@ public sealed class MainWindowViewModel : ViewModelBase
         Input = input;
         Result = new ResultViewModel();
 
-        Explorer = new ProjectExplorerViewModel(projectService, OnColumnSelected, projectNameDialogService.PromptColumnName, messageService);
+        Explorer = new ProjectExplorerViewModel(
+            projectService,
+            OnColumnSelected,
+            SaveCurrentColumnInput,
+            projectNameDialogService.PromptColumnName,
+            messageService);
 
         CalculateCommand = new AsyncRelayCommand(CalculateCurrentColumnAsync, () => !IsCalculating);
         CalculateCurrentColumnCommand = CalculateCommand;

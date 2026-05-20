@@ -12,6 +12,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 {
     private readonly IProjectService projectService;
     private readonly Action<ColumnItemViewModel?> onColumnSelected;
+    private readonly Action saveCurrentColumnInput;
     private readonly Func<string, string?> promptColumnName;
     private readonly IMessageService messageService;
     private string projectName = "New Project";
@@ -20,11 +21,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     public ProjectExplorerViewModel(
         IProjectService projectService,
         Action<ColumnItemViewModel?> onColumnSelected,
+        Action saveCurrentColumnInput,
         Func<string, string?> promptColumnName,
         IMessageService messageService)
     {
         this.projectService = projectService;
         this.onColumnSelected = onColumnSelected;
+        this.saveCurrentColumnInput = saveCurrentColumnInput;
         this.promptColumnName = promptColumnName;
         this.messageService = messageService;
 
@@ -117,6 +120,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
     private void DuplicateColumn(ColumnItemViewModel item)
     {
+        saveCurrentColumnInput();
         var name = NextDuplicateName(item.Name);
 
         try

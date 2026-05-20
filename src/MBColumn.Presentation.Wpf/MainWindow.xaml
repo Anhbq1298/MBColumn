@@ -136,28 +136,12 @@
                                 <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Button>
-                            <!-- Project name: label (double-click to rename) or inline TextBox -->
                             <TextBlock Text="{Binding Explorer.ProjectName}"
                                        Foreground="White"
                                        FontWeight="SemiBold"
                                        FontSize="12"
                                        VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"
-                                       Cursor="IBeam"
-                                       ToolTip="Double-click to rename"
-                                       Visibility="{Binding Explorer.IsRenamingProject, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                <TextBlock.InputBindings>
-                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding Explorer.BeginRenameProjectCommand}" />
-                                </TextBlock.InputBindings>
-                            </TextBlock>
-                            <TextBox Text="{Binding Explorer.EditProjectName, UpdateSourceTrigger=PropertyChanged}"
-                                     FontSize="12" FontWeight="SemiBold"
-                                     VerticalAlignment="Center"
-                                     Padding="2,1"
-                                     Visibility="{Binding Explorer.IsRenamingProject, Converter={StaticResource BoolToVisibilityConverter}}"
-                                     KeyDown="ProjectRenameBox_KeyDown"
-                                     LostFocus="ProjectRenameBox_LostFocus"
-                                     IsVisibleChanged="RenameBox_IsVisibleChanged" />
+                                       TextTrimming="CharacterEllipsis" />
                         </DockPanel>
                     </Border>
 
@@ -168,6 +152,14 @@
                                 <DataTemplate>
                                     <Border Padding="10,6"
                                             Cursor="Hand">
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Duplicate Column"
+                                                          Command="{Binding Path=PlacementTarget.DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <MenuItem Header="Delete Column"
+                                                          Command="{Binding Path=PlacementTarget.DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Background" Value="Transparent" />
