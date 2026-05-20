@@ -51,11 +51,15 @@ public sealed class PmChartInsetStateResolverService
     {
         double theta = NormalizeAngle(thetaDegrees);
         var boundary = ResolveBoundaryState(result, axialDisplay, theta);
+        // In navigation mode the NA is shown perpendicular to the slice angle (theta + 90°)
+        // so the diagram is geometrically intuitive regardless of section asymmetry.
+        // Load-case and capacity-point modes continue to use the actual solver NA angle.
+        double naAngle = NormalizeAngle(theta + 90.0);
         return new PmChartInsetSelectedStateDto(
             "",
             "Navigation",
             theta,
-            boundary?.ThetaDegrees ?? theta,
+            naAngle,
             boundary?.NeutralAxisDepth,
             axialDisplay,
             boundary?.Mx,

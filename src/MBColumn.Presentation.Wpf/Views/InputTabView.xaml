@@ -130,6 +130,10 @@
         </Style>
     </UserControl.Resources>
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0.15*"
                               MinWidth="220" />
@@ -138,13 +142,44 @@
             <ColumnDefinition Width="*"
                               MinWidth="550" />
         </Grid.ColumnDefinitions>
-        <ScrollViewer Grid.Column="0"
+
+        <!-- Frozen header row -->
+        <Border Grid.Row="0"
+                Grid.ColumnSpan="3"
+                Background="White"
+                BorderBrush="{DynamicResource BorderGreyBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="0,6,0,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.15*"
+                                      MinWidth="220" />
+                    <ColumnDefinition Width="0.35*"
+                                      MinWidth="300" />
+                    <ColumnDefinition Width="*"
+                                      MinWidth="550" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="Project Settings"
+                           Style="{StaticResource ColumnHeaderTextStyle}"
+                           Margin="0" />
+                <TextBlock Grid.Column="1"
+                           Text="Load Case"
+                           Style="{StaticResource ColumnHeaderTextStyle}"
+                           Margin="0" />
+                <TextBlock Grid.Column="2"
+                           Text="Section And Rebar Config"
+                           Style="{StaticResource ColumnHeaderTextStyle}"
+                           Margin="0" />
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1"
+                      Grid.Column="0"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Margin="0,0,14,0">
             <StackPanel>
-                <TextBlock Text="Project Settings"
-                           Style="{StaticResource ColumnHeaderTextStyle}" />
                 <GroupBox Header="General"
                           Background="White"
                           Foreground="{DynamicResource DarkNavyBrush}"
@@ -248,13 +283,12 @@
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
-        <ScrollViewer Grid.Column="1"
+        <ScrollViewer Grid.Row="1"
+                      Grid.Column="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Margin="0,0,14,0">
             <StackPanel>
-                <TextBlock Text="Load Case"
-                           Style="{StaticResource ColumnHeaderTextStyle}" />
                 <GroupBox Header="Load Cases"
                           Background="White"
                           Foreground="{DynamicResource DarkNavyBrush}"
@@ -345,12 +379,11 @@
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
-        <ScrollViewer Grid.Column="2"
+        <ScrollViewer Grid.Row="1"
+                      Grid.Column="2"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
-                <TextBlock Text="Section And Rebar Config"
-                           Style="{StaticResource ColumnHeaderTextStyle}" />
                 <Border Style="{StaticResource CardBorderStyle}"
                         Padding="18"
                         MinHeight="260"

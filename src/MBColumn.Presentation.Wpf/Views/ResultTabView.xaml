@@ -77,6 +77,10 @@
                         </Grid>
                         <TextBlock Text="{Binding PmSliceLabel}" Style="{StaticResource HelperTextStyle}" />
                         <TextBlock Text="{Binding MxMySliceLabel}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,0" />
+                        <controls:SectionStateInsetCanvas
+                            InsetFigure="{Binding PmChartInset}"
+                            Height="190"
+                            Margin="0,10,0,0" />
                     </StackPanel>
                 </Border>
 
@@ -337,7 +341,6 @@
                                               XGridStep="{Binding MStep}"
                                               YGridStep="{Binding PStep}"
                                               BoundsOverride="{Binding SharedPmBounds}"
-                                              InsetFigure="{Binding PmChartInset}"
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding PM.Ratio}"
                                               ResetVersion="{Binding PM.ResetVersion}" />
@@ -406,7 +409,6 @@
                                               UseEqualAspect="{Binding UseEqualAspectForMM}"
                                               XGridStep="{Binding MStepX}"
                                               YGridStep="{Binding MStepY}"
-                                              InsetFigure="{Binding PmChartInset}"
                                               SelectedPoint="{Binding SelectedChartPoint}"
                                               Ratio="{Binding MM.Ratio}"
                                               ResetVersion="{Binding MM.ResetVersion}" />
