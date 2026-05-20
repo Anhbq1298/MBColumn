@@ -133,13 +133,8 @@
                                      Padding="2,1"
                                      Visibility="{Binding Explorer.IsRenamingProject, Converter={StaticResource BoolToVisibilityConverter}}"
                                      KeyDown="ProjectRenameBox_KeyDown"
-                                     LostFocus="ProjectRenameBox_LostFocus">
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <EventSetter Event="IsVisibleChanged" Handler="RenameBox_IsVisibleChanged" />
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
+                                     LostFocus="ProjectRenameBox_LostFocus"
+                                     IsVisibleChanged="RenameBox_IsVisibleChanged" />
                         </DockPanel>
                     </Border>
 
@@ -189,13 +184,8 @@
                                                      Padding="2,1"
                                                      Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"
                                                      KeyDown="ColumnRenameBox_KeyDown"
-                                                     LostFocus="ColumnRenameBox_LostFocus">
-                                                <TextBox.Style>
-                                                    <Style TargetType="TextBox">
-                                                        <EventSetter Event="IsVisibleChanged" Handler="RenameBox_IsVisibleChanged" />
-                                                    </Style>
-                                                </TextBox.Style>
-                                            </TextBox>
+                                                     LostFocus="ColumnRenameBox_LostFocus"
+                                                     IsVisibleChanged="RenameBox_IsVisibleChanged" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

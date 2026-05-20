@@ -1,6 +1,7 @@
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -129,9 +130,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         try
         {
             var record = projectService.AddColumn(name);
-            var item = CreateItem(record);
-            Columns.Add(item);
-            SelectColumn(item);
+
+            // The ProjectService raises ColumnsChanged when a column is added
+            // which triggers RefreshColumns. To avoid adding the item twice
+            // we refresh the list and then select the newly created column.
+            RefreshColumns();
+            var item = Columns.FirstOrDefault(c => c.Id == record.Id);
+            if (item is not null) SelectColumn(item);
         }
         catch (InvalidOperationException ex)
         {

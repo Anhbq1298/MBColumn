@@ -17,7 +17,18 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        var vm = BuildViewModel();
+        // Create a project service early so the startup dialog can
+        // create or open a project on the same service instance.
+        IProjectService projectService = new ProjectService();
+
+        var startup = new Views.StartUpWindow(projectService) { Owner = this };
+        if (startup.ShowDialog() != true)
+        {
+            Close();
+            return;
+        }
+
+        var vm = BuildViewModel(projectService);
         DataContext = vm;
 
         // Keyboard shortcuts
@@ -64,7 +75,7 @@ public partial class MainWindow : Window
     private ProjectExplorerViewModel Explorer()
         => ((MainWindowViewModel)DataContext).Explorer;
 
-    private static MainWindowViewModel BuildViewModel()
+    private static MainWindowViewModel BuildViewModel(IProjectService projectService)
     {
         IDesignCodeService aciCode = new Aci318DesignCodeService();
         IDesignCodeService ec2Code = new Ec2DesignCodeService();
@@ -79,8 +90,6 @@ public partial class MainWindow : Window
         var validation = new InputValidationService();
         IRebarCoordinateBuilderService rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
         var calculation = new ColumnCalculationService(solverFactory, codeFactory, units, ratio, control, diagrams, validation, rebarCoordinates);
-
-        IProjectService projectService = new ProjectService();
 
         var input = new InputViewModel(metricBars, imperialBars, rebarCoordinates);
         return new MainWindowViewModel(calculation, projectService, input);
