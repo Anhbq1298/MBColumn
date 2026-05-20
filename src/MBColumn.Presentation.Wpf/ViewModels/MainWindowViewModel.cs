@@ -2,6 +2,7 @@ using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -138,6 +139,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void SaveProject()
     {
+        if (!ValidateColumnNamesBeforeSave())
+            return;
+
         if (projectService.CurrentFilePath is null)
         {
             SaveProjectAs();
@@ -158,6 +162,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void SaveProjectAs()
     {
+        if (!ValidateColumnNamesBeforeSave())
+            return;
+
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Save MBColumn Project As",
@@ -228,6 +235,27 @@ public sealed class MainWindowViewModel : ViewModelBase
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
         return result == MessageBoxResult.Yes;
+    }
+
+    private bool ValidateColumnNamesBeforeSave()
+    {
+        var duplicates = projectService.GetColumns()
+            .GroupBy(c => c.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (!duplicates.Any())
+            return true;
+
+        var duplicateList = string.Join(", ", duplicates.Select(name => $"'{name}'"));
+        MessageBox.Show(
+            $"Cannot save project because duplicate column names exist: {duplicateList}. Each column name must be unique.",
+            "Duplicate Column Names",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+
+        return false;
     }
 
     private static string? PromptProjectName(string defaultName)

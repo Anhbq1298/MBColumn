@@ -1,6 +1,7 @@
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -100,9 +101,18 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     {
         var newName = item.EditName.Trim();
         if (string.IsNullOrWhiteSpace(newName)) newName = item.Name;
-        projectService.RenameColumn(item.Id, newName);
-        item.Name = newName;
-        item.IsRenaming = false;
+
+        try
+        {
+            projectService.RenameColumn(item.Id, newName);
+            item.Name = newName;
+            item.IsRenaming = false;
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(ex.Message, "Duplicate Column Name", MessageBoxButton.OK, MessageBoxImage.Warning);
+            item.IsRenaming = true;
+        }
     }
 
     public void CancelRename(ColumnItemViewModel item)
@@ -116,10 +126,17 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         var name = promptColumnName(defaultName);
         if (name is null) return;
 
-        var record = projectService.AddColumn(name);
-        var item = CreateItem(record);
-        Columns.Add(item);
-        SelectColumn(item);
+        try
+        {
+            var record = projectService.AddColumn(name);
+            var item = CreateItem(record);
+            Columns.Add(item);
+            SelectColumn(item);
+        }
+        catch (InvalidOperationException ex)
+        {
+            MessageBox.Show(ex.Message, "Duplicate Column Name", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void DeleteColumn(ColumnItemViewModel item)

@@ -87,11 +87,17 @@ public sealed class ProjectService : IProjectService, IDisposable
 
     public ColumnRecord AddColumn(string name)
     {
+        var normalizedName = name.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new InvalidOperationException("Column name cannot be empty.");
+
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
-
         var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
+
+        EnsureUniqueColumnName(conn, projectId, normalizedName);
+
         var now = DateTime.UtcNow.ToString("O");
         var sortOrder = conn.ExecuteScalar<int>(
             "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM Column WHERE ProjectId = @pid",
@@ -102,21 +108,29 @@ public sealed class ProjectService : IProjectService, IDisposable
             VALUES (@pid, @name, @sort, '{}', @now, @now);
             SELECT last_insert_rowid();
             """,
-            new { pid = projectId, name, sort = sortOrder, now });
+            new { pid = projectId, name = normalizedName, sort = sortOrder, now });
 
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
-        return new ColumnRecord(id, name, sortOrder);
+        return new ColumnRecord(id, normalizedName, sortOrder);
     }
 
     public void RenameColumn(int columnId, string newName)
     {
+        var normalizedName = newName.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new InvalidOperationException("Column name cannot be empty.");
+
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
+        var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
+
+        EnsureUniqueColumnName(conn, projectId, normalizedName, columnId);
+
         conn.Execute(
             "UPDATE Column SET Name = @name, ModifiedAt = @now WHERE Id = @id",
-            new { name = newName, now = DateTime.UtcNow.ToString("O"), id = columnId });
+            new { name = normalizedName, now = DateTime.UtcNow.ToString("O"), id = columnId });
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -240,6 +254,17 @@ public sealed class ProjectService : IProjectService, IDisposable
         connectionString = "Data Source=mbcolumn_new;Mode=Memory;Cache=Shared";
         _keepAliveConnection = new SqliteConnection(connectionString);
         DatabaseSchema.EnsureCreated(_keepAliveConnection, ProjectName);
+    }
+
+    private static void EnsureUniqueColumnName(SqliteConnection conn, int projectId, string name, int? excludingColumnId = null)
+    {
+        var lowerName = name.ToLowerInvariant();
+        var count = conn.ExecuteScalar<int>(
+            "SELECT COUNT(1) FROM Column WHERE ProjectId = @projectId AND LOWER(Name) = @name " +
+            "AND (@exclude IS NULL OR Id != @exclude)",
+            new { projectId, name = lowerName, exclude = excludingColumnId });
+        if (count > 0)
+            throw new InvalidOperationException($"A column named '{name}' already exists. Column names must be unique.");
     }
 
     private static string BuildConnectionString(string filePath)
