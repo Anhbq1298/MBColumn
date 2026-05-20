@@ -119,7 +119,6 @@ public sealed class DxfImportService : IDxfImportService
                     break;
 
                 default:
-                    result.Warnings.Add($"Ignored non-circular {entity.EntityType} entity on rebar layer '{request.RebarLayerName}'.");
                     break;
             }
         }

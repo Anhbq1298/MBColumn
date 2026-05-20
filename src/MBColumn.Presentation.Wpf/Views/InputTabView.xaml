@@ -353,10 +353,16 @@
                            Style="{StaticResource ColumnHeaderTextStyle}" />
                 <Border Style="{StaticResource CardBorderStyle}"
                         Padding="18"
-                        MinHeight="240"
+                        MinHeight="260"
                         Margin="0,0,0,14">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Header row: title + helper text + DXF import button -->
+                        <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -408,22 +414,201 @@
                                 </StackPanel>
                             </Button>
                         </Grid>
-                        <controls:SectionPreviewCanvas Height="220"
-                                                       MinHeight="200"
-                                                       HorizontalAlignment="Stretch"
-                                                       SectionWidth="{Binding SectionWidth}"
-                                                       SectionHeight="{Binding SectionHeight}"
-                                                       Cover="{Binding Cover}"
-                                                       UnitSystem="{Binding SelectedUnitSystem}"
-                                                       SectionShape="{Binding SelectedSectionShape}"
-                                                       Rebars="{Binding PreviewRebars}"
-                                                       SectionLabel="{Binding SectionPreviewLabel}"
-                                                       RebarLabel="{Binding RebarPreviewLabel}"
-                                                       CoverLabel="{Binding CoverPreviewLabel}"
-                                                       IsValid="{Binding IsSectionPreviewValid}"
-                                                       ErrorMessage="{Binding SectionPreviewErrorMessage}"
-                                                       BoundaryPoints="{Binding PreviewBoundaryPoints}" />
-                    </StackPanel>
+
+                        <!-- Two-column content -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="220" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left: CAD-style 2D preview -->
+                            <StackPanel Grid.Column="0"
+                                        Margin="0,0,10,0">
+                                <TextBlock Text="SECTION PREVIEW"
+                                           FontSize="9"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="0,0,0,2"
+                                           />
+                                <TextBlock Text="2D VIEW · GRID"
+                                           FontSize="9"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="0,0,0,4"
+                                           />
+                                <controls:SectionPreviewCanvas Height="200"
+                                                               MinHeight="160"
+                                                               HorizontalAlignment="Stretch"
+                                                               SectionWidth="{Binding SectionWidth}"
+                                                               SectionHeight="{Binding SectionHeight}"
+                                                               Cover="{Binding Cover}"
+                                                               UnitSystem="{Binding SelectedUnitSystem}"
+                                                               SectionShape="{Binding SelectedSectionShape}"
+                                                               Rebars="{Binding PreviewRebars}"
+                                                               SectionLabel="{Binding SectionPreviewLabel}"
+                                                               RebarLabel="{Binding RebarPreviewLabel}"
+                                                               CoverLabel="{Binding CoverPreviewLabel}"
+                                                               IsValid="{Binding IsSectionPreviewValid}"
+                                                               ErrorMessage="{Binding SectionPreviewErrorMessage}"
+                                                               BoundaryPoints="{Binding PreviewBoundaryPoints}" />
+                            </StackPanel>
+
+                            <!-- Right: Section properties panel -->
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource PanelBackgroundBrush}"
+                                    BorderBrush="{DynamicResource BorderGreyBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="12,10">
+                                <StackPanel>
+                                    <TextBlock Text="SECTION PROPERTIES"
+                                               FontSize="9"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextMutedBrush}"
+                                               Margin="0,0,0,10" />
+
+                                    <!-- Shape type -->
+                                    <Grid Margin="0,0,0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Section"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PreviewShapeSummaryText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+
+                                    <!-- Rebar layout -->
+                                    <Grid Margin="0,0,0,5">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Layout"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PreviewRebarLayoutText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+
+                                    <Separator Margin="0,4,0,8"
+                                               Background="{DynamicResource BorderGreyBrush}" />
+
+                                    <!-- Cover -->
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Cover"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding CoverPreviewLabel}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}" />
+                                    </Grid>
+
+                                    <!-- Area -->
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="A"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PreviewAreaText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}" />
+                                    </Grid>
+
+                                    <!-- Ixx -->
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Ixx"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PreviewIxxText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+
+                                    <!-- Iyy -->
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Iyy"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PreviewIyyText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+
+                                    <Separator Margin="0,4,0,8"
+                                               Background="{DynamicResource BorderGreyBrush}" />
+
+                                    <!-- Rebar count -->
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Rebars"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding RebarPreviewLabel}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+
+                                    <!-- Rebar percentage -->
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="ρ"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding PreviewRebarPercentageText}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextDarkBrush}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
                 </Border>
                 <StackPanel HorizontalAlignment="Center"
                             Margin="0,0,0,12">

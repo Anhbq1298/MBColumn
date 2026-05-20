@@ -53,6 +53,12 @@ public sealed class InputViewModel : ViewModelBase
     private string rebarLayoutWarning = "";
     private double alphaCc = 0.85;
     private bool _isUpdatingPreview = false;
+    private string previewAreaText = "—";
+    private string previewIxxText = "—";
+    private string previewIyyText = "—";
+    private string previewRebarPercentageText = "—";
+    private string previewShapeSummaryText = "";
+    private string previewRebarLayoutText = "";
     private bool _isGeneratingRebars = false;
     private bool isDxfImportedSection = false;
     private int nextLoadCaseIndex = 2;
@@ -382,6 +388,12 @@ public sealed class InputViewModel : ViewModelBase
     public string SectionPreviewErrorMessage { get => sectionPreviewErrorMessage; private set => Set(ref sectionPreviewErrorMessage, value); }
     public string RebarLayoutWarning { get => rebarLayoutWarning; private set => Set(ref rebarLayoutWarning, value); }
     public bool HasRebarLayoutWarning => !string.IsNullOrWhiteSpace(RebarLayoutWarning);
+    public string PreviewAreaText { get => previewAreaText; private set => Set(ref previewAreaText, value); }
+    public string PreviewIxxText { get => previewIxxText; private set => Set(ref previewIxxText, value); }
+    public string PreviewIyyText { get => previewIyyText; private set => Set(ref previewIyyText, value); }
+    public string PreviewRebarPercentageText { get => previewRebarPercentageText; private set => Set(ref previewRebarPercentageText, value); }
+    public string PreviewShapeSummaryText { get => previewShapeSummaryText; private set => Set(ref previewShapeSummaryText, value); }
+    public string PreviewRebarLayoutText { get => previewRebarLayoutText; private set => Set(ref previewRebarLayoutText, value); }
 
     public ForceUnit CurrentForceUnit => UnitSystem == UnitSystem.Metric ? ForceUnit.kN : ForceUnit.Kip;
     public MomentUnit CurrentMomentUnit => UnitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt;
@@ -566,6 +578,7 @@ public sealed class InputViewModel : ViewModelBase
                     PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam, r.BarSize ?? ""));
                 }
             }
+            UpdateSectionPropertiesPanel();
             return;
         }
 
@@ -596,6 +609,7 @@ public sealed class InputViewModel : ViewModelBase
             SectionPreviewLabel = IsCircularSection ? $"D = {Diameter:0.###} {LengthLabel}" : $"{Width:0.###} x {Height:0.###} {LengthLabel}";
             RebarPreviewLabel = $"{PreviewRebars.Count} custom rebars";
             CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            UpdateSectionPropertiesPanel();
             return;
         }
         if (SelectedRebarLayoutType == RebarLayoutType.EqualSpacing && IsRectangularSection)
@@ -627,6 +641,7 @@ public sealed class InputViewModel : ViewModelBase
             SectionPreviewLabel = $"{Width:0.###} x {Height:0.###} {LengthLabel}";
             RebarPreviewLabel = $"{IrregularInput.Rebars.Count}-{BarSize}";
             CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            UpdateSectionPropertiesPanel();
             return;
         }
 
@@ -682,6 +697,7 @@ public sealed class InputViewModel : ViewModelBase
 
         RebarPreviewLabel = $"{PreviewRebars.Count}-{BarSize} (\u03c1 = {rho * 100:F2}%)";
         CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+        UpdateSectionPropertiesPanel();
     }
 
     private void UpdateCircularSectionPreview()
@@ -715,6 +731,7 @@ public sealed class InputViewModel : ViewModelBase
             SectionPreviewLabel = $"D = {Diameter:0.###} {LengthLabel}";
             RebarPreviewLabel = $"{IrregularInput.Rebars.Count}-{BarSize}";
             CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+            UpdateSectionPropertiesPanel();
             return;
         }
 
@@ -801,6 +818,7 @@ public sealed class InputViewModel : ViewModelBase
 
         RebarPreviewLabel = $"{effectiveBarCount}-{BarSize} (\u03c1 = {rho * 100:F2}%)";
         CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
+        UpdateSectionPropertiesPanel();
     }
 
     private RebarLayoutInputDto CreateRebarLayoutInput()
@@ -1227,6 +1245,100 @@ public sealed class InputViewModel : ViewModelBase
     private void RebarRow_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         UpdateSectionPreview();
+    }
+
+    private void UpdateSectionPropertiesPanel()
+    {
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double agMm2 = 0;
+        double ixxMm4 = 0;
+        double iyyMm4 = 0;
+
+        if (SelectedSectionShape == SectionShapeType.Rectangular && Width > 0 && Height > 0)
+        {
+            double bMm = Width * factor;
+            double hMm = Height * factor;
+            agMm2 = bMm * hMm;
+            ixxMm4 = bMm * Math.Pow(hMm, 3) / 12.0;
+            iyyMm4 = hMm * Math.Pow(bMm, 3) / 12.0;
+            PreviewShapeSummaryText = "Rectangular";
+        }
+        else if (SelectedSectionShape == SectionShapeType.Circular && Diameter > 0)
+        {
+            double dMm = Diameter * factor;
+            agMm2 = Math.PI * dMm * dMm / 4.0;
+            ixxMm4 = iyyMm4 = Math.PI * Math.Pow(dMm, 4) / 64.0;
+            PreviewShapeSummaryText = "Circular";
+        }
+        else if (SelectedSectionShape == SectionShapeType.Irregular && IrregularInput.BoundaryPoints.Count >= 3)
+        {
+            var pts = IrregularInput.BoundaryPoints
+                .Select(p => new Point2D(p.X * factor, p.Y * factor))
+                .ToList();
+            agMm2 = PolygonGeometry.Area(pts);
+            (ixxMm4, iyyMm4) = ComputePolygonSecondMoments(pts);
+            PreviewShapeSummaryText = isDxfImportedSection ? "Irregular (from DXF)" : "Irregular";
+        }
+        else
+        {
+            PreviewShapeSummaryText = "";
+        }
+
+        if (agMm2 > 0)
+        {
+            PreviewAreaText = $"{agMm2:N0} mm²";
+            PreviewIxxText = FormatInertia(ixxMm4);
+            PreviewIyyText = FormatInertia(iyyMm4);
+        }
+        else
+        {
+            PreviewAreaText = "—";
+            PreviewIxxText = "—";
+            PreviewIyyText = "—";
+        }
+
+        // Diameter in PreviewRebarPoint is always in mm
+        double totalAsMm2 = PreviewRebars.Sum(r => Math.PI * Math.Pow(r.Diameter / 2.0, 2));
+        int rebarCount = PreviewRebars.Count;
+
+        PreviewRebarLayoutText = selectedRebarLayoutType switch
+        {
+            RebarLayoutType.AllSidesEqual => "All Sides Equal",
+            RebarLayoutType.SidesDifferent => "Sides Different",
+            RebarLayoutType.EqualSpacing => "Equal Spacing",
+            RebarLayoutType.CustomCoordinates => "Custom Coordinates",
+            _ => ""
+        };
+
+        if (rebarCount > 0 && agMm2 > 0)
+            PreviewRebarPercentageText = $"{totalAsMm2 / agMm2 * 100.0:F2} %";
+        else
+            PreviewRebarPercentageText = "—";
+    }
+
+    private static (double Ixx, double Iyy) ComputePolygonSecondMoments(IReadOnlyList<Point2D> pts)
+    {
+        int n = pts.Count;
+        if (n < 3) return (0, 0);
+        double ixx = 0, iyy = 0;
+        for (int i = 0; i < n; i++)
+        {
+            var a = pts[i];
+            var b = pts[(i + 1) % n];
+            double cross = a.X * b.Y - b.X * a.Y;
+            ixx += (a.Y * a.Y + a.Y * b.Y + b.Y * b.Y) * cross;
+            iyy += (a.X * a.X + a.X * b.X + b.X * b.X) * cross;
+        }
+        return (Math.Abs(ixx / 12.0), Math.Abs(iyy / 12.0));
+    }
+
+    private static string FormatInertia(double value)
+    {
+        if (value <= 0) return "—";
+        if (value >= 1e12) return $"{value / 1e12:F3}×10¹² mm⁴";
+        if (value >= 1e9) return $"{value / 1e9:F3}×10⁹ mm⁴";
+        if (value >= 1e6) return $"{value / 1e6:F3}×10⁶ mm⁴";
+        return $"{value:N0} mm⁴";
     }
 
     public ColumnInputSnapshot ToSnapshot() => new()
