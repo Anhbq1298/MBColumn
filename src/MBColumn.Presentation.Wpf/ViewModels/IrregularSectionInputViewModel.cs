@@ -110,14 +110,16 @@ public sealed class IrregularSectionInputViewModel : ViewModelBase
     public string BoundaryValidationMessage
     {
         get => boundaryValidationMessage;
-        set => Set(ref boundaryValidationMessage, value);
+        set { Set(ref boundaryValidationMessage, value); Raise(nameof(HasBoundaryValidationMessage)); }
     }
+    public bool HasBoundaryValidationMessage => !string.IsNullOrEmpty(boundaryValidationMessage);
 
     public string RebarValidationMessage
     {
         get => rebarValidationMessage;
-        set => Set(ref rebarValidationMessage, value);
+        set { Set(ref rebarValidationMessage, value); Raise(nameof(HasRebarValidationMessage)); }
     }
+    public bool HasRebarValidationMessage => !string.IsNullOrEmpty(rebarValidationMessage);
 
     public string BarSize
     {

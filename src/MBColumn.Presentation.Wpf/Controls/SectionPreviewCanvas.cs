@@ -159,9 +159,22 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 
         if (bpts == null || bpts.Count < 3) return;
 
+        var rebars = Rebars?.OfType<PreviewRebarPoint>().ToList() ?? [];
+
         double topText = 50, leftDim = 50, bottomDim = 42, rightPad = 24;
-        double minX = bpts.Min(p => p.X), maxX = bpts.Max(p => p.X);
-        double minY = bpts.Min(p => p.Y), maxY = bpts.Max(p => p.Y);
+        double minX = Math.Min(0.0, bpts.Min(p => p.X));
+        double maxX = Math.Max(0.0, bpts.Max(p => p.X));
+        double minY = Math.Min(0.0, bpts.Min(p => p.Y));
+        double maxY = Math.Max(0.0, bpts.Max(p => p.Y));
+
+        if (rebars.Count > 0)
+        {
+            minX = Math.Min(minX, rebars.Min(p => p.X));
+            maxX = Math.Max(maxX, rebars.Max(p => p.X));
+            minY = Math.Min(minY, rebars.Min(p => p.Y));
+            maxY = Math.Max(maxY, rebars.Max(p => p.Y));
+        }
+
         double bboxW = maxX - minX, bboxH = maxY - minY;
         if (bboxW <= 0 || bboxH <= 0) return;
 
@@ -195,17 +208,16 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         }
         dc.DrawGeometry(fill, new Pen(navy, 2), geo);
 
-        double bboxCx = (minX + maxX) / 2.0, bboxCy = (minY + maxY) / 2.0;
-        var center = new Point(ToScreenX(bboxCx), ToScreenY(bboxCy));
+        var origin = new Point(ToScreenX(0.0), ToScreenY(0.0));
 
-        dc.DrawLine(new Pen(red, 1.2), center, new Point(center.X + Math.Min(34, sw / 4), center.Y));
-        dc.DrawLine(new Pen(navy, 1.2), center, new Point(center.X, center.Y - Math.Min(34, sh / 4)));
-        DrawArrow(dc, new Point(center.X + Math.Min(34, sw / 4), center.Y), 0, red);
-        DrawArrow(dc, new Point(center.X, center.Y - Math.Min(34, sh / 4)), -Math.PI / 2, navy);
-        DrawText(dc, "x", 10, red, new Point(center.X + Math.Min(38, sw / 4) + 2, center.Y - 8), FontWeights.SemiBold);
-        DrawText(dc, "y", 10, navy, new Point(center.X + 5, center.Y - Math.Min(42, sh / 4) - 8), FontWeights.SemiBold);
-        dc.DrawLine(new Pen(text, 1), new Point(center.X - 5, center.Y), new Point(center.X + 5, center.Y));
-        dc.DrawLine(new Pen(text, 1), new Point(center.X, center.Y - 5), new Point(center.X, center.Y + 5));
+        dc.DrawLine(new Pen(red, 1.2), origin, new Point(origin.X + Math.Min(34, sw / 4), origin.Y));
+        dc.DrawLine(new Pen(navy, 1.2), origin, new Point(origin.X, origin.Y - Math.Min(34, sh / 4)));
+        DrawArrow(dc, new Point(origin.X + Math.Min(34, sw / 4), origin.Y), 0, red);
+        DrawArrow(dc, new Point(origin.X, origin.Y - Math.Min(34, sh / 4)), -Math.PI / 2, navy);
+        DrawText(dc, "x", 10, red, new Point(origin.X + Math.Min(38, sw / 4) + 2, origin.Y - 8), FontWeights.SemiBold);
+        DrawText(dc, "y", 10, navy, new Point(origin.X + 5, origin.Y - Math.Min(42, sh / 4) - 8), FontWeights.SemiBold);
+        dc.DrawLine(new Pen(text, 1), new Point(origin.X - 5, origin.Y), new Point(origin.X + 5, origin.Y));
+        dc.DrawLine(new Pen(text, 1), new Point(origin.X, origin.Y - 5), new Point(origin.X, origin.Y + 5));
 
         double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
         double coverMm = Cover * factor;
@@ -233,9 +245,9 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             catch { }
         }
 
-        foreach (var item in Rebars?.OfType<PreviewRebarPoint>() ?? [])
+        foreach (var item in rebars)
         {
-            var pt = new Point(center.X + item.X * scale, center.Y - item.Y * scale);
+            var pt = new Point(ToScreenX(item.X), ToScreenY(item.Y));
             double r = Math.Max(3.0, item.Diameter * scale / 2.0);
             dc.DrawEllipse(darkNavy, new Pen(Brushes.White, 0.8), pt, r, r);
         }

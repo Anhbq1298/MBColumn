@@ -60,7 +60,7 @@ public sealed class AppComposition : IDisposable
 
     public MainWindowViewModel CreateMainWindowViewModel()
     {
-        var input = new InputViewModel(metricBars, imperialBars, rebarCoordinates);
+        var input = new InputViewModel(metricBars, imperialBars, rebarCoordinates, new DxfImportDialogService());
         return new MainWindowViewModel(
             calculationService,
             ProjectService,

@@ -356,15 +356,58 @@
                         MinHeight="240"
                         Margin="0,0,0,14">
                     <StackPanel>
-                        <TextBlock Text="Section Preview"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   Margin="0,0,0,4" />
-                        <TextBlock Style="{StaticResource HelperTextStyle}"
-                                   Margin="0,0,0,12"
-                                   TextWrapping="Wrap"
-                                   Text="Compression (+). Internal units: N, mm, MPa. Slenderness excluded." />
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Section Preview"
+                                           FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,4" />
+                                <TextBlock Style="{StaticResource HelperTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Compression (+). Internal units: N, mm, MPa. Slenderness excluded." />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Command="{Binding ImportDxfCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Width="58"
+                                    Height="54"
+                                    Padding="4"
+                                    Margin="12,0,0,0"
+                                    ToolTip="Import .DXF">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Viewbox Width="22"
+                                             Height="22"
+                                             Margin="0,1,0,2">
+                                        <Canvas Width="24"
+                                                Height="24">
+                                            <Path Data="M 6,3 L 15,3 L 20,8 L 20,21 L 6,21 Z M 15,3 L 15,8 L 20,8"
+                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="1.7"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Fill="Transparent" />
+                                            <Path Data="M 12,9 L 12,16 M 8.8,13 L 12,16.2 L 15.2,13"
+                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="1.9"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Fill="Transparent" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock Text=".dxf"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
                         <controls:SectionPreviewCanvas Height="220"
                                                        MinHeight="200"
                                                        HorizontalAlignment="Stretch"
@@ -780,6 +823,7 @@
                                     <!-- Row 2: Validation Messages -->
                                     <TextBlock Grid.Row="2"
                                                Text="{Binding RebarValidationMessage}"
+                                               Visibility="{Binding HasRebarValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
                                                Foreground="Red"
                                                FontSize="11"
                                                Margin="0,0,0,8"
@@ -854,6 +898,12 @@
                                     </Viewbox>
                                 </Button>
                             </WrapPanel>
+                            <TextBlock Text="{Binding BoundaryValidationMessage}"
+                                       Visibility="{Binding HasBoundaryValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
+                                       Foreground="Red"
+                                       FontSize="11"
+                                       Margin="0,0,0,8"
+                                       TextWrapping="Wrap" />
                             <DataGrid ItemsSource="{Binding BoundaryPoints}"
                                       AutoGenerateColumns="False"
                                       CanUserAddRows="True"
@@ -889,7 +939,7 @@
                         <GroupBox.Style>
                             <Style TargetType="GroupBox">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsIrregularSection}"
+                                    <DataTrigger Binding="{Binding IsRebarCoordinatesEditable}"
                                                  Value="False">
                                         <Setter Property="Opacity"
                                                 Value="0.45" />

@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs.ImportExport;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Application.Services.ImportExport;
@@ -12,6 +13,7 @@ using System.Windows.Input;
 using System.Linq;
 using MBColumn.Application.Services.Geometry;
 using MBColumn.Domain.Entities;
+using MBColumn.Presentation.Wpf.Services;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
@@ -24,6 +26,7 @@ public sealed class InputViewModel : ViewModelBase
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
     private readonly IRebarCoordinateBuilderService rebarCoordinateBuilder;
+    private readonly IDxfImportDialogService? dxfImportDialogService;
     private double width;
     private double height;
     private double diameter;
@@ -51,6 +54,7 @@ public sealed class InputViewModel : ViewModelBase
     private double alphaCc = 0.85;
     private bool _isUpdatingPreview = false;
     private bool _isGeneratingRebars = false;
+    private bool isDxfImportedSection = false;
     private int nextLoadCaseIndex = 2;
 
     public InputViewModel(IRebarDatabase metricBars, IRebarDatabase imperialBars)
@@ -58,16 +62,26 @@ public sealed class InputViewModel : ViewModelBase
     {
     }
 
-    public InputViewModel(IRebarDatabase metricBars, IRebarDatabase imperialBars, IRebarCoordinateBuilderService rebarCoordinateBuilder)
+    public InputViewModel(
+        IRebarDatabase metricBars,
+        IRebarDatabase imperialBars,
+        IRebarCoordinateBuilderService rebarCoordinateBuilder,
+        IDxfImportDialogService? dxfImportDialogService = null)
     {
         this.metricBars = metricBars;
         this.imperialBars = imperialBars;
         this.rebarCoordinateBuilder = rebarCoordinateBuilder;
+        this.dxfImportDialogService = dxfImportDialogService;
         RebarLayout = new RebarLayoutViewModel(UpdateSectionPreview);
         IrregularInput = new IrregularSectionInputViewModel(new IrregularSectionCsvService());
         IrregularInput.BoundaryPoints.CollectionChanged += (_, _) => { if (!_isGeneratingRebars) UpdateSectionPreview(); };
         IrregularInput.PropertyChanged += (sender, args) =>
         {
+            if (args.PropertyName == nameof(IrregularSectionInputViewModel.RebarMode))
+            {
+                SyncRebarLayoutTypeFromIrregularMode();
+            }
+
             if (args.PropertyName == nameof(IrregularSectionInputViewModel.Spacing) ||
                 args.PropertyName == nameof(IrregularSectionInputViewModel.BarSize) ||
                 args.PropertyName == nameof(IrregularSectionInputViewModel.RebarMode))
@@ -84,11 +98,13 @@ public sealed class InputViewModel : ViewModelBase
         RemoveDuplicateLoadCasesCommand = new RelayCommand(RemoveDuplicateLoadCases);
         GenerateIrregularRebarsCommand = new RelayCommand(GenerateIrregularRebars);
         GenerateEqualSpacingRebarsCommand = new RelayCommand(GenerateEqualSpacingRebars);
+        ImportDxfCommand = new RelayCommand(ImportDxf, () => this.dxfImportDialogService is not null);
     }
 
     public IReadOnlyList<UnitSystem> UnitSystems { get; } = [UnitSystem.Metric, UnitSystem.Imperial];
     public ICommand GenerateIrregularRebarsCommand { get; }
     public ICommand GenerateEqualSpacingRebarsCommand { get; }
+    public ICommand ImportDxfCommand { get; }
     public IReadOnlyList<DesignCodeOption> DesignCodes { get; } =
     [
         new(DesignCodeType.Aci318Style, "ACI 318"),
@@ -139,11 +155,15 @@ public sealed class InputViewModel : ViewModelBase
 
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes =>
         IsCircularSection
-            ? [new(RebarLayoutType.EqualSpacing, "Equal Spacing")]
+            ? [
+                new(RebarLayoutType.EqualSpacing, "Equal Spacing"),
+                new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
+              ]
             : [
                 new(RebarLayoutType.AllSidesEqual, "All Sides Equal"),
-                new(RebarLayoutType.SidesDifferent, "Sides Different")
-            ];
+                new(RebarLayoutType.SidesDifferent, "Sides Different"),
+                new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
+              ];
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
@@ -179,6 +199,7 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (selectedSectionShape == value) return;
             selectedSectionShape = value;
+            isDxfImportedSection = false;
             
             ResetShapeDefaults(value);
 
@@ -205,6 +226,8 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(SelectedRebarLayoutType));
             Raise(nameof(ShowTotalBarsInput));
             Raise(nameof(Spacing));
+            Raise(nameof(IsCustomRebarCoordinates));
+            Raise(nameof(IsRebarCoordinatesEditable));
             UpdateSectionPreview();
         }
     }
@@ -279,7 +302,13 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (selectedRebarLayoutType == value) return;
             selectedRebarLayoutType = value;
-            layoutPreset = value == RebarLayoutType.AllSidesEqual ? "All Sides Equal" : "Sides Different";
+            layoutPreset = value switch
+            {
+                RebarLayoutType.AllSidesEqual => "All Sides Equal",
+                RebarLayoutType.EqualSpacing => "Equal Spacing",
+                RebarLayoutType.CustomCoordinates => "Custom Coordinates",
+                _ => "Sides Different"
+            };
             if (selectedRebarLayoutType == RebarLayoutType.SidesDifferent)
             {
                 SeedSideCountsFromTotalBars();
@@ -288,6 +317,7 @@ public sealed class InputViewModel : ViewModelBase
             if (value == RebarLayoutType.CustomCoordinates)
             {
                 IrregularInput.RebarMode = IrregularRebarModeType.CustomCoordinates;
+                IrregularInput.RebarValidationMessage = "";
             }
             else
             {
@@ -302,6 +332,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(SelectedRebarLayout));
             Raise(nameof(IsCustomRebarCoordinates));
             Raise(nameof(IsAlgorithmicRebarCoordinates));
+            Raise(nameof(IsRebarCoordinatesEditable));
             UpdateSectionPreview();
         }
     }
@@ -329,6 +360,7 @@ public sealed class InputViewModel : ViewModelBase
     public bool IsRectangularEqualSpacingLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
     public bool IsCustomRebarCoordinates => SelectedRebarLayoutType == RebarLayoutType.CustomCoordinates;
     public bool IsAlgorithmicRebarCoordinates => !IsCustomRebarCoordinates;
+    public bool IsRebarCoordinatesEditable => IsIrregularSection || IsCustomRebarCoordinates;
     public RebarLayoutViewModel RebarLayout { get; }
     public IrregularSectionInputViewModel IrregularInput { get; }
     public bool IsIrregularSection
@@ -366,6 +398,11 @@ public sealed class InputViewModel : ViewModelBase
 
         if (SelectedSectionShape == SectionShapeType.Irregular)
         {
+            if (IrregularInput?.RebarMode == IrregularRebarModeType.EqualSpacing)
+            {
+                GenerateIrregularRebarsInternal();
+            }
+
             var irregularDto = IrregularInput?.ToDto(Cover) ?? new IrregularSectionInputDto(
                 Array.Empty<IrregularBoundaryPointDto>(),
                 Array.Empty<IrregularRebarInputDto>(),
@@ -513,23 +550,20 @@ public sealed class InputViewModel : ViewModelBase
             bool valid = IrregularInput.BoundaryPoints.Count >= 3;
             IsSectionPreviewValid = valid;
             SectionPreviewErrorMessage = valid ? "" : "Add at least 3 boundary points.";
-            SectionPreviewLabel = $"Irregular ({IrregularInput.BoundaryPoints.Count} pts)";
+            SectionPreviewLabel = isDxfImportedSection
+                ? $"Irregular imported from DXF ({IrregularInput.BoundaryPoints.Count} pts)"
+                : $"Irregular ({IrregularInput.BoundaryPoints.Count} pts)";
             RebarPreviewLabel = $"{IrregularInput.Rebars.Count} rebars";
             CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
             if (valid)
             {
                 foreach (var pt in IrregularInput.BoundaryPoints)
                     PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(pt.X, pt.Y));
-
-                var xs = IrregularInput.BoundaryPoints.Select(p => p.X).ToList();
-                var ys = IrregularInput.BoundaryPoints.Select(p => p.Y).ToList();
-                double bboxCx = (xs.Min() + xs.Max()) / 2.0;
-                double bboxCy = (ys.Min() + ys.Max()) / 2.0;
                 foreach (var r in IrregularInput.Rebars)
                 {
                     double area = r.AreaMm2 ?? 0;
                     double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : 20.0;
-                    PreviewRebars.Add(new PreviewRebarPoint(r.X - bboxCx, r.Y - bboxCy, diam, r.BarSize ?? ""));
+                    PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam, r.BarSize ?? ""));
                 }
             }
             return;
@@ -780,6 +814,35 @@ public sealed class InputViewModel : ViewModelBase
             RebarLayout.Left.ToDto(BarSize, Cover),
             RebarLayout.Right.ToDto(BarSize, Cover));
 
+    private void SyncRebarLayoutTypeFromIrregularMode()
+    {
+        if (SelectedSectionShape != SectionShapeType.Irregular)
+        {
+            return;
+        }
+
+        var desired = IrregularInput.RebarMode == IrregularRebarModeType.CustomCoordinates
+            ? RebarLayoutType.CustomCoordinates
+            : RebarLayoutType.EqualSpacing;
+
+        if (selectedRebarLayoutType != desired)
+        {
+            selectedRebarLayoutType = desired;
+            layoutPreset = desired == RebarLayoutType.CustomCoordinates ? "Custom Coordinates" : "Equal Spacing";
+            Raise(nameof(SelectedRebarLayoutType));
+            Raise(nameof(SelectedRebarLayout));
+            Raise(nameof(IsEqualSpacingLayout));
+            Raise(nameof(IsCustomRebarCoordinates));
+            Raise(nameof(IsAlgorithmicRebarCoordinates));
+            Raise(nameof(IsRebarCoordinatesEditable));
+        }
+
+        if (desired == RebarLayoutType.CustomCoordinates)
+        {
+            IrregularInput.RebarValidationMessage = "";
+        }
+    }
+
     private void SyncSideGlobalInputs()
     {
         RebarLayout.Top.SetGlobalInputs(BarSize, Cover);
@@ -996,6 +1059,143 @@ public sealed class InputViewModel : ViewModelBase
         }
     }
 
+    private void ImportDxf()
+    {
+        if (dxfImportDialogService is null)
+        {
+            return;
+        }
+
+        var result = dxfImportDialogService.ShowDialog(System.Windows.Application.Current?.MainWindow);
+        if (result is null)
+        {
+            return;
+        }
+
+        ApplyDxfImportResult(result);
+    }
+
+    public bool ApplyDxfImportResult(DxfSectionImportResult result)
+    {
+        if (!result.IsSuccess)
+        {
+            IrregularInput.BoundaryValidationMessage = string.Join(Environment.NewLine, result.Errors);
+            return false;
+        }
+
+        var boundary = result.BoundaryVertices.ToList();
+        var validator = new IrregularSectionValidationService(metricBars, imperialBars);
+        var boundaryValidation = validator.ValidateBoundary(boundary);
+        if (!boundaryValidation.IsValid)
+        {
+            IrregularInput.BoundaryValidationMessage = string.Join(Environment.NewLine, boundaryValidation.Issues.Select(i => i.Message));
+            return false;
+        }
+
+        var rebarImportErrors = ValidateImportedDxfRebarsWithoutCover(boundary, result.Rebars);
+        if (rebarImportErrors.Count > 0)
+        {
+            IrregularInput.RebarValidationMessage = string.Join(Environment.NewLine, rebarImportErrors);
+            return false;
+        }
+
+        selectedSectionShape = SectionShapeType.Irregular;
+        selectedRebarLayoutType = RebarLayoutType.CustomCoordinates;
+        layoutPreset = "Custom Coordinates";
+        isDxfImportedSection = true;
+
+        _isGeneratingRebars = true;
+        try
+        {
+            IrregularInput.BoundaryPoints.Clear();
+            for (int i = 0; i < boundary.Count; i++)
+            {
+                IrregularInput.BoundaryPoints.Add(new IrregularBoundaryPointViewModel
+                {
+                    PtIndex = i + 1,
+                    X = Math.Round(boundary[i].X, 6),
+                    Y = Math.Round(boundary[i].Y, 6)
+                });
+            }
+
+            IrregularInput.Rebars.Clear();
+            for (int i = 0; i < result.Rebars.Count; i++)
+            {
+                var rebar = result.Rebars[i];
+                IrregularInput.Rebars.Add(new IrregularRebarRowViewModel
+                {
+                    RebarIndex = (i + 1).ToString(),
+                    X = Math.Round(rebar.Center.X, 6),
+                    Y = Math.Round(rebar.Center.Y, 6),
+                    AreaMm2 = Math.Round(rebar.AreaMm2, 6),
+                    BarSize = ""
+                });
+            }
+
+            IrregularInput.RebarMode = IrregularRebarModeType.CustomCoordinates;
+            IrregularInput.BoundaryValidationMessage = "";
+            IrregularInput.RebarValidationMessage = "";
+        }
+        finally
+        {
+            _isGeneratingRebars = false;
+        }
+
+        Raise(nameof(SelectedSectionShape));
+        Raise(nameof(IsRectangularSection));
+        Raise(nameof(IsCircularSection));
+        Raise(nameof(IsIrregularSection));
+        Raise(nameof(IsCircularEqualSpacingLayout));
+        Raise(nameof(IsEqualSpacingLayout));
+        Raise(nameof(IsAllSidesEqualLayout));
+        Raise(nameof(IsSidesDifferentLayout));
+        Raise(nameof(IsRectangularEqualSpacingLayout));
+        Raise(nameof(RebarLayoutTypes));
+        Raise(nameof(SelectedRebarLayout));
+        Raise(nameof(SelectedRebarLayoutType));
+        Raise(nameof(IsCustomRebarCoordinates));
+        Raise(nameof(IsAlgorithmicRebarCoordinates));
+        Raise(nameof(IsRebarCoordinatesEditable));
+        Raise(nameof(IrregularInput));
+
+        UpdateSectionPreview();
+        return true;
+    }
+
+    private static IReadOnlyList<string> ValidateImportedDxfRebarsWithoutCover(
+        IReadOnlyList<Point2D> boundary,
+        IReadOnlyList<DxfRebarImportItem> rebars)
+    {
+        var errors = new List<string>();
+        if (rebars.Count == 0)
+        {
+            errors.Add("At least one imported rebar is required.");
+            return errors;
+        }
+
+        for (int i = 0; i < rebars.Count; i++)
+        {
+            var rebar = rebars[i];
+            if (!double.IsFinite(rebar.Center.X) ||
+                !double.IsFinite(rebar.Center.Y) ||
+                !double.IsFinite(rebar.AreaMm2) ||
+                rebar.AreaMm2 <= 0.0)
+            {
+                errors.Add($"Imported rebar {i + 1} has invalid coordinate or area.");
+                continue;
+            }
+
+            bool inside = PolygonGeometry.PointInPolygon(boundary, rebar.Center.X, rebar.Center.Y);
+            double distance = PolygonGeometry.DistanceToBoundary(boundary, rebar.Center.X, rebar.Center.Y);
+            if (!inside && distance > IrregularSectionValidationService.InsidePolygonToleranceMm)
+            {
+                errors.Add($"Imported rebar {i + 1} center is outside the boundary polygon.");
+            }
+        }
+
+        return errors;
+    }
+
     private void WireRebarsCollectionChanged()
     {
         IrregularInput.Rebars.CollectionChanged += (s, e) =>
@@ -1064,6 +1264,7 @@ public sealed class InputViewModel : ViewModelBase
 
     public void LoadFromSnapshot(ColumnInputSnapshot s)
     {
+        isDxfImportedSection = false;
         unitSystem = Enum.TryParse<UnitSystem>(s.UnitSystem, out var us) ? us : UnitSystem.Metric;
         selectedDesignCode = Enum.TryParse<DesignCodeType>(s.DesignCode, out var dc) ? dc : DesignCodeType.Aci318Style;
         selectedEc2Solver = Enum.TryParse<Ec2SolverType>(s.Ec2Solver, out var ec2) ? ec2 : Ec2SolverType.Fiber;
@@ -1185,14 +1386,13 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
-        // Convert boundary points to Point2D list
-        var boundary = IrregularInput.BoundaryPoints.Select(p => new Point2D(p.X, p.Y)).ToList();
-        
-        // Compute offset distance: cover + barDiameter / 2
-        double barDiameter = selectedBar.DiameterMm;
-        
         // Cover is in current unit system. Convert to mm if imperial.
         double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        var boundary = IrregularInput.BoundaryPoints
+            .Select(p => new Point2D(p.X * factor, p.Y * factor))
+            .ToList();
+
+        double barDiameter = selectedBar.DiameterMm;
         double coverMm = Cover * factor;
         double spacingMm = spacing * factor;
         double offsetMm = coverMm + barDiameter / 2.0;

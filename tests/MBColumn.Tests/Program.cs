@@ -180,6 +180,18 @@ var tests = new List<(string Name, Action Test)>
     ("Irregular CSV parser rejects wrong header",                    TestIrregularCsvRejectsWrongHeader),
     ("Irregular CSV parser reports invalid numbers with context",    TestIrregularCsvReportsInvalidNumbers),
     ("Irregular CSV export omits duplicate closing point",           TestIrregularCsvExportNoClosingPoint),
+    ("DXF polygon centroid",                                         TestDxfPolygonCentroid),
+    ("DXF move-to-origin transformation",                            TestDxfMoveToOrigin),
+    ("DXF closed polyline extraction",                               TestDxfClosedPolylineExtraction),
+    ("DXF rebar circle center extraction",                           TestDxfRebarCircleExtraction),
+    ("DXF point-in-polygon validation",                              TestDxfPointInPolygonValidation),
+    ("DXF rejects open boundary",                                    TestDxfRejectsOpenBoundary),
+    ("DXF rejects non-circular rebar geometry",                      TestDxfRejectsNonCircularRebar),
+    ("DXF import applies irregular custom coordinates",              TestDxfImportAppliesIrregularCustomCoordinates),
+    ("DXF import does not block on cover",                           TestDxfImportDoesNotBlockOnCover),
+    ("Irregular equal spacing generated rebars satisfy cover",        TestIrregularEqualSpacingGeneratedRebarsSatisfyCover),
+    ("Irregular equal spacing ToDto refreshes stale rebars",          TestIrregularEqualSpacingToDtoRefreshesStaleRebars),
+    ("Irregular custom mode clears stale rebar message",              TestIrregularCustomModeClearsStaleRebarMessage),
     ("Irregular section solves with Polygon integration",            TestIrregularPolygonIntegrationSolves),
     ("Irregular section PMM surface has no NaN/Infinity",            TestIrregularPmmNoNan),
     ("Irregular section pure compression positive",                  TestIrregularPureCompressionPositive),
@@ -2459,6 +2471,375 @@ static void TestIrregularCsvExportNoClosingPoint()
     int rowCount = text.Split('\n').Count(l => l.Length > 0 && !l.StartsWith('#') && !l.StartsWith("ptIndex"));
     IsTrue(rowCount == 3);
 }
+
+static void TestDxfPolygonCentroid()
+{
+    var polygon = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(100, 100),
+        new(300, 100),
+        new(300, 300),
+        new(100, 300)
+    };
+
+    var centroid = MBColumn.Application.Services.Geometry.PolygonGeometry.Centroid(polygon);
+    AreClose(200.0, centroid.X, 1e-9);
+    AreClose(200.0, centroid.Y, 1e-9);
+}
+
+static void TestDxfMoveToOrigin()
+{
+    var polygon = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(100, 100),
+        new(300, 100),
+        new(300, 300),
+        new(100, 300)
+    };
+
+    var shifted = MBColumn.Application.Services.Geometry.PolygonGeometry.MoveToCentroidOrigin(polygon, out var centroid);
+    AreClose(200.0, centroid.X, 1e-9);
+    AreClose(200.0, centroid.Y, 1e-9);
+    var shiftedCentroid = MBColumn.Application.Services.Geometry.PolygonGeometry.Centroid(shifted);
+    AreClose(0.0, shiftedCentroid.X, 1e-9);
+    AreClose(0.0, shiftedCentroid.Y, 1e-9);
+}
+
+static void TestDxfClosedPolylineExtraction()
+{
+    string path = WriteTempDxf(BuildValidDxf());
+    try
+    {
+        var svc = new MBColumn.Application.Services.ImportExport.DxfImportService();
+        var layers = svc.GetLayerNames(path);
+        IsTrue(layers.Contains("BOUNDARY"));
+        IsTrue(layers.Contains("REBAR"));
+
+        var result = svc.ImportSection(new MBColumn.Application.DTOs.ImportExport.DxfSectionImportRequest(path, "BOUNDARY", "REBAR", 1.0));
+        IsTrue(result.IsSuccess);
+        IsTrue(result.BoundaryVertices.Count == 4);
+        AreClose(40000.0, result.Area, 1e-6);
+
+        var centroid = MBColumn.Application.Services.Geometry.PolygonGeometry.Centroid(result.BoundaryVertices);
+        AreClose(0.0, centroid.X, 1e-9);
+        AreClose(0.0, centroid.Y, 1e-9);
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfRebarCircleExtraction()
+{
+    string path = WriteTempDxf(BuildValidDxf());
+    try
+    {
+        var svc = new MBColumn.Application.Services.ImportExport.DxfImportService();
+        var result = svc.ImportSection(new MBColumn.Application.DTOs.ImportExport.DxfSectionImportRequest(path, "BOUNDARY", "REBAR", 1.0));
+        IsTrue(result.IsSuccess);
+        IsTrue(result.Rebars.Count == 1);
+        AreClose(50.0, result.Rebars[0].Center.X, 1e-9);
+        AreClose(10.0, result.Rebars[0].Center.Y, 1e-9);
+        AreClose(10.0, result.Rebars[0].Radius, 1e-9);
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfPointInPolygonValidation()
+{
+    var polygon = new List<MBColumn.Domain.Entities.Point2D>
+    {
+        new(-100, -100),
+        new(100, -100),
+        new(100, 100),
+        new(-100, 100)
+    };
+
+    IsTrue(MBColumn.Application.Services.Geometry.PolygonGeometry.PointInPolygon(polygon, 0, 0));
+    IsFalse(MBColumn.Application.Services.Geometry.PolygonGeometry.PointInPolygon(polygon, 150, 0));
+}
+
+static void TestDxfRejectsOpenBoundary()
+{
+    string path = WriteTempDxf(BuildOpenBoundaryDxf());
+    try
+    {
+        var svc = new MBColumn.Application.Services.ImportExport.DxfImportService();
+        var result = svc.ImportSection(new MBColumn.Application.DTOs.ImportExport.DxfSectionImportRequest(path, "BOUNDARY", "REBAR", 1.0));
+        IsFalse(result.IsSuccess);
+        IsTrue(result.Errors.Any(e => e.Contains("No closed polyline", StringComparison.OrdinalIgnoreCase)));
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfRejectsNonCircularRebar()
+{
+    string path = WriteTempDxf(BuildNonCircularRebarDxf());
+    try
+    {
+        var svc = new MBColumn.Application.Services.ImportExport.DxfImportService();
+        var result = svc.ImportSection(new MBColumn.Application.DTOs.ImportExport.DxfSectionImportRequest(path, "BOUNDARY", "REBAR", 1.0));
+        IsFalse(result.IsSuccess);
+        IsTrue(result.Errors.Any(e => e.Contains("No valid circular rebar", StringComparison.OrdinalIgnoreCase)));
+        IsTrue(result.Warnings.Any(w => w.Contains("non-circular", StringComparison.OrdinalIgnoreCase)));
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfImportAppliesIrregularCustomCoordinates()
+{
+    var import = new MBColumn.Application.DTOs.ImportExport.DxfSectionImportResult
+    {
+        Area = 40000.0,
+        OriginalCentroidX = 200.0,
+        OriginalCentroidY = 200.0,
+        BoundaryPolylineCount = 1,
+        BoundaryVertexCount = 4,
+        RebarCircleCount = 1
+    };
+    import.BoundaryVertices.AddRange([
+        new MBColumn.Domain.Entities.Point2D(-100, 100),
+        new MBColumn.Domain.Entities.Point2D(100, 100),
+        new MBColumn.Domain.Entities.Point2D(100, -100),
+        new MBColumn.Domain.Entities.Point2D(-100, -100)
+    ]);
+    import.Rebars.Add(new MBColumn.Application.DTOs.ImportExport.DxfRebarImportItem(
+        new MBColumn.Domain.Entities.Point2D(0, 0),
+        10.0,
+        Math.PI * 10.0 * 10.0));
+
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase());
+
+    IsTrue(vm.ApplyDxfImportResult(import));
+    IsTrue(vm.SelectedSectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular);
+    IsTrue(vm.SelectedRebarLayoutType == MBColumn.Application.DTOs.RebarLayoutType.CustomCoordinates);
+    IsTrue(vm.IrregularInput.RebarMode == MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates);
+    IsTrue(vm.IrregularInput.BoundaryPoints.Count == 4);
+    IsTrue(vm.IrregularInput.Rebars.Count == 1);
+    IsTrue(vm.PreviewRebars.Count == 1);
+
+    var dto = vm.ToDto();
+    IsTrue(dto.SectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular);
+    IsTrue(dto.Irregular is not null);
+    IsTrue(dto.Irregular!.RebarMode == MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates);
+    IsTrue(dto.Irregular.Rebars.Count == 1);
+}
+
+static void TestDxfImportDoesNotBlockOnCover()
+{
+    var import = new MBColumn.Application.DTOs.ImportExport.DxfSectionImportResult
+    {
+        Area = 40000.0,
+        OriginalCentroidX = 0.0,
+        OriginalCentroidY = 0.0,
+        BoundaryPolylineCount = 1,
+        BoundaryVertexCount = 4,
+        RebarCircleCount = 1
+    };
+    import.BoundaryVertices.AddRange([
+        new MBColumn.Domain.Entities.Point2D(-100, 100),
+        new MBColumn.Domain.Entities.Point2D(100, 100),
+        new MBColumn.Domain.Entities.Point2D(100, -100),
+        new MBColumn.Domain.Entities.Point2D(-100, -100)
+    ]);
+    import.Rebars.Add(new MBColumn.Application.DTOs.ImportExport.DxfRebarImportItem(
+        new MBColumn.Domain.Entities.Point2D(45, 0),
+        10.0,
+        Math.PI * 10.0 * 10.0));
+
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase())
+    {
+        Cover = 55
+    };
+
+    IsTrue(vm.ApplyDxfImportResult(import));
+    IsTrue(string.IsNullOrWhiteSpace(vm.IrregularInput.RebarValidationMessage));
+    IsTrue(vm.IrregularInput.Rebars.Count == 1);
+    AreClose(45.0, vm.IrregularInput.Rebars[0].X, 1e-9);
+}
+
+static void TestIrregularEqualSpacingGeneratedRebarsSatisfyCover()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase());
+
+    vm.SelectedSectionShape = MBColumn.Domain.Enums.SectionShapeType.Irregular;
+    vm.IrregularInput.BarSize = "T20";
+    vm.IrregularInput.Spacing = 200;
+    vm.Cover = 55;
+    vm.UpdateSectionPreview();
+
+    var boundary = vm.IrregularInput.BoundaryPoints
+        .Select(p => new MBColumn.Domain.Entities.Point2D(p.X, p.Y))
+        .ToList();
+    var rebars = vm.IrregularInput.Rebars
+        .Select(r => new MBColumn.Application.DTOs.IrregularRebarInputDto(r.RebarIndex, r.X, r.Y, r.BarSize, r.AreaMm2))
+        .ToList();
+
+    var result = new MBColumn.Application.Services.IrregularSectionValidationService(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase())
+        .ValidateRebars(boundary, rebars, vm.Cover);
+
+    IsTrue(result.IsValid);
+}
+
+static void TestIrregularEqualSpacingToDtoRefreshesStaleRebars()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase());
+
+    vm.SelectedSectionShape = MBColumn.Domain.Enums.SectionShapeType.Irregular;
+    vm.IrregularInput.RebarMode = MBColumn.Application.DTOs.IrregularRebarModeType.EqualSpacing;
+    vm.IrregularInput.BarSize = "T20";
+    vm.IrregularInput.Spacing = 200;
+    vm.Cover = 55;
+
+    vm.IrregularInput.Rebars.Clear();
+    vm.IrregularInput.Rebars.Add(new MBColumn.Presentation.Wpf.ViewModels.IrregularRebarRowViewModel
+    {
+        RebarIndex = "1",
+        X = -284.2857,
+        Y = -605.7143,
+        BarSize = "T20",
+        AreaMm2 = 314.1593
+    });
+
+    var dto = vm.ToDto();
+    IsTrue(dto.Irregular is not null);
+    IsTrue(dto.Irregular!.Rebars.Count > 1);
+
+    var boundary = dto.Irregular.BoundaryPoints
+        .Select(p => new MBColumn.Domain.Entities.Point2D(p.X, p.Y))
+        .ToList();
+    var result = new MBColumn.Application.Services.IrregularSectionValidationService(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase())
+        .ValidateRebars(boundary, dto.Irregular.Rebars, dto.Irregular.CoverMm);
+
+    IsTrue(result.IsValid);
+}
+
+static void TestIrregularCustomModeClearsStaleRebarMessage()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase());
+
+    vm.SelectedSectionShape = MBColumn.Domain.Enums.SectionShapeType.Irregular;
+    vm.IrregularInput.RebarValidationMessage = "Rebar '1' violates cover. Distance to boundary 55.00 mm, required 65.00 mm.";
+    vm.IrregularInput.RebarMode = MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates;
+
+    IsTrue(vm.SelectedRebarLayoutType == MBColumn.Application.DTOs.RebarLayoutType.CustomCoordinates);
+    IsTrue(string.IsNullOrWhiteSpace(vm.IrregularInput.RebarValidationMessage));
+}
+
+static string WriteTempDxf(string text)
+{
+    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-{Guid.NewGuid():N}.dxf");
+    File.WriteAllText(path, text);
+    return path;
+}
+
+static string BuildValidDxf() => string.Join('\n',
+[
+    "0", "SECTION",
+    "2", "ENTITIES",
+    "0", "LWPOLYLINE",
+    "8", "BOUNDARY",
+    "90", "4",
+    "70", "1",
+    "10", "100",
+    "20", "100",
+    "10", "300",
+    "20", "100",
+    "10", "300",
+    "20", "300",
+    "10", "100",
+    "20", "300",
+    "0", "LWPOLYLINE",
+    "8", "BOUNDARY",
+    "90", "2",
+    "70", "0",
+    "10", "0",
+    "20", "0",
+    "10", "10",
+    "20", "10",
+    "0", "CIRCLE",
+    "8", "REBAR",
+    "10", "250",
+    "20", "210",
+    "40", "10",
+    "0", "ENDSEC",
+    "0", "EOF"
+]);
+
+static string BuildOpenBoundaryDxf() => string.Join('\n',
+[
+    "0", "SECTION",
+    "2", "ENTITIES",
+    "0", "LWPOLYLINE",
+    "8", "BOUNDARY",
+    "90", "4",
+    "70", "0",
+    "10", "100",
+    "20", "100",
+    "10", "300",
+    "20", "100",
+    "10", "300",
+    "20", "300",
+    "10", "100",
+    "20", "300",
+    "0", "CIRCLE",
+    "8", "REBAR",
+    "10", "200",
+    "20", "200",
+    "40", "10",
+    "0", "ENDSEC",
+    "0", "EOF"
+]);
+
+static string BuildNonCircularRebarDxf() => string.Join('\n',
+[
+    "0", "SECTION",
+    "2", "ENTITIES",
+    "0", "LWPOLYLINE",
+    "8", "BOUNDARY",
+    "90", "4",
+    "70", "1",
+    "10", "100",
+    "20", "100",
+    "10", "300",
+    "20", "100",
+    "10", "300",
+    "20", "300",
+    "10", "100",
+    "20", "300",
+    "0", "LINE",
+    "8", "REBAR",
+    "10", "190",
+    "20", "190",
+    "11", "210",
+    "21", "210",
+    "0", "ENDSEC",
+    "0", "EOF"
+]);
 
 static MBColumn.Application.DTOs.IrregularSectionInputDto BuildSquareIrregularInput()
 {

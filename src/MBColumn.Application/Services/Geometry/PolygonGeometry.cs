@@ -51,6 +51,32 @@ public static class PolygonGeometry
     // Clockwise winding in a standard +X right, +Y up coordinate frame yields negative signed area.
     public static bool IsClockwise(IReadOnlyList<Point2D> polygon) => SignedArea(polygon) < 0.0;
 
+    public static IReadOnlyList<Point2D> EnsureClockwise(IReadOnlyList<Point2D> polygon)
+    {
+        if (IsClockwise(polygon))
+        {
+            return [.. polygon];
+        }
+
+        var copy = polygon.ToList();
+        copy.Reverse();
+        return copy;
+    }
+
+    public static IReadOnlyList<Point2D> MoveToCentroidOrigin(
+        IReadOnlyList<Point2D> polygon,
+        out Point2D centroid)
+    {
+        centroid = Centroid(polygon);
+        var c = centroid;
+        return polygon
+            .Select(p => new Point2D(p.X - c.X, p.Y - c.Y))
+            .ToList();
+    }
+
+    public static IReadOnlyList<Point2D> Translate(IReadOnlyList<Point2D> points, double dx, double dy)
+        => points.Select(p => new Point2D(p.X + dx, p.Y + dy)).ToList();
+
     public static Rect2D BoundingBox(IReadOnlyList<Point2D> polygon)
     {
         if (polygon.Count == 0) return new Rect2D(0, 0, 0, 0);
