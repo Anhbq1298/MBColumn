@@ -31,6 +31,7 @@ public partial class StartUpWindow : Window
 
         BtnNew.Click += BtnNew_Click;
         BtnOpen.Click += BtnOpen_Click;
+        BtnInfo.Click += BtnInfo_Click;
         BtnCancel.Click += (_, _) => { DialogResult = false; };
     }
 
@@ -53,6 +54,15 @@ public partial class StartUpWindow : Window
         {
             RecentList.SelectedIndex = 0;
         }
+    }
+
+    private void BtnInfo_Click(object? sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            "Developer: Mark Bui",
+            "Information",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     private void RecentList_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MBColumn — Start" Height="450" Width="680" 
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        MinWidth="760"
         Background="{DynamicResource LightBackgroundBrush}">
 
     <Window.Resources>
@@ -38,6 +39,26 @@
                     <Ellipse Fill="White" Width="10" Height="10" Canvas.Left="155" Canvas.Top="60" />
                     <Ellipse Fill="White" Width="10" Height="10" Canvas.Left="235" Canvas.Top="60" />
                 </Canvas>
+
+                <Button x:Name="BtnInfo"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Width="24"
+                        Height="24"
+                        Margin="0,10,12,0"
+                        Padding="0"
+                        MinWidth="0"
+                        MinHeight="0"
+                        Background="Transparent"
+                        BorderBrush="#DCEAF5"
+                        ToolTip="Developer information">
+                    <TextBlock Text="i"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Button>
 
                 <StackPanel VerticalAlignment="Center" Margin="24,0,0,0">
                     <TextBlock Text="MBColumn" FontSize="26" FontWeight="Bold" Foreground="White"/>
@@ -136,9 +157,13 @@
                                 </StackPanel>
                             </Grid>
 
-                            <StackPanel Grid.Row="4" Margin="0,16,0,0">
+                            <Grid Grid.Row="4" Margin="0,16,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
                                 <TextBlock x:Name="TxtPreviewColCount" Text="Columns (0)" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource DarkNavyBrush}" Margin="0,0,0,8"/>
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="100">
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                     <ItemsControl x:Name="PreviewColumnsList">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
@@ -156,7 +181,7 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </ScrollViewer>
-                            </StackPanel>
+                            </Grid>
                         </Grid>
                     </Grid>
                 </Border>
