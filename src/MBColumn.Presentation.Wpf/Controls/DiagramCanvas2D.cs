@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -93,9 +94,25 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void DrawCapacity(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
-        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 2.2);
-        var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.35) { DashStyle = DashStyles.Dash };
-        var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4);
+        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 2.2)
+        {
+            LineJoin = PenLineJoin.Round,
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round
+        };
+        var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.35)
+        {
+            DashStyle = DashStyles.Dash,
+            LineJoin = PenLineJoin.Round,
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round
+        };
+        var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4)
+        {
+            LineJoin = PenLineJoin.Round,
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round
+        };
         double? designCompressionCap = DesignCompressionCap(points);
 
         foreach (var group in points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsSpecialPoint).GroupBy(p => p.GroupKey))
@@ -283,34 +300,65 @@ public class DiagramCanvas2D : FrameworkElement
     }
 
     private static StreamGeometry BuildPolylineGeometry(ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered)
-    {
-        var geo = new StreamGeometry();
-        using (var ctx = geo.Open())
-        {
-            ctx.BeginFigure(transform.ToScreen(ordered[0].X, ordered[0].Y), false, false);
-            foreach (var p in ordered.Skip(1))
-            {
-                ctx.LineTo(transform.ToScreen(p.X, p.Y), true, false);
-            }
-            // Close the loop: PM envelopes and MM diagrams are closed polylines
-            if (ordered.Count > 2)
-            {
-                ctx.LineTo(transform.ToScreen(ordered[0].X, ordered[0].Y), true, false);
-            }
-        }
-        geo.Freeze();
-        return geo;
-    }
+        => BuildSmoothPolylineGeometry(transform, ordered, closed: true);
 
     private static StreamGeometry BuildOpenPolylineGeometry(ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered)
+        => BuildSmoothPolylineGeometry(transform, ordered, closed: false);
+
+    private static StreamGeometry BuildSmoothPolylineGeometry(ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered, bool closed)
     {
+        var screenPoints = ordered.Select(p => transform.ToScreen(p.X, p.Y)).ToList();
+        if (screenPoints.Count < 2)
+        {
+            return new StreamGeometry();
+        }
+
+        if (screenPoints.Count == 2)
+        {
+            var geo = new StreamGeometry();
+            using (var ctx = geo.Open())
+            {
+                ctx.BeginFigure(screenPoints[0], false, closed);
+                ctx.LineTo(screenPoints[1], true, false);
+            }
+            geo.Freeze();
+            return geo;
+        }
+
         var geo = new StreamGeometry();
         using (var ctx = geo.Open())
         {
-            ctx.BeginFigure(transform.ToScreen(ordered[0].X, ordered[0].Y), false, false);
-            foreach (var p in ordered.Skip(1))
+            ctx.BeginFigure(screenPoints[0], false, closed);
+            int count = screenPoints.Count;
+
+            for (int i = 0; i < count - 1; i++)
             {
-                ctx.LineTo(transform.ToScreen(p.X, p.Y), true, false);
+                var p0 = i == 0 ? screenPoints[0] : screenPoints[i - 1];
+                var p1 = screenPoints[i];
+                var p2 = screenPoints[i + 1];
+                var p3 = i + 2 < count ? screenPoints[i + 2] : screenPoints[count - 1];
+
+                if (closed || i < count - 2)
+                {
+                    var c1 = new Point(
+                        p1.X + (p2.X - p0.X) / 6.0,
+                        p1.Y + (p2.Y - p0.Y) / 6.0);
+                    var c2 = new Point(
+                        p2.X - (p3.X - p1.X) / 6.0,
+                        p2.Y - (p3.Y - p1.Y) / 6.0);
+                    ctx.BezierTo(c1, c2, p2, true, false);
+                }
+                else
+                {
+                    // Last segment for an open polyline: no future point available.
+                    ctx.LineTo(p2, true, false);
+                }
+            }
+
+            if (closed)
+            {
+                // Close the loop for closed curves.
+                ctx.LineTo(screenPoints[0], true, false);
             }
         }
         geo.Freeze();

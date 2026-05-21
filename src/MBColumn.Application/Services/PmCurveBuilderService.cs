@@ -9,7 +9,7 @@ namespace MBColumn.Application.Services;
 
 public static class PmCurveBuilderService
 {
-    private const int AxialLevels = 100;
+    private const int AxialLevels = 200;
     private const double AciTiedCompressionPhi = 0.65;
     private const double AciTiedAxialCapFactor = 0.80;
     public static bool EnableDebugDiagnostics { get; set; }
