@@ -6,20 +6,20 @@ namespace MBColumn.Presentation.Wpf.Controls;
 
 public static class AxisRenderer2D
 {
-    private static readonly Brush AxisBrush = new SolidColorBrush(Color.FromRgb(51, 65, 85)); // dark slate
-    private static readonly Brush ZeroAxisBrush = new SolidColorBrush(Color.FromRgb(15, 23, 42)); // very dark, for zero axis
-    private static readonly Brush GridBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)); // light blue-grey
-    private static readonly Brush MinorGridBrush = new SolidColorBrush(Color.FromRgb(241, 245, 249)); // very light
+    private static readonly Brush AxisBrush = new SolidColorBrush(Color.FromRgb(55, 65, 81)); // soft slate
+    private static readonly Brush ZeroAxisBrush = new SolidColorBrush(Color.FromRgb(30, 41, 59)); // dark zero axis
+    private static readonly Brush GridBrush = new SolidColorBrush(Color.FromArgb(0xD0, 203, 213, 225)); // soft transparent blue-grey
+    private static readonly Brush MinorGridBrush = new SolidColorBrush(Color.FromArgb(0xB0, 241, 245, 249)); // very soft
     private static readonly Brush TextBrush = new SolidColorBrush(Color.FromRgb(31, 41, 51));
 
     public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0)
     {
-        var gridPen = new Pen(GridBrush, 1.0);
-        var minorGridPen = new Pen(MinorGridBrush, 0.6);
-        var axisPen = new Pen(AxisBrush, 1.2);
-        var zeroAxisPen = new Pen(ZeroAxisBrush, 1.8);
-        var tickPen = new Pen(AxisBrush, 1.2);
-        var minorTickPen = new Pen(AxisBrush, 0.6);
+        var gridPen = new Pen(GridBrush, 0.6);
+        var minorGridPen = new Pen(MinorGridBrush, 0.3);
+        var axisPen = new Pen(AxisBrush, 1.0);
+        var zeroAxisPen = new Pen(ZeroAxisBrush, 1.4);
+        var tickPen = new Pen(AxisBrush, 1.0);
+        var minorTickPen = new Pen(AxisBrush, 0.5);
 
         var xTicks = xMajorStep > 0
             ? AxisTickService.GenerateFixed(transform.MinX, transform.MaxX, xMajorStep)

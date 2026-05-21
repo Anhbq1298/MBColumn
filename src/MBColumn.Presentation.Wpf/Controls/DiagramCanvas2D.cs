@@ -94,20 +94,20 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void DrawCapacity(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
-        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 2.2)
+        var activeDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.4)
         {
             LineJoin = PenLineJoin.Round,
             StartLineCap = PenLineCap.Round,
             EndLineCap = PenLineCap.Round
         };
-        var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 1.35)
+        var reducedDesignPen = new Pen(new SolidColorBrush(Color.FromRgb(0, 75, 133)), 0.95)
         {
             DashStyle = DashStyles.Dash,
             LineJoin = PenLineJoin.Round,
             StartLineCap = PenLineCap.Round,
             EndLineCap = PenLineCap.Round
         };
-        var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.4)
+        var nominalPen = new Pen(new SolidColorBrush(Color.FromRgb(200, 40, 40)), 1.1)
         {
             LineJoin = PenLineJoin.Round,
             StartLineCap = PenLineCap.Round,
