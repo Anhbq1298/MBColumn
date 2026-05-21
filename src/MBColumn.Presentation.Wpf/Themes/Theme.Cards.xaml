@@ -1,5 +1,11 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Shared elevation & animation resources -->
+    <DropShadowEffect x:Key="CardElevationEffect"
+                      BlurRadius="16" ShadowDepth="4" Direction="270"
+                      Color="#000000" Opacity="0.18" />
+    <CubicEase x:Key="SmoothEase" EasingMode="EaseOut" />
+
     <Style x:Key="CardBorderStyle" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />

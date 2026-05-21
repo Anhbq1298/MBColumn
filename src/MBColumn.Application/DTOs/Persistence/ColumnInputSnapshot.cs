@@ -17,6 +17,7 @@ public sealed class ColumnInputSnapshot
     public double Fc { get; set; } = 28;
     public double Fy { get; set; } = 420;
     public double Es { get; set; } = 200000;
+    public string MaterialLibrary { get; set; } = "";
 
     public string BarSize { get; set; } = "T25";
     public int BarCount { get; set; } = 28;

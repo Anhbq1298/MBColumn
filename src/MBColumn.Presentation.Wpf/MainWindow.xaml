@@ -378,5 +378,94 @@
             <Separator />
             <TextBlock Text="{Binding ResultFreshnessStatusText}" />
         </StatusBar>
+
+        <!-- Save Notification Toast Overlay -->
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,52,24,0"
+                Visibility="{Binding IsSaveNotificationVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                IsHitTestVisible="False">
+            <Border x:Name="SaveToastBorder"
+                    CornerRadius="10"
+                    Padding="16,12,20,12"
+                    MinWidth="260"
+                    Effect="{StaticResource CardElevationEffect}">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#1B8A4E" Offset="0" />
+                        <GradientStop Color="#1F8A55" Offset="0.5" />
+                        <GradientStop Color="#178A46" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.RenderTransform>
+                    <TranslateTransform Y="0" />
+                </Border.RenderTransform>
+                <Border.Triggers>
+                    <EventTrigger RoutedEvent="Border.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="0" To="1" Duration="0:0:0.25"
+                                                 EasingFunction="{StaticResource SmoothEase}" />
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                 From="-20" To="0" Duration="0:0:0.3"
+                                                 EasingFunction="{StaticResource SmoothEase}" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Border.Triggers>
+                <StackPanel Orientation="Horizontal">
+                    <!-- Animated checkmark circle -->
+                    <Border Width="28" Height="28" CornerRadius="14"
+                            Background="#FFFFFF" Opacity="0.22"
+                            VerticalAlignment="Center" />
+                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                               FontSize="16" Foreground="White"
+                               VerticalAlignment="Center"
+                               Margin="-22,0,0,0"
+                               Width="16" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding SaveNotificationText}"
+                                   Foreground="White"
+                                   FontSize="13"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="All changes are persisted to disk."
+                                   Foreground="#C8F0D8"
+                                   FontSize="11"
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- Saving Spinner Overlay (subtle top bar) -->
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,52,24,0"
+                Visibility="{Binding IsSaving, Converter={StaticResource BoolToVisibilityConverter}}"
+                IsHitTestVisible="False">
+            <Border CornerRadius="10"
+                    Padding="16,12,20,12"
+                    MinWidth="200"
+                    Background="{DynamicResource PrimaryNavyBrush}"
+                    Effect="{StaticResource CardElevationEffect}">
+                <StackPanel Orientation="Horizontal">
+                    <ProgressBar Width="18" Height="18"
+                                 IsIndeterminate="True"
+                                 VerticalAlignment="Center"
+                                 Foreground="White"
+                                 Background="Transparent"
+                                 BorderBrush="Transparent" />
+                    <TextBlock Text="Saving project…"
+                               Foreground="White"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Margin="12,0,0,0" />
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </Window>

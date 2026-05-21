@@ -37,6 +37,9 @@ public sealed class InputViewModel : ViewModelBase
     private string layoutPreset = "Perimeter bars";
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+    private MaterialLibraryType selectedMaterialLibrary = MaterialLibraryType.America;
+    private MaterialGradeOption? selectedConcreteGrade;
+    private MaterialGradeOption? selectedSteelGrade;
     private double fc;
     private double fy;
     private double es;
@@ -63,6 +66,52 @@ public sealed class InputViewModel : ViewModelBase
     private bool _isGeneratingRebars => _generatingRebarsDepth > 0;
     private bool isDxfImportedSection = false;
     private int nextLoadCaseIndex = 2;
+    private bool isApplyingMaterialPreset = false;
+
+    private static readonly IReadOnlyList<MaterialGradeOption> AmericanConcreteGrades =
+    [
+        new("3 ksi / 21 MPa", 21.0, 3.0),
+        new("4 ksi / 28 MPa", 28.0, 4.0),
+        new("5 ksi / 35 MPa", 35.0, 5.0),
+        new("6 ksi / 42 MPa", 42.0, 6.0),
+        new("8 ksi / 55 MPa", 55.0, 8.0),
+        new("10 ksi / 69 MPa", 69.0, 10.0),
+        new("12 ksi / 83 MPa", 83.0, 12.0)
+    ];
+
+    private static readonly IReadOnlyList<MaterialGradeOption> EuropeanConcreteGrades =
+    [
+        new("C20/25", 20.0),
+        new("C25/30", 25.0),
+        new("C30/37", 30.0),
+        new("C35/45", 35.0),
+        new("C40/50", 40.0),
+        new("C45/55", 45.0),
+        new("C50/60", 50.0),
+        new("C55/67", 55.0),
+        new("C60/75", 60.0),
+        new("C70/85", 70.0),
+        new("C80/95", 80.0),
+        new("C90/105", 90.0)
+    ];
+
+    private static readonly IReadOnlyList<MaterialGradeOption> AmericanSteelGrades =
+    [
+        new("Grade 40 / 280 MPa", 280.0, 40.0, 200000.0, 29000.0),
+        new("Grade 60 / 420 MPa", 420.0, 60.0, 200000.0, 29000.0),
+        new("Grade 75 / 520 MPa", 520.0, 75.0, 200000.0, 29000.0),
+        new("Grade 80 / 550 MPa", 550.0, 80.0, 200000.0, 29000.0),
+        new("Grade 100 / 690 MPa", 690.0, 100.0, 200000.0, 29000.0)
+    ];
+
+    private static readonly IReadOnlyList<MaterialGradeOption> EuropeanSteelGrades =
+    [
+        new("B400", 400.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B500A", 500.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B500B", 500.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B500C", 500.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B550", 550.0, MetricModulus: 200000.0, ImperialModulus: 29000.0)
+    ];
 
     public InputViewModel(IRebarDatabase metricBars, IRebarDatabase imperialBars)
         : this(metricBars, imperialBars, new RebarCoordinateBuilderService(new UnitConversionService(), metricBars, imperialBars))
@@ -117,6 +166,62 @@ public sealed class InputViewModel : ViewModelBase
         new(DesignCodeType.Aci318Style, "ACI 318"),
         new(DesignCodeType.Ec2,         "Eurocode 2")
     ];
+    public IReadOnlyList<MaterialLibraryOption> MaterialLibraries { get; } =
+    [
+        new(MaterialLibraryType.America, "America"),
+        new(MaterialLibraryType.Europe, "Europe"),
+        new(MaterialLibraryType.Custom, "Custom")
+    ];
+
+    public MaterialLibraryType SelectedMaterialLibrary
+    {
+        get => selectedMaterialLibrary;
+        set
+        {
+            if (selectedMaterialLibrary == value) return;
+            selectedMaterialLibrary = value;
+            Raise();
+            Raise(nameof(AreMaterialGradesEnabled));
+            Raise(nameof(AreMaterialInputsEnabled));
+            SelectDefaultMaterialGrades(applyValues: true);
+        }
+    }
+
+    public IReadOnlyList<MaterialGradeOption> AvailableConcreteGrades => ConcreteGradesFor(selectedMaterialLibrary);
+    public IReadOnlyList<MaterialGradeOption> AvailableSteelGrades => SteelGradesFor(selectedMaterialLibrary);
+    public bool AreMaterialGradesEnabled => selectedMaterialLibrary != MaterialLibraryType.Custom;
+    public bool AreMaterialInputsEnabled => selectedMaterialLibrary == MaterialLibraryType.Custom;
+
+    public MaterialGradeOption? SelectedConcreteGrade
+    {
+        get => selectedConcreteGrade;
+        set
+        {
+            if (Equals(selectedConcreteGrade, value)) return;
+            selectedConcreteGrade = value;
+            Raise();
+            if (value is not null)
+            {
+                ApplyConcreteGrade(value);
+            }
+        }
+    }
+
+    public MaterialGradeOption? SelectedSteelGrade
+    {
+        get => selectedSteelGrade;
+        set
+        {
+            if (Equals(selectedSteelGrade, value)) return;
+            selectedSteelGrade = value;
+            Raise();
+            if (value is not null)
+            {
+                ApplySteelGrade(value);
+            }
+        }
+    }
+
     public DesignCodeType SelectedDesignCode
     {
         get => selectedDesignCode;
@@ -343,8 +448,32 @@ public sealed class InputViewModel : ViewModelBase
             UpdateSectionPreview();
         }
     }
-    public double Fc { get => fc; set => Set(ref fc, value); }
-    public double Fy { get => fy; set => Set(ref fy, value); }
+    public double Fc
+    {
+        get => fc;
+        set
+        {
+            Set(ref fc, value);
+            if (!isApplyingMaterialPreset)
+            {
+                SyncSelectedConcreteGradeToValue();
+            }
+        }
+    }
+
+    public double Fy
+    {
+        get => fy;
+        set
+        {
+            Set(ref fy, value);
+            if (!isApplyingMaterialPreset)
+            {
+                SyncSelectedSteelGradeToValue();
+            }
+        }
+    }
+
     public double Es { get => es; set => Set(ref es, value); }
     public double Pu { get => pu; set => Set(ref pu, value); }
     public double Mux { get => mux; set => Set(ref mux, value); }
@@ -965,6 +1094,127 @@ public sealed class InputViewModel : ViewModelBase
             LoadCases.Remove(dup);
     }
 
+    private void SelectDefaultMaterialGrades(bool applyValues)
+    {
+        if (selectedMaterialLibrary == MaterialLibraryType.Custom)
+        {
+            selectedConcreteGrade = null;
+            selectedSteelGrade = null;
+            Raise(nameof(AvailableConcreteGrades));
+            Raise(nameof(AvailableSteelGrades));
+            Raise(nameof(SelectedConcreteGrade));
+            Raise(nameof(SelectedSteelGrade));
+            return;
+        }
+
+        selectedConcreteGrade = selectedMaterialLibrary == MaterialLibraryType.Europe
+            ? EuropeanConcreteGrades[2]
+            : AmericanConcreteGrades[1];
+        selectedSteelGrade = selectedMaterialLibrary == MaterialLibraryType.Europe
+            ? EuropeanSteelGrades[2]
+            : AmericanSteelGrades[1];
+
+        Raise(nameof(AvailableConcreteGrades));
+        Raise(nameof(AvailableSteelGrades));
+        Raise(nameof(SelectedConcreteGrade));
+        Raise(nameof(SelectedSteelGrade));
+
+        if (!applyValues) return;
+
+        ApplyConcreteGrade(selectedConcreteGrade);
+        ApplySteelGrade(selectedSteelGrade);
+    }
+
+    private void ApplyConcreteGrade(MaterialGradeOption grade)
+    {
+        isApplyingMaterialPreset = true;
+        try
+        {
+            Fc = RoundMaterialValue(grade.StressValue(UnitSystem));
+        }
+        finally
+        {
+            isApplyingMaterialPreset = false;
+        }
+    }
+
+    private void ApplySteelGrade(MaterialGradeOption grade)
+    {
+        isApplyingMaterialPreset = true;
+        try
+        {
+            Fy = RoundMaterialValue(grade.StressValue(UnitSystem));
+            if (grade.ModulusValue(UnitSystem) is double modulus)
+            {
+                Es = RoundMaterialValue(modulus);
+            }
+        }
+        finally
+        {
+            isApplyingMaterialPreset = false;
+        }
+    }
+
+    private void SyncSelectedConcreteGradeToValue()
+    {
+        var match = FindMatchingGrade(AvailableConcreteGrades, fc);
+        if (Equals(selectedConcreteGrade, match)) return;
+
+        selectedConcreteGrade = match;
+        Raise(nameof(SelectedConcreteGrade));
+    }
+
+    private void SyncSelectedSteelGradeToValue()
+    {
+        var match = FindMatchingGrade(AvailableSteelGrades, fy);
+        if (Equals(selectedSteelGrade, match)) return;
+
+        selectedSteelGrade = match;
+        Raise(nameof(SelectedSteelGrade));
+    }
+
+    private void SyncMaterialLibraryFromValues()
+    {
+        selectedMaterialLibrary = InferMaterialLibrary();
+        selectedConcreteGrade = FindMatchingGrade(AvailableConcreteGrades, fc);
+        selectedSteelGrade = FindMatchingGrade(AvailableSteelGrades, fy);
+    }
+
+    private MaterialLibraryType InferMaterialLibrary()
+    {
+        bool europeMatch =
+            FindMatchingGrade(EuropeanConcreteGrades, fc) is not null ||
+            FindMatchingGrade(EuropeanSteelGrades, fy) is not null;
+        bool americaMatch =
+            FindMatchingGrade(AmericanConcreteGrades, fc) is not null ||
+            FindMatchingGrade(AmericanSteelGrades, fy) is not null;
+
+        if (europeMatch && !americaMatch) return MaterialLibraryType.Europe;
+        if (americaMatch && !europeMatch) return MaterialLibraryType.America;
+        return selectedDesignCode == DesignCodeType.Ec2 ? MaterialLibraryType.Europe : MaterialLibraryType.America;
+    }
+
+    private static IReadOnlyList<MaterialGradeOption> ConcreteGradesFor(MaterialLibraryType library)
+        => library switch
+        {
+            MaterialLibraryType.Europe => EuropeanConcreteGrades,
+            MaterialLibraryType.Custom => [],
+            _ => AmericanConcreteGrades
+        };
+
+    private static IReadOnlyList<MaterialGradeOption> SteelGradesFor(MaterialLibraryType library)
+        => library switch
+        {
+            MaterialLibraryType.Europe => EuropeanSteelGrades,
+            MaterialLibraryType.Custom => [],
+            _ => AmericanSteelGrades
+        };
+
+    private MaterialGradeOption? FindMatchingGrade(IReadOnlyList<MaterialGradeOption> grades, double value)
+        => grades.FirstOrDefault(grade => Math.Abs(RoundMaterialValue(grade.StressValue(UnitSystem)) - value) <= 0.0005);
+
+    private static double RoundMaterialValue(double value) => Math.Round(value, 3);
+
     private void ApplyMetricDefaults()
     {
         width = 700; height = 700; diameter = 700; cover = 55; barSize = "T25"; barCount = 28;
@@ -972,9 +1222,15 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
+        selectedMaterialLibrary = MaterialLibraryType.America;
+        selectedConcreteGrade = AmericanConcreteGrades[1];
+        selectedSteelGrade = AmericanSteelGrades[1];
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
-        fc = 28; fy = 420; es = 200000; pu = 2500; mux = 250; muy = 180; selectedAxialLoad = 0;
+        fc = selectedConcreteGrade.StressValue(UnitSystem.Metric);
+        fy = selectedSteelGrade.StressValue(UnitSystem.Metric);
+        es = selectedSteelGrade.ModulusValue(UnitSystem.Metric) ?? 200000;
+        pu = 2500; mux = 250; muy = 180; selectedAxialLoad = 0;
         LoadCases.Clear(); nextLoadCaseIndex = 2;
         AddPrimaryLoadCase();
         RaiseDefaults();
@@ -987,9 +1243,15 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
+        selectedMaterialLibrary = MaterialLibraryType.America;
+        selectedConcreteGrade = AmericanConcreteGrades[1];
+        selectedSteelGrade = AmericanSteelGrades[1];
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
-        fc = 4; fy = 60; es = 29000; pu = 560; mux = 185; muy = 130; selectedAxialLoad = 0;
+        fc = selectedConcreteGrade.StressValue(UnitSystem.Imperial);
+        fy = selectedSteelGrade.StressValue(UnitSystem.Imperial);
+        es = selectedSteelGrade.ModulusValue(UnitSystem.Imperial) ?? 29000;
+        pu = 560; mux = 185; muy = 130; selectedAxialLoad = 0;
         LoadCases.Clear(); nextLoadCaseIndex = 2;
         AddPrimaryLoadCase();
         RaiseDefaults();
@@ -1011,6 +1273,9 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SelectedSectionShape)); Raise(nameof(IsRectangularSection)); Raise(nameof(IsCircularSection)); Raise(nameof(IsCircularEqualSpacingLayout));
         Raise(nameof(Width)); Raise(nameof(Height)); Raise(nameof(Diameter)); Raise(nameof(Cover)); Raise(nameof(BarSize)); Raise(nameof(BarCount)); Raise(nameof(LayoutPreset));
         Raise(nameof(Fc)); Raise(nameof(Fy)); Raise(nameof(Es)); Raise(nameof(Pu)); Raise(nameof(Mux)); Raise(nameof(Muy)); Raise(nameof(SelectedAxialLoad));
+        Raise(nameof(SelectedMaterialLibrary)); Raise(nameof(AvailableConcreteGrades)); Raise(nameof(AvailableSteelGrades));
+        Raise(nameof(SelectedConcreteGrade)); Raise(nameof(SelectedSteelGrade));
+        Raise(nameof(AreMaterialGradesEnabled)); Raise(nameof(AreMaterialInputsEnabled));
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
@@ -1352,6 +1617,7 @@ public sealed class InputViewModel : ViewModelBase
         SectionShape = selectedSectionShape.ToString(),
         Width = width, Height = height, Diameter = diameter, Cover = cover,
         Fc = fc, Fy = fy, Es = es,
+        MaterialLibrary = selectedMaterialLibrary.ToString(),
         BarSize = barSize, BarCount = barCount, Spacing = spacing,
         RebarLayoutType = selectedRebarLayoutType.ToString(),
         TopBarCount = RebarLayout.Top.BarCount,
@@ -1386,6 +1652,17 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = Enum.TryParse<SectionShapeType>(s.SectionShape, out var ss) ? ss : SectionShapeType.Rectangular;
         width = s.Width; height = s.Height; diameter = s.Diameter; cover = s.Cover;
         fc = s.Fc; fy = s.Fy; es = s.Es;
+        if (Enum.TryParse<MaterialLibraryType>(s.MaterialLibrary, out var materialLibrary))
+        {
+            selectedMaterialLibrary = materialLibrary;
+            selectedConcreteGrade = FindMatchingGrade(ConcreteGradesFor(selectedMaterialLibrary), fc);
+            selectedSteelGrade = FindMatchingGrade(SteelGradesFor(selectedMaterialLibrary), fy);
+        }
+        else
+        {
+            SyncMaterialLibraryFromValues();
+        }
+
         barSize = s.BarSize; barCount = s.BarCount; spacing = s.Spacing;
         selectedRebarLayoutType = Enum.TryParse<RebarLayoutType>(s.RebarLayoutType, out var rlt) ? rlt : RebarLayoutType.AllSidesEqual;
         pu = s.Pu; mux = s.Mux; muy = s.Muy;
@@ -1711,4 +1988,27 @@ public sealed class InputViewModel : ViewModelBase
 public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
 public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
 public sealed record SectionIntegrationMethodOption(SectionIntegrationMethod Method, string DisplayName);
+public sealed record MaterialLibraryOption(MaterialLibraryType Library, string DisplayName);
 
+public enum MaterialLibraryType
+{
+    America,
+    Europe,
+    Custom
+}
+
+public sealed record MaterialGradeOption(
+    string DisplayName,
+    double MetricValue,
+    double? ImperialValue = null,
+    double? MetricModulus = null,
+    double? ImperialModulus = null)
+{
+    private const double MpaPerKsi = 6.894757293168;
+
+    public double StressValue(UnitSystem unitSystem)
+        => unitSystem == UnitSystem.Metric ? MetricValue : ImperialValue ?? MetricValue / MpaPerKsi;
+
+    public double? ModulusValue(UnitSystem unitSystem)
+        => unitSystem == UnitSystem.Metric ? MetricModulus : ImperialModulus ?? MetricModulus / MpaPerKsi;
+}

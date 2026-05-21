@@ -237,42 +237,93 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0"
                                    Grid.Column="0"
-                                   Text="{Binding FcLabel}"
+                                   Grid.ColumnSpan="2"
+                                   Text="Library"
                                    Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="0"
+                        <ComboBox Grid.Row="1"
+                                  Grid.Column="0"
+                                  Grid.ColumnSpan="2"
+                                  ItemsSource="{Binding MaterialLibraries}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="Library"
+                                  SelectedValue="{Binding SelectedMaterialLibrary}" />
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="2"
+                                   Text="Concrete Grade"
+                                   Style="{StaticResource FieldLabelTextStyle}"
+                                   IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                   Margin="0,8,0,0" />
+                        <ComboBox Grid.Row="3"
+                                  Grid.Column="0"
+                                  Grid.ColumnSpan="2"
+                                  ItemsSource="{Binding AvailableConcreteGrades}"
+                                  DisplayMemberPath="DisplayName"
+                                  IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                  SelectedItem="{Binding SelectedConcreteGrade}" />
+                        <TextBlock Grid.Row="4"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="2"
+                                   Text="Rebar Grade"
+                                   Style="{StaticResource FieldLabelTextStyle}"
+                                   IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                   Margin="0,8,0,0" />
+                        <ComboBox Grid.Row="5"
+                                  Grid.Column="0"
+                                  Grid.ColumnSpan="2"
+                                  ItemsSource="{Binding AvailableSteelGrades}"
+                                  DisplayMemberPath="DisplayName"
+                                  IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                  SelectedItem="{Binding SelectedSteelGrade}" />
+                        <TextBlock Grid.Row="6"
+                                   Grid.Column="0"
+                                   Text="{Binding FcLabel}"
+                                   Style="{StaticResource FieldLabelTextStyle}"
+                                   Margin="0,8,0,0" />
+                        <TextBlock Grid.Row="6"
                                    Grid.Column="1"
                                    Text="{Binding StressLabel}"
-                                   Style="{StaticResource UnitTextStyle}" />
-                        <TextBox Grid.Row="1"
+                                   Style="{StaticResource UnitTextStyle}"
+                                   Margin="0,8,0,0" />
+                        <TextBox Grid.Row="7"
                                  Grid.Column="0"
                                  Grid.ColumnSpan="2"
+                                 IsEnabled="{Binding AreMaterialInputsEnabled}"
                                  Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Grid.Row="2"
+                        <TextBlock Grid.Row="8"
                                    Grid.Column="0"
                                    Text="{Binding FyLabel}"
                                    Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="2"
+                        <TextBlock Grid.Row="8"
                                    Grid.Column="1"
                                    Text="{Binding StressLabel}"
                                    Style="{StaticResource UnitTextStyle}" />
-                        <TextBox Grid.Row="3"
+                        <TextBox Grid.Row="9"
                                  Grid.Column="0"
                                  Grid.ColumnSpan="2"
+                                 IsEnabled="{Binding AreMaterialInputsEnabled}"
                                  Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Grid.Row="4"
+                        <TextBlock Grid.Row="10"
                                    Grid.Column="0"
                                    Text="Es"
                                    Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="4"
+                        <TextBlock Grid.Row="10"
                                    Grid.Column="1"
                                    Text="{Binding StressLabel}"
                                    Style="{StaticResource UnitTextStyle}" />
-                        <TextBox Grid.Row="5"
+                        <TextBox Grid.Row="11"
                                  Grid.Column="0"
                                  Grid.ColumnSpan="2"
+                                 IsEnabled="{Binding AreMaterialInputsEnabled}"
                                  Text="{Binding Es, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                 </GroupBox>
@@ -304,57 +355,83 @@
                             <Viewbox Stretch="Uniform"
                                      HorizontalAlignment="Stretch"
                                      VerticalAlignment="Top">
-                                <Canvas Width="200" Height="165">
+                                <Canvas Width="220" Height="185">
 
-                                    <!-- Column: top face -->
-                                    <Polygon Points="35,44 92,44 122,26 65,26"
+                                    <!-- Column: top face (horizontal plane XY) -->
+                                    <Polygon Points="50,40 110,40 140,24 80,24"
                                              Fill="#BAD4F0" Stroke="#004B85" StrokeThickness="1" />
-                                    <!-- Column: right face -->
-                                    <Polygon Points="92,44 122,26 122,148 92,166"
+                                    <!-- Column: right face (YZ plane) -->
+                                    <Polygon Points="110,40 140,24 140,148 110,168"
                                              Fill="#9DC0E8" Stroke="#004B85" StrokeThickness="1" />
-                                    <!-- Column: front face -->
-                                    <Polygon Points="35,44 92,44 92,166 35,166"
+                                    <!-- Column: front face (XZ plane) -->
+                                    <Polygon Points="50,40 110,40 110,168 50,168"
                                              Fill="#D6E8FA" Stroke="#004B85" StrokeThickness="1" />
 
-                                    <!-- Muy arrow (rotation about Y / vertical axis) -->
-                                    <Path Stroke="#004B85" StrokeThickness="1.4"
-                                          Data="M 25,100 C 15,45 60,18 105,34" />
-                                    <Polygon Points="105,34 97,35 99,29" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="107" Canvas.Top="20"
-                                               Text="Muy" FontSize="10"
-                                               FontWeight="SemiBold" FontStyle="Italic"
-                                               Foreground="#004B85" />
-
-                                    <!-- Mux arrow (rotation about X / horizontal axis) -->
-                                    <Path Stroke="#004B85" StrokeThickness="1.4"
-                                          Data="M 108,62 C 145,68 142,115 102,124" />
-                                    <Polygon Points="102,124 108,120 109,126" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="130" Canvas.Top="80"
+                                    <!-- Mux: double-headed arrow along X axis (horizontal, left-right on front face) -->
+                                    <!-- Arrow shaft -->
+                                    <Line X1="30" Y1="100" X2="130" Y2="100"
+                                          Stroke="#004B85" StrokeThickness="1.6" />
+                                    <!-- Left arrowhead -->
+                                    <Polygon Points="30,100 38,96 38,104" Fill="#004B85" />
+                                    <!-- Right arrowhead -->
+                                    <Polygon Points="130,100 122,96 122,104" Fill="#004B85" />
+                                    <!-- Label Mux -->
+                                    <TextBlock Canvas.Left="132" Canvas.Top="92"
                                                Text="Mux" FontSize="10"
                                                FontWeight="SemiBold" FontStyle="Italic"
                                                Foreground="#004B85" />
 
-                                    <!-- XYZ axes (bottom right) -->
-                                    <!-- z axis (oblique / depth) -->
-                                    <Line X1="165" Y1="155" X2="180" Y2="146"
+                                    <!-- Muy: double-headed arrow along Y axis (oblique, depth direction) -->
+                                    <!-- Arrow shaft -->
+                                    <Line X1="62" Y1="142" X2="148" Y2="8"
+                                          Stroke="#004B85" StrokeThickness="1.6" />
+                                    <!-- Near arrowhead (bottom-left) -->
+                                    <Polygon Points="62,142 69,136 66,144" Fill="#004B85" />
+                                    <!-- Far arrowhead (top-right) -->
+                                    <Polygon Points="148,8 141,14 144,6" Fill="#004B85" />
+                                    <!-- Label Muy -->
+                                    <TextBlock Canvas.Left="150" Canvas.Top="2"
+                                               Text="Muy" FontSize="10"
+                                               FontWeight="SemiBold" FontStyle="Italic"
+                                               Foreground="#004B85" />
+
+                                    <!-- P: vertical arrow (axial force along Z, downward) -->
+                                    <Line X1="80" Y1="10" X2="80" Y2="40"
+                                          Stroke="#004B85" StrokeThickness="1.6" />
+                                    <Polygon Points="80,40 77,33 83,33" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="72" Canvas.Top="0"
+                                               Text="P" FontSize="10"
+                                               FontWeight="SemiBold" FontStyle="Italic"
+                                               Foreground="#004B85" />
+
+                                    <!-- XYZ axes gizmo (bottom right) -->
+                                    <!-- Origin point -->
+                                    <Ellipse Canvas.Left="172" Canvas.Top="163"
+                                             Width="3" Height="3"
+                                             Fill="#004B85" />
+
+                                    <!-- Z axis (vertical / up) -->
+                                    <Line X1="173" Y1="164" X2="173" Y2="140"
                                           Stroke="#004B85" StrokeThickness="0.9" />
-                                    <Polygon Points="180,146 177,151 174,147" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="181" Canvas.Top="140"
+                                    <Polygon Points="173,140 175,146 171,146" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="176" Canvas.Top="134"
                                                Text="z" FontSize="9" FontStyle="Italic"
                                                Foreground="#004B85" />
-                                    <!-- y axis (vertical) -->
-                                    <Line X1="165" Y1="155" X2="165" Y2="138"
+
+                                    <!-- X axis (horizontal / right) -->
+                                    <Line X1="173" Y1="164" X2="198" Y2="164"
                                           Stroke="#004B85" StrokeThickness="0.9" />
-                                    <Polygon Points="165,138 167,143 163,143" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="157" Canvas.Top="131"
-                                               Text="y" FontSize="9" FontStyle="Italic"
-                                               Foreground="#004B85" />
-                                    <!-- x axis (horizontal) -->
-                                    <Line X1="165" Y1="155" X2="183" Y2="155"
-                                          Stroke="#004B85" StrokeThickness="0.9" />
-                                    <Polygon Points="183,155 178,157 178,152" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="185" Canvas.Top="150"
+                                    <Polygon Points="198,164 192,166 192,162" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="200" Canvas.Top="158"
                                                Text="x" FontSize="9" FontStyle="Italic"
+                                               Foreground="#004B85" />
+
+                                    <!-- Y axis (oblique / depth, going back-right) -->
+                                    <Line X1="173" Y1="164" X2="190" Y2="152"
+                                          Stroke="#004B85" StrokeThickness="0.9" />
+                                    <Polygon Points="190,152 184,155 187,159" Fill="#004B85" />
+                                    <TextBlock Canvas.Left="192" Canvas.Top="146"
+                                               Text="y" FontSize="9" FontStyle="Italic"
                                                Foreground="#004B85" />
                                 </Canvas>
                             </Viewbox>

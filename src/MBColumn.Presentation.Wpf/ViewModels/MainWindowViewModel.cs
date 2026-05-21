@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -25,6 +26,10 @@ public sealed class MainWindowViewModel : ViewModelBase
     private string calculationStatus = "";
     private int selectedMainTabIndex;
     private bool suppressModified;
+    private bool isSaving;
+    private bool isSaveNotificationVisible;
+    private string saveNotificationText = "";
+    private CancellationTokenSource? saveNotificationCts;
 
     public MainWindowViewModel(
         ColumnCalculationService calculationService,
@@ -56,8 +61,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         CalculateAllColumnsCommand = new AsyncRelayCommand(CalculateAllColumnsAsync, () => !IsCalculating && HasSections);
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new RelayCommand(OpenProject);
-        SaveProjectCommand = new RelayCommand(SaveProject);
-        SaveProjectAsCommand = new RelayCommand(SaveProjectAs);
+        SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
+        SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
 
         SubscribeToInputChanges();
         UpdateWindowTitle();
@@ -122,6 +127,24 @@ public sealed class MainWindowViewModel : ViewModelBase
         ? "No section selected"
         : $"Section: {currentColumn.Name}";
     public string ModifiedStatusText => projectService.IsModified ? "Modified" : "Saved";
+    public bool IsSaving
+    {
+        get => isSaving;
+        private set => Set(ref isSaving, value);
+    }
+
+    public bool IsSaveNotificationVisible
+    {
+        get => isSaveNotificationVisible;
+        private set => Set(ref isSaveNotificationVisible, value);
+    }
+
+    public string SaveNotificationText
+    {
+        get => saveNotificationText;
+        private set => Set(ref saveNotificationText, value);
+    }
+
     public string ResultFreshnessStatusText => IsCalculationOutdated
         ? "Input changed after last calculation"
         : HasCurrentResult ? "Result current" : "No result";
@@ -321,29 +344,34 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void SaveProject()
+    private async Task SaveProjectAsync()
     {
         if (!ValidateColumnNamesBeforeSave())
             return;
 
         if (projectService.CurrentFilePath is null)
         {
-            SaveProjectAs();
+            await SaveProjectAsAsync();
             return;
         }
 
         try
         {
+            IsSaving = true;
             SaveCurrentColumnInput();
+            await Task.Yield();
             projectService.SaveProject();
+            IsSaving = false;
+            await ShowSaveNotificationAsync("Project saved successfully!");
         }
         catch (Exception ex)
         {
+            IsSaving = false;
             messageService.ShowError($"Failed to save project:\n{ex.Message}");
         }
     }
 
-    private void SaveProjectAs()
+    private async Task SaveProjectAsAsync()
     {
         if (!ValidateColumnNamesBeforeSave())
             return;
@@ -353,12 +381,38 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         try
         {
+            IsSaving = true;
             SaveCurrentColumnInput();
+            await Task.Yield();
             projectService.SaveProjectAs(filePath);
+            IsSaving = false;
+            await ShowSaveNotificationAsync("Project saved successfully!");
         }
         catch (Exception ex)
         {
+            IsSaving = false;
             messageService.ShowError($"Failed to save project:\n{ex.Message}");
+        }
+    }
+
+    private async Task ShowSaveNotificationAsync(string message)
+    {
+        // Cancel any previous notification timer
+        saveNotificationCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        saveNotificationCts = cts;
+
+        SaveNotificationText = message;
+        IsSaveNotificationVisible = true;
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1), cts.Token);
+            IsSaveNotificationVisible = false;
+        }
+        catch (TaskCanceledException)
+        {
+            // A new notification replaced this one
         }
     }
 

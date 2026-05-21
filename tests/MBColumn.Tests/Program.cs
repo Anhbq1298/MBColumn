@@ -55,6 +55,9 @@ var tests = new List<(string Name, Action Test)>
     ("Section preview perimeter bars", TestSectionPreviewPerimeterBars),
     ("Section preview invalid geometry", TestSectionPreviewInvalidGeometry),
     ("Section preview unit labels", TestSectionPreviewUnitLabels),
+    ("Material library metric presets", TestMaterialLibraryMetricPresets),
+    ("Material library imperial presets", TestMaterialLibraryImperialPresets),
+    ("Material library custom unlocks inputs", TestMaterialLibraryCustomUnlocksInputs),
     ("PM angle 0 deg axis mapping", TestPmAngleZeroAxisMapping),
     ("PM angle 90 deg axis mapping", TestPmAngleNinetyAxisMapping),
     ("Mx-My diagram axis mapping", TestMxMyDiagramAxisMapping),
@@ -464,6 +467,89 @@ static void TestSectionPreviewUnitLabels()
     IsTrue(vm.SectionPreviewLabel.Contains("in"));
     IsTrue(vm.CoverPreviewLabel.Contains("in"));
     IsTrue(vm.RebarPreviewLabel.Contains("8-#6"));
+}
+
+static void TestMaterialLibraryMetricPresets()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
+    {
+        UnitSystem = UnitSystem.Metric
+    };
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.Europe;
+
+    IsTrue(vm.AvailableConcreteGrades.Any(g => g.DisplayName == "C30/37"));
+    IsTrue(vm.AvailableSteelGrades.Any(g => g.DisplayName == "B500B"));
+    IsTrue(vm.SelectedConcreteGrade is not null);
+    IsTrue(vm.SelectedSteelGrade is not null);
+    IsTrue(vm.AreMaterialGradesEnabled);
+    IsFalse(vm.AreMaterialInputsEnabled);
+    AreClose(30.0, vm.Fc, 1e-12);
+    AreClose(500.0, vm.Fy, 1e-12);
+    AreClose(200000.0, vm.Es, 1e-12);
+
+    vm.SelectedConcreteGrade = vm.AvailableConcreteGrades.First(g => g.DisplayName == "C40/50");
+    vm.SelectedSteelGrade = vm.AvailableSteelGrades.First(g => g.DisplayName == "B400");
+
+    AreClose(40.0, vm.Fc, 1e-12);
+    AreClose(400.0, vm.Fy, 1e-12);
+}
+
+static void TestMaterialLibraryImperialPresets()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
+    {
+        UnitSystem = UnitSystem.Imperial
+    };
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.Europe;
+
+    AreClose(Math.Round(30.0 / 6.894757293168, 3), vm.Fc, 1e-12);
+    AreClose(Math.Round(500.0 / 6.894757293168, 3), vm.Fy, 1e-12);
+    AreClose(29000.0, vm.Es, 1e-12);
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.America;
+
+    IsTrue(vm.SelectedConcreteGrade is not null);
+    IsTrue(vm.SelectedSteelGrade is not null);
+    IsFalse(vm.AreMaterialInputsEnabled);
+    AreClose(4.0, vm.Fc, 1e-12);
+    AreClose(60.0, vm.Fy, 1e-12);
+}
+
+static void TestMaterialLibraryCustomUnlocksInputs()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
+    {
+        UnitSystem = UnitSystem.Metric
+    };
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.Custom;
+
+    IsFalse(vm.AreMaterialGradesEnabled);
+    IsTrue(vm.AreMaterialInputsEnabled);
+    IsTrue(vm.SelectedConcreteGrade is null);
+    IsTrue(vm.SelectedSteelGrade is null);
+    IsTrue(vm.AvailableConcreteGrades.Count == 0);
+    IsTrue(vm.AvailableSteelGrades.Count == 0);
+
+    vm.Fc = 33;
+    vm.Fy = 460;
+    vm.Es = 198000;
+
+    AreClose(33.0, vm.Fc, 1e-12);
+    AreClose(460.0, vm.Fy, 1e-12);
+    AreClose(198000.0, vm.Es, 1e-12);
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.Europe;
+
+    IsTrue(vm.SelectedConcreteGrade is not null);
+    IsTrue(vm.SelectedSteelGrade is not null);
+    IsTrue(vm.AreMaterialGradesEnabled);
+    IsFalse(vm.AreMaterialInputsEnabled);
+    AreClose(30.0, vm.Fc, 1e-12);
+    AreClose(500.0, vm.Fy, 1e-12);
+    AreClose(200000.0, vm.Es, 1e-12);
 }
 
 static void TestPmAngleZeroAxisMapping()

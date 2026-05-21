@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -402,9 +402,9 @@ public sealed class InteractionViewport3D : FrameworkElement
         dc.DrawLine(xPen, xNeg, xEnd);
         dc.DrawLine(yPen, yNeg, yEnd);
         dc.DrawLine(zPen, zBase, zEnd);
-        DrawArrow(dc, xEnd, xPen);
-        DrawArrow(dc, yEnd, yPen);
-        DrawArrow(dc, zEnd, zPen);
+        DrawArrow(dc, xNeg, xEnd, xPen, true);
+        DrawArrow(dc, yNeg, yEnd, yPen, true);
+        DrawArrow(dc, zBase, zEnd, zPen, false);
 
         if (ShowLabels)
         {
@@ -439,9 +439,36 @@ public sealed class InteractionViewport3D : FrameworkElement
             new Point3(0, 0, 0));
     }
 
-    private static void DrawArrow(DrawingContext dc, Point tip, Pen pen)
+    private static void DrawArrow(DrawingContext dc, Point start, Point tip, Pen pen, bool isMoment)
     {
-        dc.DrawEllipse(pen.Brush, null, tip, 3, 3);
+        double dx = tip.X - start.X;
+        double dy = tip.Y - start.Y;
+        if (Math.Abs(dx) < 1e-4 && Math.Abs(dy) < 1e-4) return;
+        double angle = Math.Atan2(dy, dx);
+        
+        DrawArrowHead(dc, tip, angle, pen.Brush);
+        if (isMoment)
+        {
+            double offset = 6.0;
+            var tip2 = new Point(tip.X - offset * Math.Cos(angle), tip.Y - offset * Math.Sin(angle));
+            DrawArrowHead(dc, tip2, angle, pen.Brush);
+        }
+    }
+
+    private static void DrawArrowHead(DrawingContext dc, Point tip, double angle, Brush brush)
+    {
+        double s = 5.5;
+        var p1 = new Point(tip.X - Math.Cos(angle - 0.45) * s, tip.Y - Math.Sin(angle - 0.45) * s);
+        var p2 = new Point(tip.X - Math.Cos(angle + 0.45) * s, tip.Y - Math.Sin(angle + 0.45) * s);
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
+        {
+            ctx.BeginFigure(tip, true, true);
+            ctx.LineTo(p1, true, false);
+            ctx.LineTo(p2, true, false);
+        }
+        geo.Freeze();
+        dc.DrawGeometry(brush, null, geo);
     }
 
     private void DrawOrientationCube(DrawingContext dc)
@@ -459,12 +486,12 @@ public sealed class InteractionViewport3D : FrameworkElement
         edgePen.Freeze();
         foreach (var (a, b) in edges) dc.DrawLine(edgePen, projected[a], projected[b]);
 
-        DrawOrientationAxis(dc, origin, new Point3(1.65, 0, 0), "Mx", Color.FromRgb(255, 0, 0), size);
-        DrawOrientationAxis(dc, origin, new Point3(0, 1.65, 0), "My", Color.FromRgb(0, 185, 95), size);
-        DrawOrientationAxis(dc, origin, new Point3(0, 0, 1.65), "P", Color.FromRgb(0, 0, 255), size);
+        DrawOrientationAxis(dc, origin, new Point3(1.65, 0, 0), "Mx", Color.FromRgb(255, 0, 0), size, true);
+        DrawOrientationAxis(dc, origin, new Point3(0, 1.65, 0), "My", Color.FromRgb(0, 185, 95), size, true);
+        DrawOrientationAxis(dc, origin, new Point3(0, 0, 1.65), "P", Color.FromRgb(0, 0, 255), size, false);
     }
 
-    private void DrawOrientationAxis(DrawingContext dc, Point origin, Point3 axis, string label, Color color, double size)
+    private void DrawOrientationAxis(DrawingContext dc, Point origin, Point3 axis, string label, Color color, double size, bool isMoment)
     {
         var brush = new SolidColorBrush(color);
         var pen = new Pen(brush, 1.35);
@@ -472,7 +499,21 @@ public sealed class InteractionViewport3D : FrameworkElement
         pen.Freeze();
         var end = ProjectOrientation(axis, origin, size * 0.28);
         dc.DrawLine(pen, origin, end);
-        dc.DrawEllipse(brush, null, end, 2.2, 2.2);
+        
+        double dx = end.X - origin.X;
+        double dy = end.Y - origin.Y;
+        if (Math.Abs(dx) > 1e-4 || Math.Abs(dy) > 1e-4)
+        {
+            double angle = Math.Atan2(dy, dx);
+            DrawArrowHead(dc, end, angle, brush);
+            if (isMoment)
+            {
+                double offset = 5.0;
+                var secondEnd = new Point(end.X - offset * Math.Cos(angle), end.Y - offset * Math.Sin(angle));
+                DrawArrowHead(dc, secondEnd, angle, brush);
+            }
+        }
+
         DrawText(dc, label, 8.5, brush, new Point(end.X + 2, end.Y - 9));
     }
 
