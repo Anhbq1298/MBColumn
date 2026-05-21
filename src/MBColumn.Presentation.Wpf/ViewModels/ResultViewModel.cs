@@ -22,9 +22,9 @@ public sealed record LoadCaseResultRowViewModel(
     string ForceUnit,
     string MomentUnit)
 {
-    public string PDisplay => $"{Pu:F2}";
-    public string MxDisplay => $"{Mux:F2}";
-    public string MyDisplay => $"{Muy:F2}";
+    public string PDisplay => $"{Pu:F1}";
+    public string MxDisplay => $"{Mux:F1}";
+    public string MyDisplay => $"{Muy:F1}";
     public string AngleDisplay => $"{AngleDegrees:F1}\u00b0";
     public string UtilizationDisplay => $"{Utilization:F3}";
     public string StatusDisplay => IsPass ? "PASS" : "FAIL";

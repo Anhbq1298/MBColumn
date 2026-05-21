@@ -152,7 +152,7 @@ public class DiagramCanvas2D : FrameworkElement
         var clipped = ClipClosedPolylineBelowY(ordered, cap.Value);
         if (clipped.Count > 2)
         {
-            dc.DrawGeometry(null, pen, BuildPolylineGeometry(transform, clipped));
+            dc.DrawGeometry(null, pen, BuildOpenPolylineGeometry(transform, clipped));
         }
     }
 
@@ -313,33 +313,25 @@ public class DiagramCanvas2D : FrameworkElement
             return new StreamGeometry();
         }
 
-        if (screenPoints.Count == 2)
-        {
-            var geo = new StreamGeometry();
-            using (var ctx = geo.Open())
-            {
-                ctx.BeginFigure(screenPoints[0], false, closed);
-                ctx.LineTo(screenPoints[1], true, false);
-            }
-            geo.Freeze();
-            return geo;
-        }
-
         var geo = new StreamGeometry();
         using (var ctx = geo.Open())
         {
             ctx.BeginFigure(screenPoints[0], false, closed);
             int count = screenPoints.Count;
 
-            for (int i = 0; i < count - 1; i++)
+            if (count == 2)
             {
-                var p0 = i == 0 ? screenPoints[0] : screenPoints[i - 1];
-                var p1 = screenPoints[i];
-                var p2 = screenPoints[i + 1];
-                var p3 = i + 2 < count ? screenPoints[i + 2] : screenPoints[count - 1];
-
-                if (closed || i < count - 2)
+                ctx.LineTo(screenPoints[1], true, false);
+            }
+            else if (closed)
+            {
+                for (int i = 0; i < count; i++)
                 {
+                    var p0 = screenPoints[(i + count - 1) % count];
+                    var p1 = screenPoints[i];
+                    var p2 = screenPoints[(i + 1) % count];
+                    var p3 = screenPoints[(i + 2) % count];
+
                     var c1 = new Point(
                         p1.X + (p2.X - p0.X) / 6.0,
                         p1.Y + (p2.Y - p0.Y) / 6.0);
@@ -348,19 +340,27 @@ public class DiagramCanvas2D : FrameworkElement
                         p2.Y - (p3.Y - p1.Y) / 6.0);
                     ctx.BezierTo(c1, c2, p2, true, false);
                 }
-                else
+            }
+            else
+            {
+                for (int i = 0; i < count - 1; i++)
                 {
-                    // Last segment for an open polyline: no future point available.
-                    ctx.LineTo(p2, true, false);
+                    var p0 = i == 0 ? screenPoints[0] : screenPoints[i - 1];
+                    var p1 = screenPoints[i];
+                    var p2 = screenPoints[i + 1];
+                    var p3 = i + 2 < count ? screenPoints[i + 2] : screenPoints[count - 1];
+
+                    var c1 = new Point(
+                        p1.X + (p2.X - p0.X) / 6.0,
+                        p1.Y + (p2.Y - p0.Y) / 6.0);
+                    var c2 = new Point(
+                        p2.X - (p3.X - p1.X) / 6.0,
+                        p2.Y - (p3.Y - p1.Y) / 6.0);
+                    ctx.BezierTo(c1, c2, p2, true, false);
                 }
             }
-
-            if (closed)
-            {
-                // Close the loop for closed curves.
-                ctx.LineTo(screenPoints[0], true, false);
-            }
         }
+
         geo.Freeze();
         return geo;
     }

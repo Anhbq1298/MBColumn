@@ -18,8 +18,16 @@
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
+        <Grid.Resources>
+            <Style x:Key="WrapRightAlignText" TargetType="TextBlock" BasedOn="{StaticResource RightAlignText}">
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="WrapLeftAlignText" TargetType="TextBlock" BasedOn="{StaticResource LeftAlignText}">
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+        </Grid.Resources>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="400" MinWidth="370" />
+            <ColumnDefinition Width="450" MinWidth="420" />
             <ColumnDefinition Width="10" />
             <ColumnDefinition Width="*" MinWidth="560" />
         </Grid.ColumnDefinitions>
@@ -88,9 +96,9 @@
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
                             <Button DockPanel.Dock="Right"
-                                    Content="Export control points"
+                                    Content="Export CSV"
                                     Style="{StaticResource CompactButtonStyle}"
-                                    Command="{Binding ShowControlPointsCommand}" />
+                                    Command="{Binding ExportAllPointsCommand}" />
                             <TextBlock Text="Results Summary"
                                        Style="{StaticResource SectionTitleTextStyle}"
                                        VerticalAlignment="Center" />
@@ -128,9 +136,11 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
+                                  CanUserResizeColumns="True"
                                   CanUserResizeRows="False"
                                   CanUserSortColumns="False"
                                   IsReadOnly="True"
+                                  ColumnWidth="*"
                                   MinHeight="126"
                                   MaxHeight="240">
                             <DataGrid.RowStyle>
@@ -148,13 +158,13 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="108" ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="76" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="76" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="76" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Angle" Binding="{Binding AngleDisplay}" Width="66" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Util." Binding="{Binding UtilizationDisplay}" Width="62" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="70" ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="140" ElementStyle="{StaticResource WrapLeftAlignText}" />
+                                <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="70" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="70" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="70" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="Angle" Binding="{Binding AngleDisplay}" Width="90" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="Util." Binding="{Binding UtilizationDisplay}" Width="90" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="100" ElementStyle="{StaticResource WrapLeftAlignText}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -291,18 +301,16 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,3,3">
-                <Button ToolTip="Export control points"
+                <Button ToolTip="Export CSV"
                     Command="{Binding ExportAllPointsCommand}"
-                    Width="36"
-                    Height="36"
-                    Padding="1"
+                    Width="56"
+                    Height="30"
+                    Padding="4,0"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Background="Transparent"
-                    BorderBrush="Transparent">
-                    <Image Source="/icon/export-csv.png"
-               Stretch="Uniform"/>
-                </Button>
+                    BorderBrush="Transparent"
+                    Content="CSV" />
             </Grid>
 
             <UniformGrid Grid.Row="1"
