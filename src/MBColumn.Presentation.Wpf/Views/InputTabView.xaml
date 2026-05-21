@@ -502,6 +502,24 @@
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Left"
                                             Margin="0,8,0,0">
+                                    <Button Click="OpenCadEditor_Click"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Width="70"
+                                            Height="54"
+                                            Padding="4"
+                                            Margin="0,0,8,0"
+                                            ToolTip="Open CAD Lite editor">
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock Text="&#xE70F;"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="20"
+                                                       HorizontalAlignment="Center" />
+                                            <TextBlock Text="Edit"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
                                     <Button Command="{Binding ImportDxfCommand}"
                                             Style="{StaticResource SecondaryButtonStyle}"
                                             Width="58"

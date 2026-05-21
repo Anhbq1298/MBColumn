@@ -21,6 +21,16 @@ public partial class InputTabView : UserControl
     }
     public InputTabView() => InitializeComponent();
 
+    private void OpenCadEditor_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not InputViewModel vm) return;
+        var dialog = new SectionCadEditorWindow(vm)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        dialog.ShowDialog();
+    }
+
     private void ImportBoundary_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not InputViewModel vm) return;
