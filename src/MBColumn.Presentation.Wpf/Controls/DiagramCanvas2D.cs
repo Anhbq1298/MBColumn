@@ -332,12 +332,7 @@ public class DiagramCanvas2D : FrameworkElement
                     var p2 = screenPoints[(i + 1) % count];
                     var p3 = screenPoints[(i + 2) % count];
 
-                    var c1 = new Point(
-                        p1.X + (p2.X - p0.X) / 6.0,
-                        p1.Y + (p2.Y - p0.Y) / 6.0);
-                    var c2 = new Point(
-                        p2.X - (p3.X - p1.X) / 6.0,
-                        p2.Y - (p3.Y - p1.Y) / 6.0);
+                    var (c1, c2) = ClampedBezierControlPoints(p0, p1, p2, p3);
                     ctx.BezierTo(c1, c2, p2, true, false);
                 }
             }
@@ -350,12 +345,7 @@ public class DiagramCanvas2D : FrameworkElement
                     var p2 = screenPoints[i + 1];
                     var p3 = i + 2 < count ? screenPoints[i + 2] : screenPoints[count - 1];
 
-                    var c1 = new Point(
-                        p1.X + (p2.X - p0.X) / 6.0,
-                        p1.Y + (p2.Y - p0.Y) / 6.0);
-                    var c2 = new Point(
-                        p2.X - (p3.X - p1.X) / 6.0,
-                        p2.Y - (p3.Y - p1.Y) / 6.0);
+                    var (c1, c2) = ClampedBezierControlPoints(p0, p1, p2, p3);
                     ctx.BezierTo(c1, c2, p2, true, false);
                 }
             }
@@ -363,6 +353,55 @@ public class DiagramCanvas2D : FrameworkElement
 
         geo.Freeze();
         return geo;
+    }
+
+    /// <summary>
+    /// Compute Bézier control points for a Catmull-Rom segment from p1 to p2,
+    /// with tangent magnitudes clamped to prevent overshooting at sharp turns.
+    /// </summary>
+    private static (Point C1, Point C2) ClampedBezierControlPoints(Point p0, Point p1, Point p2, Point p3)
+    {
+        // Chord lengths between consecutive points
+        double d01 = PointDistance(p0, p1);
+        double d12 = PointDistance(p1, p2);
+        double d23 = PointDistance(p2, p3);
+
+        // Raw Catmull-Rom tangent vectors (divided by 6 for Bézier conversion)
+        double t1x = (p2.X - p0.X) / 6.0;
+        double t1y = (p2.Y - p0.Y) / 6.0;
+        double t2x = (p3.X - p1.X) / 6.0;
+        double t2y = (p3.Y - p1.Y) / 6.0;
+
+        // Clamp tangent magnitudes: each control arm should not exceed
+        // one-third of the shorter adjacent chord to avoid overshooting.
+        double maxArm1 = Math.Max(1e-6, Math.Min(d01, d12)) * 0.333;
+        double arm1Len = Math.Sqrt(t1x * t1x + t1y * t1y);
+        if (arm1Len > maxArm1)
+        {
+            double scale = maxArm1 / arm1Len;
+            t1x *= scale;
+            t1y *= scale;
+        }
+
+        double maxArm2 = Math.Max(1e-6, Math.Min(d12, d23)) * 0.333;
+        double arm2Len = Math.Sqrt(t2x * t2x + t2y * t2y);
+        if (arm2Len > maxArm2)
+        {
+            double scale = maxArm2 / arm2Len;
+            t2x *= scale;
+            t2y *= scale;
+        }
+
+        var c1 = new Point(p1.X + t1x, p1.Y + t1y);
+        var c2 = new Point(p2.X - t2x, p2.Y - t2y);
+        return (c1, c2);
+    }
+
+    private static double PointDistance(Point a, Point b)
+    {
+        double dx = b.X - a.X;
+        double dy = b.Y - a.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
     }
 
     private void DrawCapacityControlPoints(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
