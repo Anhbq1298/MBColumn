@@ -118,16 +118,21 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
                 ThetaDeg = requestedTheta,
                 PointIndex = 0,
                 P = sp.P,
+                MxPositive = sp.X >= 0.0 ? sp.Mx : 0.0,
+                MyPositive = sp.X >= 0.0 ? sp.My : 0.0,
                 MThetaPositive = Math.Max(0.0, sp.X),
+                MxNegative = sp.X < 0.0 ? sp.Mx : 0.0,
+                MyNegative = sp.X < 0.0 ? sp.My : 0.0,
                 MThetaNegative = Math.Min(0.0, sp.X),
                 NeutralAxisDepth = matched is not null
                     ? DisplayLength(matched.NeutralAxisDepthMm, result.UnitSystem)
                     : DisplayLength(sp.NeutralAxisDepth, result.UnitSystem),
-                SteelStrainMax = matched is null ? 0.0 : SignedMaxAbs(
+                SteelStrainMax = matched is null ? 0.0 : DisplayStrain(SignedMaxAbs(
                     matched.MaxSteelStrain, matched.MinSteelStrain, matched.MaxTensionSteelStrain,
-                    double.NaN, double.NaN, double.NaN),
-                ConcreteStrainMax = matched is null ? 0.0 : MaxPositive(
-                    matched.MaxConcreteStrain, double.NaN),
+                    double.NaN, double.NaN, double.NaN)),
+                ConcreteStrainMax = matched is null ? 0.0 : DisplayStrain(SignedMaxAbs(
+                    matched.MaxConcreteStrain, matched.MinConcreteStrain, double.NaN)),
+                PhiFactor = matched?.Phi ?? sp.Phi,
                 IntegrationMethod = result.IntegrationMethod.ToString(),
                 ConcreteFiberCountX = result.ConcreteFiberCountX,
                 ConcreteFiberCountY = result.ConcreteFiberCountY,
@@ -166,19 +171,26 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
             ThetaDeg = thetaDegrees,
             PointIndex = pointIndex,
             P = group.Average(p => p.P),
+            MxPositive = positive?.Mx ?? 0.0,
+            MyPositive = positive?.My ?? 0.0,
             MThetaPositive = positive is null ? 0.0 : Math.Max(0.0, positive.X),
+            MxNegative = negative?.Mx ?? 0.0,
+            MyNegative = negative?.My ?? 0.0,
             MThetaNegative = negative is null ? 0.0 : Math.Min(0.0, negative.X),
             NeutralAxisDepth = displayLength,
-            SteelStrainMax = SignedMaxAbs(
+            SteelStrainMax = DisplayStrain(SignedMaxAbs(
                 positiveMatch?.MaxSteelStrain ?? double.NaN,
                 positiveMatch?.MinSteelStrain ?? double.NaN,
                 positiveMatch?.MaxTensionSteelStrain ?? double.NaN,
                 negativeMatch?.MaxSteelStrain ?? double.NaN,
                 negativeMatch?.MinSteelStrain ?? double.NaN,
-                negativeMatch?.MaxTensionSteelStrain ?? double.NaN),
-            ConcreteStrainMax = MaxPositive(
+                negativeMatch?.MaxTensionSteelStrain ?? double.NaN)),
+            ConcreteStrainMax = DisplayStrain(SignedMaxAbs(
                 positiveMatch?.MaxConcreteStrain ?? double.NaN,
-                negativeMatch?.MaxConcreteStrain ?? double.NaN),
+                positiveMatch?.MinConcreteStrain ?? double.NaN,
+                negativeMatch?.MaxConcreteStrain ?? double.NaN,
+                negativeMatch?.MinConcreteStrain ?? double.NaN)),
+            PhiFactor = RepresentativePhi(positiveMatch, negativeMatch, positive, negative),
             IntegrationMethod = result.IntegrationMethod.ToString(),
             ConcreteFiberCountX = result.ConcreteFiberCountX,
             ConcreteFiberCountY = result.ConcreteFiberCountY,
@@ -358,8 +370,28 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         return valid.OrderByDescending(Math.Abs).First();
     }
 
-    private static double MaxPositive(params double[] values)
-        => values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v) && v > 0).DefaultIfEmpty(0.0).Max();
+    private static double DisplayStrain(double solverSignedStrain)
+        => -solverSignedStrain;
+
+    private static double RepresentativePhi(
+        InteractionPoint? positiveMatch,
+        InteractionPoint? negativeMatch,
+        ControlPointDto? positive,
+        ControlPointDto? negative)
+    {
+        var values = new[]
+            {
+                positiveMatch?.Phi,
+                negativeMatch?.Phi,
+                positive?.Phi,
+                negative?.Phi
+            }
+            .Where(v => v.HasValue && !double.IsNaN(v.Value) && !double.IsInfinity(v.Value))
+            .Select(v => v!.Value)
+            .ToList();
+
+        return values.Count == 0 ? 1.0 : values.Min();
+    }
 
     private static double NormalizeAngle(double angle)
     {

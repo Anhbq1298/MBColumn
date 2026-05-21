@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Export Control Points"
         Icon="Resources/desktop-icon.png"
-        Width="1100"
+        Width="1280"
         Height="680"
-        MinWidth="820"
+        MinWidth="1040"
         MinHeight="480"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
@@ -17,9 +17,9 @@
 
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="250" />
                 <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource SidebarCardStyle}">
@@ -84,6 +84,12 @@
                                    Margin="0,0,0,8" />
                         <TextBlock Text="{Binding PreviewSummary}"
                                    Style="{StaticResource HelperTextStyle}" />
+                        <TextBlock Text="{Binding StrainSignConventionNote}"
+                                   Style="{StaticResource HelperTextStyle}"
+                                   Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding ColumnHeaderNote}"
+                                   Style="{StaticResource HelperTextStyle}"
+                                   Margin="0,4,0,0" />
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -119,48 +125,181 @@
                                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                                   ColumnWidth="Auto"
+                                  ColumnHeaderHeight="50"
                                   IsReadOnly="True">
+                            <DataGrid.Resources>
+                                <Style x:Key="PreviewHeaderTitleText" TargetType="TextBlock">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                    <Setter Property="TextAlignment" Value="Center" />
+                                    <Setter Property="HorizontalAlignment" Value="Center" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="LineHeight" Value="13" />
+                                </Style>
+                                <Style x:Key="PreviewHeaderUnitText" TargetType="TextBlock">
+                                    <Setter Property="TextAlignment" Value="Center" />
+                                    <Setter Property="HorizontalAlignment" Value="Center" />
+                                    <Setter Property="FontSize" Value="10" />
+                                    <Setter Property="FontWeight" Value="Normal" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                    <Setter Property="Margin" Value="0,2,0,0" />
+                                </Style>
+                            </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="&#x03B8;"
+                                <DataGridTextColumn
                                                     Binding="{Binding ThetaDeg, StringFormat=F1}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Pt."
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="34">
+                                            <TextBlock Text="&#x03B8;" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.AngleUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
                                                     Binding="{Binding PointIndex}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="P"
-                                                    Binding="{Binding P, StringFormat=F3}"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="34">
+                                            <TextBlock Text="Pt." Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding P, StringFormat=F1}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="M&#x03B8;+"
-                                                    Binding="{Binding MThetaPositive, StringFormat=F3}"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="P" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.ForceUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding MxPositive, StringFormat=F1}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="M&#x03B8;-"
-                                                    Binding="{Binding MThetaNegative, StringFormat=F3}"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="Mx+" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding MyPositive, StringFormat=F1}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="c"
-                                                    Binding="{Binding NeutralAxisDepth, StringFormat=F3}"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="My+" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding MThetaPositive, StringFormat=F1}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="&#x03B5;s,max"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="M&#x03B8;+" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding MxNegative, StringFormat=F1}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="Mx-" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding MyNegative, StringFormat=F1}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="My-" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding MThetaNegative, StringFormat=F1}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="M&#x03B8;-" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding NeutralAxisDepth, StringFormat=F1}"
+                                                    Width="Auto"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="76">
+                                            <TextBlock Text="Neutral Axis Depth" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.LengthUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
                                                     Binding="{Binding SteelStrainMax, StringFormat=F5}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="&#x03B5;c,max"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="&#x03B5;s" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
                                                     Binding="{Binding ConcreteStrainMax, StringFormat=F5}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Integration"
-                                                    Binding="{Binding IntegrationMethod}"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="58">
+                                            <TextBlock Text="&#x03B5;c" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
+                                                    Binding="{Binding PhiFactor, StringFormat=F2}"
                                                     Width="Auto"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="Remarks"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="56">
+                                            <TextBlock Text="&#x03C6;" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="{Binding DataContext.PhiUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn
                                                     Binding="{Binding Remarks}"
-                                                    Width="*"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                                                    Width="170"
+                                                    MinWidth="140"
+                                                    ElementStyle="{StaticResource LeftAlignText}">
+                                    <DataGridTextColumn.Header>
+                                        <StackPanel MinWidth="82">
+                                            <TextBlock Text="Remarks" Style="{StaticResource PreviewHeaderTitleText}" />
+                                            <TextBlock Text="" Style="{StaticResource PreviewHeaderUnitText}" />
+                                        </StackPanel>
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
 

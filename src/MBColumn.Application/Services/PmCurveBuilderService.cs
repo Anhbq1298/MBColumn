@@ -210,8 +210,8 @@ public static class PmCurveBuilderService
         }
         else
         {
-            if (positive.Count > 0) positive[^1] = positive[^1] with { P = pMax };
-            if (negative.Count > 0) negative[^1] = negative[^1] with { P = pMax };
+            if (positive.Count > 0) positive[^1] = AxialCompressionApex(positive[^1], pMax);
+            if (negative.Count > 0) negative[^1] = AxialCompressionApex(negative[^1], pMax);
         }
 
         ExcludeTrimSegmentFromSmoothing();
@@ -293,6 +293,15 @@ public static class PmCurveBuilderService
         // named boundary makes the ACI trim rule explicit: cap endpoints are
         // emitted as adjacent true control points and must not become a spline.
     }
+
+    private static AngleEnvelopePoint AxialCompressionApex(AngleEnvelopePoint source, double pMax)
+        => source with
+        {
+            Mtheta = 0.0,
+            P = pMax,
+            Mx = 0.0,
+            My = 0.0
+        };
 
     private static bool ValidateStraightTrimSegment(StraightTrimSegment segment, double capP, double tolerance)
     {

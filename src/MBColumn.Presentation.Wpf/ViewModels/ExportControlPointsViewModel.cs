@@ -54,8 +54,16 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
     public string ForceUnitLabel => result.ControlPointTable?.ForceUnitLabel ?? result.MxMyDiagram.PUnit;
     public string MomentUnitLabel => result.ControlPointTable?.MomentUnitLabel ?? result.MxMyDiagram.MUnit;
     public string LengthUnitLabel => result.ControlPointTable?.LengthUnitLabel ?? (result.UnitSystem == UnitSystem.Metric ? "mm" : "in");
+    public string AngleUnitHeader => "[deg]";
+    public string ForceUnitHeader => $"[{ForceUnitLabel}]";
+    public string MomentUnitHeader => $"[{MomentUnitLabel}]";
+    public string LengthUnitHeader => $"[{LengthUnitLabel}]";
+    public string StrainUnitHeader => "[-]";
+    public string PhiUnitHeader => "[-]";
     public string CurrentViewDescription => $"Current view theta = {CurrentThetaDegrees:F1}\u00b0";
     public string CurrentViewScopeDescription => $"Export only \u03b8 = {CurrentThetaDegrees:F1}\u00b0";
+    public string StrainSignConventionNote => "Strain sign: + tension, - compression.";
+    public string ColumnHeaderNote => "Column headers: θ = Bending angle, P = Axial force, Mx/My = Moments about x/y axes, Mθ = Moment about θ axis, c = Neutral axis depth, εs = Steel strain, φ = Strength reduction factor.";
     public string PreviewSummary { get => previewSummary; private set => Set(ref previewSummary, value); }
     public string EmptyStateMessage { get => emptyStateMessage; private set => Set(ref emptyStateMessage, value); }
     public string ThetaValidationMessage { get => thetaValidationMessage; private set => Set(ref thetaValidationMessage, value); }
@@ -171,12 +179,12 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
     {
         if (preview.Rows.Count == 0)
         {
-            return $"No rows to export. Units: P [{ForceUnitLabel}], M\u03b8 [{MomentUnitLabel}], c [{LengthUnitLabel}]";
+            return $"No rows to export. Units: P [{ForceUnitLabel}], Mx/My/M\u03b8 [{MomentUnitLabel}], Neutral Axis Depth [{LengthUnitLabel}]";
         }
 
         int thetaCount = preview.ThetaValues.Count;
         string datasetLabel = thetaCount == 1 ? "theta dataset" : "theta datasets";
-        return $"{preview.Rows.Count} rows across {thetaCount} {datasetLabel}. Units: P [{ForceUnitLabel}], M\u03b8 [{MomentUnitLabel}], c [{LengthUnitLabel}]";
+        return $"{preview.Rows.Count} rows across {thetaCount} {datasetLabel}. Units: P [{ForceUnitLabel}], Mx/My/M\u03b8 [{MomentUnitLabel}], Neutral Axis Depth [{LengthUnitLabel}]";
     }
 
     private void ExportCsv()

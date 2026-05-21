@@ -66,6 +66,10 @@ var tests = new List<(string Name, Action Test)>
     ("2D chart auto-fit transform", TestChartAutoFitTransform),
     ("Result settings propagate", TestResultSettingsPropagate),
     ("Selected point report derives Mtheta from Mx My and theta", TestSelectedPointReportDerivesMtheta),
+    ("PM pure bending special points have zero P", TestPmPureBendingSpecialPointsHaveZeroP),
+    ("PM max compression special point has zero moment", TestPmMaxCompressionSpecialPointHasZeroMoment),
+    ("PM nominal apex has zero moment", TestPmNominalApexHasZeroMoment),
+    ("Control point preview reports signed concrete strain", TestControlPointPreviewReportsSignedConcreteStrain),
     ("Nominal uses Pn/Mn values", TestNominalUsesPnMn),
     ("Design uses PhiPn/PhiMn values", TestDesignUsesPhiPnPhiMn),
     ("Solver exposes nominal/reduced/strain-state split", TestInteractionPointSplitOutput),
@@ -647,6 +651,62 @@ static void TestSelectedPointReportDerivesMtheta()
     double thetaRadians = 333.6 * Math.PI / 180.0;
     double expectedMtheta = 30.49 * Math.Cos(thetaRadians) + 57.34 * Math.Sin(thetaRadians);
     IsTrue(vm.SelectedPointMthetaDisplay == $"{expectedMtheta:F2} {vm.MomentUnitLabel}");
+}
+
+static void TestPmPureBendingSpecialPointsHaveZeroP()
+{
+    var result = Service().Calculate(MetricInput());
+    foreach (double theta in new[] { 0.0, 90.0 })
+    {
+        var pureBending = PmAngleDiagram(result, theta).SpecialCapacityPoints
+            .Where(p => p.Label == "Pure Bending")
+            .ToList();
+
+        IsTrue(pureBending.Count >= 2);
+        IsTrue(pureBending.All(p => Math.Abs(p.P) <= 1e-9));
+        IsTrue(pureBending.All(p => Math.Abs(p.Y) <= 1e-9));
+        IsTrue(pureBending.All(p => Math.Abs(p.Z) <= 1e-9));
+    }
+}
+
+static void TestPmMaxCompressionSpecialPointHasZeroMoment()
+{
+    var result = Service().Calculate(MetricInput());
+    foreach (double theta in new[] { 0.0, 90.0 })
+    {
+        var maxCompression = PmAngleDiagram(result, theta).SpecialCapacityPoints
+            .Single(p => p.Label == "Max Compression");
+
+        AreClose(0.0, maxCompression.X, 1e-9);
+        AreClose(0.0, maxCompression.Mx, 1e-9);
+        AreClose(0.0, maxCompression.My, 1e-9);
+    }
+}
+
+static void TestPmNominalApexHasZeroMoment()
+{
+    var result = Service().Calculate(MetricInput());
+    foreach (double theta in new[] { 0.0, 90.0 })
+    {
+        var nominal = PmAngleDiagram(result, theta).NominalCapacityPoints;
+        double maxP = nominal.Max(p => p.P);
+        var apex = nominal.Where(p => Math.Abs(p.P - maxP) <= 1e-9).ToList();
+
+        IsTrue(apex.Count >= 1);
+        IsTrue(apex.All(p => Math.Abs(p.X) <= 1e-9));
+        IsTrue(apex.All(p => Math.Abs(p.Mx) <= 1e-9));
+        IsTrue(apex.All(p => Math.Abs(p.My) <= 1e-9));
+    }
+}
+
+static void TestControlPointPreviewReportsSignedConcreteStrain()
+{
+    var result = Service().Calculate(MetricInput());
+    var preview = new ControlPointPreviewService(GetUnits())
+        .BuildPreview(result, ControlPointThetaSelectionMode.CurrentView, 0.0);
+
+    IsTrue(preview.Rows.Count > 0);
+    IsTrue(preview.Rows.Any(r => r.ConcreteStrainMax < 0.0));
 }
 
 // ----- Nominal vs Design Curve Tests -----
@@ -1785,11 +1845,16 @@ static void TestControlPointExportIntegrationMetadata()
                 ThetaDeg = 0,
                 PointIndex = 1,
                 P = 1,
+                MxPositive = 10,
+                MyPositive = 11,
                 MThetaPositive = 2,
+                MxNegative = -10,
+                MyNegative = -11,
                 MThetaNegative = -2,
                 NeutralAxisDepth = 3,
-                SteelStrainMax = 0.001,
-                ConcreteStrainMax = 0.003,
+                SteelStrainMax = -0.001,
+                ConcreteStrainMax = -0.003,
+                PhiFactor = 0.65,
                 IntegrationMethod = SectionIntegrationMethod.Polygon.ToString(),
                 ConcreteFiberCountX = 40,
                 ConcreteFiberCountY = 40,
@@ -1802,9 +1867,18 @@ static void TestControlPointExportIntegrationMetadata()
 
         new ControlPointCsvExportService().Export(path, rows);
         string csv = File.ReadAllText(path);
+        IsTrue(csv.Contains("Mx+", StringComparison.Ordinal));
+        IsTrue(csv.Contains("My-", StringComparison.Ordinal));
+        IsTrue(csv.Contains("NeutralAxisDepth", StringComparison.Ordinal));
+        IsTrue(csv.Contains("\u03b5s", StringComparison.Ordinal));
+        IsTrue(csv.Contains("\u03b5c", StringComparison.Ordinal));
+        IsTrue(csv.Contains("\u03c6", StringComparison.Ordinal));
+        IsTrue(csv.Contains("0.65", StringComparison.Ordinal));
         IsTrue(csv.Contains("IntegrationMethod", StringComparison.Ordinal));
         IsTrue(csv.Contains("CirclePolygonSegmentCount", StringComparison.Ordinal));
         IsTrue(csv.Contains("Polygon", StringComparison.Ordinal));
+        IsTrue(csv.Contains("-0.001", StringComparison.Ordinal));
+        IsTrue(csv.Contains("-0.003", StringComparison.Ordinal));
     }
     finally
     {

@@ -5,11 +5,16 @@ public sealed record ControlPointExportRow
     public double ThetaDeg { get; init; }
     public int PointIndex { get; init; }
     public double P { get; init; }
+    public double MxPositive { get; init; }
+    public double MyPositive { get; init; }
     public double MThetaPositive { get; init; }
+    public double MxNegative { get; init; }
+    public double MyNegative { get; init; }
     public double MThetaNegative { get; init; }
     public double NeutralAxisDepth { get; init; }
     public double SteelStrainMax { get; init; }
     public double ConcreteStrainMax { get; init; }
+    public double PhiFactor { get; init; } = 1.0;
     public string IntegrationMethod { get; init; } = "";
     public int ConcreteFiberCountX { get; init; }
     public int ConcreteFiberCountY { get; init; }

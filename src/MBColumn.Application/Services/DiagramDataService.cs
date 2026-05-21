@@ -47,7 +47,7 @@ public sealed class DiagramDataService
         bool phiVaries = phiMax - phiMin > 1e-3;
 
         var result = new List<ControlPointDto>();
-        result.Add(SpecialOnCurve(valid.MaxBy(p => p.Y)!, "Max Compression", "MaxCompression"));
+        result.Add(SpecialOnCurve(MaxAxialCompression(valid), "Max Compression", "MaxCompression"));
         result.Add(SpecialOnCurve(valid.MinBy(p => p.Y)!, "Max Tension",     "MaxTension"));
 
         // Positive (M+) and negative (M-) branches sorted by P descending
@@ -57,6 +57,21 @@ public sealed class DiagramDataService
         AddBranchSpecials(result, neg, phiMin, phiMax, phiVaries);
 
         return result;
+    }
+
+    private static ControlPointDto MaxAxialCompression(IReadOnlyList<ControlPointDto> points)
+    {
+        var source = points.MaxBy(p => p.Y)!;
+        double pmax = source.Y;
+        return source with
+        {
+            X = 0.0,
+            Y = pmax,
+            Z = pmax,
+            P = pmax,
+            Mx = 0.0,
+            My = 0.0
+        };
     }
 
     // Adds Balanced, Tension Control, Pure Bending for one branch (sorted by P desc).
@@ -70,9 +85,8 @@ public sealed class DiagramDataService
     {
         if (branch.Count < 2) return;
 
-        // Pure Bending: point closest to P = 0
-        int pbIdx = Enumerable.Range(0, branch.Count).MinBy(i => Math.Abs(branch[i].Y));
-        TryAddOnCurve(result, branch[pbIdx], "Pure Bending", "PureBending");
+        // Pure Bending: exact envelope intersection at P = 0.
+        TryAddOnCurve(result, InterpolatePureBending(branch), "Pure Bending", "PureBending");
 
         if (!phiVaries)
         {
@@ -108,6 +122,58 @@ public sealed class DiagramDataService
     {
         if (src is not null) result.Add(SpecialOnCurve(src, label, keyPart));
     }
+
+    private static ControlPointDto? InterpolatePureBending(IReadOnlyList<ControlPointDto> branch)
+    {
+        const double zeroTolerance = 1e-9;
+
+        foreach (var point in branch)
+        {
+            if (Math.Abs(point.P) <= zeroTolerance || Math.Abs(point.Y) <= zeroTolerance)
+            {
+                return point with { Y = 0.0, Z = 0.0, P = 0.0 };
+            }
+        }
+
+        for (int i = 0; i < branch.Count - 1; i++)
+        {
+            var a = branch[i];
+            var b = branch[i + 1];
+            if (!CrossesZero(a.P, b.P) && !CrossesZero(a.Y, b.Y))
+            {
+                continue;
+            }
+
+            double denominator = b.P - a.P;
+            if (Math.Abs(denominator) <= zeroTolerance)
+            {
+                denominator = b.Y - a.Y;
+            }
+
+            double t = Math.Abs(denominator) <= zeroTolerance ? 0.0 : -a.P / denominator;
+            t = Math.Clamp(t, 0.0, 1.0);
+
+            return a with
+            {
+                X = Linear(a.X, b.X, t),
+                Y = 0.0,
+                Z = 0.0,
+                P = 0.0,
+                Mx = Linear(a.Mx, b.Mx, t),
+                My = Linear(a.My, b.My, t),
+                Phi = Linear(a.Phi, b.Phi, t),
+                ThetaDegrees = Linear(a.ThetaDegrees, b.ThetaDegrees, t),
+                NeutralAxisDepth = Linear(a.NeutralAxisDepth, b.NeutralAxisDepth, t),
+                SortKey = Linear(a.SortKey, b.SortKey, t),
+                Utilization = Linear(a.Utilization, b.Utilization, t)
+            };
+        }
+
+        return null;
+    }
+
+    private static bool CrossesZero(double a, double b)
+        => (a <= 0.0 && b >= 0.0) || (a >= 0.0 && b <= 0.0);
 
     private static ControlPointDto SpecialOnCurve(ControlPointDto src, string label, string keyPart)
         => src with
