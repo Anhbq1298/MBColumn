@@ -4,6 +4,7 @@ public enum CadToolMode
 {
     Select,
     AddBoundaryPoint,
+    Polyline,
     AddRebar,
     Delete
 }

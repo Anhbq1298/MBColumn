@@ -12,6 +12,7 @@ namespace MBColumn.Presentation.Wpf.Views;
 public partial class SectionCadEditorWindow : Window
 {
     private readonly SectionCadEditorViewModel vm;
+    private readonly CadSnapService snapService = new();
     private double scale = 1.0;
     private double offsetX;
     private double offsetY;
@@ -19,6 +20,7 @@ public partial class SectionCadEditorWindow : Window
     private bool isDragging;
     private bool isPanning;
     private Point lastMouse;
+    private SnapKind activeSnapKind = SnapKind.None;
 
     public SectionCadEditorWindow(InputViewModel source)
     {
@@ -29,7 +31,17 @@ public partial class SectionCadEditorWindow : Window
         vm.Rebars.CollectionChanged += OnCollectionChanged;
         foreach (var p in vm.BoundaryPoints) p.PropertyChanged += OnItemChanged;
         foreach (var r in vm.Rebars) r.PropertyChanged += OnItemChanged;
+        vm.PropertyChanged += OnViewModelPropertyChanged;
         Loaded += (_, _) => FitToExtents();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(SectionCadEditorViewModel.GridSpacing)
+            or nameof(SectionCadEditorViewModel.IsSnapToGridEnabled)
+            or nameof(SectionCadEditorViewModel.IsSnapToMidpointEnabled)
+            or nameof(SectionCadEditorViewModel.ToolMode))
+            Render();
     }
 
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -57,10 +69,25 @@ public partial class SectionCadEditorWindow : Window
     {
         DrawingCanvas.Focus();
         lastMouse = e.GetPosition(DrawingCanvas);
+
         if (e.ChangedButton == MouseButton.Right)
         {
             isPanning = true;
             DrawingCanvas.CaptureMouse();
+            return;
+        }
+
+        if (vm.ToolMode == CadToolMode.Polyline)
+        {
+            if (e.ClickCount == 2)
+            {
+                vm.FinishPolyline();
+                Render();
+                return;
+            }
+            var (x, y) = GetFinalPolylinePoint(lastMouse);
+            vm.AddPolylinePoint(x, y);
+            Render();
             return;
         }
 
@@ -97,6 +124,7 @@ public partial class SectionCadEditorWindow : Window
     private void DrawingCanvas_MouseMove(object sender, MouseEventArgs e)
     {
         var pos = e.GetPosition(DrawingCanvas);
+
         if (isPanning)
         {
             offsetX += pos.X - lastMouse.X;
@@ -106,17 +134,26 @@ public partial class SectionCadEditorWindow : Window
             return;
         }
 
+        if (vm.ToolMode == CadToolMode.Polyline && vm.Draft.IsActive)
+        {
+            var (x, y) = GetFinalPolylinePoint(pos);
+            vm.UpdatePolylinePreview(x, y);
+            Render();
+            return;
+        }
+
         if (!isDragging || selected is null) return;
         var world = ScreenToWorld(pos);
+        var (sx, sy) = ApplySnap(world.X, world.Y);
         if (selected is CadPointViewModel p)
         {
-            p.X = Math.Round(world.X, 3);
-            p.Y = Math.Round(world.Y, 3);
+            p.X = Math.Round(sx, 3);
+            p.Y = Math.Round(sy, 3);
         }
         else if (selected is CadRebarViewModel r)
         {
-            r.X = Math.Round(world.X, 3);
-            r.Y = Math.Round(world.Y, 3);
+            r.X = Math.Round(sx, 3);
+            r.Y = Math.Round(sy, 3);
         }
     }
 
@@ -138,6 +175,73 @@ public partial class SectionCadEditorWindow : Window
         offsetY += mouse.Y - after.Y;
         Render();
     }
+
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (vm.ToolMode != CadToolMode.Polyline) return;
+        if (e.Key == Key.Enter)
+        {
+            vm.FinishPolyline();
+            Render();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            vm.CancelPolyline();
+            activeSnapKind = SnapKind.None;
+            Render();
+            e.Handled = true;
+        }
+    }
+
+    // --- Polyline helpers ---
+
+    private (double X, double Y) GetFinalPolylinePoint(Point screenPos)
+    {
+        var world = ScreenToWorld(screenPos);
+        double x = world.X, y = world.Y;
+
+        if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0 && vm.Draft.Points.Count > 0)
+        {
+            var last = vm.Draft.Points[^1];
+            var dx = x - last.X;
+            var dy = y - last.Y;
+            if (Math.Abs(dx) >= Math.Abs(dy))
+                y = last.Y;
+            else
+                x = last.X;
+        }
+
+        return ApplySnap(x, y);
+    }
+
+    private (double X, double Y) ApplySnap(double modelX, double modelY)
+    {
+        var result = snapService.Snap(modelX, modelY,
+            vm.IsSnapToMidpointEnabled, vm.IsSnapToGridEnabled,
+            vm.GridSpacing, scale,
+            GetSnapSegments());
+        activeSnapKind = result.Kind;
+        return (result.X, result.Y);
+    }
+
+    private IEnumerable<(double X1, double Y1, double X2, double Y2)> GetSnapSegments()
+    {
+        var bp = vm.BoundaryPoints;
+        if (bp.Count >= 2)
+            for (var i = 0; i < bp.Count; i++)
+            {
+                var a = bp[i];
+                var b = bp[(i + 1) % bp.Count];
+                yield return (a.X, a.Y, b.X, b.Y);
+            }
+
+        var pts = vm.Draft.Points;
+        for (var i = 0; i < pts.Count - 1; i++)
+            yield return (pts[i].X, pts[i].Y, pts[i + 1].X, pts[i + 1].Y);
+    }
+
+    // --- Hit test & delete ---
 
     private object? HitTest(Point screen)
     {
@@ -165,32 +269,38 @@ public partial class SectionCadEditorWindow : Window
         selected = null;
     }
 
+    // --- Rendering ---
+
     private void Render()
     {
         if (DrawingCanvas.ActualWidth <= 0 || DrawingCanvas.ActualHeight <= 0) return;
         DrawingCanvas.Children.Clear();
         DrawGrid();
         DrawBoundary();
+        DrawPolylineDraft();
         DrawRebars();
     }
 
     private void DrawGrid()
     {
-        var step = 100.0;
+        var modelStep = Math.Max(1.0, vm.GridSpacing);
+        var screenStep = modelStep * scale;
+        if (screenStep < 4.0) return;
+
         var tl = ScreenToWorld(new Point(0, 0));
         var br = ScreenToWorld(new Point(DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight));
-        var minX = Math.Floor(Math.Min(tl.X, br.X) / step) * step;
-        var maxX = Math.Ceiling(Math.Max(tl.X, br.X) / step) * step;
-        var minY = Math.Floor(Math.Min(tl.Y, br.Y) / step) * step;
-        var maxY = Math.Ceiling(Math.Max(tl.Y, br.Y) / step) * step;
+        var minX = Math.Floor(Math.Min(tl.X, br.X) / modelStep) * modelStep;
+        var maxX = Math.Ceiling(Math.Max(tl.X, br.X) / modelStep) * modelStep;
+        var minY = Math.Floor(Math.Min(tl.Y, br.Y) / modelStep) * modelStep;
+        var maxY = Math.Ceiling(Math.Max(tl.Y, br.Y) / modelStep) * modelStep;
 
-        for (var x = minX; x <= maxX; x += step)
+        for (var x = minX; x <= maxX; x += modelStep)
         {
             var a = WorldToScreen(new Point(x, minY));
             var b = WorldToScreen(new Point(x, maxY));
             DrawingCanvas.Children.Add(new Line { X1 = a.X, Y1 = a.Y, X2 = b.X, Y2 = b.Y, Stroke = Brushes.Gainsboro, StrokeThickness = 1 });
         }
-        for (var y = minY; y <= maxY; y += step)
+        for (var y = minY; y <= maxY; y += modelStep)
         {
             var a = WorldToScreen(new Point(minX, y));
             var b = WorldToScreen(new Point(maxX, y));
@@ -217,6 +327,65 @@ public partial class SectionCadEditorWindow : Window
             AddHandle(WorldToScreen(new Point(p.X, p.Y)), selected == p ? Brushes.OrangeRed : Brushes.White, Brushes.DarkBlue, 8);
     }
 
+    private void DrawPolylineDraft()
+    {
+        if (vm.ToolMode != CadToolMode.Polyline) return;
+        var pts = vm.Draft.Points;
+        if (pts.Count == 0) return;
+
+        var draftStroke = new SolidColorBrush(Color.FromRgb(0, 130, 220));
+        var screenPts = pts.Select(p => WorldToScreen(new Point(p.X, p.Y))).ToList();
+
+        for (var i = 0; i < screenPts.Count - 1; i++)
+        {
+            DrawingCanvas.Children.Add(new Line
+            {
+                X1 = screenPts[i].X, Y1 = screenPts[i].Y,
+                X2 = screenPts[i + 1].X, Y2 = screenPts[i + 1].Y,
+                Stroke = draftStroke,
+                StrokeThickness = 2
+            });
+        }
+
+        if (vm.Draft.PreviewPoint.HasValue)
+        {
+            var prev = WorldToScreen(new Point(vm.Draft.PreviewPoint.Value.X, vm.Draft.PreviewPoint.Value.Y));
+            var last = screenPts[^1];
+            DrawingCanvas.Children.Add(new Line
+            {
+                X1 = last.X, Y1 = last.Y,
+                X2 = prev.X, Y2 = prev.Y,
+                Stroke = draftStroke,
+                StrokeThickness = 1.5,
+                StrokeDashArray = new DoubleCollection([5, 4])
+            });
+            DrawSnapMarker(prev);
+        }
+
+        foreach (var sp in screenPts)
+            AddHandle(sp, Brushes.White, draftStroke, 6);
+    }
+
+    private void DrawSnapMarker(Point screen)
+    {
+        const double size = 5.0;
+        switch (activeSnapKind)
+        {
+            case SnapKind.Grid:
+                DrawingCanvas.Children.Add(new Line { X1 = screen.X - size, Y1 = screen.Y, X2 = screen.X + size, Y2 = screen.Y, Stroke = Brushes.Teal, StrokeThickness = 1.5 });
+                DrawingCanvas.Children.Add(new Line { X1 = screen.X, Y1 = screen.Y - size, X2 = screen.X, Y2 = screen.Y + size, Stroke = Brushes.Teal, StrokeThickness = 1.5 });
+                break;
+            case SnapKind.Midpoint:
+                var diamond = new Polygon { Stroke = Brushes.DarkOrange, StrokeThickness = 1.5, Fill = Brushes.Transparent };
+                diamond.Points.Add(new Point(screen.X, screen.Y - size));
+                diamond.Points.Add(new Point(screen.X + size, screen.Y));
+                diamond.Points.Add(new Point(screen.X, screen.Y + size));
+                diamond.Points.Add(new Point(screen.X - size, screen.Y));
+                DrawingCanvas.Children.Add(diamond);
+                break;
+        }
+    }
+
     private void DrawRebars()
     {
         foreach (var r in vm.Rebars)
@@ -230,6 +399,8 @@ public partial class SectionCadEditorWindow : Window
         Canvas.SetTop(ellipse, p.Y - size / 2);
         DrawingCanvas.Children.Add(ellipse);
     }
+
+    // --- Fit / coordinate transforms ---
 
     private void Fit_Click(object sender, RoutedEventArgs e) => FitToExtents();
 

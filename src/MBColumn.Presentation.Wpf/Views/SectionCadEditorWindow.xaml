@@ -7,7 +7,8 @@
         MinWidth="980"
         MinHeight="640"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource LightBackgroundBrush}">
+        Background="{DynamicResource LightBackgroundBrush}"
+        PreviewKeyDown="Window_PreviewKeyDown">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -28,6 +29,7 @@
                 <WrapPanel>
                     <Button Content="Select" Command="{Binding SelectCommand}" Style="{StaticResource CompactButtonStyle}" Margin="0,0,6,0" />
                     <Button Content="Pt" Command="{Binding AddBoundaryPointCommand}" Style="{StaticResource SecondaryButtonStyle}" MinHeight="28" Padding="10,4" Margin="0,0,6,0" ToolTip="Add boundary point" />
+                    <Button Content="Polyline" Command="{Binding PolylineCommand}" Style="{StaticResource SecondaryButtonStyle}" MinHeight="28" Padding="10,4" Margin="0,0,6,0" ToolTip="Draw boundary polyline" />
                     <Button Content="Rebar" Command="{Binding AddRebarCommand}" Style="{StaticResource SecondaryButtonStyle}" MinHeight="28" Padding="10,4" Margin="0,0,6,0" ToolTip="Place rebar" />
                     <Button Content="Delete" Command="{Binding DeleteCommand}" Style="{StaticResource SecondaryButtonStyle}" MinHeight="28" Padding="10,4" Margin="0,0,12,0" />
                     <Separator Width="1" Margin="0,2,12,2" />
@@ -55,6 +57,7 @@
                 <Canvas x:Name="DrawingCanvas"
                         Background="#FBFCFE"
                         ClipToBounds="True"
+                        Focusable="True"
                         MouseDown="DrawingCanvas_MouseDown"
                         MouseMove="DrawingCanvas_MouseMove"
                         MouseUp="DrawingCanvas_MouseUp"
@@ -108,7 +111,22 @@
                     <Button Content="Apply" Click="Apply_Click" Style="{StaticResource PrimaryButtonStyle}" MinWidth="90" Margin="0,0,8,0" />
                     <Button Content="Cancel" IsCancel="True" Style="{StaticResource SecondaryButtonStyle}" MinWidth="90" />
                 </StackPanel>
-                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                    <TextBlock Text="Grid:" Margin="16,0,4,0" VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                    <TextBox Text="{Binding GridSpacing, UpdateSourceTrigger=LostFocus, StringFormat=F0}"
+                             Width="80"
+                             VerticalAlignment="Center"
+                             Padding="4,2" />
+                    <CheckBox Content="Snap Grid"
+                              IsChecked="{Binding IsSnapToGridEnabled}"
+                              VerticalAlignment="Center"
+                              Margin="10,0,0,0" />
+                    <CheckBox Content="Snap Mid"
+                              IsChecked="{Binding IsSnapToMidpointEnabled}"
+                              VerticalAlignment="Center"
+                              Margin="10,0,0,0" />
+                </StackPanel>
             </DockPanel>
         </Border>
     </Grid>

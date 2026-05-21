@@ -11,6 +11,9 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
     private readonly InputViewModel source;
     private CadToolMode toolMode;
     private string statusText = "Select or drag points. Apply writes changes back to the coordinate tables.";
+    private double gridSpacing = 50.0;
+    private bool isSnapToGridEnabled = true;
+    private bool isSnapToMidpointEnabled = false;
 
     public SectionCadEditorViewModel(InputViewModel source)
     {
@@ -38,6 +41,7 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
 
         SelectCommand = new RelayCommand(() => ToolMode = CadToolMode.Select);
         AddBoundaryPointCommand = new RelayCommand(() => ToolMode = CadToolMode.AddBoundaryPoint);
+        PolylineCommand = new RelayCommand(() => ToolMode = CadToolMode.Polyline);
         AddRebarCommand = new RelayCommand(() => ToolMode = CadToolMode.AddRebar);
         DeleteCommand = new RelayCommand(() => ToolMode = CadToolMode.Delete);
         RectangleCommand = new RelayCommand(UseRectangleTemplate);
@@ -49,6 +53,7 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
 
     public ObservableCollection<CadPointViewModel> BoundaryPoints { get; } = [];
     public ObservableCollection<CadRebarViewModel> Rebars { get; } = [];
+    public PolylineDraft Draft { get; } = new();
 
     public CadToolMode ToolMode
     {
@@ -56,6 +61,8 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
         set
         {
             if (toolMode == value) return;
+            if (toolMode == CadToolMode.Polyline)
+                Draft.Clear();
             toolMode = value;
             Raise();
             StatusText = value switch
@@ -63,6 +70,7 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
                 CadToolMode.AddBoundaryPoint => "Click canvas to append boundary points.",
                 CadToolMode.AddRebar => "Click canvas to place rebars.",
                 CadToolMode.Delete => "Click a boundary point or rebar to delete it.",
+                CadToolMode.Polyline => "Polyline: click to add points, Enter/double-click to finish, Esc to cancel.",
                 _ => "Select or drag points."
             };
         }
@@ -70,8 +78,37 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
 
     public string StatusText { get => statusText; set => Set(ref statusText, value); }
     public string UnitLabel => source.LengthLabel;
+
+    public double GridSpacing
+    {
+        get => gridSpacing;
+        set
+        {
+            if (value <= 0)
+            {
+                StatusText = "Grid spacing must be a positive number.";
+                Raise(nameof(GridSpacing));
+                return;
+            }
+            Set(ref gridSpacing, value);
+        }
+    }
+
+    public bool IsSnapToGridEnabled
+    {
+        get => isSnapToGridEnabled;
+        set => Set(ref isSnapToGridEnabled, value);
+    }
+
+    public bool IsSnapToMidpointEnabled
+    {
+        get => isSnapToMidpointEnabled;
+        set => Set(ref isSnapToMidpointEnabled, value);
+    }
+
     public ICommand SelectCommand { get; }
     public ICommand AddBoundaryPointCommand { get; }
+    public ICommand PolylineCommand { get; }
     public ICommand AddRebarCommand { get; }
     public ICommand DeleteCommand { get; }
     public ICommand RectangleCommand { get; }
@@ -90,6 +127,49 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
     {
         Rebars.Add(new CadRebarViewModel(Round(x), Round(y), source.BarSize, CurrentBarArea()));
         StatusText = $"Rebar {Rebars.Count} added.";
+    }
+
+    public void AddPolylinePoint(double x, double y)
+    {
+        Draft.Points.Add((Round(x), Round(y)));
+        StatusText = Draft.Points.Count == 1
+            ? "Polyline: 1 point. Click to continue, Enter/double-click to finish."
+            : $"Polyline: {Draft.Points.Count} points. Enter/double-click to finish, Esc to cancel.";
+    }
+
+    public void UpdatePolylinePreview(double x, double y)
+    {
+        Draft.PreviewPoint = (x, y);
+    }
+
+    public void FinishPolyline()
+    {
+        var clean = RemoveDuplicates(Draft.Points);
+        if (clean.Count < 3)
+        {
+            Draft.Clear();
+            toolMode = CadToolMode.Select;
+            Raise(nameof(ToolMode));
+            StatusText = "Boundary polyline requires at least 3 distinct points.";
+            return;
+        }
+
+        BoundaryPoints.Clear();
+        foreach (var (x, y) in clean)
+            BoundaryPoints.Add(new CadPointViewModel(Round(x), Round(y)));
+
+        Draft.Clear();
+        toolMode = CadToolMode.Select;
+        Raise(nameof(ToolMode));
+        StatusText = "Boundary updated from polyline. Click Apply to save changes.";
+    }
+
+    public void CancelPolyline()
+    {
+        Draft.Clear();
+        toolMode = CadToolMode.Select;
+        Raise(nameof(ToolMode));
+        StatusText = "Polyline cancelled.";
     }
 
     public string? Validate()
@@ -227,5 +307,16 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
             area += a.X * b.Y - b.X * a.Y;
         }
         return area / 2.0;
+    }
+
+    private static List<(double X, double Y)> RemoveDuplicates(List<(double X, double Y)> points)
+    {
+        var result = new List<(double X, double Y)>();
+        foreach (var p in points)
+        {
+            if (result.Count == 0 || Math.Abs(p.X - result[^1].X) > 1e-9 || Math.Abs(p.Y - result[^1].Y) > 1e-9)
+                result.Add(p);
+        }
+        return result;
     }
 }
