@@ -88,6 +88,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         onColumnSelected(item);
     }
 
+    public void SelectColumnById(int columnId)
+    {
+        var item = Columns.FirstOrDefault(c => c.Id == columnId);
+        if (item is not null)
+            SelectColumn(item);
+    }
+
     public void CommitRename(ColumnItemViewModel item)
     {
         var newName = item.EditName.Trim();

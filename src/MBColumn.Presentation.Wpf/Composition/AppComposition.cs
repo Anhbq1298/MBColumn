@@ -16,6 +16,7 @@ public sealed class AppComposition : IDisposable
     public IMessageService MessageService { get; }
     public IProjectFileDialogService ProjectFileDialogService { get; }
     public IProjectNameDialogService ProjectNameDialogService { get; }
+    public IEtabsImportDialogService EtabsImportDialogService { get; }
     public ProjectSession ProjectSession { get; }
 
     private readonly ColumnCalculationService calculationService;
@@ -29,6 +30,7 @@ public sealed class AppComposition : IDisposable
         MessageService = new MessageBoxService();
         ProjectFileDialogService = new ProjectFileDialogService();
         ProjectNameDialogService = new ProjectNameDialogService();
+        EtabsImportDialogService = new EtabsImportDialogService();
         ProjectSession = new ProjectSession();
 
         IDesignCodeService aciCode = new Aci318DesignCodeService();
@@ -68,6 +70,7 @@ public sealed class AppComposition : IDisposable
             MessageService,
             ProjectFileDialogService,
             ProjectNameDialogService,
+            EtabsImportDialogService,
             ProjectSession);
     }
 

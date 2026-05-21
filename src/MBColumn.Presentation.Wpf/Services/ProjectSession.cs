@@ -50,6 +50,12 @@ public sealed class ProjectSession
     public bool IsCurrentColumnOutdated()
         => CurrentColumnId is not null && outdatedColumnIds.Contains(CurrentColumnId.Value);
 
+    public void ClearColumnResult(int columnId)
+    {
+        columnResults.Remove(columnId);
+        outdatedColumnIds.Remove(columnId);
+    }
+
     public void ClearResults()
     {
         columnResults.Clear();

@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Window x:Class="MBColumn.Presentation.Wpf.Views.EtabsImportWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Import from ETABS"
+        Width="1180"
+        Height="760"
+        MinWidth="1060"
+        MinHeight="680"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style x:Key="WizardPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style x:Key="PreviewDotStyle" TargetType="Ellipse">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Fill" Value="{DynamicResource AccentBlueBrush}" />
+            <Setter Property="Stroke" Value="White" />
+            <Setter Property="StrokeThickness" Value="1" />
+        </Style>
+        <Style x:Key="InfoLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+            <Setter Property="Margin" Value="0,0,8,3" />
+        </Style>
+        <Style x:Key="InfoValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Margin" Value="0,0,0,3" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{DynamicResource LightBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{DynamicResource PrimaryNavyBrush}"
+                Padding="16,12">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="X"
+                        Command="{Binding CancelCommand}"
+                        Width="30"
+                        Height="26"
+                        Padding="0"
+                        Style="{StaticResource SecondaryButtonStyle}" />
+                <StackPanel>
+                    <TextBlock Text="Import from ETABS"
+                               Foreground="White"
+                               FontSize="18"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding StepTitle}"
+                               Foreground="#DCEBFF"
+                               FontSize="12"
+                               Margin="0,3,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderGreyBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="14,10">
+            <UniformGrid Columns="4">
+                <TextBlock Text="1  Connect"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           TextAlignment="Center" />
+                <TextBlock Text="2  Define Section"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           TextAlignment="Center" />
+                <TextBlock Text="3  Forces"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           TextAlignment="Center" />
+                <TextBlock Text="4  Create"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           TextAlignment="Center" />
+            </UniformGrid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="14">
+            <Grid Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="310" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Column="0" Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="1.4*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="1.6*" />
+                    </Grid.ColumnDefinitions>
+
+                    <GroupBox Header="Connection"
+                              BorderBrush="{DynamicResource BorderGreyBrush}"
+                              Foreground="{DynamicResource DarkNavyBrush}"
+                              Padding="10">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Connect to running ETABS"
+                                        Command="{Binding ConnectCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,5"
+                                        MinHeight="30" />
+                                <Button Content="Disconnect"
+                                        Command="{Binding DisconnectCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,5"
+                                        MinHeight="30"
+                                        Margin="8,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding ConnectionStatus}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="12"
+                                       Margin="0,8,0,0" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Grid.Column="2"
+                              Header="Model Information"
+                              BorderBrush="{DynamicResource BorderGreyBrush}"
+                              Foreground="{DynamicResource DarkNavyBrush}"
+                              Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="95" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Model" Style="{StaticResource InfoLabelStyle}" />
+                            <TextBlock Grid.Column="1" Text="{Binding ModelName}" Style="{StaticResource InfoValueStyle}" />
+                            <TextBlock Grid.Row="1" Text="Path" Style="{StaticResource InfoLabelStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ModelPath}" ToolTip="{Binding ModelPath}" Style="{StaticResource InfoValueStyle}" />
+                            <TextBlock Grid.Row="2" Text="Units" Style="{StaticResource InfoLabelStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PresentUnits}" Style="{StaticResource InfoValueStyle}" />
+                            <TextBlock Grid.Row="3" Text="Stories / Piers" Style="{StaticResource InfoLabelStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="1">
+                                <Run Text="{Binding StoryCount}" />
+                                <Run Text=" / " />
+                                <Run Text="{Binding PierCount}" />
+                            </TextBlock>
+                            <TextBlock Grid.Row="4" Text="Frame objects" Style="{StaticResource InfoLabelStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding FrameObjectCount}" Style="{StaticResource InfoValueStyle}" />
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Grid.Column="4"
+                              Header="Filter"
+                              BorderBrush="{DynamicResource BorderGreyBrush}"
+                              Foreground="{DynamicResource DarkNavyBrush}"
+                              Padding="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="8" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Pier" VerticalAlignment="Center" Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding PierFilters}"
+                                      SelectedItem="{Binding SelectedPierFilter}" />
+                            <TextBlock Grid.Column="2" Text="Story" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Column="3"
+                                      ItemsSource="{Binding StoryFilters}"
+                                      SelectedItem="{Binding SelectedStoryFilter}" />
+                            <TextBlock Grid.Row="2" Text="Label" VerticalAlignment="Center" Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Row="2"
+                                      Grid.Column="1"
+                                      ItemsSource="{Binding LabelFilters}"
+                                      SelectedItem="{Binding SelectedLabelFilter}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Section" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Row="2"
+                                      Grid.Column="3"
+                                      ItemsSource="{Binding UniqueSectionFilters}"
+                                      SelectedItem="{Binding SelectedUniqueSectionFilter}" />
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+
+                <DataGrid Grid.Column="0"
+                          Grid.Row="1"
+                          ItemsSource="{Binding FilteredColumns}"
+                          SelectedItem="{Binding SelectedColumn, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="Select"
+                                                Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="58" />
+                        <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Unique Section" Binding="{Binding UniqueSection}" Width="150" IsReadOnly="True" />
+                        <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSectionName}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="80" IsReadOnly="True" />
+                        <DataGridTextColumn Header="b" Binding="{Binding Width, StringFormat={}{0:0.#}}" Width="65" IsReadOnly="True" />
+                        <DataGridTextColumn Header="h" Binding="{Binding Height, StringFormat={}{0:0.#}}" Width="65" IsReadOnly="True" />
+                        <DataGridTextColumn Header="D" Binding="{Binding Diameter, StringFormat={}{0:0.#}}" Width="65" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Linked Section" Binding="{Binding LinkedSection}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Border Grid.Column="2"
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        Style="{StaticResource WizardPanelStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Preview"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}" />
+                        <TextBlock Text="{Binding ColumnPreviewTitle}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Margin="0,8,0,0"
+                                   TextTrimming="CharacterEllipsis" />
+                        <Canvas Height="230"
+                                Margin="0,14,0,10"
+                                Background="{DynamicResource LightBackgroundBrush}"
+                                ClipToBounds="True">
+                            <Rectangle Canvas.Left="66"
+                                       Canvas.Top="34"
+                                       Width="160"
+                                       Height="120"
+                                       Stroke="{DynamicResource PrimaryNavyBrush}"
+                                       StrokeThickness="2"
+                                       Fill="#1A1E88E5"
+                                       Visibility="{Binding IsColumnPreviewRectangular, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <Ellipse Canvas.Left="66"
+                                     Canvas.Top="28"
+                                     Width="160"
+                                     Height="160"
+                                     Stroke="{DynamicResource PrimaryNavyBrush}"
+                                     StrokeThickness="2"
+                                     Fill="#1A1E88E5"
+                                     Visibility="{Binding IsColumnPreviewCircular, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <Ellipse Canvas.Left="82" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="210" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="82" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="210" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="145" Canvas.Top="35" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="145" Canvas.Top="175" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="75" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="215" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
+                        </Canvas>
+                        <TextBlock Text="{Binding ColumnPreviewDimensions}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextDarkBrush}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding ColumnPreviewRebar}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,6,0,0" />
+                        <Separator Margin="0,14,0,10" />
+                        <TextBlock Text="{Binding UnitConversionMessage}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding SelectedColumnCount, StringFormat=Selected columns: {0}}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="310" />
+                </Grid.ColumnDefinitions>
+
+                <DataGrid Grid.Column="0"
+                          ItemsSource="{Binding SectionMappings}"
+                          SelectedItem="{Binding SelectedMapping, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSectionName}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Unique Section" Binding="{Binding UniqueSection}" Width="150" IsReadOnly="True" />
+                        <DataGridTemplateColumn Header="MBColumn Type" Width="125">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SectionType}" Padding="8,0" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding SectionTypes}"
+                                              SelectedItem="{Binding SectionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="b" Binding="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="65" />
+                        <DataGridTextColumn Header="h" Binding="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="65" />
+                        <DataGridTextColumn Header="D" Binding="{Binding Diameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="65" />
+                        <DataGridTextColumn Header="Material" Binding="{Binding Material, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="85" />
+                        <DataGridTextColumn Header="Bar" Binding="{Binding BarSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                        <DataGridTextColumn Header="Bars b" Binding="{Binding BarsAlongWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                        <DataGridTextColumn Header="Bars h" Binding="{Binding BarsAlongHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                        <DataGridTextColumn Header="Total" Binding="{Binding TotalBars, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                        <DataGridTextColumn Header="Cover" Binding="{Binding Cover, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="75" />
+                        <DataGridTextColumn Header="Tie dia" Binding="{Binding TieDiameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="75" />
+                        <DataGridTextColumn Header="Tie spacing" Binding="{Binding TieSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="90" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Border Grid.Column="2"
+                        Style="{StaticResource WizardPanelStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Rebar Preview"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}" />
+                        <TextBlock Text="{Binding MappingPreviewTitle}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="0,8,0,0" />
+                        <Canvas Height="230"
+                                Margin="0,14,0,10"
+                                Background="{DynamicResource LightBackgroundBrush}"
+                                ClipToBounds="True">
+                            <Rectangle Canvas.Left="66"
+                                       Canvas.Top="34"
+                                       Width="160"
+                                       Height="120"
+                                       Stroke="{DynamicResource PrimaryNavyBrush}"
+                                       StrokeThickness="2"
+                                       Fill="#1A10B981"
+                                       Visibility="{Binding IsMappingPreviewRectangular, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <Ellipse Canvas.Left="66"
+                                     Canvas.Top="28"
+                                     Width="160"
+                                     Height="160"
+                                     Stroke="{DynamicResource PrimaryNavyBrush}"
+                                     StrokeThickness="2"
+                                     Fill="#1A10B981"
+                                     Visibility="{Binding IsMappingPreviewCircular, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <Ellipse Canvas.Left="82" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="145" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="210" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="82" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="145" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="210" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="75" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
+                            <Ellipse Canvas.Left="215" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
+                        </Canvas>
+                        <TextBlock Text="{Binding MappingPreviewDimensions}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextDarkBrush}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding MappingPreviewRebar}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,6,0,0" />
+                        <TextBlock Text="Section and reinforcement values will be written as ordinary MBColumn inputs."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,14,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300" />
+                    <ColumnDefinition Width="14" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Style="{StaticResource WizardPanelStyle}">
+                    <DockPanel LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Text="Load Combinations"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            <TextBox Text="{Binding LoadCombinationFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,10,0,8" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Select All"
+                                        Command="{Binding SelectAllCombosCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,5"
+                                        MinHeight="30" />
+                                <Button Content="Clear All"
+                                        Command="{Binding ClearAllCombosCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,5"
+                                        MinHeight="30"
+                                        Margin="8,0,0,0" />
+                            </StackPanel>
+                            <Button Content="Refresh Combos"
+                                    Command="{Binding RefreshCombosCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Padding="10,5"
+                                    MinHeight="30"
+                                    HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding SelectedLoadCombinationCount, StringFormat=Selected combinations: {0}}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Margin="0,10,0,8" />
+                        </StackPanel>
+                        <ListBox ItemsSource="{Binding FilteredLoadCombinations}"
+                                 BorderBrush="{DynamicResource BorderGreyBrush}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Name}"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="4,2" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0"
+                              ItemsSource="{Binding ForceRows}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Select"
+                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="58" />
+                            <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="70" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="70" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
+                            <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSection}" Width="120" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Load Combo" Binding="{Binding LoadCombination}" Width="170" IsReadOnly="True" />
+                            <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat={}{0:0.#}}" Width="75" IsReadOnly="True" />
+                            <DataGridTextColumn Header="M2" Binding="{Binding M2, StringFormat={}{0:0.#}}" Width="75" IsReadOnly="True" />
+                            <DataGridTextColumn Header="M3" Binding="{Binding M3, StringFormat={}{0:0.#}}" Width="75" IsReadOnly="True" />
+                            <DataGridTextColumn Header="V2" Binding="{Binding V2, StringFormat={}{0:0.#}}" Width="75" IsReadOnly="True" />
+                            <DataGridTextColumn Header="V3" Binding="{Binding V3, StringFormat={}{0:0.#}}" Width="75" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" IsReadOnly="True" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderGreyBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="12"
+                            Margin="0,10,0,0">
+                        <TextBlock Text="{Binding ForceConventionNote}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <Grid Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0"
+                        Style="{StaticResource WizardPanelStyle}"
+                        Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Duplicate handling"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource FieldLabelTextStyle}" />
+                        <ComboBox ItemsSource="{Binding DuplicateHandlingOptions}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedItem="{Binding SelectedDuplicateHandling}"
+                                  Width="180"
+                                  Margin="12,0,0,0" />
+                        <TextBlock Text="{Binding SummaryCreateCount, StringFormat=Sections to create or update: {0}}"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Margin="18,0,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding SummaryRows}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="New Section Name" Binding="{Binding NewSectionName}" Width="170" />
+                        <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="90" />
+                        <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
+                        <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="80" />
+                        <DataGridTextColumn Header="Section Type" Binding="{Binding SectionType}" Width="110" />
+                        <DataGridTextColumn Header="Dimensions" Binding="{Binding Dimensions}" Width="120" />
+                        <DataGridTextColumn Header="Rebar" Binding="{Binding Rebar}" Width="220" />
+                        <DataGridTextColumn Header="Load Cases" Binding="{Binding LoadCaseCount}" Width="90" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="3"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderGreyBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="14,10">
+            <DockPanel>
+                <Button DockPanel.Dock="Left"
+                        Content="Cancel"
+                        Command="{Binding CancelCommand}"
+                        IsCancel="True"
+                        Style="{StaticResource SecondaryButtonStyle}" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Back"
+                            Command="{Binding BackCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,0" />
+                    <Button Content="{Binding NextButtonText}"
+                            Command="{Binding NextCommand}"
+                            IsDefault="True"
+                            Style="{StaticResource PrimaryButtonStyle}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

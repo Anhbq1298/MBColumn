@@ -50,6 +50,13 @@ public partial class MainWindow : Window
         button.ContextMenu.IsOpen = true;
     }
 
+    private void AddSectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.ContextMenu is null) return;
+        button.ContextMenu.PlacementTarget = button;
+        button.ContextMenu.IsOpen = true;
+    }
+
     private ProjectExplorerViewModel Explorer()
         => ((MainWindowViewModel)DataContext).Explorer;
 }

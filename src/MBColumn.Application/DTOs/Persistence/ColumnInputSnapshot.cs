@@ -1,3 +1,5 @@
+using MBColumn.Application.DTOs.Etabs;
+
 namespace MBColumn.Application.DTOs.Persistence;
 
 public sealed class ColumnInputSnapshot
@@ -40,6 +42,8 @@ public sealed class ColumnInputSnapshot
     public double PmAngleDegrees { get; set; }
     public double AxialLoad { get; set; }
     public List<SnapshotLoadCase> LoadCases { get; set; } = [];
+
+    public EtabsImportMetadataDto? EtabsMetadata { get; set; }
 }
 
 public sealed class SnapshotBoundaryPoint

@@ -17,6 +17,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     private readonly IMessageService messageService;
     private readonly IProjectFileDialogService projectFileDialogService;
     private readonly IProjectNameDialogService projectNameDialogService;
+    private readonly IEtabsImportDialogService etabsImportDialogService;
     private readonly ProjectSession projectSession;
     private string validationMessage = "";
     private bool isCalculationOutdated;
@@ -38,6 +39,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         IMessageService messageService,
         IProjectFileDialogService projectFileDialogService,
         IProjectNameDialogService projectNameDialogService,
+        IEtabsImportDialogService etabsImportDialogService,
         ProjectSession projectSession)
     {
         this.calculationService = calculationService;
@@ -45,6 +47,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         this.messageService = messageService;
         this.projectFileDialogService = projectFileDialogService;
         this.projectNameDialogService = projectNameDialogService;
+        this.etabsImportDialogService = etabsImportDialogService;
         this.projectSession = projectSession;
         Input = input;
         Result = new ResultViewModel();
@@ -63,6 +66,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
+        ImportFromEtabsCommand = new RelayCommand(ImportFromEtabs);
 
         SubscribeToInputChanges();
         UpdateWindowTitle();
@@ -92,6 +96,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
+    public ICommand ImportFromEtabsCommand { get; }
 
     public string ValidationMessage { get => validationMessage; set => Set(ref validationMessage, value); }
     public string WindowTitle { get => windowTitle; private set => Set(ref windowTitle, value); }
@@ -341,6 +346,68 @@ public sealed class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             messageService.ShowError($"Failed to open project:\n{ex.Message}");
+        }
+    }
+
+    private void ImportFromEtabs()
+    {
+        SaveCurrentColumnInput();
+
+        var existingNames = projectService.GetColumns()
+            .Select(column => column.Name)
+            .ToList();
+        var result = etabsImportDialogService.ShowDialog(
+            System.Windows.Application.Current?.MainWindow,
+            existingNames);
+        if (result is null || result.Sections.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var columnsByName = projectService.GetColumns()
+                .ToDictionary(column => column.Name, StringComparer.OrdinalIgnoreCase);
+            int created = 0;
+            int updated = 0;
+            int? lastImportedId = null;
+
+            foreach (var imported in result.Sections)
+            {
+                if (imported.UpdateExisting && columnsByName.TryGetValue(imported.SectionName, out var existing))
+                {
+                    projectService.SaveColumnInput(existing.Id, imported.Snapshot);
+                    projectSession.ClearColumnResult(existing.Id);
+                    Explorer.SetSectionStatus(existing.Id, SectionStatus.NotCalculated);
+                    lastImportedId = existing.Id;
+                    updated++;
+                    continue;
+                }
+
+                var record = projectService.AddColumn(imported.SectionName);
+                projectService.SaveColumnInput(record.Id, imported.Snapshot);
+                projectSession.ClearColumnResult(record.Id);
+                Explorer.SetSectionStatus(record.Id, SectionStatus.NotCalculated);
+                columnsByName[record.Name] = record;
+                lastImportedId = record.Id;
+                created++;
+            }
+
+            if (lastImportedId is not null)
+            {
+                Explorer.SelectColumnById(lastImportedId.Value);
+            }
+
+            SelectedMainTabIndex = 0;
+            ValidationMessage = "";
+            RaiseStatusProperties();
+            messageService.ShowInformation(
+                $"Imported {created + updated} ETABS columns as MBColumn sections.",
+                "ETABS Import");
+        }
+        catch (Exception ex)
+        {
+            messageService.ShowError($"Failed to import ETABS sections:\n{ex.Message}", "ETABS Import");
         }
     }
 

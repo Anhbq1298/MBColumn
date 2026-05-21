@@ -157,7 +157,7 @@
                             Padding="10,6">
                         <DockPanel>
                             <Button DockPanel.Dock="Right"
-                                    Command="{Binding Explorer.AddColumnCommand}"
+                                    Click="AddSectionButton_Click"
                                     ToolTip="Add Section"
                                     Width="22" Height="22"
                                     Padding="0"
@@ -167,6 +167,14 @@
                                     Cursor="Hand">
                                 <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Add Manually"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.Explorer.AddColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <MenuItem Header="Import from ETABS"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.ImportFromEtabsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    </ContextMenu>
+                                </Button.ContextMenu>
                             </Button>
                             <TextBlock Text="{Binding Explorer.ProjectName}"
                                        Foreground="White"
