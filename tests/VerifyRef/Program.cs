@@ -1,11 +1,13 @@
 using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Rebar;
 using MBColumn.Infrastructure.Solvers;
+using MBColumn.Infrastructure.Solvers.Integration;
 
 // Composition root â€” mirror MainWindow.xaml.cs
 IDesignCodeService aciCode = new Aci318DesignCodeService();
