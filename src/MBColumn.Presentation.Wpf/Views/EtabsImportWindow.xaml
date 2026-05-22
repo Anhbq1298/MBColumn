@@ -3,12 +3,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels"
+        xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
         Title="Import from ETABS"
         Width="1200"
-        Height="800"
+        Height="820"
         MinWidth="1060"
-        MinHeight="680"
-        WindowStartupLocation="CenterOwner">
+        MinHeight="700"
+        WindowStartupLocation="CenterOwner"
+        Loaded="OnWindowLoaded">
     <Window.Resources>
         <Style x:Key="PanelBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
@@ -56,10 +58,21 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <Style x:Key="StepCircleStyle" TargetType="Border">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="Background" Value="{DynamicResource BorderGreyBrush}" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+        <Style x:Key="StepCircleActiveStyle" TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+            <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+        </Style>
     </Window.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -71,7 +84,7 @@
                 Padding="16,12">
             <DockPanel>
                 <Button DockPanel.Dock="Right"
-                        Content="X"
+                        Content="✕"
                         Command="{Binding CancelCommand}"
                         Width="30"
                         Height="26"
@@ -90,15 +103,163 @@
             </DockPanel>
         </Border>
 
-        <!-- ─── Main workspace ─── -->
-        <Grid Grid.Row="1" Margin="12,10,12,8">
+        <!-- ─── Step Indicator ─── -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderGreyBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                <!-- Step 1 -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Margin="0,0,8,0">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFlow1}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="SemiBold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlow1}" Value="True">
+                                            <Setter Property="Foreground" Value="White" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="Group Filtering" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="12" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFlow1}" Value="True">
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <Rectangle Width="50" Height="1" Fill="{DynamicResource BorderGreyBrush}"
+                           VerticalAlignment="Center" Margin="14,0" />
+
+                <!-- Step 2 -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Margin="0,0,8,0">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFlow2}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="SemiBold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlow2}" Value="True">
+                                            <Setter Property="Foreground" Value="White" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="Force Import" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="12" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFlow2}" Value="True">
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <Rectangle Width="50" Height="1" Fill="{DynamicResource BorderGreyBrush}"
+                           VerticalAlignment="Center" Margin="14,0" />
+
+                <!-- Step 3 -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Margin="0,0,8,0">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFlow3}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="SemiBold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlow3}" Value="True">
+                                            <Setter Property="Foreground" Value="White" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="Review &amp; Import" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="FontSize" Value="12" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFlow3}" Value="True">
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════
+             FLOW 1 — Group Filtering
+             ═══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2"
+              Margin="12,10,12,8"
+              Visibility="{Binding IsFlow1, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2.2*" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="1.8*" />
             </Grid.ColumnDefinitions>
 
-            <!-- ═══ LEFT: Filters + Available Items ═══ -->
+            <!-- ── LEFT: Connection + Filter + Available Items ── -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -140,7 +301,7 @@
                     </DockPanel>
                 </GroupBox>
 
-                <!-- Filters -->
+                <!-- Filter -->
                 <GroupBox Grid.Row="1"
                           Header="Filter"
                           BorderBrush="{DynamicResource BorderGreyBrush}"
@@ -164,7 +325,6 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- Row 0: ETABS Element | Section Type | Unique Section -->
                         <TextBlock Grid.Row="0" Grid.Column="0"
                                    Text="ETABS Element"
                                    VerticalAlignment="Center"
@@ -191,7 +351,6 @@
                                   DisplayMemberPath="DisplayName"
                                   SelectedItem="{Binding SelectedUniqueSection}" />
 
-                        <!-- Row 2: Story From | Story To | Label -->
                         <TextBlock Grid.Row="2" Grid.Column="0"
                                    Text="Story From"
                                    VerticalAlignment="Center"
@@ -255,58 +414,30 @@
                 </GroupBox>
             </Grid>
 
-            <!-- ═══ RIGHT: Preview + Summary + Import Groups ═══ -->
+            <!-- ── RIGHT: Section Preview + Summary + Import Groups ── -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="150" />
+                    <RowDefinition Height="240" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Section Boundary Preview -->
-                <Border Grid.Row="0" Style="{StaticResource PanelBorderStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="130" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" VerticalAlignment="Top">
-                            <TextBlock Text="Boundary Preview" Style="{StaticResource SectionHeaderStyle}" />
-                            <TextBlock Text="{Binding PreviewStatusText}"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11"
-                                       TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding ColumnPreviewDimensions}"
-                                       Foreground="{DynamicResource TextDarkBrush}"
-                                       FontSize="11"
-                                       Margin="0,4,0,0"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Border Grid.Column="1"
-                                BorderBrush="{DynamicResource BorderGreyBrush}"
-                                BorderThickness="1"
-                                CornerRadius="3"
-                                Padding="4">
-                            <Grid>
-                                <TextBlock Text="No boundary"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           FontSize="11"
-                                           Visibility="{Binding HasBoundaryPreview, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
-                                <Viewbox Stretch="Uniform"
-                                         Visibility="{Binding HasBoundaryPreview, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <Canvas Width="{Binding PreviewCanvasWidth}"
-                                            Height="{Binding PreviewCanvasHeight}">
-                                        <Polygon Points="{Binding BoundaryPreviewPointCollection}"
-                                                 Stroke="{DynamicResource AccentBlueBrush}"
-                                                 Fill="#200070C0"
-                                                 StrokeThickness="1.5" />
-                                    </Canvas>
-                                </Viewbox>
-                            </Grid>
-                        </Border>
-                    </Grid>
+                <!-- Section Preview (SectionPreviewCanvas style) -->
+                <Border Grid.Row="0"
+                        Style="{StaticResource PanelBorderStyle}"
+                        Padding="6">
+                    <controls:SectionPreviewCanvas
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        SectionWidth="{Binding BoundaryPreviewWidth}"
+                        SectionHeight="{Binding BoundaryPreviewHeight}"
+                        Cover="{Binding BoundaryPreviewCover}"
+                        UnitSystem="{Binding TargetUnitSystem}"
+                        SectionShape="{Binding BoundaryPreviewSectionShape}"
+                        BoundaryPoints="{Binding BoundaryPreviewPoints}"
+                        SectionLabel="{Binding BoundaryPreviewSectionLabel}"
+                        IsValid="{Binding IsBoundaryPreviewValid}"
+                        ErrorMessage="{Binding PreviewStatusText}" />
                 </Border>
 
                 <!-- Import Summary -->
@@ -337,7 +468,6 @@
                         Style="{StaticResource PanelBorderStyle}"
                         Margin="0,8,0,0">
                     <DockPanel>
-                        <!-- Header row -->
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                             <Button DockPanel.Dock="Right"
                                     Content="+ New Group"
@@ -351,7 +481,6 @@
                                        VerticalAlignment="Center" />
                         </DockPanel>
 
-                        <!-- Empty state -->
                         <TextBlock DockPanel.Dock="Top"
                                    Text="No groups yet. Select items on the left, then click + New Group."
                                    Foreground="{DynamicResource TextMutedBrush}"
@@ -370,16 +499,13 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- Groups list -->
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding ImportGroups}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:ImportGroupViewModel}">
                                         <Border Style="{StaticResource GroupCardStyle}">
                                             <StackPanel>
-                                                <!-- Group header row -->
                                                 <DockPanel Margin="0,0,0,4">
-                                                    <!-- Delete button -->
                                                     <Button DockPanel.Dock="Right"
                                                             Style="{StaticResource SmallIconButtonStyle}"
                                                             ToolTip="Delete group"
@@ -388,7 +514,6 @@
                                                         <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
-                                                    <!-- Clear button -->
                                                     <Button DockPanel.Dock="Right"
                                                             Style="{StaticResource SmallIconButtonStyle}"
                                                             ToolTip="Clear all items from group"
@@ -397,7 +522,6 @@
                                                         <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="11"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
-                                                    <!-- Rename button / commit / cancel -->
                                                     <StackPanel DockPanel.Dock="Right"
                                                                 Orientation="Horizontal"
                                                                 Margin="0,0,4,0">
@@ -437,8 +561,6 @@
                                                         <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
-
-                                                    <!-- Group name / edit -->
                                                     <TextBlock>
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock" BasedOn="{StaticResource GroupNameNormalStyle}">
@@ -468,7 +590,6 @@
                                                     </TextBox>
                                                 </DockPanel>
 
-                                                <!-- Assign selected items button -->
                                                 <Button Content="→ Assign selected items"
                                                         Command="{Binding DataContext.AssignToGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}"
@@ -478,7 +599,6 @@
                                                         HorizontalAlignment="Left"
                                                         FontSize="11" />
 
-                                                <!-- Items list -->
                                                 <ItemsControl ItemsSource="{Binding Items}"
                                                               Margin="0,6,0,0">
                                                     <ItemsControl.Style>
@@ -525,34 +645,28 @@
             </Grid>
         </Grid>
 
-        <!-- ─── Bottom Bar ─── -->
-        <Border Grid.Row="2"
-                Background="{DynamicResource PanelBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderGreyBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="12,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="1" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="1" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="1" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+        <!-- ═══════════════════════════════════════════════════════
+             FLOW 2 — Force Import
+             ═══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2"
+              Margin="12,10,12,8"
+              Visibility="{Binding IsFlow2, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="260" />
+            </Grid.ColumnDefinitions>
 
-                <!-- Load Combinations (compact) -->
-                <DockPanel Grid.Column="0" Margin="0,0,10,0">
-                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+            <!-- Demand Cases (left) -->
+            <GroupBox Grid.Column="0"
+                      Header="Demand Cases"
+                      BorderBrush="{DynamicResource BorderGreyBrush}"
+                      Foreground="{DynamicResource DarkNavyBrush}"
+                      Padding="12">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                         <TextBlock DockPanel.Dock="Left"
-                                   Text="Demand Cases"
-                                   FontWeight="SemiBold"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   VerticalAlignment="Center" />
-                        <TextBlock DockPanel.Dock="Left"
-                                   Text="{Binding SelectedLoadCombinationCount, StringFormat=  ({0} selected)}"
+                                   Text="{Binding SelectedLoadCombinationCount, StringFormat='{}{0} selected'}"
                                    FontSize="11"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    VerticalAlignment="Center" />
@@ -560,21 +674,21 @@
                             <Button Content="All"
                                     Command="{Binding SelectAllCombosCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="6,2"
-                                    MinHeight="22"
+                                    Padding="8,3"
+                                    MinHeight="24"
                                     FontSize="11" />
                             <Button Content="None"
                                     Command="{Binding ClearAllCombosCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="6,2"
-                                    MinHeight="22"
+                                    Padding="8,3"
+                                    MinHeight="24"
                                     FontSize="11"
                                     Margin="4,0,0,0" />
                             <Button Content="⟳"
                                     Command="{Binding RefreshCombosCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="6,2"
-                                    MinHeight="22"
+                                    Padding="8,3"
+                                    MinHeight="24"
                                     FontSize="11"
                                     Margin="4,0,0,0"
                                     ToolTip="Refresh load combinations from ETABS" />
@@ -582,145 +696,314 @@
                     </DockPanel>
                     <TextBox DockPanel.Dock="Top"
                              Text="{Binding LoadCombinationFilterText, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,0,4"
+                             Margin="0,0,0,6"
                              FontSize="11" />
                     <ListBox ItemsSource="{Binding FilteredLoadCombinations}"
-                             MaxHeight="72"
                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                             FontSize="11">
+                             FontSize="12">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <CheckBox Content="{Binding Name}"
                                           IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Margin="2,1" />
+                                          Margin="2,2" />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </DockPanel>
+            </GroupBox>
 
-                <!-- Separator 1 -->
-                <Rectangle Grid.Column="1"
-                           Fill="{DynamicResource BorderGreyBrush}"
-                           Width="1"
-                           Margin="0,2" />
+            <!-- Stations + Force Cache (right) -->
+            <StackPanel Grid.Column="2">
+                <GroupBox Header="Stations"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          Padding="12"
+                          Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Include forces at:"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="0,0,0,8" />
+                        <CheckBox Content="Top"
+                                  IsChecked="{Binding ImportTop, Mode=TwoWay}"
+                                  Margin="0,3"
+                                  FontSize="12" />
+                        <CheckBox Content="Bottom"
+                                  IsChecked="{Binding ImportBottom, Mode=TwoWay}"
+                                  Margin="0,3"
+                                  FontSize="12" />
+                        <CheckBox Content="Mid-height"
+                                  IsChecked="{Binding ImportMid, Mode=TwoWay}"
+                                  Margin="0,3"
+                                  FontSize="12" />
+                    </StackPanel>
+                </GroupBox>
 
-                <!-- Stations + Force Cache -->
-                <StackPanel Grid.Column="2" Margin="10,0">
-                    <TextBlock Text="Stations"
-                               FontWeight="SemiBold"
-                               FontSize="12"
-                               Foreground="{DynamicResource PrimaryNavyBrush}"
-                               Margin="0,0,0,4" />
-                    <CheckBox Content="Top"
-                              IsChecked="{Binding ImportTop, Mode=TwoWay}"
-                              Margin="0,2"
-                              FontSize="11" />
-                    <CheckBox Content="Bottom"
-                              IsChecked="{Binding ImportBottom, Mode=TwoWay}"
-                              Margin="0,2"
-                              FontSize="11" />
-                    <CheckBox Content="Mid-height"
-                              IsChecked="{Binding ImportMid, Mode=TwoWay}"
-                              Margin="0,2"
-                              FontSize="11" />
-                    <TextBlock Text="Force Cache"
-                               FontWeight="SemiBold"
-                               FontSize="12"
-                               Foreground="{DynamicResource PrimaryNavyBrush}"
-                               Margin="0,8,0,4" />
-                    <TextBlock Text="{Binding ForceCacheStatus}"
+                <GroupBox Header="Force Cache"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          Padding="12"
+                          Visibility="{Binding IsForceCacheAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="Pre-load all forces from ETABS into an in-memory cache for faster repeated queries."
+                                   TextWrapping="Wrap"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="0,0,0,8" />
+                        <TextBlock Text="{Binding ForceCacheStatus}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="0,0,0,8" />
+                        <Button Content="Build Cache"
+                                Command="{Binding BuildForceCacheCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,5"
+                                MinHeight="28"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════
+             FLOW 3 — Review &amp; Import
+             ═══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2"
+              Margin="12,10,12,8"
+              Visibility="{Binding IsFlow3, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="340" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Import Groups Summary (left) -->
+            <GroupBox Grid.Column="0"
+                      Header="Import Groups Summary"
+                      BorderBrush="{DynamicResource BorderGreyBrush}"
+                      Foreground="{DynamicResource DarkNavyBrush}"
+                      Padding="12">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Margin="0,0,0,10"
                                FontSize="11"
                                Foreground="{DynamicResource TextMutedBrush}"
-                               Margin="0,0,0,4" />
-                    <Button Content="Build Cache"
-                            Command="{Binding BuildForceCacheCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Padding="8,3"
-                            MinHeight="24"
-                            FontSize="11"
-                            HorizontalAlignment="Left"
-                            Visibility="{Binding IsForceCacheAvailable, Converter={StaticResource BoolToVisibilityConverter}}" />
-                </StackPanel>
+                               TextWrapping="Wrap">
+                        <Run Text="{Binding ImportGroupsReadyCount, Mode=OneWay}" />
+                        <Run Text=" group(s) ready to import. Each group becomes one column section." />
+                    </TextBlock>
 
-                <!-- Separator 2 -->
-                <Rectangle Grid.Column="3"
-                           Fill="{DynamicResource BorderGreyBrush}"
-                           Width="1"
-                           Margin="0,2" />
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="No import groups defined. Go back to Flow 1 and assign items to groups."
+                               FontSize="11"
+                               Foreground="{DynamicResource AccentRedBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ImportGroupsReadyCount}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
-                <!-- Model Info (compact) -->
-                <StackPanel Grid.Column="4" Margin="10,0">
-                    <TextBlock Text="Model"
-                               FontWeight="SemiBold"
-                               FontSize="12"
-                               Foreground="{DynamicResource PrimaryNavyBrush}"
-                               Margin="0,0,0,4" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding ImportGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:ImportGroupViewModel}">
+                                    <Border Style="{StaticResource GroupCardStyle}">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right"
+                                                           Text="{Binding ItemCount, StringFormat='{}{0} item(s)'}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextMutedBrush}"
+                                                           VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding GroupName}"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                                           VerticalAlignment="Center" />
+                                            </DockPanel>
+                                            <ItemsControl ItemsSource="{Binding Items}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type vm:EtabsColumnImportRowViewModel}">
+                                                        <TextBlock FontSize="11"
+                                                                   Foreground="{DynamicResource TextDarkBrush}"
+                                                                   Margin="0,1">
+                                                            <Run Text="{Binding EtabsSectionName, Mode=OneWay}" />
+                                                            <Run Text=" | " Foreground="{DynamicResource TextMutedBrush}" />
+                                                            <Run Text="{Binding Story, Mode=OneWay}" />
+                                                            <Run Text=" / " Foreground="{DynamicResource TextMutedBrush}" />
+                                                            <Run Text="{Binding Label, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </GroupBox>
+
+            <!-- Right panel: Target Group + Model Info -->
+            <StackPanel Grid.Column="2">
+                <!-- Target Project Group -->
+                <GroupBox Header="Target Project Group"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          Padding="12"
+                          Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Imported sections will be added to:"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="0,0,0,8" />
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right"
+                                    Content="+ New"
+                                    Command="{Binding AddTargetGroupCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Padding="8,3"
+                                    MinHeight="26"
+                                    Margin="6,0,0,0" />
+                            <ComboBox ItemsSource="{Binding TargetGroups}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedItem="{Binding SelectedTargetGroup}" />
+                        </DockPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Model Info -->
+                <GroupBox Header="Model"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          Padding="12"
+                          Margin="0,0,0,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="55" />
+                            <ColumnDefinition Width="65" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Units" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding PresentUnits}" FontSize="11" />
-                        <TextBlock Grid.Row="1" Text="Stories" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ModelName}" FontSize="11" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Units" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PresentUnits}" FontSize="11" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Stories" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" Margin="0,0,0,4">
                             <Run Text="{Binding StoryCount, Mode=OneWay}" />
-                            <Run Text=" / " />
+                            <Run Text=" stories / " />
                             <Run Text="{Binding PierCount, Mode=OneWay}" />
+                            <Run Text=" piers" />
                         </TextBlock>
-                        <TextBlock Grid.Row="2" Text="Frames" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding FrameObjectCount}" FontSize="11" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Frames" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FrameObjectCount}" FontSize="11" />
                     </Grid>
-                </StackPanel>
+                </GroupBox>
 
-                <!-- Separator 3 -->
-                <Rectangle Grid.Column="5"
-                           Fill="{DynamicResource BorderGreyBrush}"
-                           Width="1"
-                           Margin="0,2" />
-
-                <!-- Target Group + Action Buttons -->
-                <StackPanel Grid.Column="6" Margin="10,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="Target Project Group"
-                               FontWeight="SemiBold"
-                               FontSize="12"
-                               Foreground="{DynamicResource PrimaryNavyBrush}"
-                               Margin="0,0,0,6" />
-                    <DockPanel Margin="0,0,0,10">
-                        <Button DockPanel.Dock="Right"
-                                Content="+ New"
-                                Command="{Binding AddTargetGroupCommand}"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Padding="8,3"
-                                MinHeight="26"
-                                Margin="6,0,0,0" />
-                        <ComboBox ItemsSource="{Binding TargetGroups}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedItem="{Binding SelectedTargetGroup}"
-                                  MinWidth="160" />
-                    </DockPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancel"
-                                Command="{Binding CancelCommand}"
-                                IsCancel="True"
-                                Style="{StaticResource SecondaryButtonStyle}"
-                                Padding="14,6"
-                                MinHeight="32"
-                                Margin="0,0,8,0" />
-                        <Button Content="Import →"
-                                Command="{Binding ApplyImportCommand}"
-                                IsDefault="True"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Padding="18,6"
-                                MinHeight="32" />
+                <!-- Demand Cases Summary -->
+                <Border Style="{StaticResource PanelBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Force Settings" Style="{StaticResource SectionHeaderStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="Combos" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding SelectedLoadCombinationCount, StringFormat='{}{0} selected'}"
+                                       FontSize="11" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="1" Text="Stations" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewStationsText}" FontSize="11" />
+                        </Grid>
                     </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- ─── Bottom Navigation Bar ─── -->
+        <Border Grid.Row="3"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderGreyBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12,8">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <!-- Cancel (always) -->
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            IsCancel="True"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="14,6"
+                            MinHeight="32" />
+
+                    <!-- Back (flows 2 and 3) -->
+                    <Button Content="← Back"
+                            Command="{Binding GoBackCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="14,6"
+                            MinHeight="32"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsFlow1, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+
+                    <!-- Flow 1 → Flow 2 -->
+                    <Button Content="Force Import  →"
+                            Command="{Binding GoToFlow2Command}"
+                            IsDefault="True"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Padding="18,6"
+                            MinHeight="32"
+                            Margin="8,0,0,0"
+                            ToolTip="Connect to ETABS first to proceed"
+                            Visibility="{Binding IsFlow1, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <!-- Flow 2 → Flow 3 -->
+                    <Button Content="Review  →"
+                            Command="{Binding GoToFlow3Command}"
+                            IsDefault="True"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Padding="18,6"
+                            MinHeight="32"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsFlow2, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <!-- Flow 3: Import -->
+                    <Button Content="Import  →"
+                            Command="{Binding ApplyImportCommand}"
+                            IsDefault="True"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Padding="18,6"
+                            MinHeight="32"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsFlow3, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </StackPanel>
-            </Grid>
+
+                <TextBlock Text="{Binding ConnectionStatus}"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextDarkBrush}" />
+            </DockPanel>
         </Border>
     </Grid>
 </Window>

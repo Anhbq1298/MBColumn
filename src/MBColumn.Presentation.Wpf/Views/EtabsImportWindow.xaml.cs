@@ -17,6 +17,12 @@ public partial class EtabsImportWindow : Window
         };
     }
 
+    private void OnWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is EtabsImportViewModel vm && !vm.IsConnected)
+            vm.ConnectCommand.Execute(null);
+    }
+
     private void OnAvailableItemsContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
         if (DataContext is not EtabsImportViewModel vm) return;

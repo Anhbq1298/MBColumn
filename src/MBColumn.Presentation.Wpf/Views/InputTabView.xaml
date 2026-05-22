@@ -130,355 +130,360 @@
         </Style>
     </UserControl.Resources>
     <TabControl>
-        <TabItem Header="General Settings">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Margin="4,6,4,4">
-            <StackPanel>
-                <GroupBox Header="General"
-                          Background="White"
-                          Foreground="{DynamicResource DarkNavyBrush}"
-                          BorderBrush="{DynamicResource BorderGreyBrush}"
-                          Padding="14"
-                          Margin="0,0,0,14">
+        <TabItem Header="General Parameters + Load Inputs">
+            <Grid Margin="4,6,4,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="1.4*" MinWidth="320" />
+                </Grid.ColumnDefinitions>
+                <ScrollViewer Grid.Column="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-                        <TextBlock Text="Workflow"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox ItemsSource="{Binding UnitSystems}"
-                                  SelectedItem="{Binding UnitSystem}" />
-                        <TextBlock Text="Design Code"
-                                   Style="{StaticResource FieldLabelTextStyle}"
-                                   Margin="0,10,0,0" />
-                        <ComboBox ItemsSource="{Binding DesignCodes}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="Code"
-                                  SelectedValue="{Binding SelectedDesignCode}" />
-                        <TextBlock Text="Section Integration Method"
-                                   Style="{StaticResource FieldLabelTextStyle}"
-                                   Margin="0,10,0,0" />
-                        <ComboBox ItemsSource="{Binding SectionIntegrationMethodOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="Method"
-                                  SelectedValue="{Binding SelectedIntegrationMethod}">
-                            <ComboBox.ToolTip>
-                                <TextBlock TextWrapping="Wrap"
-                                           MaxWidth="360"
-                                           Text="Fiber Integration: General numerical integration method recommended for circular sections and future arbitrary sections. Polygon Integration: Faster compression-zone clipping method useful for stress-block comparison." />
-                            </ComboBox.ToolTip>
-                        </ComboBox>
-                        <StackPanel Visibility="{Binding ShowAlphaCcOption, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="Alpha cc"
-                                       Style="{StaticResource FieldLabelTextStyle}"
-                                       Margin="0,10,0,0" />
-                            <TextBox Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
+                        <GroupBox Header="General"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Workflow"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <ComboBox ItemsSource="{Binding UnitSystems}"
+                                          SelectedItem="{Binding UnitSystem}" />
+                                <TextBlock Text="Design Code"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,10,0,0" />
+                                <ComboBox ItemsSource="{Binding DesignCodes}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Code"
+                                          SelectedValue="{Binding SelectedDesignCode}" />
+                                <TextBlock Text="Section Integration Method"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,10,0,0" />
+                                <ComboBox ItemsSource="{Binding SectionIntegrationMethodOptions}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Method"
+                                          SelectedValue="{Binding SelectedIntegrationMethod}">
+                                    <ComboBox.ToolTip>
+                                        <TextBlock TextWrapping="Wrap"
+                                                   MaxWidth="360"
+                                                   Text="Fiber Integration: General numerical integration method recommended for circular sections and future arbitrary sections. Polygon Integration: Faster compression-zone clipping method useful for stress-block comparison." />
+                                    </ComboBox.ToolTip>
+                                </ComboBox>
+                                <StackPanel Visibility="{Binding ShowAlphaCcOption, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Alpha cc"
+                                               Style="{StaticResource FieldLabelTextStyle}"
+                                               Margin="0,10,0,0" />
+                                    <TextBox Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Material"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="76" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Library"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <ComboBox Grid.Row="1"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding MaterialLibraries}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Library"
+                                          SelectedValue="{Binding SelectedMaterialLibrary}" />
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Concrete Grade"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                           Margin="0,8,0,0" />
+                                <ComboBox Grid.Row="3"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding AvailableConcreteGrades}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                          SelectedItem="{Binding SelectedConcreteGrade}" />
+                                <TextBlock Grid.Row="4"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Rebar Grade"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                           Margin="0,8,0,0" />
+                                <ComboBox Grid.Row="5"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding AvailableSteelGrades}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                          SelectedItem="{Binding SelectedSteelGrade}" />
+                                <TextBlock Grid.Row="6"
+                                           Grid.Column="0"
+                                           Text="{Binding FcLabel}"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,8,0,0" />
+                                <TextBlock Grid.Row="6"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}"
+                                           Margin="0,8,0,0" />
+                                <TextBox Grid.Row="7"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Row="8"
+                                           Grid.Column="0"
+                                           Text="{Binding FyLabel}"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="8"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="9"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Row="10"
+                                           Grid.Column="0"
+                                           Text="Es"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="10"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="11"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Es, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                        </GroupBox>
                     </StackPanel>
-                </GroupBox>
-                <GroupBox Header="Material"
-                          Background="White"
-                          Foreground="{DynamicResource DarkNavyBrush}"
-                          BorderBrush="{DynamicResource BorderGreyBrush}"
-                          Padding="14"
-                          Margin="0,0,0,14">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="76" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0"
-                                   Grid.Column="0"
-                                   Grid.ColumnSpan="2"
-                                   Text="Library"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox Grid.Row="1"
-                                  Grid.Column="0"
-                                  Grid.ColumnSpan="2"
-                                  ItemsSource="{Binding MaterialLibraries}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="Library"
-                                  SelectedValue="{Binding SelectedMaterialLibrary}" />
-                        <TextBlock Grid.Row="2"
-                                   Grid.Column="0"
-                                   Grid.ColumnSpan="2"
-                                   Text="Concrete Grade"
-                                   Style="{StaticResource FieldLabelTextStyle}"
-                                   IsEnabled="{Binding AreMaterialGradesEnabled}"
-                                   Margin="0,8,0,0" />
-                        <ComboBox Grid.Row="3"
-                                  Grid.Column="0"
-                                  Grid.ColumnSpan="2"
-                                  ItemsSource="{Binding AvailableConcreteGrades}"
-                                  DisplayMemberPath="DisplayName"
-                                  IsEnabled="{Binding AreMaterialGradesEnabled}"
-                                  SelectedItem="{Binding SelectedConcreteGrade}" />
-                        <TextBlock Grid.Row="4"
-                                   Grid.Column="0"
-                                   Grid.ColumnSpan="2"
-                                   Text="Rebar Grade"
-                                   Style="{StaticResource FieldLabelTextStyle}"
-                                   IsEnabled="{Binding AreMaterialGradesEnabled}"
-                                   Margin="0,8,0,0" />
-                        <ComboBox Grid.Row="5"
-                                  Grid.Column="0"
-                                  Grid.ColumnSpan="2"
-                                  ItemsSource="{Binding AvailableSteelGrades}"
-                                  DisplayMemberPath="DisplayName"
-                                  IsEnabled="{Binding AreMaterialGradesEnabled}"
-                                  SelectedItem="{Binding SelectedSteelGrade}" />
-                        <TextBlock Grid.Row="6"
-                                   Grid.Column="0"
-                                   Text="{Binding FcLabel}"
-                                   Style="{StaticResource FieldLabelTextStyle}"
-                                   Margin="0,8,0,0" />
-                        <TextBlock Grid.Row="6"
-                                   Grid.Column="1"
-                                   Text="{Binding StressLabel}"
-                                   Style="{StaticResource UnitTextStyle}"
-                                   Margin="0,8,0,0" />
-                        <TextBox Grid.Row="7"
-                                 Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 IsEnabled="{Binding AreMaterialInputsEnabled}"
-                                 Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Grid.Row="8"
-                                   Grid.Column="0"
-                                   Text="{Binding FyLabel}"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="8"
-                                   Grid.Column="1"
-                                   Text="{Binding StressLabel}"
-                                   Style="{StaticResource UnitTextStyle}" />
-                        <TextBox Grid.Row="9"
-                                 Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 IsEnabled="{Binding AreMaterialInputsEnabled}"
-                                 Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Grid.Row="10"
-                                   Grid.Column="0"
-                                   Text="Es"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="10"
-                                   Grid.Column="1"
-                                   Text="{Binding StressLabel}"
-                                   Style="{StaticResource UnitTextStyle}" />
-                        <TextBox Grid.Row="11"
-                                 Grid.Column="0"
-                                 Grid.ColumnSpan="2"
-                                 IsEnabled="{Binding AreMaterialInputsEnabled}"
-                                 Text="{Binding Es, UpdateSourceTrigger=PropertyChanged}" />
-                    </Grid>
-                </GroupBox>
-            </StackPanel>
-        </ScrollViewer>
-        </TabItem>
-        <TabItem Header="Load Cases">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Margin="4,6,4,4">
-            <StackPanel>
-                <GroupBox Header="Demand Cases"
-                          Background="White"
-                          Foreground="{DynamicResource DarkNavyBrush}"
-                          BorderBrush="{DynamicResource BorderGreyBrush}"
-                          Padding="14"
-                          Margin="0,0,0,14">
+                </ScrollViewer>
+                <ScrollViewer Grid.Column="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-                        <TextBlock Text="Moment Sign Convention"
-                                   Style="{StaticResource FieldLabelTextStyle}"
-                                   Margin="0,0,0,8" />
-                        <Border Background="White"
-                                BorderBrush="{DynamicResource BorderSoftBrush}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="10,8"
-                                Margin="0,0,0,14">
-                            <!-- Moment sign convention diagram — XAML vector, blue theme -->
-                            <Viewbox Stretch="Uniform"
-                                     HorizontalAlignment="Stretch"
-                                     VerticalAlignment="Top">
-                                <Canvas Width="900" Height="1150">
-                                    <Canvas.Resources>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
-                                            <Setter Property="Foreground" Value="#0046d5"/>
-                                        </Style>
-                                    </Canvas.Resources>
+                        <GroupBox Header="Demand Cases"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Moment Sign Convention"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,0,0,8" />
+                                <Border Background="White"
+                                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="10,8"
+                                        Margin="0,0,0,14">
+                                    <!-- Moment sign convention diagram — XAML vector, blue theme -->
+                                    <Viewbox Stretch="Uniform"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Top">
+                                        <Canvas Width="900" Height="1150">
+                                            <Canvas.Resources>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
+                                                    <Setter Property="Foreground" Value="#0046d5"/>
+                                                </Style>
+                                            </Canvas.Resources>
 
-                                    <Rectangle Width="900" Height="1150" Fill="White"/>
+                                            <Rectangle Width="900" Height="1150" Fill="White"/>
 
-                                    <!-- Column faces -->
-                                    <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
-                                    <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
-                                    <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
+                                            <!-- Column faces -->
+                                            <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
+                                            <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
+                                            <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
 
-                                    <!-- Main prism outline -->
-                                    <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                    <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                    <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                    <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                    <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                    <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                            <!-- Main prism outline -->
+                                            <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
-                                    <!-- Mid section: exact copy of the base/top parallelogram -->
-                                    <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
-                                    <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
-                                    <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                            <!-- Mid section: exact copy of the base/top parallelogram -->
+                                            <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
+                                            <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                            <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
-                                    <!-- Centroid marker at exact diagonal intersection -->
-                                    <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
-                                    <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
+                                            <!-- Centroid marker at exact diagonal intersection -->
+                                            <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
+                                            <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
 
-                                    <!-- Axial load P: replaces member Z axis and points downward -->
-                                    <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
-                                    <!-- Arrow marker for P pointing down -->
-                                    <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
-                                    <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="30" />
+                                            <!-- Axial load P: replaces member Z axis and points downward -->
+                                            <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
+                                            <!-- Arrow marker for P pointing down -->
+                                            <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
+                                            <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="30" />
 
-                                    <!-- MX: global/member X, horizontal, with double arrowhead at far end -->
-                                    <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
-                                    <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                    <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                    <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                    <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="30" />
+                                            <!-- MX: global/member X, horizontal, with double arrowhead at far end -->
+                                            <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                            <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="30" />
 
-                                    <!-- MY: global/member Y, parallel to Y projection, with double arrowhead at far end -->
-                                    <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
-                                    <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                    <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                    <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                    <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="30" />
+                                            <!-- MY: global/member Y, parallel to Y projection, with double arrowhead at far end -->
+                                            <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                            <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="30" />
 
-                                    <!-- Coordinate triad -->
-                                    <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
-                                    <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                            <!-- Coordinate triad -->
+                                            <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
+                                            <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
 
-                                    <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
-                                    <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                            <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
+                                            <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
 
-                                    <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
-                                    <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                            <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
+                                            <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
 
-                                    <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                    <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
+                                            <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
 
-                                    <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                    <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
+                                            <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
 
-                                    <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                    <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
+                                            <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
 
-                                    <!-- Title -->
-                                    <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
-                                </Canvas>
-                            </Viewbox>
-                        </Border>
-                        <DataGrid x:Name="LoadCasesGrid"
-                                  ItemsSource="{Binding LoadCases}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  CanUserResizeColumns="True"
-                                  CanUserResizeRows="True"
-                                  HeadersVisibility="Column"
-                                  SelectionMode="Extended"
-                                  SelectionUnit="FullRow"
-                                  MinHeight="260"
-                                  MaxHeight="460"
-                                  Margin="0,0,0,8">
-                            <DataGrid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Add Demand Case"
-                                              Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="Remove Selected Demand Case(s)"
-                                              Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                </ContextMenu>
-                            </DataGrid.ContextMenu>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Case&#xA;Name"
-                                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="120"
-                                                    MinWidth="90"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="Original LC"
-                                                    Binding="{Binding OriginalLoadCaseName, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="105"
-                                                    MinWidth="80"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="Label"
-                                                    Binding="{Binding SourceObjectLabel, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="80"
-                                                    MinWidth="64"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="Story"
-                                                    Binding="{Binding Story, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="75"
-                                                    MinWidth="60"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="Station"
-                                                    Binding="{Binding Station, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="80"
-                                                    MinWidth="64"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridTextColumn Header="P"
-                                                    Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                    Width="*"
-                                                    MinWidth="64"
-                                                    ElementStyle="{StaticResource RightAlignText}"
-                                                    EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                <DataGridTextColumn Header="Mx"
-                                                    Binding="{Binding Mux, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                    Width="*"
-                                                    MinWidth="64"
-                                                    ElementStyle="{StaticResource RightAlignText}"
-                                                    EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                <DataGridTextColumn Header="My"
-                                                    Binding="{Binding Muy, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                    Width="*"
-                                                    MinWidth="64"
-                                                    ElementStyle="{StaticResource RightAlignText}"
-                                                    EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                <DataGridTextColumn Header="Source"
-                                                    Binding="{Binding Source, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="80"
-                                                    MinWidth="64"
-                                                    ElementStyle="{StaticResource LeftAlignText}" />
-                                <DataGridCheckBoxColumn Header="Include"
-                                                        Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                        Width="70"
-                                                        MinWidth="60" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <WrapPanel>
-                            <Button Content="+ Add case"
-                                    Command="{Binding AddLoadCaseCommand}"
-                                    Style="{StaticResource CompactButtonStyle}" />
-                            <Button Content="Delete demand case"
-                                    Command="{Binding DeleteSelectedLoadCasesCommand}"
-                                    CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="10,4"
-                                    FontSize="11.5"
-                                    Margin="8,0,0,0" />
-                        </WrapPanel>
+                                            <!-- Title -->
+                                            <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <DataGrid x:Name="LoadCasesGrid"
+                                          ItemsSource="{Binding LoadCases}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserResizeColumns="True"
+                                          CanUserResizeRows="True"
+                                          HeadersVisibility="Column"
+                                          SelectionMode="Extended"
+                                          SelectionUnit="FullRow"
+                                          MinHeight="260"
+                                          MaxHeight="460"
+                                          Margin="0,0,0,8">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Add Demand Case"
+                                                      Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Remove Selected Demand Case(s)"
+                                                      Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Case&#xA;Name"
+                                                            Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="120"
+                                                            MinWidth="90"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Header="Original LC"
+                                                            Binding="{Binding OriginalLoadCaseName, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="105"
+                                                            MinWidth="80"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Header="Label"
+                                                            Binding="{Binding SourceObjectLabel, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="80"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Header="Story"
+                                                            Binding="{Binding Story, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="75"
+                                                            MinWidth="60"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Header="Station"
+                                                            Binding="{Binding Station, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="80"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Header="P"
+                                                            Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                                            Width="*"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                        <DataGridTextColumn Header="Mx"
+                                                            Binding="{Binding Mux, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                                            Width="*"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                        <DataGridTextColumn Header="My"
+                                                            Binding="{Binding Muy, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                                            Width="*"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                        <DataGridTextColumn Header="Source"
+                                                            Binding="{Binding Source, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="80"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridCheckBoxColumn Header="Include"
+                                                                Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                Width="70"
+                                                                MinWidth="60" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <WrapPanel>
+                                    <Button Content="+ Add case"
+                                            Command="{Binding AddLoadCaseCommand}"
+                                            Style="{StaticResource CompactButtonStyle}" />
+                                    <Button Content="Delete demand case"
+                                            Command="{Binding DeleteSelectedLoadCasesCommand}"
+                                            CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Padding="10,4"
+                                            FontSize="11.5"
+                                            Margin="8,0,0,0" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
-                </GroupBox>
-            </StackPanel>
-        </ScrollViewer>
+                </ScrollViewer>
+            </Grid>
         </TabItem>
         <TabItem Header="Section + Rebar">
             <ScrollViewer VerticalScrollBarVisibility="Auto"

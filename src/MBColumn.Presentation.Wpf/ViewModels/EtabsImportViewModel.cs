@@ -56,9 +56,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly RelayCommand<ImportGroupViewModel> assignToGroupCommand;
     private readonly RelayCommand<ImportGroupViewModel> deleteImportGroupCommand;
     private readonly AsyncRelayCommand buildForceCacheCommand;
+    private readonly RelayCommand goToFlow1Command;
+    private readonly RelayCommand goToFlow2Command;
+    private readonly RelayCommand goToFlow3Command;
+    private readonly RelayCommand goBackCommand;
 
+    private int currentFlow = 1;
     private bool isConnected;
     private ImportGroupViewModel? selectedImportGroup;
+    private IReadOnlyList<Point2D> rawBoundaryPoints = [];
     private string forceCacheStatus = "Not built";
     private string connectionStatus = "Not connected";
     private string modelName = "-";
@@ -168,6 +174,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
         deleteImportGroupCommand = new RelayCommand<ImportGroupViewModel>(DeleteImportGroup);
         buildForceCacheCommand = new AsyncRelayCommand(BuildForceCacheAsync,
             () => IsConnected && forceCacheService is not null && LoadCombinations.Count > 0);
+        goToFlow1Command = new RelayCommand(() => SetFlow(1));
+        goToFlow2Command = new RelayCommand(GoToFlow2, () => IsConnected);
+        goToFlow3Command = new RelayCommand(() => SetFlow(3));
+        goBackCommand = new RelayCommand(() => SetFlow(currentFlow - 1), () => currentFlow > 1);
     }
 
     public event EventHandler<bool>? RequestClose;
@@ -203,7 +213,50 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICommand AssignToGroupCommand => assignToGroupCommand;
     public ICommand DeleteImportGroupCommand => deleteImportGroupCommand;
     public ICommand BuildForceCacheCommand => buildForceCacheCommand;
+    public ICommand GoToFlow2Command => goToFlow2Command;
+    public ICommand GoToFlow3Command => goToFlow3Command;
+    public ICommand GoBackCommand => goBackCommand;
     public bool IsForceCacheAvailable => forceCacheService is not null;
+
+    public int CurrentFlow
+    {
+        get => currentFlow;
+        private set
+        {
+            if (currentFlow == value) return;
+            currentFlow = value;
+            Raise();
+            Raise(nameof(IsFlow1));
+            Raise(nameof(IsFlow2));
+            Raise(nameof(IsFlow3));
+            goBackCommand.RaiseCanExecuteChanged();
+        }
+    }
+    public bool IsFlow1 => currentFlow == 1;
+    public bool IsFlow2 => currentFlow == 2;
+    public bool IsFlow3 => currentFlow == 3;
+
+    // SectionPreviewCanvas bindings
+    public IReadOnlyList<PreviewBoundaryPoint> BoundaryPreviewPoints
+        => rawBoundaryPoints.Select(p => new PreviewBoundaryPoint(p.X, p.Y)).ToList();
+    public SectionShapeType BoundaryPreviewSectionShape
+        => SelectedColumn?.SectionType ?? SectionShapeType.Rectangular;
+    public double BoundaryPreviewWidth
+        => SelectedColumn is null ? 0 : SelectedColumn.IsCircular ? SelectedColumn.Diameter : SelectedColumn.Width;
+    public double BoundaryPreviewHeight
+        => SelectedColumn is null ? 0 : SelectedColumn.IsCircular ? SelectedColumn.Diameter : SelectedColumn.Height;
+    public double BoundaryPreviewCover
+        => SectionMappings.FirstOrDefault(m =>
+            string.Equals(m.UniqueSection, SelectedColumn?.UniqueSection, StringComparison.OrdinalIgnoreCase))?.Cover ?? 50.0;
+    public string BoundaryPreviewSectionLabel
+        => SelectedColumn is null ? "" : $"{SelectedColumn.EtabsSectionName}  ·  {SelectedColumn.SectionTypeDisplay}";
+
+    public UnitSystem TargetUnitSystem => targetUnitSystem;
+    public bool IsBoundaryPreviewValid
+        => SelectedColumn is not null
+           && (SelectedColumn.IsIrregular
+               ? rawBoundaryPoints.Count >= 3
+               : SelectedColumn.IsCircular ? SelectedColumn.Diameter > 0 : SelectedColumn.Width > 0 && SelectedColumn.Height > 0);
 
     public ImportGroupViewModel? SelectedImportGroup
     {
@@ -989,10 +1042,23 @@ public sealed class EtabsImportViewModel : ViewModelBase
         buildForceCacheCommand.RaiseCanExecuteChanged();
     }
 
+    private void SetFlow(int flow)
+    {
+        CurrentFlow = Math.Clamp(flow, 1, 3);
+    }
+
+    private void GoToFlow2()
+    {
+        if (LoadCombinations.Count == 0 && IsConnected)
+            RefreshLoadCombinations();
+        SetFlow(2);
+    }
+
     private void OnImportGroupChanged()
     {
         RaiseImportSummary();
         applyImportCommand.RaiseCanExecuteChanged();
+        goToFlow2Command.RaiseCanExecuteChanged();
     }
 
     private void RaiseImportSummary()
@@ -1647,9 +1713,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         if (col is null)
         {
+            rawBoundaryPoints = [];
             BoundaryPreviewPointCollection = null;
             PreviewStatusText = "Select a row to preview boundary.";
             Raise(nameof(HasBoundaryPreview));
+            RaiseCanvasProperties();
             return;
         }
 
@@ -1732,6 +1800,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void SetPreviewPoints(IReadOnlyList<Point2D> points, string typeLabel, int openingCount = 0)
     {
+        rawBoundaryPoints = points;
+
         var minX = points.Min(p => p.X);
         var maxX = points.Max(p => p.X);
         var minY = points.Min(p => p.Y);
@@ -1751,6 +1821,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         BoundaryPreviewPointCollection = pc;
         var openingSuffix = openingCount > 0 ? $"  ·  {openingCount} opening(s)" : "";
         PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} × {maxY - minY:0.#} mm{openingSuffix}";
+        RaiseCanvasProperties();
     }
 
     private IReadOnlyList<Point2D>? GetOrComputePierBoundaryForPreview(EtabsColumnImportRowViewModel column)
@@ -2181,6 +2252,18 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(IsColumnPreviewCircular));
         Raise(nameof(ColumnPreviewDimensions));
         Raise(nameof(ColumnPreviewRebar));
+        RaiseCanvasProperties();
+    }
+
+    private void RaiseCanvasProperties()
+    {
+        Raise(nameof(BoundaryPreviewPoints));
+        Raise(nameof(BoundaryPreviewSectionShape));
+        Raise(nameof(BoundaryPreviewWidth));
+        Raise(nameof(BoundaryPreviewHeight));
+        Raise(nameof(BoundaryPreviewCover));
+        Raise(nameof(BoundaryPreviewSectionLabel));
+        Raise(nameof(IsBoundaryPreviewValid));
     }
 
     private void RaiseCommandStates()
