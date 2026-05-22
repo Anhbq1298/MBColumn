@@ -1013,7 +1013,13 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
 
         BoundaryPreviewPointCollection = pc;
-        PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} × {maxY - minY:0.#} mm";
+        var openingInfo = pierBoundaryCache.TryGetValue(typeLabel, out _) ? "" : "";
+        // Append opening count if boundary is cached for this preview
+        var openingCount = 0;
+        foreach (var kv in pierBoundaryCache.Values)
+            if (kv.Outer == points) { openingCount = kv.Openings.Count; break; }
+        var openingSuffix = openingCount > 0 ? $"  ·  {openingCount} opening(s)" : "";
+        PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} × {maxY - minY:0.#} mm{openingSuffix}";
     }
 
     private IReadOnlyList<Point2D>? GetOrComputePierBoundaryForPreview(EtabsColumnImportRowViewModel column)
