@@ -1,7 +1,6 @@
 using ETABSv1;
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.Services.Etabs;
-using System.Globalization;
 using SMath = System.Math;
 
 namespace MBColumn.Infrastructure.Etabs;
@@ -9,14 +8,20 @@ namespace MBColumn.Infrastructure.Etabs;
 // Reads ETABS area/shell objects assigned to a PierLabel and Story.
 // Each matching shell is converted into one plan-view centerline segment with its thickness.
 //
-// NOTE: ETABS COM API signatures (PropArea.GetShell_1 in particular) vary by version.
-// If thickness values look wrong, verify the parameter order against MBColumn_ref/ETABS.
+// Performance: BuildCache() runs once per connection and uses two bulk API calls:
+//   - AreaObj.GetLabelNameList  → all area names / labels / stories  (1 COM call)
+//   - AreaObj.GetAllAreas       → all area corner XYZ coordinates    (1 COM call)
+// Subsequent calls to GetPierGroups() / GetSegments() are pure dictionary lookups.
 public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
 {
     private const double FallbackThicknessMm = 200.0;
     private const double PlanSnapToleranceMm = 0.01;
 
     private readonly EtabsConnectionService connection;
+
+    // Cache is keyed to the model COM object; rebuilds automatically on reconnect.
+    private AreaScanCache? _cache;
+    private cSapModel? _cacheModel;
 
     public EtabsPierShellImportService(EtabsConnectionService connection)
     {
@@ -28,29 +33,17 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var areaNames = GetAreaNames(model);
-        var groups = new Dictionary<string, (string Pier, string Story, string Prop)>(StringComparer.OrdinalIgnoreCase);
+        var c = EnsureCache(model);
 
-        foreach (var areaName in areaNames)
-        {
-            var pier = GetAreaPierLabel(model, areaName);
-            if (string.IsNullOrEmpty(pier)) continue;
-
-            var (_, story) = GetAreaLabelAndStory(model, areaName);
-            if (string.IsNullOrEmpty(story)) continue;
-
-            var key = $"{pier}|{story}";
-            if (!groups.ContainsKey(key))
+        return [.. c.PierAreaMap.Keys
+            .Select(key =>
             {
-                var prop = GetAreaPropertyName(model, areaName);
-                groups[key] = (pier, story, prop);
-            }
-        }
-
-        return [.. groups.Values
+                var first = c.PierAreaMap[key][0];
+                var info = c.AreaInfo[first];
+                return (info.Pier, info.Story, info.Prop);
+            })
             .OrderBy(g => g.Pier, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(g => g.Story, StringComparer.OrdinalIgnoreCase)
-            .Select(g => (g.Pier, g.Story, g.Prop))];
+            .ThenBy(g => g.Story, StringComparer.OrdinalIgnoreCase)];
     }
 
     public IReadOnlyList<EtabsPierShellSegmentDto> GetSegments(string pierLabel, string storyName)
@@ -58,70 +51,129 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
+        var c = EnsureCache(model);
+
+        var key = $"{pierLabel.Trim()}|{storyName.Trim()}";
+        if (!c.PierAreaMap.TryGetValue(key, out var areaNames) || areaNames.Count == 0)
+            return [];
+
         var units = model.GetPresentUnits();
         var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
 
-        var areaNames = GetAreaNames(model);
-        var segments = new List<EtabsPierShellSegmentDto>();
-
+        var segments = new List<EtabsPierShellSegmentDto>(areaNames.Count);
         foreach (var areaName in areaNames)
         {
-            var (areaLabel, story) = GetAreaLabelAndStory(model, areaName);
-            if (!string.Equals(story, storyName, StringComparison.OrdinalIgnoreCase))
-                continue;
+            if (!c.AreaInfo.TryGetValue(areaName, out var info)) continue;
+            if (!c.AreaPoints.TryGetValue(areaName, out var points)) continue;
 
-            var pier = GetAreaPierLabel(model, areaName);
-            if (!string.Equals(pier, pierLabel, StringComparison.OrdinalIgnoreCase))
-                continue;
+            var centerline = ExtractPlanCenterlineSegment(points);
+            if (centerline is null) continue;
 
-            var pointsXyz = GetAreaPointsXyz(model, areaName, lengthToMm);
-            var centerline = ExtractPlanCenterlineSegment(pointsXyz);
-            if (centerline is null)
-                continue;
-
-            var propName = GetAreaPropertyName(model, areaName);
-            var thicknessMm = GetAreaThicknessMm(model, propName, lengthToMm) ?? FallbackThicknessMm;
-
+            var thicknessMm = c.GetOrFetchThickness(model, info.Prop, lengthToMm)
+                              ?? FallbackThicknessMm;
             var (start, end) = centerline.Value;
             segments.Add(new EtabsPierShellSegmentDto(
-                areaName, pierLabel, storyName, areaLabel,
-                propName, thicknessMm, start, end));
+                areaName, pierLabel, storyName, info.Label,
+                info.Prop, thicknessMm, start, end));
         }
 
         return segments;
     }
 
-    private static IReadOnlyList<string> GetAreaNames(cSapModel model)
+    // -------------------------------------------------------------------
+    // Cache management
+    // -------------------------------------------------------------------
+
+    private AreaScanCache EnsureCache(cSapModel model)
     {
-        int count = 0;
-        string[] names = [];
-        return model.AreaObj.GetNameList(ref count, ref names) == 0 ? names ?? [] : [];
+        if (_cache != null && ReferenceEquals(_cacheModel, model)) return _cache;
+        _cache = BuildCache(model);
+        _cacheModel = model;
+        return _cache;
     }
 
-    private static (string Label, string Story) GetAreaLabelAndStory(cSapModel model, string areaName)
+    // Two bulk calls cover the whole model; only pier-assigned areas get a GetPier COM call.
+    private static AreaScanCache BuildCache(cSapModel model)
     {
-        string label = "";
-        string story = "";
-        var ret = model.AreaObj.GetLabelFromName(areaName, ref label, ref story);
-        return ret == 0 ? (label ?? "", story ?? "") : ("", "");
-    }
+        var units = model.GetPresentUnits();
+        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
 
-    private static string GetAreaPierLabel(cSapModel model, string areaName)
-    {
-        string pierName = "";
-        try
+        // ── Bulk 1: label + story for every area (1 COM call) ────────────────────────────
+        int nAreas = 0;
+        string[] bulkNames = [], bulkLabels = [], bulkStories = [];
+        model.AreaObj.GetLabelNameList(ref nAreas, ref bulkNames, ref bulkLabels, ref bulkStories);
+
+        var labelStory = new Dictionary<string, (string Label, string Story)>(
+            nAreas, StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < nAreas; i++)
+            labelStory[bulkNames[i]] = (bulkLabels[i] ?? "", bulkStories[i] ?? "");
+
+        // ── Bulk 2: all area corner XYZ coordinates (1 COM call) ─────────────────────────
+        int nAreasBulk = 0, totalPts = 0;
+        string[] allAreaNames = [];
+        eAreaDesignOrientation[] orientations = [];
+        int[] ptDelimiter = [];       // cumulative point count up to each area
+        string[] ptNames = [];
+        double[] ptX = [], ptY = [], ptZ = [];
+
+        var areaPoints = new Dictionary<string, List<(double X, double Y)>>(
+            nAreas, StringComparer.OrdinalIgnoreCase);
+
+        if (model.AreaObj.GetAllAreas(
+                ref nAreasBulk, ref allAreaNames, ref orientations,
+                ref totalPts, ref ptDelimiter, ref ptNames,
+                ref ptX, ref ptY, ref ptZ) == 0 && nAreasBulk > 0)
         {
-            // AreaObj.GetPier mirrors FrameObj.GetPier in the ETABSv1 COM API
-            var ret = model.AreaObj.GetPier(areaName, ref pierName);
-            return ret == 0 ? pierName ?? "" : "";
+            var pStart = 0;
+            for (var i = 0; i < nAreasBulk; i++)
+            {
+                var pEnd = ptDelimiter[i]; // cumulative exclusive end
+                var pts = new List<(double X, double Y)>(pEnd - pStart);
+                for (var p = pStart; p < pEnd; p++)
+                    pts.Add((ptX[p] * lengthToMm, ptY[p] * lengthToMm));
+                areaPoints[allAreaNames[i]] = pts;
+                pStart = pEnd;
+            }
         }
-        catch
+        else
         {
-            return "";
+            // Fallback path: ETABS version that doesn't support GetAllAreas
+            foreach (var name in bulkNames)
+                areaPoints[name] = GetPointsFallback(model, name, lengthToMm);
         }
+
+        // ── Per area: pier label + section property (only 1 COM call per area) ──────────
+        var areaInfo = new Dictionary<string, AreaRecord>(StringComparer.OrdinalIgnoreCase);
+        var pierAreaMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var areaName in bulkNames)
+        {
+            string pier = "";
+            try { model.AreaObj.GetPier(areaName, ref pier); } catch { }
+            if (string.IsNullOrEmpty(pier)) continue;
+
+            if (!labelStory.TryGetValue(areaName, out var ls) || string.IsNullOrEmpty(ls.Story))
+                continue;
+
+            string prop = "";
+            try { model.AreaObj.GetProperty(areaName, ref prop); } catch { }
+
+            areaInfo[areaName] = new AreaRecord(pier, ls.Story, ls.Label, prop ?? "");
+
+            var mapKey = $"{pier}|{ls.Story}";
+            if (!pierAreaMap.TryGetValue(mapKey, out var list))
+                pierAreaMap[mapKey] = list = [];
+            list.Add(areaName);
+        }
+
+        return new AreaScanCache(areaInfo, pierAreaMap, areaPoints);
     }
 
-    private static List<(double X, double Y)> GetAreaPointsXyz(
+    // -------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------
+
+    private static List<(double X, double Y)> GetPointsFallback(
         cSapModel model, string areaName, double lengthToMm)
     {
         int nPoints = 0;
@@ -129,36 +181,17 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         if (model.AreaObj.GetPoints(areaName, ref nPoints, ref pointNames) != 0 || nPoints == 0)
             return [];
 
-        var xyPoints = new List<(double X, double Y)>(nPoints);
+        var pts = new List<(double X, double Y)>(nPoints);
         foreach (var ptName in pointNames)
         {
             double x = 0, y = 0, z = 0;
             if (model.PointObj.GetCoordCartesian(ptName, ref x, ref y, ref z) == 0)
-                xyPoints.Add((x * lengthToMm, y * lengthToMm));
+                pts.Add((x * lengthToMm, y * lengthToMm));
         }
-
-        return xyPoints;
+        return pts;
     }
 
-    private static string GetAreaPropertyName(cSapModel model, string areaName)
-    {
-        string propName = "";
-        try
-        {
-            // Python prototype: sap_model.AreaObj.GetProperty(area_name) -> (ret, propName)
-            var ret = model.AreaObj.GetProperty(areaName, ref propName);
-            return ret == 0 ? propName ?? "" : "";
-        }
-        catch
-        {
-            return "";
-        }
-    }
-
-    // Thickness priority:
-    //   1. GetWall  — standard homogeneous wall section (most common for pier shells)
-    //   2. GetSlab  — slab/shell sections sometimes used for thin walls
-    //   3. GetShellLayer_1 — layered shells: sum of all layer thicknesses
+    // Thickness priority: GetWall → GetSlab → GetShellLayer_1
     private static double? GetAreaThicknessMm(cSapModel model, string propName, double lengthToMm)
     {
         if (string.IsNullOrEmpty(propName))
@@ -173,10 +206,9 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
             int color = 0;
             string notes = "", guid = "";
 
-            var ret = model.PropArea.GetWall(propName, ref wallType, ref shellType,
-                ref matProp, ref thickness, ref color, ref notes, ref guid);
-
-            if (ret == 0 && thickness > 0)
+            if (model.PropArea.GetWall(propName, ref wallType, ref shellType,
+                    ref matProp, ref thickness, ref color, ref notes, ref guid) == 0
+                && thickness > 0)
                 return thickness * lengthToMm;
         }
         catch { }
@@ -190,10 +222,9 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
             int color = 0;
             string notes = "", guid = "";
 
-            var ret = model.PropArea.GetSlab(propName, ref slabType, ref shellType,
-                ref matProp, ref thickness, ref color, ref notes, ref guid);
-
-            if (ret == 0 && thickness > 0)
+            if (model.PropArea.GetSlab(propName, ref slabType, ref shellType,
+                    ref matProp, ref thickness, ref color, ref notes, ref guid) == 0
+                && thickness > 0)
                 return thickness * lengthToMm;
         }
         catch { }
@@ -207,11 +238,10 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
             string[] matProps = [];
             double[] matAng = [];
 
-            var ret = model.PropArea.GetShellLayer_1(propName, ref nLayers, ref layerNames,
-                ref dist, ref thick, ref myType, ref nIntPts, ref matProps, ref matAng,
-                ref s11, ref s22, ref s12);
-
-            if (ret == 0 && thick.Length > 0)
+            if (model.PropArea.GetShellLayer_1(propName, ref nLayers, ref layerNames,
+                    ref dist, ref thick, ref myType, ref nIntPts, ref matProps, ref matAng,
+                    ref s11, ref s22, ref s12) == 0
+                && thick.Length > 0)
                 return thick.Sum() * lengthToMm;
         }
         catch { }
@@ -227,7 +257,6 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         if (xyPoints.Count < 2)
             return null;
 
-        // Deduplicate with snap tolerance
         var unique = new List<(double X, double Y)>();
         foreach (var p in xyPoints)
         {
@@ -241,21 +270,14 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         if (unique.Count == 2)
             return (unique[0], unique[1]);
 
-        // More than 2 unique XY points: use farthest pair
         (double X, double Y) bestA = unique[0], bestB = unique[1];
         double maxDist = 0;
-
-        for (int i = 0; i < unique.Count; i++)
+        for (var i = 0; i < unique.Count; i++)
         {
-            for (int j = i + 1; j < unique.Count; j++)
+            for (var j = i + 1; j < unique.Count; j++)
             {
                 var d = Dist2D(unique[i], unique[j]);
-                if (d > maxDist)
-                {
-                    maxDist = d;
-                    bestA = unique[i];
-                    bestB = unique[j];
-                }
+                if (d > maxDist) { maxDist = d; bestA = unique[i]; bestB = unique[j]; }
             }
         }
 
@@ -264,4 +286,32 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
 
     private static double Dist2D((double X, double Y) a, (double X, double Y) b)
         => SMath.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+
+    // -------------------------------------------------------------------
+    // Inner types
+    // -------------------------------------------------------------------
+
+    private sealed record AreaRecord(string Pier, string Story, string Label, string Prop);
+
+    private sealed class AreaScanCache(
+        Dictionary<string, AreaRecord> areaInfo,
+        Dictionary<string, List<string>> pierAreaMap,
+        Dictionary<string, List<(double X, double Y)>> areaPoints)
+    {
+        private readonly Dictionary<string, double?> thicknessCache =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        public Dictionary<string, AreaRecord> AreaInfo { get; } = areaInfo;
+        public Dictionary<string, List<string>> PierAreaMap { get; } = pierAreaMap;
+        public Dictionary<string, List<(double X, double Y)>> AreaPoints { get; } = areaPoints;
+
+        public double? GetOrFetchThickness(cSapModel model, string propName, double lengthToMm)
+        {
+            if (string.IsNullOrEmpty(propName)) return null;
+            if (thicknessCache.TryGetValue(propName, out var cached)) return cached;
+            var result = GetAreaThicknessMm(model, propName, lengthToMm);
+            thicknessCache[propName] = result;
+            return result;
+        }
+    }
 }
