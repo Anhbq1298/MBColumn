@@ -1,13 +1,26 @@
 using MBColumn.Presentation.Wpf.Composition;
 using MBColumn.Presentation.Wpf.Views;
+using System;
+using System.Windows;
 
 namespace MBColumn.Presentation.Wpf;
 
 public partial class App : System.Windows.Application
 {
-    protected override void OnStartup(System.Windows.StartupEventArgs e)
+    protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+        {
+            System.IO.File.WriteAllText("crash.log", args.ExceptionObject.ToString());
+        };
+        DispatcherUnhandledException += (s, args) =>
+        {
+            System.IO.File.WriteAllText("crash.log", args.Exception.ToString());
+            args.Handled = true; // prevent immediate exit if possible
+        };
+
         DispatcherUnhandledException += OnUnhandledException;
         ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
 

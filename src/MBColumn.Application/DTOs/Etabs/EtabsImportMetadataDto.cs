@@ -20,4 +20,5 @@ public sealed class EtabsImportMetadataDto
     public List<string> SourceShellNames { get; set; } = [];
     public List<string> SourceAreaSectionProperties { get; set; } = [];
     public string? IrregularBoundaryWarning { get; set; }
+    public int OpeningCount { get; set; }
 }

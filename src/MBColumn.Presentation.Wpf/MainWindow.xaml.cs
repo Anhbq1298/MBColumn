@@ -29,17 +29,17 @@ public partial class MainWindow : Window
         }
     }
 
-    // Column rename handlers
-    private void ColumnRenameBox_KeyDown(object sender, KeyEventArgs e)
+    // Node rename handlers
+    private void NodeRenameBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (sender is not TextBox tb || tb.DataContext is not ColumnItemViewModel item) return;
+        if (sender is not TextBox tb || tb.DataContext is not ExplorerNodeViewModel item) return;
         if (e.Key == Key.Enter) { Explorer().CommitRename(item); e.Handled = true; }
         else if (e.Key == Key.Escape) { Explorer().CancelRename(item); e.Handled = true; }
     }
 
-    private void ColumnRenameBox_LostFocus(object sender, RoutedEventArgs e)
+    private void NodeRenameBox_LostFocus(object sender, RoutedEventArgs e)
     {
-        if (sender is TextBox tb && tb.DataContext is ColumnItemViewModel item)
+        if (sender is TextBox tb && tb.DataContext is ExplorerNodeViewModel item)
             Explorer().CommitRename(item);
     }
 
@@ -55,6 +55,22 @@ public partial class MainWindow : Window
         if (sender is not Button button || button.ContextMenu is null) return;
         button.ContextMenu.PlacementTarget = button;
         button.ContextMenu.IsOpen = true;
+    }
+
+    private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        if (e.NewValue is ExplorerNodeViewModel node)
+        {
+            Explorer().SelectNode(node);
+        }
+    }
+
+    private void Border_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (sender is Border b && b.DataContext is ExplorerNodeViewModel node)
+        {
+            Explorer().SelectNode(node);
+        }
     }
 
     private ProjectExplorerViewModel Explorer()

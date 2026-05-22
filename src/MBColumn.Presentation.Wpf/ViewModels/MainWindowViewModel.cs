@@ -57,6 +57,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             OnColumnSelected,
             SaveCurrentColumnInput,
             projectNameDialogService.PromptColumnName,
+            projectNameDialogService.PromptSelectSections,
             messageService);
 
         CalculateCommand = new AsyncRelayCommand(CalculateCurrentColumnAsync, () => !IsCalculating && HasCurrentSection);
@@ -71,7 +72,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SubscribeToInputChanges();
         UpdateWindowTitle();
 
-        Explorer.Columns.CollectionChanged += (_, _) =>
+        Explorer.Nodes.CollectionChanged += (_, _) =>
         {
             Raise(nameof(HasSections));
             RaiseCommandStates();
@@ -113,7 +114,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     }
     public int SelectedMainTabIndex { get => selectedMainTabIndex; set => Set(ref selectedMainTabIndex, value); }
     public bool HasCurrentSection => currentColumn is not null;
-    public bool HasSections => Explorer is not null && Explorer.Columns.Count > 0;
+    public bool HasSections => Explorer is not null && Explorer.Nodes.Count > 0;
     public bool HasCurrentResult => Result.HasResult;
     public bool ShowInputEmptyState => !HasCurrentSection;
     public bool ShowResultContent => HasCurrentSection && HasCurrentResult && !IsCalculationOutdated;

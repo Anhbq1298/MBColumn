@@ -14,9 +14,11 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     private readonly Action<ColumnItemViewModel?> onColumnSelected;
     private readonly Action saveCurrentColumnInput;
     private readonly Func<string, string?> promptColumnName;
+    private readonly Func<IEnumerable<ColumnRecord>, IEnumerable<int>?> promptSelectSections;
     private readonly IMessageService messageService;
     private readonly Dictionary<int, SectionStatus> sectionStatuses = [];
     private string projectName = "New Project";
+    private ExplorerNodeViewModel? selectedNode;
     private ColumnItemViewModel? selectedColumn;
 
     public ProjectExplorerViewModel(
@@ -24,17 +26,20 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         Action<ColumnItemViewModel?> onColumnSelected,
         Action saveCurrentColumnInput,
         Func<string, string?> promptColumnName,
+        Func<IEnumerable<ColumnRecord>, IEnumerable<int>?> promptSelectSections,
         IMessageService messageService)
     {
         this.projectService = projectService;
         this.onColumnSelected = onColumnSelected;
         this.saveCurrentColumnInput = saveCurrentColumnInput;
         this.promptColumnName = promptColumnName;
+        this.promptSelectSections = promptSelectSections;
         this.messageService = messageService;
 
-        Columns = new ObservableCollection<ColumnItemViewModel>();
+        Nodes = new ObservableCollection<ExplorerNodeViewModel>();
 
-        AddColumnCommand = new RelayCommand(AddColumn);
+        AddGroupCommand = new RelayCommand(AddGroup);
+        AddColumnCommand = new RelayCommand(() => AddColumn(null));
 
         projectService.ProjectChanged += (_, _) =>
         {
@@ -52,7 +57,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         private set => Set(ref projectName, value);
     }
 
-    public ObservableCollection<ColumnItemViewModel> Columns { get; }
+    public ObservableCollection<ExplorerNodeViewModel> Nodes { get; }
+
+    public ExplorerNodeViewModel? SelectedNode
+    {
+        get => selectedNode;
+        private set => Set(ref selectedNode, value);
+    }
 
     public ColumnItemViewModel? SelectedColumn
     {
@@ -60,12 +71,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         private set => Set(ref selectedColumn, value);
     }
 
+    public ICommand AddGroupCommand { get; }
     public ICommand AddColumnCommand { get; }
 
     public void SetSectionStatus(int sectionId, SectionStatus status)
     {
         sectionStatuses[sectionId] = status;
-        var section = Columns.FirstOrDefault(c => c.Id == sectionId);
+        var section = FindColumn(sectionId);
         if (section is not null)
             section.Status = status;
     }
@@ -73,67 +85,125 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     public void ClearSectionStatuses()
     {
         sectionStatuses.Clear();
-        foreach (var section in Columns)
-            section.Status = SectionStatus.NotCalculated;
+        foreach (var node in Nodes)
+        {
+            if (node is ColumnItemViewModel section)
+                section.Status = SectionStatus.NotCalculated;
+            else if (node is GroupItemViewModel group)
+            {
+                foreach (var child in group.Columns)
+                    child.Status = SectionStatus.NotCalculated;
+            }
+        }
     }
 
-    public void SelectColumn(ColumnItemViewModel item)
+    public void SelectNode(ExplorerNodeViewModel? item)
     {
-        if (selectedColumn is not null)
-            selectedColumn.IsSelected = false;
+        if (selectedNode == item) return;
 
-        selectedColumn = item;
-        item.IsSelected = true;
-        Raise(nameof(SelectedColumn));
-        onColumnSelected(item);
+        if (selectedNode is not null)
+            selectedNode.IsSelected = false;
+
+        selectedNode = item;
+        if (item is not null)
+            item.IsSelected = true;
+            
+        Raise(nameof(SelectedNode));
+        
+        var column = item as ColumnItemViewModel;
+        SelectedColumn = column;
+        onColumnSelected(column);
     }
 
     public void SelectColumnById(int columnId)
     {
-        var item = Columns.FirstOrDefault(c => c.Id == columnId);
+        var item = FindColumn(columnId);
         if (item is not null)
-            SelectColumn(item);
+            SelectNode(item);
     }
 
-    public void CommitRename(ColumnItemViewModel item)
+    private ColumnItemViewModel? FindColumn(int id)
+    {
+        foreach (var node in Nodes)
+        {
+            if (node is ColumnItemViewModel c && c.Id == id) return c;
+            if (node is GroupItemViewModel g)
+            {
+                var found = g.Columns.FirstOrDefault(x => x.Id == id);
+                if (found is not null) return found;
+            }
+        }
+        return null;
+    }
+
+    private GroupItemViewModel? FindGroup(int id)
+    {
+        return Nodes.OfType<GroupItemViewModel>().FirstOrDefault(g => g.Id == id);
+    }
+
+    public void CommitRename(ExplorerNodeViewModel item)
     {
         var newName = item.EditName.Trim();
         if (string.IsNullOrWhiteSpace(newName)) newName = item.Name;
 
         try
         {
-            projectService.RenameColumn(item.Id, newName);
+            if (item is ColumnItemViewModel)
+            {
+                projectService.RenameColumn(item.Id, newName);
+            }
+            else if (item is GroupItemViewModel)
+            {
+                projectService.RenameGroup(item.Id, newName);
+            }
+            
             item.Name = newName;
             item.IsRenaming = false;
         }
         catch (InvalidOperationException ex)
         {
-            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Section Name");
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Name");
             item.IsRenaming = true;
         }
     }
 
-    public void CancelRename(ColumnItemViewModel item)
+    public void CancelRename(ExplorerNodeViewModel item)
     {
         item.IsRenaming = false;
     }
 
-    private void AddColumn()
+    private void AddGroup()
     {
-        var defaultName = $"Section {Columns.Count + 1}";
+        var defaultName = $"Group {Nodes.OfType<GroupItemViewModel>().Count() + 1}";
         var name = promptColumnName(defaultName);
         if (name is null) return;
 
         try
         {
-            var record = projectService.AddColumn(name);
-
-            // The ProjectService raises ColumnsChanged when a column is added
-            // which triggers RefreshColumns. To avoid adding the item twice
-            // we refresh the list and then select the newly created column.
+            var record = projectService.AddGroup(name);
             RefreshColumns();
-            var item = Columns.FirstOrDefault(c => c.Id == record.Id);
-            if (item is not null) SelectColumn(item);
+            var item = FindGroup(record.Id);
+            if (item is not null) SelectNode(item);
+        }
+        catch (InvalidOperationException ex)
+        {
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Group Name");
+        }
+    }
+
+    private void AddColumn(GroupItemViewModel? group)
+    {
+        var totalColumns = Nodes.OfType<ColumnItemViewModel>().Count() + Nodes.OfType<GroupItemViewModel>().SelectMany(g => g.Columns).Count();
+        var defaultName = $"Section {totalColumns + 1}";
+        var name = promptColumnName(defaultName);
+        if (name is null) return;
+
+        try
+        {
+            var record = projectService.AddColumn(name, group?.Id);
+            RefreshColumns();
+            var item = FindColumn(record.Id);
+            if (item is not null) SelectNode(item);
         }
         catch (InvalidOperationException ex)
         {
@@ -148,14 +218,27 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
         try
         {
-            var record = projectService.DuplicateColumn(item.Id, name);
+            var record = projectService.DuplicateColumn(item.Id, name, item.GroupId);
             RefreshColumns();
-            var duplicated = Columns.FirstOrDefault(c => c.Id == record.Id);
-            if (duplicated is not null) SelectColumn(duplicated);
+            var duplicated = FindColumn(record.Id);
+            if (duplicated is not null) SelectNode(duplicated);
         }
         catch (InvalidOperationException ex)
         {
-            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Section");
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Duplicate Section Name");
+        }
+    }
+
+    private void MoveColumn(int columnId, int? groupId)
+    {
+        try
+        {
+            projectService.MoveColumn(columnId, groupId);
+            // RefreshColumns is automatically called via ColumnsChanged
+        }
+        catch (Exception ex)
+        {
+            messageService.ShowWarning(ToSectionWording(ex.Message), "Move Section Error");
         }
     }
 
@@ -166,59 +249,138 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
         projectService.DeleteColumn(item.Id);
         sectionStatuses.Remove(item.Id);
-        Columns.Remove(item);
-        if (selectedColumn == item)
+        
+        if (selectedNode == item)
         {
-            var next = Columns.FirstOrDefault();
-            if (next is not null) SelectColumn(next);
-            else
-            {
-                selectedColumn = null;
-                Raise(nameof(SelectedColumn));
-                onColumnSelected(null);
-            }
+            SelectNode(Nodes.FirstOrDefault());
+        }
+    }
+
+    private void DeleteGroup(GroupItemViewModel group)
+    {
+        if (!messageService.ConfirmWarning($"Delete group '{group.Name}' and all its sections?", "Delete Group"))
+            return;
+
+        foreach (var col in group.Columns)
+            sectionStatuses.Remove(col.Id);
+            
+        projectService.DeleteGroup(group.Id);
+        
+        if (selectedNode == group || (selectedColumn != null && selectedColumn.GroupId == group.Id))
+        {
+            SelectNode(Nodes.FirstOrDefault());
         }
     }
 
     private void RefreshColumns()
     {
-        var previousId = selectedColumn?.Id;
-        Columns.Clear();
+        var previousId = selectedNode?.Id;
+        var previousIsGroup = selectedNode is GroupItemViewModel;
+        
+        Nodes.Clear();
+
+        var groups = projectService.GetGroups();
+        var groupDict = new Dictionary<int, GroupItemViewModel>();
+        
+        foreach (var groupRecord in groups)
+        {
+            var groupVm = CreateItem(groupRecord);
+            groupDict[groupRecord.Id] = groupVm;
+            Nodes.Add(groupVm);
+        }
 
         foreach (var record in projectService.GetColumns())
         {
-            Columns.Add(CreateItem(record));
+            var item = CreateItem(record);
+            
+            item.MoveToGroupOptions.Add(new GroupActionViewModel("(None)", () => MoveColumn(item.Id, null)));
+            foreach (var groupVm in groupDict.Values)
+            {
+                if (record.GroupId != groupVm.Id)
+                {
+                    item.MoveToGroupOptions.Add(new GroupActionViewModel(groupVm.Name, () => MoveColumn(item.Id, groupVm.Id)));
+                }
+            }
+
+            if (record.GroupId.HasValue && groupDict.TryGetValue(record.GroupId.Value, out var parentGroup))
+            {
+                parentGroup.Columns.Add(item);
+            }
+            else
+            {
+                Nodes.Add(item);
+            }
         }
 
-        var currentIds = Columns.Select(c => c.Id).ToHashSet();
+        var currentIds = Nodes.OfType<ColumnItemViewModel>().Select(c => c.Id)
+            .Concat(Nodes.OfType<GroupItemViewModel>().SelectMany(g => g.Columns).Select(c => c.Id))
+            .ToHashSet();
+            
         foreach (var removedId in sectionStatuses.Keys.Where(id => !currentIds.Contains(id)).ToList())
             sectionStatuses.Remove(removedId);
 
         UpdateProjectName();
 
-        var toReselect = previousId.HasValue
-            ? Columns.FirstOrDefault(c => c.Id == previousId.Value)
-            : null;
+        ExplorerNodeViewModel? toReselect = null;
+        if (previousId.HasValue)
+        {
+            toReselect = previousIsGroup ? FindGroup(previousId.Value) : FindColumn(previousId.Value);
+        }
 
         if (toReselect is not null)
         {
-            SelectColumn(toReselect);
+            SelectNode(toReselect);
         }
-        else if (Columns.Count > 0)
+        else if (Nodes.Count > 0)
         {
-            SelectColumn(Columns[0]);
+            SelectNode(Nodes[0]);
         }
         else
         {
-            selectedColumn = null;
-            Raise(nameof(SelectedColumn));
-            onColumnSelected(null);
+            SelectNode(null);
+        }
+    }
+
+    private GroupItemViewModel CreateItem(GroupRecord record)
+    {
+        return new GroupItemViewModel(
+            record,
+            SelectNode,
+            AddColumn,
+            DeleteGroup,
+            AddExistingSectionsToGroup
+        );
+    }
+
+    private void AddExistingSectionsToGroup(GroupItemViewModel group)
+    {
+        var allColumns = projectService.GetColumns();
+        var columnsNotInGroup = allColumns.Where(c => c.GroupId != group.Id).ToList();
+
+        if (columnsNotInGroup.Count == 0)
+        {
+            messageService.ShowInformation("There are no available sections to add.", "Add Sections");
+            return;
+        }
+
+        var selectedIds = promptSelectSections(columnsNotInGroup);
+        if (selectedIds != null && selectedIds.Any())
+        {
+            try
+            {
+                projectService.MoveColumns(selectedIds, group.Id);
+                // RefreshColumns will be called automatically
+            }
+            catch (Exception ex)
+            {
+                messageService.ShowWarning(ToSectionWording(ex.Message), "Add Sections Error");
+            }
         }
     }
 
     private ColumnItemViewModel CreateItem(ColumnRecord record)
     {
-        var item = new ColumnItemViewModel(record, SelectColumn, DuplicateColumn, DeleteColumn);
+        var item = new ColumnItemViewModel(record, SelectNode, DuplicateColumn, DeleteColumn);
         if (sectionStatuses.TryGetValue(record.Id, out var status))
             item.Status = status;
         return item;
@@ -226,7 +388,10 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
     private string NextDuplicateName(string sourceName)
     {
-        var existing = Columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingColumns = Nodes.OfType<ColumnItemViewModel>().Select(c => c.Name)
+            .Concat(Nodes.OfType<GroupItemViewModel>().SelectMany(g => g.Columns).Select(c => c.Name));
+            
+        var existing = existingColumns.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var baseName = $"{sourceName} Copy";
         if (!existing.Contains(baseName))
             return baseName;

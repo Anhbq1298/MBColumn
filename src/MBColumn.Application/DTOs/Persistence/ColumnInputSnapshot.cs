@@ -34,6 +34,8 @@ public sealed class ColumnInputSnapshot
     public double IrregularSpacing { get; set; } = 150;
     public string IrregularRebarMode { get; set; } = "EqualSpacing";
     public List<SnapshotBoundaryPoint> BoundaryPoints { get; set; } = [];
+    // Each inner list is one void/hole boundary (CCW, centroid-origin mm).
+    public List<List<SnapshotBoundaryPoint>> OpeningPoints { get; set; } = [];
     public List<SnapshotRebar> Rebars { get; set; } = [];
 
     public double Pu { get; set; }

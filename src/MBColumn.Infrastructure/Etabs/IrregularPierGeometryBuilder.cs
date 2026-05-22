@@ -67,11 +67,12 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
             };
         }
 
-        var union = UnaryUnionOp.Union(geoms);
-        var polylines = ExportClockwisePolylines(union);
+        var raw   = UnaryUnionOp.Union(geoms);
+        var union = NetTopologySuite.Simplify.DouglasPeuckerSimplifier.Simplify(raw, SnapToleranceMm);
+        var (outerPolylines, openingPolylines) = ExportPolylines(union);
 
         // Largest polygon first so callers can pick [0] without extra sorting
-        var sortedPolylines = polylines
+        var sortedPolylines = outerPolylines
             .OrderByDescending(p => SMath.Abs(PolygonGeometry.SignedArea(p)))
             .ToList<IReadOnlyList<Point2D>>();
 
@@ -82,6 +83,7 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
         return new EtabsIrregularBoundaryDto
         {
             ClockwisePolylines = sortedPolylines,
+            OpeningPolylines   = openingPolylines,
             PierLabel = segments[0].PierLabel,
             StoryName = segments[0].StoryName,
             SourceShellNames = segments.Select(s => s.ShellName).ToList(),
@@ -158,7 +160,12 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
             var u = UnitVectorFromNode(s, x0, y0);
             double nx = -u.Y, ny = u.X;
             double half = s.ThicknessMm / 2.0;
-            double forward = SMath.Min(SMath.Max(s.ThicknessMm, 1.0), 500.0);
+            double segLen = SMath.Sqrt(
+                (s.End.X - s.Start.X) * (s.End.X - s.Start.X) +
+                (s.End.Y - s.Start.Y) * (s.End.Y - s.Start.Y));
+            // Cap forward at segment length: a patch that extends beyond the segment's
+            // far end produces an extra stub outside the buffer body.
+            double forward = SMath.Min(SMath.Min(SMath.Max(s.ThicknessMm, 1.0), 500.0), segLen);
 
             sampleCoords.Add(new Coordinate(x0 + nx * half, y0 + ny * half));
             sampleCoords.Add(new Coordinate(x0 - nx * half, y0 - ny * half));
@@ -199,12 +206,15 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
     }
 
     // -------------------------------------------------------------------
-    // Export NTS union result as clockwise MBColumn Point2D lists.
+    // Export NTS union result as clockwise outer polylines + CCW opening polylines.
     // MBColumn uses: clockwise = negative signed area (standard frame).
-    // NTS exterior rings are CCW by default, so we reverse them.
+    // NTS exterior rings are CCW by default → reverse to CW for outer boundary.
+    // Interior rings (holes detected by NTS) → kept CCW, represent voids/openings.
+    // All rings are translated to the same centroid origin as the outer polygon.
     // -------------------------------------------------------------------
 
-    private static List<IReadOnlyList<Point2D>> ExportClockwisePolylines(Geometry geometry)
+    private static (List<IReadOnlyList<Point2D>> Outer, List<IReadOnlyList<Point2D>> Openings)
+        ExportPolylines(Geometry geometry)
     {
         IEnumerable<Geometry> polys = geometry switch
         {
@@ -213,25 +223,37 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
             _ => []
         };
 
-        var result = new List<IReadOnlyList<Point2D>>();
+        var outer    = new List<IReadOnlyList<Point2D>>();
+        var openings = new List<IReadOnlyList<Point2D>>();
+
         foreach (var g in polys)
         {
             if (g is not Polygon poly || poly.IsEmpty) continue;
 
-            // Exclude the closing repeated point
-            var coords = poly.ExteriorRing.Coordinates;
-            var points = coords
-                .Take(coords.Length - 1)
+            // Exterior ring → clockwise, centroid origin
+            var extCoords = poly.ExteriorRing.Coordinates;
+            var extPts = extCoords
+                .Take(extCoords.Length - 1)
                 .Select(c => new Point2D(c.X, c.Y))
                 .ToList();
 
-            var cw = PolygonGeometry.EnsureClockwise(points);
-            // Translate to centroid origin so MBColumn section origin = geometric centre
-            var centered = PolygonGeometry.MoveToCentroidOrigin(cw, out _);
-            result.Add(centered);
+            var cw = PolygonGeometry.EnsureClockwise(extPts);
+            var centered = PolygonGeometry.MoveToCentroidOrigin(cw, out var centroid);
+            outer.Add(centered);
+
+            // Interior rings → voids/openings, shifted by the same centroid
+            for (int i = 0; i < poly.NumInteriorRings; i++)
+            {
+                var holeCoords = poly.GetInteriorRingN(i).Coordinates;
+                var holePts = holeCoords
+                    .Take(holeCoords.Length - 1)
+                    .Select(c => new Point2D(c.X - centroid.X, c.Y - centroid.Y))
+                    .ToList();
+                openings.Add(holePts);
+            }
         }
 
-        return result;
+        return (outer, openings);
     }
 
     // -------------------------------------------------------------------
@@ -241,10 +263,13 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
     private static (double X, double Y) UnitVectorFromNode(
         EtabsPierShellSegmentDto seg, double nodeX, double nodeY)
     {
-        const double tol = 1e-9;
-        double dStartX = seg.Start.X - nodeX;
-        double dStartY = seg.Start.Y - nodeY;
-        bool startIsNode = dStartX * dStartX + dStartY * dStartY <= tol;
+        // Use the same snap-key comparison as BuildNodeConnections so that endpoints
+        // within SnapToleranceMm of the node are correctly identified as being at it.
+        // A raw squared-distance threshold (formerly 1e-9) was tighter than the snap
+        // tolerance (0.01 mm → 1e-4 mm²), which caused reversed unit vectors when
+        // two segments shared a snapped node but their actual coordinates differed by
+        // a few microns — producing a spurious "leg" in the joint-patch convex hull.
+        bool startIsNode = SnapKey(seg.Start.X, seg.Start.Y) == SnapKey(nodeX, nodeY);
 
         (double x0, double y0) = startIsNode ? seg.Start : seg.End;
         (double x1, double y1) = startIsNode ? seg.End : seg.Start;
@@ -253,7 +278,7 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
         double dy = y1 - y0;
         double len = SMath.Sqrt(dx * dx + dy * dy);
 
-        return len <= tol ? (1.0, 0.0) : (dx / len, dy / len);
+        return len <= 1e-9 ? (1.0, 0.0) : (dx / len, dy / len);
     }
 
     private static string SnapKey(double x, double y)

@@ -197,6 +197,8 @@ var tests = new List<(string Name, Action Test)>
     ("DXF import applies irregular custom coordinates",              TestDxfImportAppliesIrregularCustomCoordinates),
     ("DXF import does not block on cover",                           TestDxfImportDoesNotBlockOnCover),
     ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
+    ("ETABS pier geometry snap-tolerance fix",                      TestIrregularPierGeometrySnapTolerance),
+    ("ETABS pier geometry forward-cap fix",                         TestIrregularPierGeometryForwardCap),
     ("Irregular equal spacing generated rebars satisfy cover",        TestIrregularEqualSpacingGeneratedRebarsSatisfyCover),
     ("Irregular equal spacing ToDto refreshes stale rebars",          TestIrregularEqualSpacingToDtoRefreshesStaleRebars),
     ("Irregular custom mode clears stale rebar message",              TestIrregularCustomModeClearsStaleRebarMessage),
@@ -2836,7 +2838,13 @@ static void TestDxfImportDoesNotBlockOnCover()
 
 static void TestEtabsImportCreatesIrregularCustomCoordinates()
 {
-    var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel([]);
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel(
+        [],
+        new StubEtabsConnectionService(),
+        new StubEtabsColumnImportService(),
+        new StubEtabsForceImportService(),
+        new StubPierShellImportService(),
+        new Stub32PointGeometryBuilder());
 
     vm.ConnectCommand.Execute(null);
     var column = vm.Columns.First(c => c.EtabsSectionName == "CIRC800");
@@ -2845,6 +2853,11 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     vm.NextCommand.Execute(null);
     IsTrue(vm.CurrentStep == 2);
     IsTrue(vm.SectionMappings.Count == 1);
+
+    // Step 2 → 3 requires at least one selected load combination and one selected force row.
+    // Selecting the load combination triggers GenerateForceRows() which populates ForceRows.
+    // Force rows are selected by default.
+    vm.LoadCombinations[0].IsSelected = true;
 
     vm.NextCommand.Execute(null);
     IsTrue(vm.CurrentStep == 3);
@@ -3165,4 +3178,126 @@ static void TestIrregularIntegratorBoundaryHandled()
     AreClose(max, 100.0, 1e-9);
     double maxDiag = MBColumn.Infrastructure.Solvers.NeutralAxisSweepStrategy.ProjectExtreme(section, 1.0 / Math.Sqrt(2.0), 1.0 / Math.Sqrt(2.0));
     AreClose(maxDiag, 100.0 * Math.Sqrt(2.0), 1e-9);
+}
+
+// ── Bug-fix regression: IrregularPierGeometryBuilder ─────────────────────────
+//
+// Both tests exercise the convex-hull joint-patch path (general case) by using a
+// 3-segment T-junction so the orthogonal branch is never taken.
+
+static void TestIrregularPierGeometrySnapTolerance()
+{
+    // T-junction where two segment endpoints at the shared node differ by 0.005 mm.
+    // SnapKey maps both to "0,0" (within SnapToleranceMm=0.01 mm), but the old
+    // squared-distance check (threshold 1e-9 mm²) failed to recognise them as the
+    // same node.  This reversed the unit vectors for segH_right and segV in the
+    // joint-patch convex hull, pushing sample points 200 mm downward and producing
+    // a spurious stub.
+    var segH_left  = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "HL", "P1", "S1", "L1", "CW200", 200, (-300, 0.005), (0, 0.005));
+    var segH_right = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "HR", "P1", "S1", "L2", "CW200", 200, (0, 0),        (300, 0));
+    var segV       = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "V",  "P1", "S1", "L3", "CW200", 200, (0, 0),        (0, 400));
+
+    var result = new MBColumn.Infrastructure.Etabs.IrregularPierGeometryBuilder()
+                     .BuildBoundary([segH_left, segH_right, segV]);
+
+    IsTrue(result.ClockwisePolylines.Count >= 1);
+    var poly = result.ClockwisePolylines[0];
+
+    // Correct T-shape Y extent ≈ 500 mm (−100 bottom of H-arms to +400 top of V-arm).
+    // With the bug the convex hull had sample points at y ≈ −200, inflating extent to ≈ 600 mm.
+    double yExtent = poly.Max(p => p.Y) - poly.Min(p => p.Y);
+    IsTrue(yExtent < 550);
+}
+
+static void TestIrregularPierGeometryForwardCap()
+{
+    // T-junction where the upward arm is only 40 mm long — shorter than the wall
+    // thickness of 200 mm.  Old code used forward = min(max(200,1),500) = 200, placing
+    // convex-hull sample points 200 mm above the joint even though the arm only extends
+    // 40 mm.  New code caps forward at segLen = 40 mm, keeping the patch within the arm body.
+    var shortSeg   = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "Short", "P1", "S1", "L1", "CW200", 200, (0, 0),    (0, 40));
+    var longH_left  = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "HL",    "P1", "S1", "L2", "CW200", 200, (-300, 0), (0, 0));
+    var longH_right = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "HR",    "P1", "S1", "L3", "CW200", 200, (0, 0),    (300, 0));
+
+    var result = new MBColumn.Infrastructure.Etabs.IrregularPierGeometryBuilder()
+                     .BuildBoundary([shortSeg, longH_left, longH_right]);
+
+    IsTrue(result.ClockwisePolylines.Count >= 1);
+    var poly = result.ClockwisePolylines[0];
+
+    // Correct shape Y extent ≈ 200 mm (H-arms y ∈ [−100, 100]; short arm adds nothing above 100).
+    // With the bug the patch reached y ≈ 200, inflating the extent to ≈ 300 mm.
+    double yExtent = poly.Max(p => p.Y) - poly.Min(p => p.Y);
+    IsTrue(yExtent < 250);
+}
+
+// ── Stub services for TestEtabsImportCreatesIrregularCustomCoordinates ─────────
+
+sealed class StubEtabsConnectionService : MBColumn.Application.Services.Etabs.IEtabsConnectionService
+{
+    public bool IsConnected => false;
+    public MBColumn.Application.DTOs.Etabs.EtabsConnectionResultDto ConnectToRunningEtabs()
+        => new(true, "Stub connected", new("TestModel", "C:\\test.edb", "kN-m", 1, 1, 0));
+    public void Disconnect() { }
+}
+
+sealed class StubEtabsColumnImportService : MBColumn.Application.Services.Etabs.IEtabsColumnImportService
+{
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> GetCandidateColumns(MBColumn.Domain.Enums.UnitSystem _)
+        => [new("pier:P1:Story1", "P1", "Story1", "P1", "P1|Story1", "CIRC800", "C40",
+                MBColumn.Domain.Enums.SectionShapeType.Irregular, 800, 800, 0, "", "Ready")];
+    public IReadOnlyList<string> GetLoadCombinations() => ["1.2D+1.6L"];
+}
+
+sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.IEtabsForceImportService
+{
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetForces(
+        IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> _,
+        IReadOnlyList<string> _2,
+        MBColumn.Domain.Enums.UnitSystem _3) => [];
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetPierForces(
+        IReadOnlyList<(string PierLabel, string StoryName)> _,
+        IReadOnlyList<string> _2,
+        MBColumn.Domain.Enums.UnitSystem _3)
+        => [new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 0, 0, "OK")];
+}
+
+sealed class StubPierShellImportService : MBColumn.Application.Services.Etabs.IEtabsPierShellImportService
+{
+    public IReadOnlyList<(string PierLabel, string StoryName, string SectionProperty)> GetPierGroups(
+        MBColumn.Domain.Enums.UnitSystem _) => [];
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto> GetSegments(
+        string pierLabel, string storyName, MBColumn.Domain.Enums.UnitSystem _)
+        => [new("A1", pierLabel, storyName, "L1", "CW200", 200, (0, 0), (400, 0))];
+}
+
+sealed class Stub32PointGeometryBuilder : MBColumn.Application.Services.Etabs.IIrregularPierGeometryBuilder
+{
+    public MBColumn.Application.DTOs.Etabs.EtabsIrregularBoundaryDto BuildBoundary(
+        IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto> segments)
+    {
+        // Clockwise circle, 32 vertices, radius 400 mm, centred at origin
+        var pts = Enumerable.Range(0, 32)
+            .Select(i =>
+            {
+                var angle = Math.PI / 2.0 - 2.0 * Math.PI * i / 32.0;
+                return new MBColumn.Domain.Entities.Point2D(
+                    Math.Round(400 * Math.Cos(angle), 6),
+                    Math.Round(400 * Math.Sin(angle), 6));
+            })
+            .ToList<MBColumn.Domain.Entities.Point2D>();
+        return new MBColumn.Application.DTOs.Etabs.EtabsIrregularBoundaryDto
+        {
+            ClockwisePolylines = [pts],
+            PierLabel = segments.Count > 0 ? segments[0].PierLabel : "",
+            StoryName = segments.Count > 0 ? segments[0].StoryName : "",
+            SourceShellNames = segments.Select(s => s.ShellName).ToList()
+        };
+    }
 }

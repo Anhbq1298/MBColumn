@@ -39,7 +39,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
     private readonly UnitSystem targetUnitSystem;
-    private readonly Dictionary<string, IReadOnlyList<Point2D>> pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, (IReadOnlyList<Point2D> Outer, IReadOnlyList<IReadOnlyList<Point2D>> Openings)>
+        pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
     private bool pierGroupsLoaded;
     private readonly RelayCommand connectCommand;
     private readonly RelayCommand disconnectCommand;
@@ -745,6 +746,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             .ToList();
 
         IReadOnlyList<Point2D> boundary;
+        IReadOnlyList<IReadOnlyList<Point2D>> openings = [];
         string importMode = "FrameSection";
         List<string> sourceShells = [];
         List<string> sourceSectionProps = [];
@@ -752,8 +754,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         if (mapping.IsIrregular)
         {
-            var (irr, shells, props, warn) = BuildIrregularBoundary(row.Pier, row.Story, mapping);
+            var (irr, ops, shells, props, warn) = BuildIrregularBoundary(row.Pier, row.Story, mapping);
             boundary = irr;
+            openings = ops;
             sourceShells = shells;
             sourceSectionProps = props;
             boundaryWarning = warn;
@@ -810,6 +813,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         Y = Math.Round(point.Y, 6)
                     }).ToList()
                 : [],
+            OpeningPoints = mapping.IsIrregular
+                ? openings.Select(op => op.Select((pt, j) => new SnapshotBoundaryPoint
+                    {
+                        PtIndex = j + 1,
+                        X = Math.Round(pt.X, 6),
+                        Y = Math.Round(pt.Y, 6)
+                    }).ToList()).ToList()
+                : [],
             Rebars = mapping.IsIrregular ? rebars : [],
             Pu = primaryForce?.P ?? 0,
             Mux = primaryForce?.M2 ?? 0,
@@ -834,7 +845,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 ImportMode = importMode,
                 SourceShellNames = sourceShells,
                 SourceAreaSectionProperties = sourceSectionProps,
-                IrregularBoundaryWarning = boundaryWarning
+                IrregularBoundaryWarning = boundaryWarning,
+                OpeningCount = openings.Count
             }
         };
 
@@ -842,6 +854,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     }
 
     private (IReadOnlyList<Point2D> Boundary,
+             IReadOnlyList<IReadOnlyList<Point2D>> Openings,
              List<string> ShellNames,
              List<string> SectionProps,
              string? Warning)
@@ -849,7 +862,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         if (pierShellImportService is null || irregularGeometryBuilder is null)
         {
-            return (BuildBoundaryPoints(mapping), [], [],
+            return (BuildBoundaryPoints(mapping), [], [], [],
                 "Pier shell service not available — rectangular fallback used.");
         }
 
@@ -858,14 +871,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var segments = pierShellImportService.GetSegments(pier, story, targetUnitSystem);
             if (segments.Count == 0)
             {
-                return (BuildBoundaryPoints(mapping), [], [],
+                return (BuildBoundaryPoints(mapping), [], [], [],
                     $"No shell segments found for pier '{pier}', story '{story}' — rectangular fallback used.");
             }
 
             var result = irregularGeometryBuilder.BuildBoundary(segments);
             if (result.IsEmpty)
             {
-                return (BuildBoundaryPoints(mapping),
+                return (BuildBoundaryPoints(mapping), [],
                     [.. result.SourceShellNames], [.. result.SourceSectionProperties],
                     $"Geometry builder returned empty polygon — rectangular fallback used. {result.WarningMessage}");
             }
@@ -880,13 +893,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 MessageBox.Show(warning, "Irregular Section Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             return (centeredPoints,
+                result.OpeningPolylines,
                 [.. result.SourceShellNames],
                 [.. result.SourceSectionProperties],
                 warning);
         }
         catch (Exception ex)
         {
-            return (BuildBoundaryPoints(mapping), [], [],
+            return (BuildBoundaryPoints(mapping), [], [], [],
                 $"Irregular boundary failed: {ex.Message} — rectangular fallback used.");
         }
     }
@@ -914,7 +928,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             // Check cache first (no COM call needed)
             if (pierBoundaryCache.TryGetValue(col.UniqueSection, out var cached))
             {
-                points = cached;
+                points = cached.Outer;
             }
             else
             {
@@ -1007,7 +1021,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var key = column.UniqueSection;
 
         if (pierBoundaryCache.TryGetValue(key, out var cached))
-            return cached;
+            return cached.Outer;
 
         if (pierShellImportService is null || irregularGeometryBuilder is null)
             return null;
@@ -1022,7 +1036,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
             var centered = result.ClockwisePolylines[0];
 
-            pierBoundaryCache[key] = centered;
+            pierBoundaryCache[key] = (centered, result.OpeningPolylines);
             return centered;
         }
         catch

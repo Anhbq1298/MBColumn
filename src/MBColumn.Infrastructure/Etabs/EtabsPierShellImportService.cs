@@ -111,39 +111,15 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         for (var i = 0; i < nAreas; i++)
             labelStory[bulkNames[i]] = (bulkLabels[i] ?? "", bulkStories[i] ?? "");
 
-        // ── Bulk 2: all area corner XYZ coordinates (1 COM call) ─────────────────────────
-        int nAreasBulk = 0, totalPts = 0;
-        string[] allAreaNames = [];
-        eAreaDesignOrientation[] orientations = [];
-        int[] ptDelimiter = [];       // cumulative point count up to each area
-        string[] ptNames = [];
-        double[] ptX = [], ptY = [], ptZ = [];
-
+        // ── Per area: XY coordinates via joint connectivity (GetPoints + GetCoordCartesian) ──
+        // GetAllAreas bulk approach was unreliable: ptDelimiter interpretation varies by
+        // ETABS version and caused coordinates from one shell to be assigned to another.
+        // Joint connectivity is the authoritative source — each joint has a unique ID and
+        // stable XYZ, so this path is always correct.
         var areaPoints = new Dictionary<string, List<(double X, double Y)>>(
             nAreas, StringComparer.OrdinalIgnoreCase);
-
-        if (model.AreaObj.GetAllAreas(
-                ref nAreasBulk, ref allAreaNames, ref orientations,
-                ref totalPts, ref ptDelimiter, ref ptNames,
-                ref ptX, ref ptY, ref ptZ) == 0 && nAreasBulk > 0)
-        {
-            var pStart = 0;
-            for (var i = 0; i < nAreasBulk; i++)
-            {
-                var pEnd = ptDelimiter[i]; // cumulative exclusive end
-                var pts = new List<(double X, double Y)>(pEnd - pStart);
-                for (var p = pStart; p < pEnd; p++)
-                    pts.Add((ptX[p] * lengthToMm, ptY[p] * lengthToMm));
-                areaPoints[allAreaNames[i]] = pts;
-                pStart = pEnd;
-            }
-        }
-        else
-        {
-            // Fallback path: ETABS version that doesn't support GetAllAreas
-            foreach (var name in bulkNames)
-                areaPoints[name] = GetPointsFallback(model, name, lengthToMm);
-        }
+        foreach (var name in bulkNames)
+            areaPoints[name] = GetPointsFallback(model, name, lengthToMm);
 
         // ── Per area: pier label + section property (only 1 COM call per area) ──────────
         var areaInfo = new Dictionary<string, AreaRecord>(StringComparer.OrdinalIgnoreCase);
@@ -252,8 +228,15 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         return null;
     }
 
-    // Projects all 3-D points to plan (XY) and returns the unique pair of
-    // points that are farthest apart — the wall centerline in plan view.
+    // Projects all 3-D points to plan (XY) and extracts the wall centerline segment.
+    //
+    // For a rectangular wall shell (4 unique corners), the correct centerline is the
+    // axis that runs along the mid-thickness of the wall — NOT the diagonal.
+    // Algorithm: try all 3 ways to partition 4 points into two pairs; the partition
+    // whose pair-midpoints are FARTHEST apart defines the face direction, so those two
+    // midpoints are the correct centerline endpoints.
+    //
+    // For 2-point or degenerate cases the existing endpoints are returned directly.
     private static ((double X, double Y) Start, (double X, double Y) End)? ExtractPlanCenterlineSegment(
         List<(double X, double Y)> xyPoints)
     {
@@ -273,19 +256,45 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         if (unique.Count == 2)
             return (unique[0], unique[1]);
 
-        (double X, double Y) bestA = unique[0], bestB = unique[1];
+        // Rectangular wall shell: exactly 4 corners → find true centerline
+        if (unique.Count == 4)
+        {
+            // All 3 ways to split 4 points into 2 pairs: (0,1|2,3), (0,2|1,3), (0,3|1,2)
+            (int a, int b, int c, int d)[] splits = [(0, 1, 2, 3), (0, 2, 1, 3), (0, 3, 1, 2)];
+
+            (double X, double Y) bestM0 = default, bestM1 = default;
+            double bestDist = -1;
+
+            foreach (var (a, b, c, d) in splits)
+            {
+                var m0 = Midpoint2D(unique[a], unique[b]);
+                var m1 = Midpoint2D(unique[c], unique[d]);
+                var dist = Dist2D(m0, m1);
+                if (dist > bestDist) { bestDist = dist; bestM0 = m0; bestM1 = m1; }
+            }
+
+            if (bestDist > PlanSnapToleranceMm)
+                return (bestM0, bestM1);
+        }
+
+        // Fallback for ≠4 corners: use the two most-distant unique points
+        (double X, double Y) fallbackA = unique[0], fallbackB = unique[1];
         double maxDist = 0;
         for (var i = 0; i < unique.Count; i++)
         {
             for (var j = i + 1; j < unique.Count; j++)
             {
                 var d = Dist2D(unique[i], unique[j]);
-                if (d > maxDist) { maxDist = d; bestA = unique[i]; bestB = unique[j]; }
+                if (d > maxDist) { maxDist = d; fallbackA = unique[i]; fallbackB = unique[j]; }
             }
         }
 
-        return (bestA, bestB);
+        return (fallbackA, fallbackB);
     }
+
+    private static (double X, double Y) Midpoint2D(
+        (double X, double Y) a, (double X, double Y) b)
+        => ((a.X + b.X) / 2.0, (a.Y + b.Y) / 2.0);
 
     private static double Dist2D((double X, double Y) a, (double X, double Y) b)
         => SMath.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));

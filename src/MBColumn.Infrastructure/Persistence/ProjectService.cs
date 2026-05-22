@@ -75,17 +75,103 @@ public sealed class ProjectService : IProjectService, IDisposable
         ProjectChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public IReadOnlyList<GroupRecord> GetGroups()
+    {
+        if (connectionString is null) return [];
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var rows = conn.Query<GroupRow>(
+            "SELECT Id, Name, SortOrder FROM SectionGroup ORDER BY SortOrder, Id");
+        return rows.Select(r => new GroupRecord(r.Id, r.Name, r.SortOrder)).ToList();
+    }
+
+    public GroupRecord AddGroup(string name)
+    {
+        var normalizedName = name.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new InvalidOperationException("Group name cannot be empty.");
+
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
+
+        EnsureUniqueGroupName(conn, projectId, normalizedName);
+
+        var now = DateTime.UtcNow.ToString("O");
+        var sortOrder = conn.ExecuteScalar<int>(
+            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM SectionGroup WHERE ProjectId = @pid",
+            new { pid = projectId });
+
+        var id = conn.ExecuteScalar<int>("""
+            INSERT INTO SectionGroup (ProjectId, Name, SortOrder, CreatedAt, ModifiedAt)
+            VALUES (@pid, @name, @sort, @now, @now);
+            SELECT last_insert_rowid();
+            """,
+            new { pid = projectId, name = normalizedName, sort = sortOrder, now });
+
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+        return new GroupRecord(id, normalizedName, sortOrder);
+    }
+
+    public void RenameGroup(int groupId, string newName)
+    {
+        var normalizedName = newName.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new InvalidOperationException("Group name cannot be empty.");
+
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
+
+        EnsureUniqueGroupName(conn, projectId, normalizedName, groupId);
+
+        conn.Execute(
+            "UPDATE SectionGroup SET Name = @name, ModifiedAt = @now WHERE Id = @id",
+            new { name = normalizedName, now = DateTime.UtcNow.ToString("O"), id = groupId });
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void DeleteGroup(int groupId)
+    {
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        conn.Execute("DELETE FROM SectionGroup WHERE Id = @id", new { id = groupId });
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ReorderGroups(IEnumerable<(int Id, int SortOrder)> orders)
+    {
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var now = DateTime.UtcNow.ToString("O");
+        foreach (var (id, sortOrder) in orders)
+        {
+            conn.Execute(
+                "UPDATE SectionGroup SET SortOrder = @sort, ModifiedAt = @now WHERE Id = @id",
+                new { sort = sortOrder, now, id });
+        }
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public IReadOnlyList<ColumnRecord> GetColumns()
     {
         if (connectionString is null) return [];
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
         var rows = conn.Query<ColumnRow>(
-            "SELECT Id, Name, SortOrder FROM Column ORDER BY SortOrder, Id");
-        return rows.Select(r => new ColumnRecord(r.Id, r.Name, r.SortOrder)).ToList();
+            "SELECT Id, GroupId, Name, SortOrder FROM Column ORDER BY SortOrder, Id");
+        return rows.Select(r => new ColumnRecord(r.Id, r.GroupId, r.Name, r.SortOrder)).ToList();
     }
 
-    public ColumnRecord AddColumn(string name)
+    public ColumnRecord AddColumn(string name, int? groupId = null)
     {
         var normalizedName = name.Trim();
         if (string.IsNullOrWhiteSpace(normalizedName))
@@ -100,22 +186,22 @@ public sealed class ProjectService : IProjectService, IDisposable
 
         var now = DateTime.UtcNow.ToString("O");
         var sortOrder = conn.ExecuteScalar<int>(
-            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM Column WHERE ProjectId = @pid",
-            new { pid = projectId });
+            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM Column WHERE ProjectId = @pid AND COALESCE(GroupId, 0) = COALESCE(@gid, 0)",
+            new { pid = projectId, gid = groupId });
 
         var id = conn.ExecuteScalar<int>("""
-            INSERT INTO Column (ProjectId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt)
-            VALUES (@pid, @name, @sort, '{}', @now, @now);
+            INSERT INTO Column (ProjectId, GroupId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt)
+            VALUES (@pid, @gid, @name, @sort, '{}', @now, @now);
             SELECT last_insert_rowid();
             """,
-            new { pid = projectId, name = normalizedName, sort = sortOrder, now });
+            new { pid = projectId, gid = groupId, name = normalizedName, sort = sortOrder, now });
 
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
-        return new ColumnRecord(id, normalizedName, sortOrder);
+        return new ColumnRecord(id, groupId, normalizedName, sortOrder);
     }
 
-    public ColumnRecord DuplicateColumn(int sourceColumnId, string name)
+    public ColumnRecord DuplicateColumn(int sourceColumnId, string name, int? groupId = null)
     {
         var normalizedName = name.Trim();
         if (string.IsNullOrWhiteSpace(normalizedName))
@@ -136,19 +222,19 @@ public sealed class ProjectService : IProjectService, IDisposable
 
         var now = DateTime.UtcNow.ToString("O");
         var sortOrder = conn.ExecuteScalar<int>(
-            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM Column WHERE ProjectId = @pid",
-            new { pid = projectId });
+            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM Column WHERE ProjectId = @pid AND COALESCE(GroupId, 0) = COALESCE(@gid, 0)",
+            new { pid = projectId, gid = groupId });
 
         var id = conn.ExecuteScalar<int>("""
-            INSERT INTO Column (ProjectId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt)
-            VALUES (@pid, @name, @sort, @json, @now, @now);
+            INSERT INTO Column (ProjectId, GroupId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt)
+            VALUES (@pid, @gid, @name, @sort, @json, @now, @now);
             SELECT last_insert_rowid();
             """,
-            new { pid = projectId, name = normalizedName, sort = sortOrder, json = source.InputJson, now });
+            new { pid = projectId, gid = groupId, name = normalizedName, sort = sortOrder, json = source.InputJson, now });
 
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
-        return new ColumnRecord(id, normalizedName, sortOrder);
+        return new ColumnRecord(id, groupId, normalizedName, sortOrder);
     }
 
     public void RenameColumn(int columnId, string newName)
@@ -176,22 +262,59 @@ public sealed class ProjectService : IProjectService, IDisposable
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
+
         conn.Execute("DELETE FROM Column WHERE Id = @id", new { id = columnId });
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void ReorderColumns(IEnumerable<(int Id, int SortOrder)> orders)
+    public void MoveColumn(int columnId, int? newGroupId)
+    {
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+
+        var now = DateTime.UtcNow.ToString("O");
+        conn.Execute("UPDATE Column SET GroupId = @gid, ModifiedAt = @now WHERE Id = @id",
+            new { gid = newGroupId, now, id = columnId });
+
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void MoveColumns(IEnumerable<int> columnIds, int? newGroupId)
+    {
+        if (!columnIds.Any()) return;
+
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+
+        var now = DateTime.UtcNow.ToString("O");
+        using var tx = conn.BeginTransaction();
+        
+        foreach (var id in columnIds)
+        {
+            conn.Execute("UPDATE Column SET GroupId = @gid, ModifiedAt = @now WHERE Id = @id",
+                new { gid = newGroupId, now, id });
+        }
+        
+        tx.Commit();
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ReorderColumns(IEnumerable<(int Id, int? GroupId, int SortOrder)> orders)
     {
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
         var now = DateTime.UtcNow.ToString("O");
-        foreach (var (id, sortOrder) in orders)
+        foreach (var (id, groupId, sortOrder) in orders)
         {
             conn.Execute(
-                "UPDATE Column SET SortOrder = @sort, ModifiedAt = @now WHERE Id = @id",
-                new { sort = sortOrder, now, id });
+                "UPDATE Column SET GroupId = @gid, SortOrder = @sort, ModifiedAt = @now WHERE Id = @id",
+                new { gid = groupId, sort = sortOrder, now, id });
         }
 
         MarkModified();
@@ -232,10 +355,8 @@ public sealed class ProjectService : IProjectService, IDisposable
 
     private void SaveToFile(string filePath)
     {
-        // If saving to a different file, copy the in-memory/current DB
         if (connectionString is null)
         {
-            // New project that was never opened — create database at target path
             var newCs = BuildConnectionString(filePath);
             using var conn = new SqliteConnection(newCs);
             DatabaseSchema.EnsureCreated(conn, ProjectName);
@@ -243,7 +364,6 @@ public sealed class ProjectService : IProjectService, IDisposable
         }
         else if (_keepAliveConnection is not null && CurrentFilePath is null)
         {
-            // Was using in-memory DB — write schema/data to the file instead
             var newCs = BuildConnectionString(filePath);
             using var conn = new SqliteConnection(newCs);
             DatabaseSchema.EnsureCreated(conn, ProjectName);
@@ -253,60 +373,68 @@ public sealed class ProjectService : IProjectService, IDisposable
         }
         else if (CurrentFilePath is null || !string.Equals(CurrentFilePath, filePath, StringComparison.OrdinalIgnoreCase))
         {
-            // Save As: copy current file to new path
             if (CurrentFilePath is not null && System.IO.File.Exists(CurrentFilePath))
             {
                 System.IO.File.Copy(CurrentFilePath, filePath, overwrite: true);
             }
             else
             {
-                // No existing file — create a new DB at destination
                 var newCs = BuildConnectionString(filePath);
                 using var conn = new SqliteConnection(newCs);
                 DatabaseSchema.EnsureCreated(conn, ProjectName);
             }
-
             connectionString = BuildConnectionString(filePath);
         }
 
-        // Update project name and ModifiedAt in the file
-        using var updateConn = new SqliteConnection(connectionString);
-        DatabaseSchema.Open(updateConn);
-        updateConn.Execute(
-            "UPDATE Project SET Name = @name, ModifiedAt = @now WHERE Id = (SELECT MIN(Id) FROM Project)",
-            new { name = ProjectName, now = DateTime.UtcNow.ToString("O") });
-
-        isModified = false;
+        if (_keepAliveConnection is null)
+        {
+            using var conn = new SqliteConnection(connectionString);
+            DatabaseSchema.Open(conn);
+            conn.Execute(
+                "UPDATE Project SET Name = @name, ModifiedAt = @now WHERE Id = (SELECT Id FROM Project LIMIT 1)",
+                new { name = ProjectName, now = DateTime.UtcNow.ToString("O") });
+        }
     }
 
     private void EnsureConnection()
     {
         if (connectionString is not null) return;
-
-        // New unsaved project — use an in-memory db with a named cache so
-        // multiple connections share the same data within this process.
-        // The keep-alive connection must stay open; closing all connections
-        // destroys a named in-memory database.
-        connectionString = "Data Source=mbcolumn_new;Mode=Memory;Cache=Shared";
+        var inMemoryName = $"mbc_{Guid.NewGuid():N}";
+        connectionString = $"Data Source={inMemoryName};Mode=Memory;Cache=Shared";
         _keepAliveConnection = new SqliteConnection(connectionString);
+        _keepAliveConnection.Open();
         DatabaseSchema.EnsureCreated(_keepAliveConnection, ProjectName);
     }
 
-    private static void EnsureUniqueColumnName(SqliteConnection conn, int projectId, string name, int? excludingColumnId = null)
+    private static string BuildConnectionString(string filePath)
     {
-        var lowerName = name.ToLowerInvariant();
-        var count = conn.ExecuteScalar<int>(
-            "SELECT COUNT(1) FROM Column WHERE ProjectId = @projectId AND LOWER(Name) = @name " +
-            "AND (@exclude IS NULL OR Id != @exclude)",
-            new { projectId, name = lowerName, exclude = excludingColumnId });
-        if (count > 0)
-            throw new InvalidOperationException($"A section named '{name}' already exists. Section names must be unique.");
+        return new SqliteConnectionStringBuilder
+        {
+            DataSource = filePath,
+            Mode = SqliteOpenMode.ReadWriteCreate
+        }.ToString();
     }
 
-    private static string BuildConnectionString(string filePath)
-        => $"Data Source={filePath};";
+    private static void EnsureUniqueGroupName(SqliteConnection conn, int projectId, string name, int? excludingGroupId = null)
+    {
+        var count = conn.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM SectionGroup WHERE ProjectId = @pid AND Name = @name AND (@excludeId IS NULL OR Id != @excludeId)",
+            new { pid = projectId, name, excludeId = excludingGroupId });
+        if (count > 0)
+            throw new InvalidOperationException($"Group name '{name}' already exists.");
+    }
 
+    private void EnsureUniqueColumnName(SqliteConnection conn, int projectId, string name, int? excludeId = null)
+    {
+        var count = conn.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM Column WHERE ProjectId = @pid AND Name = @name AND (@excludeId IS NULL OR Id != @excludeId)",
+            new { pid = projectId, name, excludeId });
+        if (count > 0)
+            throw new InvalidOperationException($"Section name '{name}' already exists.");
+    }
+
+    private sealed class GroupRow { public int Id { get; set; } public string Name { get; set; } = ""; public int SortOrder { get; set; } }
+    private sealed class ColumnRow { public int Id { get; set; } public int? GroupId { get; set; } public string Name { get; set; } = ""; public int SortOrder { get; set; } }
     private sealed class ProjectRow { public string Name { get; set; } = ""; }
-    private sealed class ColumnRow { public int Id { get; set; } public string Name { get; set; } = ""; public int SortOrder { get; set; } }
-    private sealed class ColumnInputRow { public string InputJson { get; set; } = "{}"; }
+    private sealed class ColumnInputRow { public string InputJson { get; set; } = ""; }
 }

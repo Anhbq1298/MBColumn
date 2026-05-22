@@ -187,82 +187,74 @@
 
                     <!-- Section list -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Explorer.Columns}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Padding="10,6"
-                                            Cursor="Hand">
-                                        <Border.InputBindings>
-                                            <MouseBinding MouseAction="LeftClick" Command="{Binding SelectCommand}" />
-                                        </Border.InputBindings>
-                                        <Border.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="Rename Section"
-                                                          Command="{Binding Path=PlacementTarget.DataContext.BeginRenameCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                                <Separator />
-                                                <MenuItem Header="Duplicate Section"
-                                                          Command="{Binding Path=PlacementTarget.DataContext.DuplicateCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                                <MenuItem Header="Delete Section"
-                                                          Command="{Binding Path=PlacementTarget.DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                            </ContextMenu>
-                                        </Border.ContextMenu>
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource AccentBlueBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-                                            <!-- Normal label -->
-                                            <TextBlock Text="{Binding Name}"
-                                                       FontSize="12"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       ToolTip="Right-click for section actions"
-                                                       Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                <Setter Property="Foreground" Value="White" />
-                                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                            <Border Grid.Row="1"
-                                                    Style="{StaticResource ExplorerStatusBadgeStyle}"
-                                                    HorizontalAlignment="Left"
-                                                    Margin="0,5,0,0"
-                                                    Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                                <TextBlock Text="{Binding StatusText}"
-                                                           FontSize="10"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextMutedBrush}" />
-                                            </Border>
-                                            <!-- Inline rename TextBox -->
-                                            <TextBox Grid.RowSpan="2"
-                                                     Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
-                                                     FontSize="12"
-                                                     Padding="2,1"
-                                                     Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                     KeyDown="ColumnRenameBox_KeyDown"
-                                                     LostFocus="ColumnRenameBox_LostFocus"
-                                                     IsVisibleChanged="RenameBox_IsVisibleChanged" />
-                                        </Grid>
-                                    </Border>
+                        <TreeView ItemsSource="{Binding Explorer.Nodes}"
+                                  SelectedItemChanged="TreeView_SelectedItemChanged"
+                                  BorderThickness="0" Background="Transparent">
+                            <TreeView.ItemContainerStyle>
+                                <Style TargetType="TreeViewItem">
+                                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                    <Setter Property="Padding" Value="4,4" />
+                                </Style>
+                            </TreeView.ItemContainerStyle>
+                            <TreeView.Resources>
+                                <!-- Group Template -->
+                                <HierarchicalDataTemplate DataType="{x:Type vm:GroupItemViewModel}" ItemsSource="{Binding Columns}">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                            <TextBlock Text="📁 " />
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <StackPanel.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
+                                                    <MenuItem Header="Add New Section" Command="{Binding AddSectionCommand}" />
+                                                    <MenuItem Header="Add Existing Sections..." Command="{Binding AddExistingSectionsCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="Red" />
+                                                </ContextMenu>
+                                            </StackPanel.ContextMenu>
+                                        </StackPanel>
+                                        <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                 KeyDown="NodeRenameBox_KeyDown"
+                                                 LostFocus="NodeRenameBox_LostFocus"
+                                                 IsVisibleChanged="RenameBox_IsVisibleChanged" />
+                                    </Grid>
+                                </HierarchicalDataTemplate>
+
+                                <!-- Column Template -->
+                                <DataTemplate DataType="{x:Type vm:ColumnItemViewModel}">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                            <TextBlock Text="📄 " />
+                                            <TextBlock Text="{Binding Name}" />
+                                            <StackPanel.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
+                                                    <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="Move to Group..." ItemsSource="{Binding MoveToGroupOptions}">
+                                                        <MenuItem.ItemContainerStyle>
+                                                            <Style TargetType="MenuItem">
+                                                                <Setter Property="Header" Value="{Binding Name}" />
+                                                                <Setter Property="Command" Value="{Binding Command}" />
+                                                            </Style>
+                                                        </MenuItem.ItemContainerStyle>
+                                                    </MenuItem>
+                                                    <Separator />
+                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="Red" />
+                                                </ContextMenu>
+                                            </StackPanel.ContextMenu>
+                                        </StackPanel>
+                                        <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                 KeyDown="NodeRenameBox_KeyDown"
+                                                 LostFocus="NodeRenameBox_LostFocus"
+                                                 IsVisibleChanged="RenameBox_IsVisibleChanged" />
+                                    </Grid>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                            </TreeView.Resources>
+                        </TreeView>
                     </ScrollViewer>
                 </DockPanel>
             </Border>
