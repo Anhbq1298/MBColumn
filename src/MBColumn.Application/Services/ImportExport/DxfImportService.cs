@@ -114,11 +114,12 @@ public sealed class DxfImportService : IDxfImportService
                     }
                     else
                     {
-                        result.Warnings.Add("Ignored a closed polyline on the rebar layer because it is not approximately circular.");
+                        result.Warnings.Add("Ignored a non-circular closed polyline on the rebar layer.");
                     }
                     break;
 
                 default:
+                    result.Warnings.Add($"Ignored a non-circular {entity.EntityType} entity on the rebar layer.");
                     break;
             }
         }

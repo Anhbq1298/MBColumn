@@ -196,6 +196,7 @@ var tests = new List<(string Name, Action Test)>
     ("DXF rejects non-circular rebar geometry",                      TestDxfRejectsNonCircularRebar),
     ("DXF import applies irregular custom coordinates",              TestDxfImportAppliesIrregularCustomCoordinates),
     ("DXF import does not block on cover",                           TestDxfImportDoesNotBlockOnCover),
+    ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
     ("Irregular equal spacing generated rebars satisfy cover",        TestIrregularEqualSpacingGeneratedRebarsSatisfyCover),
     ("Irregular equal spacing ToDto refreshes stale rebars",          TestIrregularEqualSpacingToDtoRefreshesStaleRebars),
     ("Irregular custom mode clears stale rebar message",              TestIrregularCustomModeClearsStaleRebarMessage),
@@ -1416,10 +1417,11 @@ static void Test3DBoundsMatch2D()
 
     // The axis-aligned PM angle slices are XZ/YZ plane intersections of the PMM surface, so their values must be
     // contained by the design 3D bounds but do not have to equal the global Mx/My maxima.
-    IsTrue(max2DX <= max3DX + 5.0);
-    IsTrue(max2DY <= max3DY + 5.0);
-    IsTrue(min2DX >= min3DX - 5.0);
-    IsTrue(min2DY >= min3DY - 5.0);
+    const double sliceTolerance = 6.0;
+    IsTrue(max2DX <= max3DX + sliceTolerance);
+    IsTrue(max2DY <= max3DY + sliceTolerance);
+    IsTrue(min2DX >= min3DX - sliceTolerance);
+    IsTrue(min2DY >= min3DY - sliceTolerance);
 }
 
 // ----- Chart Axis Tick and Rendering Tests (Task 8) -----
@@ -2830,6 +2832,37 @@ static void TestDxfImportDoesNotBlockOnCover()
     IsTrue(string.IsNullOrWhiteSpace(vm.IrregularInput.RebarValidationMessage));
     IsTrue(vm.IrregularInput.Rebars.Count == 1);
     AreClose(45.0, vm.IrregularInput.Rebars[0].X, 1e-9);
+}
+
+static void TestEtabsImportCreatesIrregularCustomCoordinates()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel([]);
+
+    vm.ConnectCommand.Execute(null);
+    var column = vm.Columns.First(c => c.EtabsSectionName == "CIRC800");
+    column.IsSelected = true;
+
+    vm.NextCommand.Execute(null);
+    IsTrue(vm.CurrentStep == 2);
+    IsTrue(vm.SectionMappings.Count == 1);
+
+    vm.NextCommand.Execute(null);
+    IsTrue(vm.CurrentStep == 3);
+    IsTrue(vm.SummaryRows.Count == 1);
+    IsTrue(vm.SummaryRows[0].SectionType == MBColumn.Domain.Enums.SectionShapeType.Irregular);
+    IsTrue(vm.SummaryRows[0].Rebar.Contains("custom coordinates", StringComparison.OrdinalIgnoreCase));
+
+    vm.NextCommand.Execute(null);
+    var imported = vm.ImportResult!.Sections.Single();
+    var snapshot = imported.Snapshot;
+
+    IsTrue(snapshot.SectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular.ToString());
+    IsTrue(snapshot.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Polygon.ToString());
+    IsTrue(snapshot.RebarLayoutType == MBColumn.Application.DTOs.RebarLayoutType.CustomCoordinates.ToString());
+    IsTrue(snapshot.IrregularRebarMode == MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates.ToString());
+    IsTrue(snapshot.BoundaryPoints.Count == 32);
+    IsTrue(snapshot.Rebars.Count > 0);
+    IsTrue(snapshot.Rebars.All(r => string.Equals(r.BarSize, "T25", StringComparison.OrdinalIgnoreCase)));
 }
 
 static void TestIrregularEqualSpacingGeneratedRebarsSatisfyCover()

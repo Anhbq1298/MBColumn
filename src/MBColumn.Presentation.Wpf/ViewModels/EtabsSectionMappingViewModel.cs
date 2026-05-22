@@ -26,7 +26,10 @@ public sealed class EtabsSectionMappingViewModel : ViewModelBase
         double width,
         double height,
         double diameter,
-        string material)
+        string material,
+        string barSize,
+        double cover,
+        double tieSpacing)
     {
         this.mappingChanged = mappingChanged;
         EtabsSectionName = etabsSectionName;
@@ -36,13 +39,13 @@ public sealed class EtabsSectionMappingViewModel : ViewModelBase
         this.height = height;
         this.diameter = diameter;
         this.material = material;
-        barSize = "T25";
+        this.barSize = barSize;
         barsAlongWidth = 4;
         barsAlongHeight = 4;
         totalBars = 12;
-        cover = 50;
+        this.cover = cover;
         tieDiameter = 10;
-        tieSpacing = 150;
+        this.tieSpacing = tieSpacing;
     }
 
     public IReadOnlyList<SectionShapeType> SectionTypes { get; } = [SectionShapeType.Rectangular, SectionShapeType.Circular];
@@ -208,14 +211,13 @@ public sealed class EtabsSectionMappingViewModel : ViewModelBase
     public bool IsCircular => SectionType == SectionShapeType.Circular;
     public int RectangularBarCount => Math.Max(0, (BarsAlongWidth * 2) + (BarsAlongHeight * 2) - 4);
     public int EffectiveBarCount => IsCircular ? TotalBars : RectangularBarCount;
-    public string RebarTemplate => IsCircular
-        ? $"{TotalBars}-{BarSize}, cover {Cover:0.#}, tie {TieDiameter:0.#}@{TieSpacing:0.#}"
-        : $"{RectangularBarCount}-{BarSize}, {BarsAlongWidth} wide x {BarsAlongHeight} deep, cover {Cover:0.#}";
+    public string RebarTemplate => $"Equal spacing {BarSize} @ {TieSpacing:0.#}, cover {Cover:0.#} (custom coordinates)";
     public string Dimensions => IsCircular ? $"D{Diameter:0.#}" : $"{Width:0.#} x {Height:0.#}";
+    public string BoundarySummary => IsCircular ? $"Circular boundary D{Diameter:0.#}" : $"Rectangular boundary {Width:0.#} x {Height:0.#}";
     public string Status => HasValidDefinition ? "Ready" : "Needs review";
     public bool HasValidDefinition => IsCircular
-        ? Diameter > 0 && TotalBars >= 4 && Cover > 0
-        : Width > 0 && Height > 0 && BarsAlongWidth >= 2 && BarsAlongHeight >= 2 && Cover > 0;
+        ? Diameter > 0 && Cover > 0 && TieSpacing > 0
+        : Width > 0 && Height > 0 && Cover > 0 && TieSpacing > 0;
 
     private void RaiseComputed()
     {
@@ -225,6 +227,7 @@ public sealed class EtabsSectionMappingViewModel : ViewModelBase
         Raise(nameof(EffectiveBarCount));
         Raise(nameof(RebarTemplate));
         Raise(nameof(Dimensions));
+        Raise(nameof(BoundarySummary));
         Raise(nameof(Status));
         Raise(nameof(HasValidDefinition));
     }
