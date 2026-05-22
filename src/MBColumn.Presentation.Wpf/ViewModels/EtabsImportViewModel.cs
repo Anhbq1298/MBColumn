@@ -1,5 +1,6 @@
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.Persistence;
+using MBColumn.Application.Services.Etabs;
 using MBColumn.Application.Services.Geometry;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
@@ -26,6 +27,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private const double DefaultEtabsSpacingMm = 150.0;
 
     private readonly HashSet<string> existingSectionNames;
+    private readonly IEtabsConnectionService connectionService;
+    private readonly IEtabsColumnImportService columnImportService;
+    private readonly IEtabsForceImportService forceImportService;
     private readonly RelayCommand connectCommand;
     private readonly RelayCommand disconnectCommand;
     private readonly RelayCommand backCommand;
@@ -54,9 +58,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private EtabsSectionMappingViewModel? selectedMapping;
     private EtabsDuplicateHandlingOption selectedDuplicateHandling;
 
-    public EtabsImportViewModel(IReadOnlyCollection<string> existingSectionNames)
+    public EtabsImportViewModel(
+        IReadOnlyCollection<string> existingSectionNames,
+        IEtabsConnectionService connectionService,
+        IEtabsColumnImportService columnImportService,
+        IEtabsForceImportService forceImportService)
     {
         this.existingSectionNames = existingSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        this.connectionService = connectionService;
+        this.columnImportService = columnImportService;
+        this.forceImportService = forceImportService;
 
         Columns = [];
         FilteredColumns = CollectionViewSource.GetDefaultView(Columns);
@@ -281,22 +292,54 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void Connect()
     {
-        IsConnected = true;
-        ConnectionStatus = "Connected to ETABS (mock data)";
-        ModelName = "Office Tower Mock";
-        ModelPath = @"C:\Models\Office Tower Mock.edb";
-        PresentUnits = "kN, m, C";
-        StoryCount = 8;
-        PierCount = 3;
-        FrameObjectCount = 256;
-        UnitConversionMessage = "ETABS data will be converted from kN, m to kN, mm.";
+        ConnectionStatus = "Connecting...";
+        var result = connectionService.ConnectToRunningEtabs();
 
-        Columns.Clear();
-        foreach (var column in CreateMockColumns())
+        if (!result.IsConnected)
         {
-            Columns.Add(column);
+            ConnectionStatus = result.Message;
+            IsConnected = false;
+            return;
         }
 
+        var info = result.ModelInfo!;
+        ModelName = info.ModelName;
+        ModelPath = info.ModelPath;
+        PresentUnits = info.PresentUnits;
+        StoryCount = info.StoryCount;
+        PierCount = info.PierCount;
+        FrameObjectCount = info.FrameObjectCount;
+        UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to kN, mm.";
+
+        Columns.Clear();
+        try
+        {
+            foreach (var dto in columnImportService.GetCandidateColumns())
+            {
+                Columns.Add(new EtabsColumnImportRowViewModel(
+                    OnColumnSelectionChanged,
+                    dto.ObjectName,
+                    dto.PierName,
+                    dto.StoryName,
+                    dto.Label,
+                    dto.UniqueSectionDisplayName,
+                    dto.EtabsSectionName,
+                    dto.MaterialName,
+                    dto.SectionType,
+                    dto.Width,
+                    dto.Height,
+                    dto.Diameter,
+                    dto.LinkedSection,
+                    dto.Status));
+            }
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatus = $"Connected but failed to load columns: {ex.Message}";
+        }
+
+        IsConnected = true;
+        ConnectionStatus = result.Message;
         ResetColumnFilters();
         SelectedColumn = Columns.FirstOrDefault();
         Raise(nameof(SelectedColumnCount));
@@ -428,17 +471,19 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void RefreshLoadCombinations()
     {
-        if (LoadCombinations.Count > 0)
+        LoadCombinations.Clear();
+        try
         {
-            return;
+            foreach (var name in columnImportService.GetLoadCombinations())
+            {
+                LoadCombinations.Add(new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged));
+            }
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatus = $"Warning: could not load combinations — {ex.Message}";
         }
 
-        LoadCombinations.Add(new EtabsLoadCombinationViewModel("1.2D + 1.6L", OnLoadCombinationSelectionChanged, true));
-        LoadCombinations.Add(new EtabsLoadCombinationViewModel("1.2D + 1.0Ex + 0.3L", OnLoadCombinationSelectionChanged, true));
-        LoadCombinations.Add(new EtabsLoadCombinationViewModel("1.2D + 1.0Ey + 0.3L", OnLoadCombinationSelectionChanged, true));
-        LoadCombinations.Add(new EtabsLoadCombinationViewModel("0.9D + 1.0Ex", OnLoadCombinationSelectionChanged));
-        LoadCombinations.Add(new EtabsLoadCombinationViewModel("0.9D + 1.0Ey", OnLoadCombinationSelectionChanged));
-        LoadCombinations.Add(new EtabsLoadCombinationViewModel("1.4D", OnLoadCombinationSelectionChanged));
         FilteredLoadCombinations.Refresh();
         RaiseCounts();
     }
@@ -450,34 +495,41 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
         var selectedCombos = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList();
 
-        for (var columnIndex = 0; columnIndex < selectedColumns.Count; columnIndex++)
+        if (selectedColumns.Count == 0 || selectedCombos.Count == 0)
         {
-            var column = selectedColumns[columnIndex];
-            for (var comboIndex = 0; comboIndex < selectedCombos.Count; comboIndex++)
-            {
-                var combo = selectedCombos[comboIndex];
-                var shapeFactor = column.IsCircular ? 1.12 : 1.0;
-                var p = Math.Round((1750 + columnIndex * 210 + comboIndex * 160) * shapeFactor, 1);
-                var m2 = Math.Round(105.0 + columnIndex * 18.0 + comboIndex * 22.0, 1);
-                var m3 = Math.Round(88.0 + columnIndex * 16.0 + comboIndex * 19.0, 1);
-                var v2 = Math.Round(35.0 + columnIndex * 4.0 + comboIndex * 5.0, 1);
-                var v3 = Math.Round(29.0 + columnIndex * 3.0 + comboIndex * 4.0, 1);
+            RaiseCounts();
+            RaiseCommandStates();
+            return;
+        }
 
+        try
+        {
+            var columnDtos = selectedColumns.Select(c => new EtabsColumnImportDto(
+                c.ObjectName, c.Pier, c.Story, c.Label,
+                c.UniqueSection, c.EtabsSectionName, c.Material,
+                c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+
+            foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos))
+            {
                 ForceRows.Add(new EtabsForceImportRowViewModel(
                     OnForceSelectionChanged,
-                    column.ObjectName,
-                    column.Pier,
-                    column.Story,
-                    column.Label,
-                    column.EtabsSectionName,
-                    combo,
-                    p,
-                    m2,
-                    m3,
-                    v2,
-                    v3,
-                    "Ready"));
+                    force.ObjectName,
+                    force.PierName,
+                    force.StoryName,
+                    force.Label,
+                    force.EtabsSectionName,
+                    force.LoadCombination,
+                    force.P,
+                    force.M2,
+                    force.M3,
+                    force.V2,
+                    force.V3,
+                    force.Status));
             }
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatus = $"Warning: could not load forces — {ex.Message}";
         }
 
         RaiseCounts();
@@ -762,17 +814,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private static bool MatchesFilter(string selected, string allValue, string value)
         => string.Equals(selected, allValue, StringComparison.OrdinalIgnoreCase)
            || string.Equals(selected, value, StringComparison.OrdinalIgnoreCase);
-
-    private IReadOnlyList<EtabsColumnImportRowViewModel> CreateMockColumns()
-        =>
-        [
-            new(OnColumnSelectionChanged, "C-L01-025", "P1", "L01", "C25", "Rectangular 400 x 600", "R400X600", "C35", SectionShapeType.Rectangular, 400, 600, 0, "", "Ready"),
-            new(OnColumnSelectionChanged, "C-L02-025", "P1", "L02", "C25", "Rectangular 400 x 600", "R400X600", "C35", SectionShapeType.Rectangular, 400, 600, 0, "", "Ready"),
-            new(OnColumnSelectionChanged, "C-L03-009", "P2", "L03", "C9", "Rectangular 500 x 700", "R500X700", "C40", SectionShapeType.Rectangular, 500, 700, 0, "", "Ready"),
-            new(OnColumnSelectionChanged, "CW-L04-P2", "CoreWall", "L04", "P2", "Rectangular 600 x 900", "CORE600X900", "C45", SectionShapeType.Rectangular, 600, 900, 0, "", "Ready"),
-            new(OnColumnSelectionChanged, "C-L05-002", "", "L05", "C2", "Circular D600", "CIRC600", "C35", SectionShapeType.Circular, 0, 0, 600, "", "Ready"),
-            new(OnColumnSelectionChanged, "C-L06-010", "P2", "L06", "C10", "Circular D800", "CIRC800", "C45", SectionShapeType.Circular, 0, 0, 800, "", "Ready")
-        ];
 
     private void ResetColumnFilters()
     {

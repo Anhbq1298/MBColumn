@@ -1,6 +1,7 @@
 using MBColumn.Application.Services;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
+using MBColumn.Infrastructure.Etabs;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Persistence;
 using MBColumn.Infrastructure.Rebar;
@@ -30,8 +31,12 @@ public sealed class AppComposition : IDisposable
         MessageService = new MessageBoxService();
         ProjectFileDialogService = new ProjectFileDialogService();
         ProjectNameDialogService = new ProjectNameDialogService();
-        EtabsImportDialogService = new EtabsImportDialogService();
         ProjectSession = new ProjectSession();
+
+        var etabsConnection = new EtabsConnectionService();
+        var etabsColumns = new EtabsColumnImportService(etabsConnection);
+        var etabsForces = new EtabsForceImportService(etabsConnection);
+        EtabsImportDialogService = new EtabsImportDialogService(etabsConnection, etabsColumns, etabsForces);
 
         IDesignCodeService aciCode = new Aci318DesignCodeService();
         IDesignCodeService ec2Code = new Ec2DesignCodeService();
