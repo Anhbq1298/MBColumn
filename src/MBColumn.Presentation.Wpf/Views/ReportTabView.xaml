@@ -1,0 +1,186 @@
+<UserControl x:Class="MBColumn.Presentation.Wpf.Views.ReportTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinHeight="560">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="270" />
+            <ColumnDefinition Width="14" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Style="{StaticResource CardBorderStyle}"
+                Padding="16">
+            <StackPanel>
+                <TextBlock Text="Report Settings"
+                           Style="{StaticResource SectionTitleTextStyle}"
+                           FontSize="16" />
+                <CheckBox Content="Include Input Data"
+                          IsChecked="{Binding IncludeInputData}"
+                          Margin="0,14,0,0" />
+                <CheckBox Content="Include Boundary Coordinates"
+                          IsChecked="{Binding IncludeBoundaryCoordinates}"
+                          Margin="0,8,0,0" />
+                <CheckBox Content="Include Rebar Coordinates"
+                          IsChecked="{Binding IncludeRebarCoordinates}"
+                          Margin="0,8,0,0" />
+                <CheckBox Content="Include Demand Cases"
+                          IsChecked="{Binding IncludeDemandCases}"
+                          Margin="0,8,0,0" />
+                <CheckBox Content="Include PM Charts"
+                          IsChecked="{Binding IncludePmCharts}"
+                          Margin="0,8,0,0" />
+
+                <TextBlock Text="Chart Angle Step"
+                           Style="{StaticResource FieldLabelTextStyle}"
+                           Margin="0,18,0,4" />
+                <TextBox Text="{Binding ChartAngleStepDegrees, UpdateSourceTrigger=PropertyChanged}"
+                         Width="80"
+                         HorizontalAlignment="Left" />
+
+                <Button Content="Generate Preview"
+                        Command="{Binding GeneratePreviewCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Margin="0,18,0,0" />
+                <Button Content="Print"
+                        IsEnabled="False"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,8,0,0" />
+                <Button Content="Export PDF"
+                        IsEnabled="False"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Column="2"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Border Background="White"
+                    BorderBrush="{DynamicResource BorderGreyBrush}"
+                    BorderThickness="1"
+                    Padding="28"
+                    MaxWidth="900"
+                    HorizontalAlignment="Left">
+                <StackPanel>
+                    <TextBlock Text="MBColumn Design Report"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryNavyBrush}" />
+                    <TextBlock Text="{Binding ResultStatusText, StringFormat=Result status: {0}}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,4,0,0" />
+                    <Border Background="#FFF7E6"
+                            BorderBrush="#C98600"
+                            BorderThickness="1"
+                            Padding="10"
+                            Margin="0,12,0,0"
+                            Visibility="{Binding IsOutdated, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="Input or demand cases changed after the last calculation. Recalculate before generating the final report."
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <TextBlock Text="I. Input Data"
+                               Style="{StaticResource SectionTitleTextStyle}"
+                               FontSize="16"
+                               Margin="0,22,0,8"
+                               Visibility="{Binding IncludeInputData, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <Grid Visibility="{Binding IncludeInputData, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Project" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding ProjectName}" />
+                        <TextBlock Grid.Row="1" Text="Group" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GroupName}" />
+                        <TextBlock Grid.Row="2" Text="Design Tier" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DesignTierName}" />
+                        <TextBlock Grid.Row="3" Text="Section Shape" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SectionShape}" />
+                        <TextBlock Grid.Row="4" Text="Design Code" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DesignCode}" />
+                        <TextBlock Grid.Row="5" Text="Unit System" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding UnitSystem}" />
+                        <TextBlock Grid.Row="6" Text="Material" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding MaterialSummary}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="7" Text="Geometry" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding GeometrySummary}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="8" Text="Rebar" Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarSummary}" TextWrapping="Wrap" />
+                    </Grid>
+
+                    <TextBlock Text="II. Applied Demand Cases"
+                               Style="{StaticResource SectionTitleTextStyle}"
+                               FontSize="16"
+                               Margin="0,24,0,8"
+                               Visibility="{Binding IncludeDemandCases, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <DataGrid ItemsSource="{Binding DemandCases}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              HeadersVisibility="Column"
+                              MaxHeight="300"
+                              Visibility="{Binding IncludeDemandCases, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Case Name" Binding="{Binding CaseName}" Width="150" />
+                            <DataGridTextColumn Header="Original LC" Binding="{Binding OriginalLoadCase}" Width="110" />
+                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="80" />
+                            <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
+                            <DataGridTextColumn Header="Station" Binding="{Binding Station}" Width="80" />
+                            <DataGridTextColumn Header="P" Binding="{Binding Pu, StringFormat={}{0:0.#}}" Width="80" />
+                            <DataGridTextColumn Header="Mx" Binding="{Binding Mux, StringFormat={}{0:0.#}}" Width="80" />
+                            <DataGridTextColumn Header="My" Binding="{Binding Muy, StringFormat={}{0:0.#}}" Width="80" />
+                            <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="80" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Text="III. Capacity Charts"
+                               Style="{StaticResource SectionTitleTextStyle}"
+                               FontSize="16"
+                               Margin="0,24,0,8"
+                               Visibility="{Binding IncludePmCharts, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <ItemsControl ItemsSource="{Binding ChartPreviews}"
+                                  Visibility="{Binding IncludePmCharts, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource BorderGreyBrush}"
+                                        BorderThickness="1"
+                                        Margin="0,0,10,10"
+                                        Padding="12"
+                                        MinHeight="120">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap" />
+                                        <TextBlock Text="Capacity curve and demand points use the current MBColumn result."
+                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,8,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

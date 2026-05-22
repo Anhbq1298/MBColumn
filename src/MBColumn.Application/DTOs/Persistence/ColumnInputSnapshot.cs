@@ -45,6 +45,9 @@ public sealed class ColumnInputSnapshot
     public double AxialLoad { get; set; }
     public List<SnapshotLoadCase> LoadCases { get; set; } = [];
 
+    public string DesignTierName { get; set; } = "";
+    public string DesignTierSource { get; set; } = "";
+    public EtabsTierImportMetadataDto? EtabsTierMetadata { get; set; }
     public EtabsImportMetadataDto? EtabsMetadata { get; set; }
 }
 
@@ -68,6 +71,12 @@ public sealed class SnapshotLoadCase
 {
     public string Id { get; set; } = "";
     public string Label { get; set; } = "";
+    public string OriginalLoadCaseName { get; set; } = "";
+    public string SourceObjectName { get; set; } = "";
+    public string SourceObjectLabel { get; set; } = "";
+    public string Story { get; set; } = "";
+    public string Station { get; set; } = "";
+    public string Source { get; set; } = "Manual";
     public double Pu { get; set; }
     public double Mux { get; set; }
     public double Muy { get; set; }

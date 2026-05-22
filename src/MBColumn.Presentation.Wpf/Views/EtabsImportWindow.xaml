@@ -71,16 +71,20 @@
                 BorderBrush="{DynamicResource BorderGreyBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="14,10">
-            <UniformGrid Columns="3">
-                <TextBlock Text="1  Connect"
+            <UniformGrid Columns="4">
+                <TextBlock Text="1  Target"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
                            TextAlignment="Center" />
-                <TextBlock Text="2  Forces"
+                <TextBlock Text="2  Tier"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
                            TextAlignment="Center" />
-                <TextBlock Text="3  Create"
+                <TextBlock Text="3  Forces"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           TextAlignment="Center" />
+                <TextBlock Text="4  Apply"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
                            TextAlignment="Center" />
@@ -184,6 +188,10 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="10" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <TextBlock Text="ETABS Element"
@@ -217,6 +225,32 @@
                             <ComboBox Grid.Row="6" Grid.Column="1"
                                       ItemsSource="{Binding LabelFilters}"
                                       SelectedItem="{Binding SelectedLabelFilter}" />
+
+                            <TextBlock Grid.Row="8"
+                                       Text="Target Group"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
+                            <DockPanel Grid.Row="8" Grid.Column="1">
+                                <Button DockPanel.Dock="Right"
+                                        Content="+ New"
+                                        Command="{Binding AddTargetGroupCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="8,3"
+                                        MinHeight="26"
+                                        Margin="6,0,0,0" />
+                                <ComboBox ItemsSource="{Binding TargetGroups}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedItem="{Binding SelectedTargetGroup}" />
+                            </DockPanel>
+
+                            <TextBlock Grid.Row="10"
+                                       Text="Unique Section"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Row="10" Grid.Column="1"
+                                      ItemsSource="{Binding UniqueSectionOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedItem="{Binding SelectedUniqueSection}" />
                         </Grid>
                     </GroupBox>
                 </Grid>
@@ -289,6 +323,84 @@
             </Grid>
 
             <Grid Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Style="{StaticResource WizardPanelStyle}"
+                        Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Tier Name"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding TierName, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Column="3"
+                                   Text="Story From"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource FieldLabelTextStyle}" />
+                        <ComboBox Grid.Column="4"
+                                  ItemsSource="{Binding StoryOptions}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="StoryName"
+                                  SelectedValue="{Binding StoryFrom, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Column="6"
+                                   Text="Story To"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource FieldLabelTextStyle}" />
+                        <ComboBox Grid.Column="7"
+                                  ItemsSource="{Binding StoryOptions}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="StoryName"
+                                  SelectedValue="{Binding StoryTo, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Column="9"
+                                   Text="Label Filter"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource FieldLabelTextStyle}" />
+                        <TextBox Grid.Column="10"
+                                 Text="{Binding LabelTextFilter, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </Border>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding TierObjectCandidatesView}"
+                          SelectedItem="{Binding SelectedColumn, Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="Include"
+                                                Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="70" />
+                        <DataGridTextColumn Header="Object" Binding="{Binding ObjectName}" Width="140" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="90" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="90" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="90" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Unique Section" Binding="{Binding UniqueSection}" Width="220" IsReadOnly="True" />
+                        <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSectionName}" Width="140" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <Grid Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="300" />
                     <ColumnDefinition Width="14" />
@@ -328,6 +440,19 @@
                                        FontSize="12"
                                        FontWeight="SemiBold"
                                        Margin="0,10,0,8" />
+                            <TextBlock Text="Stations"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Margin="0,4,0,4" />
+                            <CheckBox Content="Top"
+                                      IsChecked="{Binding ImportTop, Mode=TwoWay}"
+                                      Margin="4,1" />
+                            <CheckBox Content="Bottom"
+                                      IsChecked="{Binding ImportBottom, Mode=TwoWay}"
+                                      Margin="4,1" />
+                            <CheckBox Content="Mid-height"
+                                      IsChecked="{Binding ImportMid, Mode=TwoWay}"
+                                      Margin="4,1,4,8" />
                         </StackPanel>
                         <ListBox ItemsSource="{Binding FilteredLoadCombinations}"
                                  BorderBrush="{DynamicResource BorderGreyBrush}">
@@ -357,6 +482,7 @@
                                                     Width="58" />
                             <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="70" IsReadOnly="True" />
                             <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="70" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Station" Binding="{Binding Station}" Width="80" IsReadOnly="True" />
                             <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
                             <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSection}" Width="120" IsReadOnly="True" />
                             <DataGridTextColumn Header="Load Combo" Binding="{Binding LoadCombination}" Width="170" IsReadOnly="True" />
@@ -383,7 +509,7 @@
                 </Grid>
             </Grid>
 
-            <Grid Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -391,19 +517,35 @@
                 <Border Grid.Row="0"
                         Style="{StaticResource WizardPanelStyle}"
                         Margin="0,0,0,12">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Duplicate handling"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox ItemsSource="{Binding DuplicateHandlingOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedItem="{Binding SelectedDuplicateHandling}"
-                                  Width="180"
-                                  Margin="12,0,0,0" />
-                        <TextBlock Text="{Binding SummaryCreateCount, StringFormat=Sections to create or update: {0}}"
-                                   VerticalAlignment="Center"
-                                   FontWeight="SemiBold"
-                                   Margin="18,0,0,0" />
+                    <StackPanel>
+                        <UniformGrid Columns="4">
+                            <TextBlock Text="{Binding PreviewTargetGroupName, StringFormat=Target Group: {0}}"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding PreviewUniqueSectionName, StringFormat=ETABS Section: {0}}"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding MatchedTierObjectCount, StringFormat=Objects: {0}}"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding TierDemandCaseCount, StringFormat=Demand Cases: {0}}"
+                                       FontWeight="SemiBold" />
+                        </UniformGrid>
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Duplicate handling"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox ItemsSource="{Binding DuplicateHandlingOptions}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedItem="{Binding SelectedDuplicateHandling}"
+                                      Width="180"
+                                      Margin="12,0,0,0" />
+                            <TextBlock Text="{Binding SummaryCreateCount, StringFormat=Design tiers to create or update: {0}}"
+                                       VerticalAlignment="Center"
+                                       FontWeight="SemiBold"
+                                       Margin="18,0,0,0" />
+                            <TextBlock Text="{Binding PreviewStationsText, StringFormat=Stations: {0}}"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Margin="18,0,0,0" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -420,7 +562,7 @@
                         <DataGridTextColumn Header="Section Type" Binding="{Binding SectionType}" Width="110" />
                         <DataGridTextColumn Header="Dimensions" Binding="{Binding Dimensions}" Width="120" />
                         <DataGridTextColumn Header="Rebar" Binding="{Binding Rebar}" Width="220" />
-                        <DataGridTextColumn Header="Load Cases" Binding="{Binding LoadCaseCount}" Width="90" />
+                        <DataGridTextColumn Header="Demand Cases" Binding="{Binding LoadCaseCount}" Width="100" />
                         <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
                     </DataGrid.Columns>
                 </DataGrid>

@@ -7,4 +7,7 @@ public sealed record EtabsImportDialogResult(IReadOnlyList<EtabsImportedSectionI
 public sealed record EtabsImportedSectionInput(
     string SectionName,
     ColumnInputSnapshot Snapshot,
-    bool UpdateExisting);
+    bool UpdateExisting,
+    int? TargetGroupId,
+    string TargetGroupName,
+    bool CreateTargetGroup);

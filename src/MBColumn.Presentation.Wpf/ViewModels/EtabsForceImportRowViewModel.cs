@@ -18,6 +18,7 @@ public sealed class EtabsForceImportRowViewModel : ViewModelBase
         double m3,
         double v2,
         double v3,
+        string station,
         string status)
     {
         this.selectionChanged = selectionChanged;
@@ -32,6 +33,7 @@ public sealed class EtabsForceImportRowViewModel : ViewModelBase
         M3 = m3;
         V2 = v2;
         V3 = v3;
+        Station = station;
         Status = status;
     }
 
@@ -58,5 +60,6 @@ public sealed class EtabsForceImportRowViewModel : ViewModelBase
     public double M3 { get; }
     public double V2 { get; }
     public double V3 { get; }
+    public string Station { get; }
     public string Status { get; }
 }

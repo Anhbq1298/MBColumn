@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.ImportExport;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
@@ -67,6 +68,10 @@ public sealed class InputViewModel : ViewModelBase
     private bool isDxfImportedSection = false;
     private int nextLoadCaseIndex = 2;
     private bool isApplyingMaterialPreset = false;
+    private string designTierName = "";
+    private string designTierSource = "";
+    private EtabsTierImportMetadataDto? etabsTierMetadata;
+    private EtabsImportMetadataDto? etabsMetadata;
 
     private static readonly IReadOnlyList<MaterialGradeOption> AmericanConcreteGrades =
     [
@@ -1643,14 +1648,36 @@ public sealed class InputViewModel : ViewModelBase
         Pu = pu, Mux = mux, Muy = muy,
         PmAngleDegrees = selectedPmAngleDegrees,
         AxialLoad = selectedAxialLoad,
+        DesignTierName = designTierName,
+        DesignTierSource = designTierSource,
+        EtabsTierMetadata = etabsTierMetadata,
+        EtabsMetadata = etabsMetadata,
         LoadCases = LoadCases
-            .Select(lc => new SnapshotLoadCase { Id = lc.Id, Label = lc.Name, Pu = lc.Pu, Mux = lc.Mux, Muy = lc.Muy, IsActive = lc.IsActive })
+            .Select(lc => new SnapshotLoadCase
+            {
+                Id = lc.Id,
+                Label = lc.Name,
+                OriginalLoadCaseName = lc.OriginalLoadCaseName,
+                SourceObjectName = lc.SourceObjectName,
+                SourceObjectLabel = lc.SourceObjectLabel,
+                Story = lc.Story,
+                Station = lc.Station,
+                Source = string.IsNullOrWhiteSpace(lc.Source) ? "Manual" : lc.Source,
+                Pu = lc.Pu,
+                Mux = lc.Mux,
+                Muy = lc.Muy,
+                IsActive = lc.IsActive
+            })
             .ToList()
     };
 
     public void LoadFromSnapshot(ColumnInputSnapshot s)
     {
         isDxfImportedSection = false;
+        designTierName = s.DesignTierName;
+        designTierSource = s.DesignTierSource;
+        etabsTierMetadata = s.EtabsTierMetadata;
+        etabsMetadata = s.EtabsMetadata;
         unitSystem = Enum.TryParse<UnitSystem>(s.UnitSystem, out var us) ? us : UnitSystem.Metric;
         selectedDesignCode = Enum.TryParse<DesignCodeType>(s.DesignCode, out var dc) ? dc : DesignCodeType.Aci318Style;
         selectedEc2Solver = Enum.TryParse<Ec2SolverType>(s.Ec2Solver, out var ec2) ? ec2 : Ec2SolverType.Fiber;
@@ -1686,7 +1713,15 @@ public sealed class InputViewModel : ViewModelBase
         nextLoadCaseIndex = 2;
         foreach (var lc in s.LoadCases)
         {
-            LoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive));
+            LoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive)
+            {
+                OriginalLoadCaseName = lc.OriginalLoadCaseName,
+                SourceObjectName = lc.SourceObjectName,
+                SourceObjectLabel = lc.SourceObjectLabel,
+                Story = lc.Story,
+                Station = lc.Station,
+                Source = string.IsNullOrWhiteSpace(lc.Source) ? "Manual" : lc.Source
+            });
             if (int.TryParse(lc.Label.Replace("LC", ""), out var n) && n >= nextLoadCaseIndex)
                 nextLoadCaseIndex = n + 1;
         }

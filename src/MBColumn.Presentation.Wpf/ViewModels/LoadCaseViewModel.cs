@@ -12,6 +12,12 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private double muy;
     private bool isActive;
     private bool hasValidationError;
+    private string originalLoadCaseName = "";
+    private string sourceObjectName = "";
+    private string sourceObjectLabel = "";
+    private string story = "";
+    private string station = "";
+    private string source = "Manual";
 
     public LoadCaseViewModel(string id, string name, double pu, double mux, double muy, bool isActive = true)
     {
@@ -30,6 +36,12 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public double Muy { get => muy; set => Set(ref muy, value); }
     public bool IsActive { get => isActive; set => Set(ref isActive, value); }
     public bool HasValidationError { get => hasValidationError; set => Set(ref hasValidationError, value); }
+    public string OriginalLoadCaseName { get => originalLoadCaseName; set => Set(ref originalLoadCaseName, value); }
+    public string SourceObjectName { get => sourceObjectName; set => Set(ref sourceObjectName, value); }
+    public string SourceObjectLabel { get => sourceObjectLabel; set => Set(ref sourceObjectLabel, value); }
+    public string Story { get => story; set => Set(ref story, value); }
+    public string Station { get => station; set => Set(ref station, value); }
+    public string Source { get => source; set => Set(ref source, value); }
 
     public LoadCaseDto ToDto(ForceUnit forceUnit, MomentUnit momentUnit)
         => new(Id, Name, Pu, Mux, Muy, IsActive, forceUnit, momentUnit);

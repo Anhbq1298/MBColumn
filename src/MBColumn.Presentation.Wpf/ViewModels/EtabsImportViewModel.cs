@@ -1,5 +1,6 @@
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.Persistence;
+using MBColumn.Application.Services;
 using MBColumn.Application.Services.Etabs;
 using MBColumn.Application.Services.Geometry;
 using MBColumn.Domain.Entities;
@@ -50,6 +51,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly RelayCommand selectAllCombosCommand;
     private readonly RelayCommand clearAllCombosCommand;
     private readonly RelayCommand refreshCombosCommand;
+    private readonly RelayCommand addTargetGroupCommand;
 
     private int currentStep = 1;
     private bool isConnected;
@@ -66,6 +68,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private string selectedStoryFilter = AllStories;
     private string selectedLabelFilter = AllLabels;
     private string loadCombinationFilterText = "";
+    private ProjectGroupOptionViewModel? selectedTargetGroup;
+    private EtabsUniqueSectionOptionViewModel? selectedUniqueSection;
+    private string tierName = "";
+    private string lastGeneratedTierName = "";
+    private string storyFrom = "";
+    private string storyTo = "";
+    private string labelTextFilter = "";
+    private bool importTop = true;
+    private bool importBottom = true;
+    private bool importMid;
     private EtabsColumnImportRowViewModel? selectedColumn;
     private EtabsSectionMappingViewModel? selectedMapping;
     private EtabsDuplicateHandlingOption selectedDuplicateHandling;
@@ -76,6 +88,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     public EtabsImportViewModel(
         IReadOnlyCollection<string> existingSectionNames,
+        IReadOnlyList<GroupRecord> targetGroups,
+        int? defaultTargetGroupId,
         IEtabsConnectionService connectionService,
         IEtabsColumnImportService columnImportService,
         IEtabsForceImportService forceImportService,
@@ -92,12 +106,30 @@ public sealed class EtabsImportViewModel : ViewModelBase
         this.targetUnitSystem = targetUnitSystem;
 
         Columns = [];
-        FilteredColumns = CollectionViewSource.GetDefaultView(Columns);
+        FilteredColumns = new ListCollectionView(Columns);
         FilteredColumns.Filter = FilterColumn;
+        TierObjectCandidatesView = new ListCollectionView(Columns);
+        TierObjectCandidatesView.Filter = FilterTierObjectCandidate;
 
         SectionMappings = [];
+        TargetGroups = [];
+        foreach (var group in targetGroups)
+        {
+            TargetGroups.Add(new ProjectGroupOptionViewModel(group.Id, group.Name));
+        }
+
+        if (TargetGroups.Count == 0)
+        {
+            TargetGroups.Add(new ProjectGroupOptionViewModel(null, "ETABS Import", true));
+        }
+
+        selectedTargetGroup = TargetGroups.FirstOrDefault(g => g.GroupId == defaultTargetGroupId)
+            ?? TargetGroups.FirstOrDefault();
+
+        UniqueSectionOptions = [];
+        StoryOptions = [];
         LoadCombinations = [];
-        FilteredLoadCombinations = CollectionViewSource.GetDefaultView(LoadCombinations);
+        FilteredLoadCombinations = new ListCollectionView(LoadCombinations);
         FilteredLoadCombinations.Filter = FilterLoadCombination;
         ForceRows = [];
         SummaryRows = [];
@@ -123,6 +155,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         selectAllCombosCommand = new RelayCommand(() => SetAllLoadCombinations(true), () => LoadCombinations.Count > 0);
         clearAllCombosCommand = new RelayCommand(() => SetAllLoadCombinations(false), () => LoadCombinations.Count > 0);
         refreshCombosCommand = new RelayCommand(RefreshLoadCombinations, () => IsConnected);
+        addTargetGroupCommand = new RelayCommand(AddTargetGroup);
     }
 
     public event EventHandler<bool>? RequestClose;
@@ -130,7 +163,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public EtabsImportDialogResult? ImportResult { get; private set; }
     public ObservableCollection<EtabsColumnImportRowViewModel> Columns { get; }
     public ICollectionView FilteredColumns { get; }
+    public ICollectionView TierObjectCandidatesView { get; }
     public ObservableCollection<EtabsSectionMappingViewModel> SectionMappings { get; }
+    public ObservableCollection<ProjectGroupOptionViewModel> TargetGroups { get; }
+    public ObservableCollection<EtabsUniqueSectionOptionViewModel> UniqueSectionOptions { get; }
+    public ObservableCollection<EtabsStoryOptionViewModel> StoryOptions { get; }
     public ObservableCollection<EtabsLoadCombinationViewModel> LoadCombinations { get; }
     public ICollectionView FilteredLoadCombinations { get; }
     public ObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
@@ -149,6 +186,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICommand SelectAllCombosCommand => selectAllCombosCommand;
     public ICommand ClearAllCombosCommand => clearAllCombosCommand;
     public ICommand RefreshCombosCommand => refreshCombosCommand;
+    public ICommand AddTargetGroupCommand => addTargetGroupCommand;
 
     public int CurrentStep
     {
@@ -203,6 +241,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             }
 
             RebuildStoryFilters();
+            RebuildUniqueSectionOptions();
         }
     }
 
@@ -217,6 +256,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             selectedSectionTypeFilter = value;
             Raise();
             RebuildStoryFilters();
+            RebuildUniqueSectionOptions();
         }
     }
 
@@ -256,6 +296,134 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
     }
 
+    public ProjectGroupOptionViewModel? SelectedTargetGroup
+    {
+        get => selectedTargetGroup;
+        set
+        {
+            if (selectedTargetGroup == value) return;
+            selectedTargetGroup = value;
+            Raise();
+            RaiseCommandStates();
+        }
+    }
+
+    public EtabsUniqueSectionOptionViewModel? SelectedUniqueSection
+    {
+        get => selectedUniqueSection;
+        set
+        {
+            if (selectedUniqueSection == value) return;
+            selectedUniqueSection = value;
+            Raise();
+            RebuildStoryOptions();
+            ApplyTierObjectFilter(selectMatches: true);
+            UpdateDefaultTierName();
+            UpdateBoundaryPreviewFromUniqueSection();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
+    public string TierName
+    {
+        get => tierName;
+        set
+        {
+            if (tierName == value) return;
+            tierName = value;
+            Raise();
+            RaiseCommandStates();
+        }
+    }
+
+    public string StoryFrom
+    {
+        get => storyFrom;
+        set
+        {
+            if (storyFrom == value) return;
+            storyFrom = value;
+            Raise();
+            ApplyTierObjectFilter(selectMatches: true);
+            UpdateDefaultTierName();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
+    public string StoryTo
+    {
+        get => storyTo;
+        set
+        {
+            if (storyTo == value) return;
+            storyTo = value;
+            Raise();
+            ApplyTierObjectFilter(selectMatches: true);
+            UpdateDefaultTierName();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
+    public string LabelTextFilter
+    {
+        get => labelTextFilter;
+        set
+        {
+            if (labelTextFilter == value) return;
+            labelTextFilter = value;
+            Raise();
+            ApplyTierObjectFilter(selectMatches: true);
+            UpdateDefaultTierName();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
+    public bool ImportTop
+    {
+        get => importTop;
+        set
+        {
+            if (importTop == value) return;
+            importTop = value;
+            Raise();
+            ApplyStationSelection();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
+    public bool ImportBottom
+    {
+        get => importBottom;
+        set
+        {
+            if (importBottom == value) return;
+            importBottom = value;
+            Raise();
+            ApplyStationSelection();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
+    public bool ImportMid
+    {
+        get => importMid;
+        set
+        {
+            if (importMid == value) return;
+            importMid = value;
+            Raise();
+            ApplyStationSelection();
+            RaiseTierProperties();
+            RaiseCommandStates();
+        }
+    }
+
     public EtabsColumnImportRowViewModel? SelectedColumn
     {
         get => selectedColumn;
@@ -288,7 +456,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (selectedDuplicateHandling == value) return;
             selectedDuplicateHandling = value;
             Raise();
-            if (CurrentStep == 3)
+            if (CurrentStep == 4)
             {
                 BuildSummaryRows();
             }
@@ -309,18 +477,35 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public bool IsStep1 => CurrentStep == 1;
     public bool IsStep2 => CurrentStep == 2;
     public bool IsStep3 => CurrentStep == 3;
-    public bool IsStep4 => false;
+    public bool IsStep4 => CurrentStep == 4;
     public string StepTitle => CurrentStep switch
     {
-        1 => "Connect & Select Columns",
-        2 => "Import Forces",
-        _ => "Create Sections"
+        1 => "Target Group, Shape & Section",
+        2 => "Build Design Tier",
+        3 => "Import Forces",
+        4 => "Preview & Apply",
+        _ => ""
     };
-    public string NextButtonText => CurrentStep == 3 ? "Create Sections" : "Next";
+    public string NextButtonText => CurrentStep == 4 ? "Apply Import" : "Next";
     public int SelectedColumnCount => Columns.Count(c => c.IsSelected);
+    public int MatchedTierObjectCount => Columns.Count(c => FilterTierObjectCandidate(c));
     public int SelectedLoadCombinationCount => LoadCombinations.Count(c => c.IsSelected);
     public int SelectedForceRowCount => ForceRows.Count(f => f.IsSelected);
     public int SummaryCreateCount => SummaryRows.Count(r => !r.IsSkipped);
+    public int TierDemandCaseCount => SelectedForceRowCount;
+    public string PreviewTargetGroupName => SelectedTargetGroup?.GroupName ?? "";
+    public string PreviewUniqueSectionName => SelectedUniqueSection?.SectionName ?? "";
+    public string PreviewStationsText
+    {
+        get
+        {
+            var stations = new List<string>();
+            if (ImportTop) stations.Add("Top");
+            if (ImportBottom) stations.Add("Bottom");
+            if (ImportMid) stations.Add("Mid");
+            return stations.Count == 0 ? "None" : string.Join(", ", stations);
+        }
+    }
     public string ColumnPreviewTitle => SelectedColumn is null
         ? "No column highlighted"
         : $"{SelectedColumn.Pier} / {SelectedColumn.Story} / {SelectedColumn.Label}";
@@ -396,8 +581,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IsConnected = true;
         ConnectionStatus = result.Message;
         ResetColumnFilters();
+        RebuildUniqueSectionOptions();
         SelectedColumn = Columns.FirstOrDefault();
         Raise(nameof(SelectedColumnCount));
+        RaiseTierProperties();
         RaiseCommandStates();
     }
 
@@ -441,7 +628,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         : $"Connected — {groups.Count} pier group(s) loaded.";
 
                     RebuildStoryFilters();
+                    RebuildUniqueSectionOptions();
                     Raise(nameof(SelectedColumnCount));
+                    RaiseTierProperties();
                     RaiseCommandStates();
                 });
             }
@@ -470,15 +659,21 @@ public sealed class EtabsImportViewModel : ViewModelBase
         UnitConversionMessage = "Connect to ETABS to read model units.";
         Columns.Clear();
         SectionMappings.Clear();
+        UniqueSectionOptions.Clear();
+        StoryOptions.Clear();
         ForceRows.Clear();
         SummaryRows.Clear();
         pierBoundaryCache.Clear();
         pierGroupsLoaded = false;
         SelectedColumn = null;
         SelectedMapping = null;
+        selectedUniqueSection = null;
+        Raise(nameof(SelectedUniqueSection));
         CurrentStep = 1;
         ResetColumnFilters();
+        TierObjectCandidatesView.Refresh();
         RaiseCounts();
+        RaiseTierProperties();
     }
 
     private void Back()
@@ -493,17 +688,24 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         if (CurrentStep == 1)
         {
-            BuildSectionMappings();
-            RefreshLoadCombinations();
-            GenerateForceRows();
+            PrepareTierBuilder();
             CurrentStep = 2;
             return;
         }
 
         if (CurrentStep == 2)
         {
-            BuildSummaryRows();
+            BuildSectionMappings();
+            RefreshLoadCombinations();
+            GenerateForceRows();
             CurrentStep = 3;
+            return;
+        }
+
+        if (CurrentStep == 3)
+        {
+            BuildSummaryRows();
+            CurrentStep = 4;
             return;
         }
 
@@ -513,9 +715,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private bool CanMoveNext()
         => CurrentStep switch
         {
-            1 => IsConnected && SelectedColumnCount > 0,
-            2 => SelectedLoadCombinationCount > 0 && SelectedForceRowCount > 0,
-            3 => SummaryCreateCount > 0,
+            1 => IsConnected && SelectedTargetGroup is not null && SelectedUniqueSection is not null,
+            2 => SelectedColumnCount > 0 && !string.IsNullOrWhiteSpace(TierName),
+            3 => SelectedLoadCombinationCount > 0 && SelectedForceRowCount > 0,
+            4 => SummaryCreateCount > 0,
             _ => false
         };
 
@@ -525,8 +728,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
             .Where(row => !row.IsSkipped)
             .Select(row => new EtabsImportedSectionInput(
                 row.NewSectionName,
-                CreateSnapshot(row),
-                row.UpdateExisting))
+                CreateTierSnapshot(row),
+                row.UpdateExisting,
+                SelectedTargetGroup?.GroupId,
+                SelectedTargetGroup?.GroupName ?? "",
+                SelectedTargetGroup?.CreateGroup == true))
             .ToList();
 
         if (sections.Count == 0)
@@ -536,6 +742,171 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         ImportResult = new EtabsImportDialogResult(sections);
         RequestClose?.Invoke(this, true);
+    }
+
+    private void PrepareTierBuilder()
+    {
+        RebuildStoryOptions();
+        ApplyTierObjectFilter(selectMatches: true);
+        UpdateDefaultTierName();
+        RaiseTierProperties();
+    }
+
+    private void AddTargetGroup()
+    {
+        var existingNames = TargetGroups
+            .Select(g => g.GroupName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var name = NextAvailableGroupName("ETABS Import", existingNames);
+        var option = new ProjectGroupOptionViewModel(null, name, true);
+        TargetGroups.Add(option);
+        SelectedTargetGroup = option;
+    }
+
+    private static string NextAvailableGroupName(string baseName, HashSet<string> existingNames)
+    {
+        if (!existingNames.Contains(baseName))
+            return baseName;
+
+        var index = 2;
+        while (existingNames.Contains($"{baseName} {index}"))
+            index++;
+
+        return $"{baseName} {index}";
+    }
+
+    private void RebuildUniqueSectionOptions()
+    {
+        var previous = SelectedUniqueSection?.SectionName;
+        UniqueSectionOptions.Clear();
+
+        foreach (var group in FilteredByType()
+                     .GroupBy(c => c.UniqueSection, StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var first = group.First();
+            UniqueSectionOptions.Add(new EtabsUniqueSectionOptionViewModel(
+                first.UniqueSection,
+                first.EtabsSectionName,
+                first.SectionType,
+                group.Count()));
+        }
+
+        SelectedUniqueSection = UniqueSectionOptions.FirstOrDefault(s =>
+                string.Equals(s.SectionName, previous, StringComparison.OrdinalIgnoreCase))
+            ?? UniqueSectionOptions.FirstOrDefault();
+    }
+
+    private void RebuildStoryOptions()
+    {
+        StoryOptions.Clear();
+
+        var stories = Columns
+            .Where(c => SelectedUniqueSection is not null
+                        && string.Equals(c.UniqueSection, SelectedUniqueSection.SectionName, StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.Story)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select((story, index) => new EtabsStoryOptionViewModel(story, 0, index))
+            .ToList();
+
+        foreach (var story in stories)
+            StoryOptions.Add(story);
+
+        if (StoryOptions.Count == 0)
+        {
+            storyFrom = "";
+            storyTo = "";
+        }
+        else
+        {
+            if (!StoryOptions.Any(s => string.Equals(s.StoryName, storyFrom, StringComparison.OrdinalIgnoreCase)))
+                storyFrom = StoryOptions.First().StoryName;
+            if (!StoryOptions.Any(s => string.Equals(s.StoryName, storyTo, StringComparison.OrdinalIgnoreCase)))
+                storyTo = StoryOptions.Last().StoryName;
+        }
+
+        Raise(nameof(StoryFrom));
+        Raise(nameof(StoryTo));
+    }
+
+    private void ApplyTierObjectFilter(bool selectMatches)
+    {
+        TierObjectCandidatesView.Refresh();
+
+        if (selectMatches)
+        {
+            foreach (var column in Columns)
+            {
+                column.IsSelected = FilterTierObjectCandidate(column);
+            }
+        }
+
+        Raise(nameof(SelectedColumnCount));
+        Raise(nameof(MatchedTierObjectCount));
+    }
+
+    private bool FilterTierObjectCandidate(object item)
+    {
+        if (item is not EtabsColumnImportRowViewModel column || SelectedUniqueSection is null)
+            return false;
+
+        if (!string.Equals(column.UniqueSection, SelectedUniqueSection.SectionName, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (!IsStoryWithinRange(column.Story))
+            return false;
+
+        return string.IsNullOrWhiteSpace(LabelTextFilter)
+               || column.Label.Contains(LabelTextFilter.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsStoryWithinRange(string story)
+    {
+        if (StoryOptions.Count == 0 || string.IsNullOrWhiteSpace(story))
+            return true;
+
+        var storyIndex = StoryIndex(story);
+        var fromIndex = StoryIndex(StoryFrom);
+        var toIndex = StoryIndex(StoryTo);
+        if (storyIndex < 0 || fromIndex < 0 || toIndex < 0)
+            return true;
+
+        var min = Math.Min(fromIndex, toIndex);
+        var max = Math.Max(fromIndex, toIndex);
+        return storyIndex >= min && storyIndex <= max;
+    }
+
+    private int StoryIndex(string story)
+        => StoryOptions.FirstOrDefault(s => string.Equals(s.StoryName, story, StringComparison.OrdinalIgnoreCase))?.SortIndex ?? -1;
+
+    private void UpdateDefaultTierName()
+    {
+        if (SelectedUniqueSection is null)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(TierName)
+            && !string.Equals(TierName, lastGeneratedTierName, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var label = string.IsNullOrWhiteSpace(LabelTextFilter) ? "All" : LabelTextFilter.Trim();
+        var storyRange = string.Equals(StoryFrom, StoryTo, StringComparison.OrdinalIgnoreCase)
+            ? StoryFrom
+            : $"{StoryFrom}-{StoryTo}";
+        lastGeneratedTierName = SanitizeName($"{SelectedUniqueSection.SourceSectionName}_{storyRange}_{label}");
+        tierName = lastGeneratedTierName;
+        Raise(nameof(TierName));
+    }
+
+    private void UpdateBoundaryPreviewFromUniqueSection()
+    {
+        if (SelectedUniqueSection is null)
+            return;
+
+        var previewColumn = Columns.FirstOrDefault(c =>
+            string.Equals(c.UniqueSection, SelectedUniqueSection.SectionName, StringComparison.OrdinalIgnoreCase));
+        if (previewColumn is not null)
+            SelectedColumn = previewColumn;
     }
 
     private void BuildSectionMappings()
@@ -658,6 +1029,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             }
         }
 
+        ApplyStationSelection();
         RaiseCounts();
         RaiseCommandStates();
     }
@@ -677,6 +1049,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             force.M3,
             force.V2,
             force.V3,
+            force.Station,
             force.Status));
     }
 
@@ -685,44 +1058,44 @@ public sealed class EtabsImportViewModel : ViewModelBase
         SummaryRows.Clear();
         var reservedNames = existingSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var mode = SelectedDuplicateHandling.Mode;
-
-        foreach (var column in Columns.Where(c => c.IsSelected))
+        var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
+        var sourceColumn = selectedColumns.FirstOrDefault();
+        var mapping = SectionMappings.FirstOrDefault();
+        if (sourceColumn is null || mapping is null)
         {
-            var mapping = SectionMappings.First(m => string.Equals(m.UniqueSection, column.UniqueSection, StringComparison.OrdinalIgnoreCase));
-            var baseName = BuildDefaultSectionName(column);
-            var exists = existingSectionNames.Contains(baseName);
-            var isSkipped = exists && mode == EtabsDuplicateHandlingMode.SkipExisting;
-            var updateExisting = exists && mode == EtabsDuplicateHandlingMode.UpdateExisting;
-            var finalName = updateExisting ? baseName : NextAvailableName(baseName, reservedNames);
-            var loadCaseCount = ForceRows.Count(f => f.IsSelected && f.ObjectName == column.ObjectName);
-            var status = isSkipped
-                ? "Skipped"
-                : updateExisting
-                    ? "Update existing"
-                    : string.Equals(finalName, baseName, StringComparison.OrdinalIgnoreCase) ? "Ready" : "Create copy";
-
-            if (!isSkipped && !updateExisting)
-            {
-                reservedNames.Add(finalName);
-            }
-
-            SummaryRows.Add(new EtabsImportSummaryRowViewModel(
-                column,
-                mapping,
-                finalName,
-                column.Pier,
-                column.Story,
-                column.Label,
-                column.SectionType,
-                mapping.BoundarySummary,
-                mapping.RebarTemplate,
-                loadCaseCount,
-                status,
-                isSkipped,
-                updateExisting));
+            Raise(nameof(SummaryCreateCount));
+            RaiseCommandStates();
+            return;
         }
 
+        var baseName = SanitizeName(string.IsNullOrWhiteSpace(TierName) ? BuildDefaultSectionName(sourceColumn) : TierName);
+        var exists = existingSectionNames.Contains(baseName);
+        var isSkipped = exists && mode == EtabsDuplicateHandlingMode.SkipExisting;
+        var updateExisting = exists && mode == EtabsDuplicateHandlingMode.UpdateExisting;
+        var finalName = updateExisting ? baseName : NextAvailableName(baseName, reservedNames);
+        var status = isSkipped
+            ? "Skipped"
+            : updateExisting
+                ? "Update existing"
+                : string.Equals(finalName, baseName, StringComparison.OrdinalIgnoreCase) ? "Ready" : "Create copy";
+
+        SummaryRows.Add(new EtabsImportSummaryRowViewModel(
+            sourceColumn,
+            mapping,
+            finalName,
+            sourceColumn.Pier,
+            $"{StoryFrom}-{StoryTo}".Trim('-'),
+            LabelTextFilter,
+            sourceColumn.SectionType,
+            mapping.BoundarySummary,
+            mapping.RebarTemplate,
+            SelectedForceRowCount,
+            status,
+            isSkipped,
+            updateExisting));
+
         Raise(nameof(SummaryCreateCount));
+        RaiseTierProperties();
         RaiseCommandStates();
     }
 
@@ -754,7 +1127,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         if (mapping.IsIrregular)
         {
-            var (irr, ops, shells, props, warn) = BuildIrregularBoundary(row.Pier, row.Story, mapping);
+            var (irr, ops, shells, props, warn) = BuildIrregularBoundary(row.Pier, row.SourceColumn.Story, mapping);
             boundary = irr;
             openings = ops;
             sourceShells = shells;
@@ -834,7 +1207,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 SourceModelName = ModelName,
                 EtabsObjectName = row.SourceColumn.ObjectName,
                 PierName = row.Pier,
-                StoryName = row.Story,
+                StoryName = row.SourceColumn.Story,
                 Label = row.Label,
                 EtabsSectionName = row.SourceColumn.EtabsSectionName,
                 UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
@@ -849,6 +1222,94 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 OpeningCount = openings.Count
             }
         };
+
+        return snapshot;
+    }
+
+    private ColumnInputSnapshot CreateTierSnapshot(EtabsImportSummaryRowViewModel row)
+    {
+        var snapshot = CreateSnapshot(row);
+        var selectedObjectNames = Columns
+            .Where(c => c.IsSelected)
+            .Select(c => c.ObjectName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var selectedForces = ForceRows
+            .Where(force => force.IsSelected && selectedObjectNames.Contains(force.ObjectName))
+            .ToList();
+
+        var loadCases = selectedForces
+            .Select((force, index) =>
+            {
+                var station = NormalizeDemandStation(force.Station, force.Status);
+                var sourceLabel = string.IsNullOrWhiteSpace(force.Label) ? force.Pier : force.Label;
+                return new SnapshotLoadCase
+                {
+                    Id = $"etabs_{index + 1}",
+                    OriginalLoadCaseName = force.LoadCombination,
+                    SourceObjectName = force.ObjectName,
+                    SourceObjectLabel = sourceLabel,
+                    Story = force.Story,
+                    Station = station,
+                    Source = "ETABS",
+                    Label = BuildDemandCaseLabel(force.LoadCombination, sourceLabel, force.Story, station),
+                    Pu = force.P,
+                    Mux = force.M2,
+                    Muy = force.M3,
+                    IsActive = true
+                };
+            })
+            .ToList();
+
+        var primaryForce = loadCases.FirstOrDefault();
+        snapshot.Pu = primaryForce?.Pu ?? 0;
+        snapshot.Mux = primaryForce?.Mux ?? 0;
+        snapshot.Muy = primaryForce?.Muy ?? 0;
+        snapshot.LoadCases = loadCases;
+        snapshot.DesignTierName = row.NewSectionName;
+        snapshot.DesignTierSource = "ETABS";
+
+        var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
+        snapshot.EtabsTierMetadata = new EtabsTierImportMetadataDto
+        {
+            SourceModelPath = ModelPath,
+            SourceModelName = ModelName,
+            ImportedUnits = PresentUnits,
+            MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+            ShapeType = row.SectionType.ToString(),
+            SourceSectionName = row.SourceColumn.EtabsSectionName,
+            UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
+            TargetGroupName = SelectedTargetGroup?.GroupName ?? "",
+            TargetGroupId = SelectedTargetGroup?.GroupId,
+            TierName = row.NewSectionName,
+            StoryFrom = StoryFrom,
+            StoryTo = StoryTo,
+            LabelFilter = LabelTextFilter,
+            SourceObjects = selectedColumns
+                .Select(c => new EtabsSourceObjectRefDto
+                {
+                    ObjectName = c.ObjectName,
+                    Label = c.Label,
+                    Story = c.Story,
+                    SectionName = c.EtabsSectionName
+                })
+                .ToList(),
+            SelectedLoadCombinations = LoadCombinations
+                .Where(c => c.IsSelected)
+                .Select(c => c.Name)
+                .ToList(),
+            ImportTop = ImportTop,
+            ImportBottom = ImportBottom,
+            ImportMid = ImportMid,
+            ImportedAt = DateTime.UtcNow
+        };
+
+        if (snapshot.EtabsMetadata is not null)
+        {
+            snapshot.EtabsMetadata.SelectedLoadCombinations = snapshot.LoadCases
+                .Select(lc => lc.OriginalLoadCaseName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
 
         return snapshot;
     }
@@ -946,7 +1407,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         // Only apply if the user hasn't moved to a different row
                         if (SelectedColumn?.UniqueSection != capturedCol.UniqueSection) return;
                         if (result is { Count: >= 3 })
-                            SetPreviewPoints(result, capturedCol.SectionTypeDisplay);
+                        {
+                            var opCount = pierBoundaryCache.TryGetValue(capturedCol.UniqueSection, out var c) ? c.Openings.Count : 0;
+                            SetPreviewPoints(result, capturedCol.SectionTypeDisplay, opCount);
+                        }
                         else
                             PreviewStatusText = "Could not compute pier boundary.";
                         Raise(nameof(HasBoundaryPreview));
@@ -990,11 +1454,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
             return;
         }
 
-        SetPreviewPoints(points, col.SectionTypeDisplay);
+        var cachedOpenings = col.IsIrregular && pierBoundaryCache.TryGetValue(col.UniqueSection, out var cv) ? cv.Openings.Count : 0;
+        SetPreviewPoints(points, col.SectionTypeDisplay, cachedOpenings);
         Raise(nameof(HasBoundaryPreview));
     }
 
-    private void SetPreviewPoints(IReadOnlyList<Point2D> points, string typeLabel)
+    private void SetPreviewPoints(IReadOnlyList<Point2D> points, string typeLabel, int openingCount = 0)
     {
         var minX = points.Min(p => p.X);
         var maxX = points.Max(p => p.X);
@@ -1013,11 +1478,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
 
         BoundaryPreviewPointCollection = pc;
-        var openingInfo = pierBoundaryCache.TryGetValue(typeLabel, out _) ? "" : "";
-        // Append opening count if boundary is cached for this preview
-        var openingCount = 0;
-        foreach (var kv in pierBoundaryCache.Values)
-            if (kv.Outer == points) { openingCount = kv.Openings.Count; break; }
         var openingSuffix = openingCount > 0 ? $"  ·  {openingCount} opening(s)" : "";
         PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} × {maxY - minY:0.#} mm{openingSuffix}";
     }
@@ -1357,12 +1817,13 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private void OnColumnSelectionChanged()
     {
         Raise(nameof(SelectedColumnCount));
+        RaiseTierProperties();
         RaiseCommandStates();
     }
 
     private void OnMappingChanged()
     {
-        if (CurrentStep == 3)
+        if (CurrentStep == 4)
         {
             BuildSummaryRows();
         }
@@ -1380,15 +1841,71 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private void OnForceSelectionChanged()
     {
         Raise(nameof(SelectedForceRowCount));
+        RaiseTierProperties();
         RaiseCommandStates();
+    }
+
+    private void ApplyStationSelection()
+    {
+        foreach (var force in ForceRows)
+        {
+            force.IsSelected = ShouldIncludeStation(force);
+        }
+
+        Raise(nameof(SelectedForceRowCount));
+    }
+
+    private bool ShouldIncludeStation(EtabsForceImportRowViewModel force)
+    {
+        var station = NormalizeDemandStation(force.Station, force.Status);
+        return station switch
+        {
+            "Bottom" => ImportBottom,
+            "Mid" => ImportMid,
+            "Top" => ImportTop,
+            _ => ImportTop || ImportBottom || ImportMid
+        };
+    }
+
+    private static string NormalizeDemandStation(string station, string status)
+    {
+        if (!string.IsNullOrWhiteSpace(station))
+            return station;
+        if (status.Contains("bottom", StringComparison.OrdinalIgnoreCase))
+            return "Bottom";
+        if (status.Contains("mid", StringComparison.OrdinalIgnoreCase))
+            return "Mid";
+        if (status.Contains("top", StringComparison.OrdinalIgnoreCase))
+            return "Top";
+
+        return "Top";
+    }
+
+    private static string BuildDemandCaseLabel(string originalLoadCase, string label, string story, string station)
+    {
+        var parts = new[] { originalLoadCase, label, story, station }
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .Select(SanitizeName);
+        return string.Join("-", parts);
     }
 
     private void RaiseCounts()
     {
         Raise(nameof(SelectedColumnCount));
+        Raise(nameof(MatchedTierObjectCount));
         Raise(nameof(SelectedLoadCombinationCount));
         Raise(nameof(SelectedForceRowCount));
         Raise(nameof(SummaryCreateCount));
+        Raise(nameof(TierDemandCaseCount));
+    }
+
+    private void RaiseTierProperties()
+    {
+        Raise(nameof(MatchedTierObjectCount));
+        Raise(nameof(TierDemandCaseCount));
+        Raise(nameof(PreviewTargetGroupName));
+        Raise(nameof(PreviewUniqueSectionName));
+        Raise(nameof(PreviewStationsText));
     }
 
     private void RaiseStepProperties()
@@ -1396,6 +1913,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(IsStep1));
         Raise(nameof(IsStep2));
         Raise(nameof(IsStep3));
+        Raise(nameof(IsStep4));
         Raise(nameof(StepTitle));
         Raise(nameof(NextButtonText));
     }
@@ -1507,6 +2025,57 @@ public sealed class EtabsLoadCombinationViewModel : ViewModelBase
 }
 
 public sealed record EtabsDuplicateHandlingOption(EtabsDuplicateHandlingMode Mode, string DisplayName);
+
+public sealed class ProjectGroupOptionViewModel
+{
+    public ProjectGroupOptionViewModel(int? groupId, string groupName, bool createGroup = false)
+    {
+        GroupId = groupId;
+        GroupName = groupName;
+        CreateGroup = createGroup;
+    }
+
+    public int? GroupId { get; }
+    public string GroupName { get; }
+    public bool CreateGroup { get; }
+    public string DisplayName => CreateGroup ? $"{GroupName} (new)" : GroupName;
+}
+
+public sealed class EtabsUniqueSectionOptionViewModel
+{
+    public EtabsUniqueSectionOptionViewModel(
+        string sectionName,
+        string sourceSectionName,
+        SectionShapeType shapeType,
+        int objectCount)
+    {
+        SectionName = sectionName;
+        SourceSectionName = sourceSectionName;
+        ShapeType = shapeType;
+        ObjectCount = objectCount;
+    }
+
+    public string SectionName { get; }
+    public string SourceSectionName { get; }
+    public SectionShapeType ShapeType { get; }
+    public int ObjectCount { get; }
+    public string DisplayName => $"{SectionName} ({ObjectCount} objects)";
+}
+
+public sealed class EtabsStoryOptionViewModel
+{
+    public EtabsStoryOptionViewModel(string storyName, double elevation, int sortIndex)
+    {
+        StoryName = storyName;
+        Elevation = elevation;
+        SortIndex = sortIndex;
+    }
+
+    public string StoryName { get; }
+    public double Elevation { get; }
+    public int SortIndex { get; }
+    public string DisplayName => StoryName;
+}
 
 public enum EtabsDuplicateHandlingMode
 {

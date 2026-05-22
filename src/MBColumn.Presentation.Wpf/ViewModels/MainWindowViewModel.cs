@@ -51,6 +51,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         this.projectSession = projectSession;
         Input = input;
         Result = new ResultViewModel();
+        Report = new ReportTabViewModel();
 
         Explorer = new ProjectExplorerViewModel(
             projectService,
@@ -88,6 +89,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public InputViewModel Input { get; }
     public ResultViewModel Result { get; }
+    public ReportTabViewModel Report { get; }
     public ProjectExplorerViewModel Explorer { get; }
 
     public ICommand CalculateCommand { get; }
@@ -227,6 +229,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             // Auto-save column input after successful calculation
             if (currentColumn is not null)
                 SaveCurrentColumnInput();
+
+            RefreshReportFromCurrentWorkspace();
         }
         catch (Exception ex)
         {
@@ -297,6 +301,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         ValidationMessage = "";
         ApplyCurrentColumnResult();
+        RefreshReportFromCurrentWorkspace();
         SelectedMainTabIndex = 1;
         RaiseResultStateProperties();
     }
@@ -315,6 +320,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         projectService.NewProject(name);
         ClearResults();
+        Report.Clear();
         Explorer.ClearSectionStatuses();
         IsCalculationOutdated = false;
         SelectedMainTabIndex = 0;
@@ -338,6 +344,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
             projectService.OpenProject(filePath);
             ClearResults();
+            Report.Clear();
             Explorer.ClearSectionStatuses();
             IsCalculationOutdated = false;
             SelectedMainTabIndex = 0;
@@ -357,9 +364,18 @@ public sealed class MainWindowViewModel : ViewModelBase
         var existingNames = projectService.GetColumns()
             .Select(column => column.Name)
             .ToList();
+        var groups = projectService.GetGroups();
+        var defaultTargetGroupId = Explorer.SelectedNode switch
+        {
+            GroupItemViewModel group => group.Id,
+            ColumnItemViewModel column => column.GroupId,
+            _ => currentColumn?.GroupId ?? groups.FirstOrDefault()?.Id
+        };
         var result = etabsImportDialogService.ShowDialog(
             System.Windows.Application.Current?.MainWindow,
             existingNames,
+            groups,
+            defaultTargetGroupId,
             Input.UnitSystem);
         if (result is null || result.Sections.Count == 0)
         {
@@ -376,8 +392,19 @@ public sealed class MainWindowViewModel : ViewModelBase
 
             foreach (var imported in result.Sections)
             {
+                var targetGroupId = imported.TargetGroupId;
+                var targetGroupName = imported.TargetGroupName;
+                if (imported.CreateTargetGroup)
+                {
+                    var group = projectService.AddGroup(imported.TargetGroupName);
+                    targetGroupId = group.Id;
+                    targetGroupName = group.Name;
+                }
+
                 if (imported.UpdateExisting && columnsByName.TryGetValue(imported.SectionName, out var existing))
                 {
+                    if (existing.GroupId != targetGroupId)
+                        projectService.MoveColumn(existing.Id, targetGroupId);
                     projectService.SaveColumnInput(existing.Id, imported.Snapshot);
                     projectSession.ClearColumnResult(existing.Id);
                     Explorer.SetSectionStatus(existing.Id, SectionStatus.NotCalculated);
@@ -386,7 +413,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                     continue;
                 }
 
-                var record = projectService.AddColumn(imported.SectionName);
+                var record = projectService.AddColumn(imported.SectionName, targetGroupId);
                 projectService.SaveColumnInput(record.Id, imported.Snapshot);
                 projectSession.ClearColumnResult(record.Id);
                 Explorer.SetSectionStatus(record.Id, SectionStatus.NotCalculated);
@@ -403,8 +430,11 @@ public sealed class MainWindowViewModel : ViewModelBase
             SelectedMainTabIndex = 0;
             ValidationMessage = "";
             RaiseStatusProperties();
+            var importedTier = result.Sections.Count == 1 ? result.Sections[0] : null;
             messageService.ShowInformation(
-                $"Imported {created + updated} ETABS columns as MBColumn sections.",
+                importedTier is not null
+                    ? $"Imported ETABS design tier '{importedTier.SectionName}' into '{importedTier.TargetGroupName}' with {importedTier.Snapshot.EtabsTierMetadata?.SourceObjects.Count ?? 0} objects and {importedTier.Snapshot.LoadCases.Count} demand cases."
+                    : $"Imported {created + updated} ETABS design tiers.",
                 "ETABS Import");
         }
         catch (Exception ex)
@@ -518,6 +548,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
 
         RaiseResultStateProperties();
+        RefreshReportFromCurrentWorkspace();
     }
 
     private void SaveCurrentColumnInput()
@@ -603,6 +634,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             if (!Result.HasResult) return;
             IsCalculationOutdated = true;
+            Report.MarkOutdated();
             return;
         }
 
@@ -610,6 +642,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         projectSession.MarkCurrentColumnOutdated();
         Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Outdated);
         IsCalculationOutdated = true;
+        Report.MarkOutdated();
     }
 
     private void MarkProjectModified()
@@ -683,5 +716,30 @@ public sealed class MainWindowViewModel : ViewModelBase
         projectSession.ClearResults();
         Result.Result = null;
         RaiseResultStateProperties();
+    }
+
+    private void RefreshReportFromCurrentWorkspace()
+    {
+        if (currentColumn is null)
+        {
+            Report.Clear();
+            return;
+        }
+
+        Report.LoadFromCurrentWorkspace(
+            Input,
+            Result,
+            projectService.ProjectName,
+            CurrentGroupName(),
+            currentColumn.Name,
+            IsCalculationOutdated);
+    }
+
+    private string CurrentGroupName()
+    {
+        if (currentColumn?.GroupId is not int groupId)
+            return "";
+
+        return projectService.GetGroups().FirstOrDefault(group => group.Id == groupId)?.Name ?? "";
     }
 }

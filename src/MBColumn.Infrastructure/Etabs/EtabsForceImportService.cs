@@ -167,6 +167,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m3 * momentFactor,  3),
                 SMath.Round(v2 * forceToKn,     3),
                 SMath.Round(v3 * forceToKn,     3),
+                NormalizeStation(loc),
                 status));
         }
 
@@ -223,6 +224,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m3[i] * momentFactor, 3),
                 SMath.Round(v2[i] * forceToKn,    3),
                 SMath.Round(v3[i] * forceToKn,    3),
+                NormalizeStation(loc),
                 status));
         }
 
@@ -320,6 +322,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
                 0.0,
+                "Top",
                 "Design Force"));
         }
 
@@ -382,40 +385,69 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (ret != 0 || numResults == 0)
             yield break;
 
-        // Group by (loadCombo, stepType) and take one representative row per combo
-        // For envelope output, stepType is "Max" or "Min"; we keep both
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var indices = Enumerable.Range(0, numResults)
+            .Where(i => selectedCombos.Contains(loadCase[i] ?? ""))
+            .GroupBy(i => $"{loadCase[i]}|{stepType[i]}", StringComparer.OrdinalIgnoreCase);
 
-        for (var i = 0; i < numResults; i++)
+        foreach (var group in indices)
         {
-            var combo = loadCase[i];
-            if (!selectedCombos.Contains(combo))
+            var rows = group
+                .OrderBy(i => StationValue(objSta, elmSta, i))
+                .ToList();
+            if (rows.Count == 0)
                 continue;
 
-            var key = $"{combo}|{stepType[i]}";
-            if (!seen.Add(key))
-                continue;
-
-            var status = stepType[i] switch
+            var bottomIndex = rows.First();
+            var topIndex = rows.Last();
+            foreach (var (index, station) in DistinctStationRows(bottomIndex, topIndex))
             {
-                "Max" => "Envelope Max",
-                "Min" => "Envelope Min",
-                _ => stepType[i]
-            };
+                var combo = loadCase[index];
+                var baseStatus = stepType[index] switch
+                {
+                    "Max" => "Envelope Max",
+                    "Min" => "Envelope Min",
+                    _ => stepType[index]
+                };
 
-            yield return new EtabsForceResultDto(
-                column.ObjectName,
-                column.PierName,
-                column.StoryName,
-                column.Label,
-                column.EtabsSectionName,
-                combo,
-                SMath.Round(p[i] * forceToKn, 3),
-                SMath.Round(m2[i] * momentFactor, 3),
-                SMath.Round(m3[i] * momentFactor, 3),
-                SMath.Round(v2[i] * forceToKn, 3),
-                SMath.Round(v3[i] * forceToKn, 3),
-                status);
+                yield return new EtabsForceResultDto(
+                    column.ObjectName,
+                    column.PierName,
+                    column.StoryName,
+                    column.Label,
+                    column.EtabsSectionName,
+                    combo,
+                    SMath.Round(p[index] * forceToKn, 3),
+                    SMath.Round(m2[index] * momentFactor, 3),
+                    SMath.Round(m3[index] * momentFactor, 3),
+                    SMath.Round(v2[index] * forceToKn, 3),
+                    SMath.Round(v3[index] * forceToKn, 3),
+                    station,
+                    $"{baseStatus} {station}");
+            }
         }
+    }
+
+    private static double StationValue(double[] objSta, double[] elmSta, int index)
+        => index < objSta.Length ? objSta[index]
+            : index < elmSta.Length ? elmSta[index]
+            : 0.0;
+
+    private static IEnumerable<(int Index, string Station)> DistinctStationRows(int bottomIndex, int topIndex)
+    {
+        yield return (bottomIndex, "Bottom");
+        if (topIndex != bottomIndex)
+            yield return (topIndex, "Top");
+    }
+
+    private static string NormalizeStation(string value)
+    {
+        if (value.Contains("bottom", StringComparison.OrdinalIgnoreCase))
+            return "Bottom";
+        if (value.Contains("mid", StringComparison.OrdinalIgnoreCase))
+            return "Mid";
+        if (value.Contains("top", StringComparison.OrdinalIgnoreCase))
+            return "Top";
+
+        return "";
     }
 }

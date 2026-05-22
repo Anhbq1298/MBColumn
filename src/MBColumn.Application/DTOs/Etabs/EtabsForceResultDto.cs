@@ -12,4 +12,5 @@ public sealed record EtabsForceResultDto(
     double M3,
     double V2,
     double V3,
+    string Station,
     string Status);

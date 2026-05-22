@@ -164,11 +164,11 @@
                            Style="{StaticResource ColumnHeaderTextStyle}"
                            Margin="0" />
                 <TextBlock Grid.Column="1"
-                           Text="Load Case"
+                           Text="Demand Cases"
                            Style="{StaticResource ColumnHeaderTextStyle}"
                            Margin="0" />
                 <TextBlock Grid.Column="2"
-                           Text="Section And Rebar Config"
+                           Text="Section + Rebar"
                            Style="{StaticResource ColumnHeaderTextStyle}"
                            Margin="0" />
             </Grid>
@@ -335,7 +335,7 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Margin="0,0,14,0">
             <StackPanel>
-                <GroupBox Header="Load Cases"
+                <GroupBox Header="Demand Cases"
                           Background="White"
                           Foreground="{DynamicResource DarkNavyBrush}"
                           BorderBrush="{DynamicResource BorderGreyBrush}"
@@ -446,18 +446,38 @@
                                   Margin="0,0,0,8">
                             <DataGrid.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="Add Load Case"
+                                    <MenuItem Header="Add Demand Case"
                                               Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="Remove Selected Load Case(s)"
+                                    <MenuItem Header="Remove Selected Demand Case(s)"
                                               Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                               CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 </ContextMenu>
                             </DataGrid.ContextMenu>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Load&#xA;Case"
+                                <DataGridTextColumn Header="Case&#xA;Name"
                                                     Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="72"
+                                                    Width="120"
+                                                    MinWidth="90"
+                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="Original LC"
+                                                    Binding="{Binding OriginalLoadCaseName, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="105"
+                                                    MinWidth="80"
+                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="Label"
+                                                    Binding="{Binding SourceObjectLabel, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="80"
+                                                    MinWidth="64"
+                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="Story"
+                                                    Binding="{Binding Story, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="75"
                                                     MinWidth="60"
+                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridTextColumn Header="Station"
+                                                    Binding="{Binding Station, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="80"
+                                                    MinWidth="64"
                                                     ElementStyle="{StaticResource LeftAlignText}" />
                                 <DataGridTextColumn Header="P"
                                                     Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
@@ -477,13 +497,22 @@
                                                     MinWidth="64"
                                                     ElementStyle="{StaticResource RightAlignText}"
                                                     EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                <DataGridTextColumn Header="Source"
+                                                    Binding="{Binding Source, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="80"
+                                                    MinWidth="64"
+                                                    ElementStyle="{StaticResource LeftAlignText}" />
+                                <DataGridCheckBoxColumn Header="Include"
+                                                        Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        Width="70"
+                                                        MinWidth="60" />
                             </DataGrid.Columns>
                         </DataGrid>
                         <WrapPanel>
                             <Button Content="+ Add case"
                                     Command="{Binding AddLoadCaseCommand}"
                                     Style="{StaticResource CompactButtonStyle}" />
-                            <Button Content="Delete load case"
+                            <Button Content="Delete demand case"
                                     Command="{Binding DeleteSelectedLoadCasesCommand}"
                                     CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
                                     Style="{StaticResource SecondaryButtonStyle}"

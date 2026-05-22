@@ -1,4 +1,5 @@
 using MBColumn.Application.Services.Etabs;
+using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.ViewModels;
 using MBColumn.Presentation.Wpf.Views;
 
@@ -29,10 +30,14 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
     public EtabsImportDialogResult? ShowDialog(
         System.Windows.Window? owner,
         IReadOnlyCollection<string> existingSectionNames,
+        IReadOnlyList<GroupRecord> targetGroups,
+        int? defaultTargetGroupId,
         MBColumn.Domain.Enums.UnitSystem targetSystem)
     {
         var vm = new EtabsImportViewModel(
             existingSectionNames,
+            targetGroups,
+            defaultTargetGroupId,
             connectionService,
             columnImportService,
             forceImportService,
