@@ -12,12 +12,16 @@ using System.Text.RegularExpressions;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows;
+using System.Windows.Media;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
 public sealed class EtabsImportViewModel : ViewModelBase
 {
-    private const string AllSections = "All Sections";
+    private const string AllTypes = "All";
+    private const string TypeRectangular = "Rectangular";
+    private const string TypeCircular = "Circular";
+    private const string TypeIrregularPier = "Irregular / Pier";
     private const string AllStories = "All Stories";
     private const string AllLabels = "All Labels";
     private const string DefaultEtabsBarSize = "T25";
@@ -32,6 +36,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly IEtabsForceImportService forceImportService;
     private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
+    private readonly Dictionary<string, IReadOnlyList<Point2D>> pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
+    private bool pierGroupsLoaded;
     private readonly RelayCommand connectCommand;
     private readonly RelayCommand disconnectCommand;
     private readonly RelayCommand backCommand;
@@ -51,13 +57,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private int pierCount;
     private int frameObjectCount;
     private string unitConversionMessage = "Connect to ETABS to read model units.";
-    private string selectedSectionFilter = AllSections;
+    private string selectedSectionTypeFilter = AllTypes;
     private string selectedStoryFilter = AllStories;
     private string selectedLabelFilter = AllLabels;
     private string loadCombinationFilterText = "";
     private EtabsColumnImportRowViewModel? selectedColumn;
     private EtabsSectionMappingViewModel? selectedMapping;
     private EtabsDuplicateHandlingOption selectedDuplicateHandling;
+    private PointCollection? boundaryPreviewPointCollection;
+    private double previewCanvasWidth = 200;
+    private double previewCanvasHeight = 200;
+    private string previewStatusText = "Select a row to preview boundary.";
 
     public EtabsImportViewModel(
         IReadOnlyCollection<string> existingSectionNames,
@@ -85,7 +95,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ForceRows = [];
         SummaryRows = [];
 
-        SectionFilters = [AllSections];
+        SectionTypeFilters = [AllTypes, TypeRectangular, TypeCircular, TypeIrregularPier];
         StoryFilters = [AllStories];
         LabelFilters = [AllLabels];
 
@@ -117,7 +127,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICollectionView FilteredLoadCombinations { get; }
     public ObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
     public ObservableCollection<EtabsImportSummaryRowViewModel> SummaryRows { get; }
-    public ObservableCollection<string> SectionFilters { get; }
+    public IReadOnlyList<string> SectionTypeFilters { get; }
     public ObservableCollection<string> StoryFilters { get; }
     public ObservableCollection<string> LabelFilters { get; }
     public IReadOnlyList<EtabsDuplicateHandlingOption> DuplicateHandlingOptions { get; }
@@ -165,15 +175,23 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public int FrameObjectCount { get => frameObjectCount; private set => Set(ref frameObjectCount, value); }
     public string UnitConversionMessage { get => unitConversionMessage; private set => Set(ref unitConversionMessage, value); }
 
-    // Cascading filters: Section → Story → Label
-    public string SelectedSectionFilter
+    // Section type → Story → Label cascade
+    public string SelectedSectionTypeFilter
     {
-        get => selectedSectionFilter;
+        get => selectedSectionTypeFilter;
         set
         {
-            if (selectedSectionFilter == value) return;
-            selectedSectionFilter = value;
+            if (selectedSectionTypeFilter == value) return;
+            selectedSectionTypeFilter = value;
             Raise();
+
+            // Lazily load pier groups the first time the user selects this filter
+            if (value == TypeIrregularPier && !pierGroupsLoaded && isConnected && pierShellImportService is not null)
+            {
+                LoadPierGroupsAsync();
+                return; // LoadPierGroupsAsync calls RebuildStoryFilters when done
+            }
+
             RebuildStoryFilters();
         }
     }
@@ -223,6 +241,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             selectedColumn = value;
             Raise();
             RaiseColumnPreviewProperties();
+            UpdateBoundaryPreview();
         }
     }
 
@@ -252,6 +271,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
     }
 
+    // Boundary preview properties
+    public PointCollection? BoundaryPreviewPointCollection
+    {
+        get => boundaryPreviewPointCollection;
+        private set => Set(ref boundaryPreviewPointCollection, value);
+    }
+    public double PreviewCanvasWidth { get => previewCanvasWidth; private set => Set(ref previewCanvasWidth, value); }
+    public double PreviewCanvasHeight { get => previewCanvasHeight; private set => Set(ref previewCanvasHeight, value); }
+    public string PreviewStatusText { get => previewStatusText; private set => Set(ref previewStatusText, value); }
+    public bool HasBoundaryPreview => BoundaryPreviewPointCollection is { Count: >= 3 };
+
     public bool IsStep1 => CurrentStep == 1;
     public bool IsStep2 => CurrentStep == 2;
     public bool IsStep3 => CurrentStep == 3;
@@ -276,7 +306,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ? "-"
         : SelectedColumn.IsCircular
             ? $"D = {SelectedColumn.Diameter:0.#} mm"
-            : $"b = {SelectedColumn.Width:0.#} mm, h = {SelectedColumn.Height:0.#} mm";
+            : SelectedColumn.IsIrregular
+                ? "Pier shell (boundary computed from ETABS area objects)"
+                : $"b = {SelectedColumn.Width:0.#} mm, h = {SelectedColumn.Height:0.#} mm";
     public string ColumnPreviewRebar => SelectedColumn is null
         ? "-"
         : SelectedColumn.IsCircular ? "Mock preview: equal angular bars" : "Mock preview: perimeter bars";
@@ -304,6 +336,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
         UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to kN, mm.";
 
         Columns.Clear();
+        pierBoundaryCache.Clear();
+
+        // Load frame columns (rectangular + circular)
         try
         {
             foreach (var dto in columnImportService.GetCandidateColumns())
@@ -327,8 +362,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ConnectionStatus = $"Connected but failed to load columns: {ex.Message}";
+            ConnectionStatus = $"Connected but failed to load frame columns: {ex.Message}";
         }
+
+        // Pier groups are loaded lazily when the user selects "Irregular / Pier" type filter
+        // to avoid blocking the UI thread with a full area-object scan on connect.
+        pierGroupsLoaded = false;
 
         IsConnected = true;
         ConnectionStatus = result.Message;
@@ -336,6 +375,62 @@ public sealed class EtabsImportViewModel : ViewModelBase
         SelectedColumn = Columns.FirstOrDefault();
         Raise(nameof(SelectedColumnCount));
         RaiseCommandStates();
+    }
+
+    private void LoadPierGroupsAsync()
+    {
+        pierGroupsLoaded = true; // set early to prevent re-entry
+        ConnectionStatus = "Loading pier groups…";
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var groups = pierShellImportService!.GetPierGroups();
+
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    // Remove any stale pier rows first (e.g. from a previous partial load)
+                    var staleRows = Columns.Where(c => c.IsIrregular).ToList();
+                    foreach (var row in staleRows)
+                        Columns.Remove(row);
+
+                    foreach (var (pier, story, sectionProp) in groups)
+                    {
+                        Columns.Add(new EtabsColumnImportRowViewModel(
+                            OnColumnSelectionChanged,
+                            $"pier:{pier}:{story}",
+                            pier,
+                            story,
+                            pier,
+                            $"{pier}|{story}",
+                            pier,
+                            sectionProp,
+                            SectionShapeType.Irregular,
+                            0, 0, 0,
+                            "",
+                            "Ready"));
+                    }
+
+                    ConnectionStatus = groups.Count == 0
+                        ? "Connected — no pier groups found."
+                        : $"Connected — {groups.Count} pier group(s) loaded.";
+
+                    RebuildStoryFilters();
+                    Raise(nameof(SelectedColumnCount));
+                    RaiseCommandStates();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    pierGroupsLoaded = false; // allow retry on next selection
+                    ConnectionStatus = $"Failed to load pier groups: {ex.Message}";
+                    RebuildStoryFilters();
+                });
+            }
+        });
     }
 
     private void Disconnect()
@@ -353,6 +448,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         SectionMappings.Clear();
         ForceRows.Clear();
         SummaryRows.Clear();
+        pierBoundaryCache.Clear();
+        pierGroupsLoaded = false;
         SelectedColumn = null;
         SelectedMapping = null;
         CurrentStep = 1;
@@ -449,10 +546,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 mapping.BarsAlongWidth = source.Width >= 500 ? 5 : 4;
                 mapping.BarsAlongHeight = source.Height >= 700 ? 5 : 4;
             }
-            else
+            else if (!source.IsIrregular)
             {
+                // Circular
                 mapping.TotalBars = source.Diameter >= 800 ? 16 : 12;
             }
+            // Irregular/pier: use constructor defaults (cover + spacing)
 
             SectionMappings.Add(mapping);
         }
@@ -484,48 +583,73 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         ForceRows.Clear();
 
-        var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
         var selectedCombos = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList();
-
-        if (selectedColumns.Count == 0 || selectedCombos.Count == 0)
+        if (selectedCombos.Count == 0)
         {
             RaiseCounts();
             RaiseCommandStates();
             return;
         }
 
-        try
+        // Frame column forces
+        var selectedFrameColumns = Columns.Where(c => c.IsSelected && !c.IsIrregular).ToList();
+        if (selectedFrameColumns.Count > 0)
         {
-            var columnDtos = selectedColumns.Select(c => new EtabsColumnImportDto(
-                c.ObjectName, c.Pier, c.Story, c.Label,
-                c.UniqueSection, c.EtabsSectionName, c.Material,
-                c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
-
-            foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos))
+            try
             {
-                ForceRows.Add(new EtabsForceImportRowViewModel(
-                    OnForceSelectionChanged,
-                    force.ObjectName,
-                    force.PierName,
-                    force.StoryName,
-                    force.Label,
-                    force.EtabsSectionName,
-                    force.LoadCombination,
-                    force.P,
-                    force.M2,
-                    force.M3,
-                    force.V2,
-                    force.V3,
-                    force.Status));
+                var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
+                    c.ObjectName, c.Pier, c.Story, c.Label,
+                    c.UniqueSection, c.EtabsSectionName, c.Material,
+                    c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+
+                foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos))
+                    AddForceRow(force);
+            }
+            catch (Exception ex)
+            {
+                ConnectionStatus = $"Warning: could not load frame forces — {ex.Message}";
             }
         }
-        catch (Exception ex)
+
+        // Pier forces (Bottom + Top per story+pier+combo)
+        var selectedPiers = Columns
+            .Where(c => c.IsSelected && c.IsIrregular)
+            .Select(c => (c.Pier, c.Story))
+            .ToList();
+
+        if (selectedPiers.Count > 0)
         {
-            ConnectionStatus = $"Warning: could not load forces — {ex.Message}";
+            try
+            {
+                foreach (var force in forceImportService.GetPierForces(selectedPiers, selectedCombos))
+                    AddForceRow(force);
+            }
+            catch (Exception ex)
+            {
+                ConnectionStatus = $"Warning: could not load pier forces — {ex.Message}";
+            }
         }
 
         RaiseCounts();
         RaiseCommandStates();
+    }
+
+    private void AddForceRow(EtabsForceResultDto force)
+    {
+        ForceRows.Add(new EtabsForceImportRowViewModel(
+            OnForceSelectionChanged,
+            force.ObjectName,
+            force.PierName,
+            force.StoryName,
+            force.Label,
+            force.EtabsSectionName,
+            force.LoadCombination,
+            force.P,
+            force.M2,
+            force.M3,
+            force.V2,
+            force.V3,
+            force.Status));
     }
 
     private void BuildSummaryRows()
@@ -684,9 +808,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         return snapshot;
     }
 
-    // Calls ETABS pier shell service and geometry builder to produce a clockwise
-    // boundary polygon for an irregular pier section.  Falls back to a rectangular
-    // bounding-box polygon when the service is unavailable or returns no data.
     private (IReadOnlyList<Point2D> Boundary,
              List<string> ShellNames,
              List<string> SectionProps,
@@ -716,11 +837,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     $"Geometry builder returned empty polygon — rectangular fallback used. {result.WarningMessage}");
             }
 
-            // Translate from absolute ETABS coordinates to centroid-based MBColumn coordinates
-            var rawPoly = result.ClockwisePolylines[0];
-            var centroid = PolygonGeometry.Centroid(rawPoly);
-            var centeredPoints = PolygonGeometry.EnsureClockwise(
-                rawPoly.Select(p => new Point2D(p.X - centroid.X, p.Y - centroid.Y)).ToList());
+            var centeredPoints = result.ClockwisePolylines[0];
 
             var warning = result.HasMultiplePolylines
                 ? $"Warning: {result.ClockwisePolylines.Count} disconnected shell groups — largest polygon used. {result.WarningMessage}"
@@ -740,6 +857,148 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 $"Irregular boundary failed: {ex.Message} — rectangular fallback used.");
         }
     }
+
+    // -------------------------------------------------------------------
+    // Boundary preview for Step 1
+    // -------------------------------------------------------------------
+
+    private void UpdateBoundaryPreview()
+    {
+        var col = SelectedColumn;
+
+        if (col is null)
+        {
+            BoundaryPreviewPointCollection = null;
+            PreviewStatusText = "Select a row to preview boundary.";
+            Raise(nameof(HasBoundaryPreview));
+            return;
+        }
+
+        IReadOnlyList<Point2D>? points = null;
+
+        if (col.IsIrregular)
+        {
+            // Check cache first (no COM call needed)
+            if (pierBoundaryCache.TryGetValue(col.UniqueSection, out var cached))
+            {
+                points = cached;
+            }
+            else
+            {
+                // Compute on background thread — don't block UI
+                PreviewStatusText = "Computing pier boundary…";
+                BoundaryPreviewPointCollection = null;
+                Raise(nameof(HasBoundaryPreview));
+
+                var capturedCol = col;
+                _ = Task.Run(() =>
+                {
+                    var result = GetOrComputePierBoundaryForPreview(capturedCol);
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        // Only apply if the user hasn't moved to a different row
+                        if (SelectedColumn?.UniqueSection != capturedCol.UniqueSection) return;
+                        if (result is { Count: >= 3 })
+                            SetPreviewPoints(result, capturedCol.SectionTypeDisplay);
+                        else
+                            PreviewStatusText = "Could not compute pier boundary.";
+                        Raise(nameof(HasBoundaryPreview));
+                    });
+                });
+                return;
+            }
+        }
+        else if (col.IsCircular && col.Diameter > 0)
+        {
+            var radius = col.Diameter / 2.0;
+            const int n = 48;
+            points = Enumerable.Range(0, n)
+                .Select(i =>
+                {
+                    var angle = Math.PI / 2.0 - 2.0 * Math.PI * i / n;
+                    return new Point2D(radius * Math.Cos(angle), radius * Math.Sin(angle));
+                })
+                .ToList();
+        }
+        else if (col.IsRectangular && col.Width > 0 && col.Height > 0)
+        {
+            var hw = col.Width / 2.0;
+            var hh = col.Height / 2.0;
+            points =
+            [
+                new Point2D(-hw, hh),
+                new Point2D(hw, hh),
+                new Point2D(hw, -hh),
+                new Point2D(-hw, -hh)
+            ];
+        }
+
+        if (points is null || points.Count < 3)
+        {
+            BoundaryPreviewPointCollection = null;
+            PreviewStatusText = col.IsIrregular
+                ? "Pier boundary not yet computed (connect to ETABS)."
+                : "No valid boundary — check section dimensions.";
+            Raise(nameof(HasBoundaryPreview));
+            return;
+        }
+
+        SetPreviewPoints(points, col.SectionTypeDisplay);
+        Raise(nameof(HasBoundaryPreview));
+    }
+
+    private void SetPreviewPoints(IReadOnlyList<Point2D> points, string typeLabel)
+    {
+        var minX = points.Min(p => p.X);
+        var maxX = points.Max(p => p.X);
+        var minY = points.Min(p => p.Y);
+        var maxY = points.Max(p => p.Y);
+        const double margin = 8.0;
+
+        PreviewCanvasWidth = Math.Max(maxX - minX, 1.0) + margin * 2;
+        PreviewCanvasHeight = Math.Max(maxY - minY, 1.0) + margin * 2;
+
+        var pc = new PointCollection(points.Count);
+        foreach (var pt in points)
+        {
+            // Flip Y so Y-up math coords render top-to-bottom in canvas coords
+            pc.Add(new System.Windows.Point(pt.X - minX + margin, maxY - pt.Y + margin));
+        }
+
+        BoundaryPreviewPointCollection = pc;
+        PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} × {maxY - minY:0.#} mm";
+    }
+
+    private IReadOnlyList<Point2D>? GetOrComputePierBoundaryForPreview(EtabsColumnImportRowViewModel column)
+    {
+        var key = column.UniqueSection;
+
+        if (pierBoundaryCache.TryGetValue(key, out var cached))
+            return cached;
+
+        if (pierShellImportService is null || irregularGeometryBuilder is null)
+            return null;
+
+        try
+        {
+            var segments = pierShellImportService.GetSegments(column.Pier, column.Story);
+            if (segments.Count == 0) return null;
+
+            var result = irregularGeometryBuilder.BuildBoundary(segments);
+            if (result.IsEmpty) return null;
+
+            var centered = result.ClockwisePolylines[0];
+
+            pierBoundaryCache[key] = centered;
+            return centered;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // -------------------------------------------------------------------
 
     private static IReadOnlyList<Point2D> BuildBoundaryPoints(EtabsSectionMappingViewModel mapping)
     {
@@ -786,11 +1045,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         var spacing = mapping.TieSpacing > 0 ? mapping.TieSpacing : DefaultEtabsSpacingMm;
 
-        // Rectangular: always fix bars at the 4 corners, then distribute intermediates
         if (mapping.IsRectangular)
             return BuildRectangularRebars(insetPolygon, mapping.BarSize, barArea, spacing);
 
-        // Circular (32-point polygon): pure equal spacing, no corner constraint
         var perimeter = PolygonPerimeter(insetPolygon);
         if (!double.IsFinite(perimeter) || perimeter <= 0.0 || !double.IsFinite(spacing) || spacing <= 0.0)
             return [];
@@ -832,7 +1089,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var end = insetPolygon[(i + 1) % n];
             var sideLength = Distance(start, end);
 
-            // Corner bar always at the start vertex of each side
             rebars.Add(new SnapshotRebar
             {
                 RebarIndex = (rebarIndex++).ToString(),
@@ -842,7 +1098,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 AreaMm2 = Math.Round(barArea, 6)
             });
 
-            // Intermediate bars evenly distributed between this corner and the next
             var nIntermediate = Math.Max(0, (int)Math.Round(sideLength / spacing) - 1);
             for (var j = 1; j <= nIntermediate; j++)
             {
@@ -925,8 +1180,20 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private bool FilterColumn(object item)
     {
         if (item is not EtabsColumnImportRowViewModel column) return false;
-        return MatchesFilter(SelectedSectionFilter, AllSections, column.EtabsSectionName)
-               && MatchesFilter(SelectedStoryFilter, AllStories, column.Story)
+
+        if (selectedSectionTypeFilter != AllTypes)
+        {
+            var typeMatch = selectedSectionTypeFilter switch
+            {
+                TypeRectangular => column.IsRectangular,
+                TypeCircular => column.IsCircular,
+                TypeIrregularPier => column.IsIrregular,
+                _ => true
+            };
+            if (!typeMatch) return false;
+        }
+
+        return MatchesFilter(SelectedStoryFilter, AllStories, column.Story)
                && MatchesFilter(SelectedLabelFilter, AllLabels, column.Label);
     }
 
@@ -943,31 +1210,34 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void ResetColumnFilters()
     {
-        ResetFilter(SectionFilters, AllSections, Columns.Select(c => c.EtabsSectionName).Where(s => !string.IsNullOrEmpty(s)));
-        selectedSectionFilter = AllSections;
-        Raise(nameof(SelectedSectionFilter));
+        selectedSectionTypeFilter = AllTypes;
+        Raise(nameof(SelectedSectionTypeFilter));
         RebuildStoryFilters();
     }
 
-    // Rebuilds Story dropdown based on current section selection, then cascades to Label.
+    private IEnumerable<EtabsColumnImportRowViewModel> FilteredByType()
+    {
+        if (selectedSectionTypeFilter == AllTypes) return Columns;
+        return selectedSectionTypeFilter switch
+        {
+            TypeRectangular => Columns.Where(c => c.IsRectangular),
+            TypeCircular => Columns.Where(c => c.IsCircular),
+            TypeIrregularPier => Columns.Where(c => c.IsIrregular),
+            _ => Columns
+        };
+    }
+
     private void RebuildStoryFilters()
     {
-        var src = SelectedSectionFilter == AllSections
-            ? Columns
-            : Columns.Where(c => string.Equals(c.EtabsSectionName, SelectedSectionFilter, StringComparison.OrdinalIgnoreCase));
-
-        ResetFilter(StoryFilters, AllStories, src.Select(c => c.Story));
+        ResetFilter(StoryFilters, AllStories, FilteredByType().Select(c => c.Story));
         selectedStoryFilter = AllStories;
         Raise(nameof(SelectedStoryFilter));
         RebuildLabelFilters();
     }
 
-    // Rebuilds Label dropdown based on current section + story selection, then refreshes the grid.
     private void RebuildLabelFilters()
     {
-        IEnumerable<EtabsColumnImportRowViewModel> src = Columns;
-        if (SelectedSectionFilter != AllSections)
-            src = src.Where(c => string.Equals(c.EtabsSectionName, SelectedSectionFilter, StringComparison.OrdinalIgnoreCase));
+        var src = FilteredByType();
         if (SelectedStoryFilter != AllStories)
             src = src.Where(c => string.Equals(c.Story, SelectedStoryFilter, StringComparison.OrdinalIgnoreCase));
 

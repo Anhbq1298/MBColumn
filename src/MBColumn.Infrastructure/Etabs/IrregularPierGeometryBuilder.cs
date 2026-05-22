@@ -226,7 +226,9 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
                 .ToList();
 
             var cw = PolygonGeometry.EnsureClockwise(points);
-            result.Add(cw);
+            // Translate to centroid origin so MBColumn section origin = geometric centre
+            var centered = PolygonGeometry.MoveToCentroidOrigin(cw, out _);
+            result.Add(centered);
         }
 
         return result;

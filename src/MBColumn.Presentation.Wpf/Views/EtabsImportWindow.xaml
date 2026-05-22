@@ -95,6 +95,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="130" />
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Column="0" Grid.Row="0" Margin="0,0,0,12">
@@ -172,7 +173,7 @@
                               Padding="10">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="60" />
+                                <ColumnDefinition Width="78" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -183,12 +184,12 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="Section"
+                            <TextBlock Text="Section Type"
                                        VerticalAlignment="Center"
                                        Style="{StaticResource FieldLabelTextStyle}" />
                             <ComboBox Grid.Column="1"
-                                      ItemsSource="{Binding SectionFilters}"
-                                      SelectedItem="{Binding SelectedSectionFilter}" />
+                                      ItemsSource="{Binding SectionTypeFilters}"
+                                      SelectedItem="{Binding SelectedSectionTypeFilter}" />
 
                             <TextBlock Grid.Row="2"
                                        Text="Story"
@@ -219,17 +220,61 @@
                         <DataGridCheckBoxColumn Header="Select"
                                                 Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Width="58" />
-                        <DataGridTextColumn Header="Section" Binding="{Binding EtabsSectionName}" Width="130" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Type" Binding="{Binding SectionTypeDisplay}" Width="100" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Section / Pier" Binding="{Binding EtabsSectionName}" Width="130" IsReadOnly="True" />
                         <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" IsReadOnly="True" />
                         <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="80" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="80" IsReadOnly="True" />
-                        <DataGridTextColumn Header="b (mm)" Binding="{Binding Width, StringFormat={}{0:0.#}}" Width="70" IsReadOnly="True" />
-                        <DataGridTextColumn Header="h (mm)" Binding="{Binding Height, StringFormat={}{0:0.#}}" Width="70" IsReadOnly="True" />
-                        <DataGridTextColumn Header="D (mm)" Binding="{Binding Diameter, StringFormat={}{0:0.#}}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="90" IsReadOnly="True" />
                         <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" IsReadOnly="True" />
                     </DataGrid.Columns>
                 </DataGrid>
+
+                <!-- Boundary Preview Panel -->
+                <Grid Grid.Row="2" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Style="{StaticResource WizardPanelStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Boundary Preview"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            <TextBlock Text="{Binding PreviewStatusText}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="11"
+                                       Margin="0,6,0,0"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Style="{StaticResource WizardPanelStyle}"
+                            Padding="4">
+                        <Grid>
+                            <TextBlock Text="No boundary"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="11"
+                                       Visibility="{Binding HasBoundaryPreview, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                            <Viewbox Stretch="Uniform"
+                                     Visibility="{Binding HasBoundaryPreview, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Canvas Width="{Binding PreviewCanvasWidth}"
+                                        Height="{Binding PreviewCanvasHeight}">
+                                    <Polygon Points="{Binding BoundaryPreviewPointCollection}"
+                                             Stroke="{DynamicResource AccentBlueBrush}"
+                                             Fill="#200070C0"
+                                             StrokeThickness="1.5" />
+                                </Canvas>
+                            </Viewbox>
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
 
             <Grid Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisibilityConverter}}">

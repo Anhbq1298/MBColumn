@@ -66,5 +66,13 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
     public string Status { get; }
     public bool IsRectangular => SectionType == SectionShapeType.Rectangular;
     public bool IsCircular => SectionType == SectionShapeType.Circular;
+    public bool IsIrregular => SectionType == SectionShapeType.Irregular;
+    public string SectionTypeDisplay => SectionType switch
+    {
+        SectionShapeType.Rectangular => "Rectangular",
+        SectionShapeType.Circular => "Circular",
+        SectionShapeType.Irregular => "Pier",
+        _ => SectionType.ToString()
+    };
     public string SectionKey => $"{EtabsSectionName}|{UniqueSection}|{SectionType}";
 }

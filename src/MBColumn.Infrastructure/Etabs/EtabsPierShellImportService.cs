@@ -23,6 +23,36 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         this.connection = connection;
     }
 
+    public IReadOnlyList<(string PierLabel, string StoryName, string SectionProperty)> GetPierGroups()
+    {
+        var model = connection.Model
+            ?? throw new InvalidOperationException("Not connected to ETABS.");
+
+        var areaNames = GetAreaNames(model);
+        var groups = new Dictionary<string, (string Pier, string Story, string Prop)>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var areaName in areaNames)
+        {
+            var pier = GetAreaPierLabel(model, areaName);
+            if (string.IsNullOrEmpty(pier)) continue;
+
+            var (_, story) = GetAreaLabelAndStory(model, areaName);
+            if (string.IsNullOrEmpty(story)) continue;
+
+            var key = $"{pier}|{story}";
+            if (!groups.ContainsKey(key))
+            {
+                var prop = GetAreaPropertyName(model, areaName);
+                groups[key] = (pier, story, prop);
+            }
+        }
+
+        return [.. groups.Values
+            .OrderBy(g => g.Pier, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(g => g.Story, StringComparer.OrdinalIgnoreCase)
+            .Select(g => (g.Pier, g.Story, g.Prop))];
+    }
+
     public IReadOnlyList<EtabsPierShellSegmentDto> GetSegments(string pierLabel, string storyName)
     {
         var model = connection.Model
