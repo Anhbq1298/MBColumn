@@ -28,6 +28,7 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty InsetFigureProperty = DependencyProperty.Register(nameof(InsetFigure), typeof(PmChartInsetFigureDto), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty XGridStepProperty = DependencyProperty.Register(nameof(XGridStep), typeof(double), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty YGridStepProperty = DependencyProperty.Register(nameof(YGridStep), typeof(double), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty HighlightedDemandLabelProperty = DependencyProperty.Register(nameof(HighlightedDemandLabel), typeof(string), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
     private const double HitTolerance = 10.0;
 
@@ -59,6 +60,7 @@ public class DiagramCanvas2D : FrameworkElement
     public PmChartInsetFigureDto? InsetFigure { get => (PmChartInsetFigureDto?)GetValue(InsetFigureProperty); set => SetValue(InsetFigureProperty, value); }
     public double XGridStep { get => (double)GetValue(XGridStepProperty); set => SetValue(XGridStepProperty, value); }
     public double YGridStep { get => (double)GetValue(YGridStepProperty); set => SetValue(YGridStepProperty, value); }
+    public string? HighlightedDemandLabel { get => (string?)GetValue(HighlightedDemandLabelProperty); set => SetValue(HighlightedDemandLabelProperty, value); }
 
     public void ResetView() => InvalidateVisual();
 
@@ -477,16 +479,37 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void DrawSpecialPoints(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
-        foreach (var p in points.Where(p => ShowDemandPoint && p.IsDemand))
+        var demandPoints = ShowDemandPoint ? points.Where(p => p.IsDemand).ToList() : [];
+        var highlighted = HighlightedDemandLabel;
+        var hasHighlight = !string.IsNullOrEmpty(highlighted);
+
+        // Draw non-highlighted demand points first (behind the highlighted one)
+        foreach (var p in demandPoints)
         {
-            var color = Color.FromRgb(227, 27, 35);
-            var brush = new SolidColorBrush(color);
+            var isHighlighted = hasHighlight && string.Equals(p.Label, highlighted, StringComparison.OrdinalIgnoreCase);
+            if (isHighlighted) continue;
+
             var pt = transform.ToScreen(p.X, p.Y);
-            dc.DrawEllipse(brush, new Pen(Brushes.White, 1), pt, 5, 5);
-            if (ShowLabels)
+            if (hasHighlight)
             {
-                DrawText(dc, p.Label, 11, brush, new Point(pt.X + 7, pt.Y - 15), FontWeights.SemiBold);
+                // Dim unselected points when something is highlighted
+                dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(80, 227, 27, 35)), null, pt, 3.5, 3.5);
             }
+            else
+            {
+                // Normal: solid dot, no label
+                dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(227, 27, 35)), new Pen(Brushes.White, 1), pt, 5, 5);
+            }
+        }
+
+        // Draw highlighted demand point on top with ring + label
+        foreach (var p in demandPoints.Where(p => hasHighlight && string.Equals(p.Label, highlighted, StringComparison.OrdinalIgnoreCase)))
+        {
+            var pt = transform.ToScreen(p.X, p.Y);
+            var redBrush = new SolidColorBrush(Color.FromRgb(227, 27, 35));
+            var ringPen = new Pen(new SolidColorBrush(Color.FromRgb(31, 41, 51)), 1.5);
+            dc.DrawEllipse(redBrush, ringPen, pt, 7, 7);
+            DrawText(dc, p.Label, 11, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
         }
         foreach (var p in points.Where(p => p.GroupKey == "LabeledPoint"))
         {

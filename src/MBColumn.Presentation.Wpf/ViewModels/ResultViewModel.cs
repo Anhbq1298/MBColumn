@@ -177,6 +177,7 @@ public sealed class ResultViewModel : ViewModelBase
     public IReadOnlyList<ChartReferenceLineDto> PmReferenceLines { get => pmReferenceLines; private set => Set(ref pmReferenceLines, value); }
     public PmChartInsetFigureDto? PmChartInset { get => pmChartInset; private set => Set(ref pmChartInset, value); }
     public IReadOnlyList<LoadCaseResultRowViewModel> LoadCaseRows { get => loadCaseRows; private set => Set(ref loadCaseRows, value); }
+    public string? HighlightedDemandLabel => selectedLoadCaseRow?.Name;
     public LoadCaseResultRowViewModel? SelectedLoadCaseRow
     {
         get => selectedLoadCaseRow;
@@ -184,6 +185,7 @@ public sealed class ResultViewModel : ViewModelBase
         {
             if (Equals(selectedLoadCaseRow, value)) return;
             Set(ref selectedLoadCaseRow, value);
+            Raise(nameof(HighlightedDemandLabel));
             if (value != null)
             {
                 SelectedChartPoint = null;

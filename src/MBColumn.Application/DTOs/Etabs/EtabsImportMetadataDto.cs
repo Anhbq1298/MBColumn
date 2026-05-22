@@ -14,4 +14,10 @@ public sealed class EtabsImportMetadataDto
     public string ImportedUnits { get; set; } = "";
     public string MBColumnUnitsAtImport { get; set; } = "";
     public List<string> SelectedLoadCombinations { get; set; } = [];
+
+    // IrregularPierShell import fields (populated when ImportMode = "IrregularPierShell")
+    public string ImportMode { get; set; } = "FrameSection";
+    public List<string> SourceShellNames { get; set; } = [];
+    public List<string> SourceAreaSectionProperties { get; set; } = [];
+    public string? IrregularBoundaryWarning { get; set; }
 }

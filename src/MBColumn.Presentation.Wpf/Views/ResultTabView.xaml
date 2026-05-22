@@ -339,6 +339,7 @@
                                               YGridStep="{Binding PStep}"
                                               BoundsOverride="{Binding SharedPmBounds}"
                                               SelectedPoint="{Binding SelectedChartPoint}"
+                                              HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
                                               Ratio="{Binding PM.Ratio}"
                                               ResetVersion="{Binding PM.ResetVersion}" />
                     </Grid>
@@ -407,6 +408,7 @@
                                               XGridStep="{Binding MStepX}"
                                               YGridStep="{Binding MStepY}"
                                               SelectedPoint="{Binding SelectedChartPoint}"
+                                              HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
                                               Ratio="{Binding MM.Ratio}"
                                               ResetVersion="{Binding MM.ResetVersion}" />
                     </Grid>

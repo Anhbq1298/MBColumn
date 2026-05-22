@@ -172,34 +172,39 @@
                               Padding="10">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="80" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="60" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="8" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Pier" VerticalAlignment="Center" Style="{StaticResource FieldLabelTextStyle}" />
+
+                            <TextBlock Text="Section"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
                             <ComboBox Grid.Column="1"
-                                      ItemsSource="{Binding PierFilters}"
-                                      SelectedItem="{Binding SelectedPierFilter}" />
-                            <TextBlock Grid.Column="2" Text="Story" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource FieldLabelTextStyle}" />
-                            <ComboBox Grid.Column="3"
+                                      ItemsSource="{Binding SectionFilters}"
+                                      SelectedItem="{Binding SelectedSectionFilter}" />
+
+                            <TextBlock Grid.Row="2"
+                                       Text="Story"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Row="2" Grid.Column="1"
                                       ItemsSource="{Binding StoryFilters}"
                                       SelectedItem="{Binding SelectedStoryFilter}" />
-                            <TextBlock Grid.Row="2" Text="Label" VerticalAlignment="Center" Style="{StaticResource FieldLabelTextStyle}" />
-                            <ComboBox Grid.Row="2"
-                                      Grid.Column="1"
+
+                            <TextBlock Grid.Row="4"
+                                       Text="Label"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Row="4" Grid.Column="1"
                                       ItemsSource="{Binding LabelFilters}"
                                       SelectedItem="{Binding SelectedLabelFilter}" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Section" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource FieldLabelTextStyle}" />
-                            <ComboBox Grid.Row="2"
-                                      Grid.Column="3"
-                                      ItemsSource="{Binding UniqueSectionFilters}"
-                                      SelectedItem="{Binding SelectedUniqueSectionFilter}" />
                         </Grid>
                     </GroupBox>
                 </Grid>
@@ -214,16 +219,14 @@
                         <DataGridCheckBoxColumn Header="Select"
                                                 Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Width="58" />
-                        <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="70" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Section" Binding="{Binding EtabsSectionName}" Width="130" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" IsReadOnly="True" />
                         <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Unique Section" Binding="{Binding UniqueSection}" Width="150" IsReadOnly="True" />
-                        <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSectionName}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Pier" Binding="{Binding Pier}" Width="80" IsReadOnly="True" />
                         <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="80" IsReadOnly="True" />
-                        <DataGridTextColumn Header="b" Binding="{Binding Width, StringFormat={}{0:0.#}}" Width="65" IsReadOnly="True" />
-                        <DataGridTextColumn Header="h" Binding="{Binding Height, StringFormat={}{0:0.#}}" Width="65" IsReadOnly="True" />
-                        <DataGridTextColumn Header="D" Binding="{Binding Diameter, StringFormat={}{0:0.#}}" Width="65" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Linked Section" Binding="{Binding LinkedSection}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="b (mm)" Binding="{Binding Width, StringFormat={}{0:0.#}}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="h (mm)" Binding="{Binding Height, StringFormat={}{0:0.#}}" Width="70" IsReadOnly="True" />
+                        <DataGridTextColumn Header="D (mm)" Binding="{Binding Diameter, StringFormat={}{0:0.#}}" Width="70" IsReadOnly="True" />
                         <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" IsReadOnly="True" />
                     </DataGrid.Columns>
                 </DataGrid>

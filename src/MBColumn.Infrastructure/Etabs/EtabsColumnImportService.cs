@@ -2,11 +2,15 @@ using ETABSv1;
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Enums;
+using System.Globalization;
 
 namespace MBColumn.Infrastructure.Etabs;
 
 public sealed class EtabsColumnImportService : IEtabsColumnImportService
 {
+    private const string RectTableKey = "Frame Section Property Definitions - Concrete Rectangular";
+    private const string CircleTableKey = "Frame Section Property Definitions - Concrete Circle";
+
     private readonly EtabsConnectionService connection;
 
     public EtabsColumnImportService(EtabsConnectionService connection)
@@ -22,6 +26,9 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         var units = model.GetPresentUnits();
         var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
 
+        // Two bulk table calls instead of one PropFrame API call per section
+        var sections = LoadConcreteSections(model, lengthToMm);
+
         int count = 0;
         string[] names = [];
         string[] labels = [];
@@ -32,22 +39,22 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         for (var i = 0; i < count; i++)
         {
             var orientation = eFrameDesignOrientation.Null;
-            var ret = model.FrameObj.GetDesignOrientation(names[i], ref orientation);
-            if (ret != 0 || orientation != eFrameDesignOrientation.Column)
+            if (model.FrameObj.GetDesignOrientation(names[i], ref orientation) != 0
+                || orientation != eFrameDesignOrientation.Column)
                 continue;
 
             var sectionName = "";
             var sAuto = "";
             model.FrameObj.GetSection(names[i], ref sectionName, ref sAuto);
 
+            // Skip non-concrete and unsupported shapes — only rect and circle imported
+            if (!sections.TryGetValue(sectionName, out var sec))
+                continue;
+
             var pierName = "";
             model.FrameObj.GetPier(names[i], ref pierName);
 
-            var sectionType = ResolveSectionDimensions(
-                model, sectionName, lengthToMm,
-                out var width, out var height, out var diameter, out var material);
-
-            var uniqueSection = BuildUniqueSectionKey(sectionName, sectionType, width, height, diameter);
+            var uniqueSection = BuildUniqueSectionKey(sectionName, sec.Type, sec.Width, sec.Height, sec.Diameter);
 
             columns.Add(new EtabsColumnImportDto(
                 names[i],
@@ -56,11 +63,11 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
                 labels[i] ?? "",
                 uniqueSection,
                 sectionName,
-                material,
-                sectionType,
-                width,
-                height,
-                diameter,
+                sec.Material,
+                sec.Type,
+                sec.Width,
+                sec.Height,
+                sec.Diameter,
                 "",
                 "Ready"));
         }
@@ -79,81 +86,109 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         return names ?? [];
     }
 
-    private static SectionShapeType ResolveSectionDimensions(
-        cSapModel model,
-        string sectionName,
-        double lengthToMm,
-        out double width,
-        out double height,
-        out double diameter,
-        out string material)
+    private static Dictionary<string, ConcreteSectionInfo> LoadConcreteSections(cSapModel model, double lengthToMm)
     {
-        width = 0;
-        height = 0;
-        diameter = 0;
-        material = "";
+        var result = new Dictionary<string, ConcreteSectionInfo>(StringComparer.OrdinalIgnoreCase);
+        LoadRectangularSections(model, lengthToMm, result);
+        LoadCircularSections(model, lengthToMm, result);
+        return result;
+    }
 
-        if (string.IsNullOrEmpty(sectionName))
-            return SectionShapeType.Rectangular;
+    private static void LoadRectangularSections(
+        cSapModel model, double lengthToMm,
+        Dictionary<string, ConcreteSectionInfo> target)
+    {
+        string[] fieldsIn = [];
+        string[] fields = [];
+        int tableVersion = 0;
+        string[] tableData = [];
+        int numRecords = 0;
 
-        var propType = eFramePropType.Rectangular;
-        model.PropFrame.GetTypeOAPI(sectionName, ref propType);
+        if (model.DatabaseTables.GetTableForDisplayArray(
+                RectTableKey, ref fieldsIn, "", ref tableVersion,
+                ref fields, ref numRecords, ref tableData) != 0
+            || numRecords == 0 || fields.Length == 0)
+            return;
 
-        string fileName = "", matProp = "", notes = "", guid = "";
-        int color = 0;
+        var nameIdx = IndexOf(fields, "Name");
+        var matIdx  = IndexOf(fields, "Material");
+        var t3Idx   = IndexOf(fields, "t3", "Depth", "Height");
+        var t2Idx   = IndexOf(fields, "t2", "Width");
 
-        switch (propType)
+        if (nameIdx < 0 || t3Idx < 0 || t2Idx < 0)
+            return;
+
+        var fc = fields.Length;
+        for (var r = 0; r < numRecords; r++)
         {
-            case eFramePropType.Rectangular:
-            {
-                double t3 = 0, t2 = 0;
-                model.PropFrame.GetRectangle(sectionName, ref fileName, ref matProp, ref t3, ref t2, ref color, ref notes, ref guid);
-                width = t2 * lengthToMm;
-                height = t3 * lengthToMm;
-                material = matProp;
-                return SectionShapeType.Rectangular;
-            }
-            case eFramePropType.Circle:
-            {
-                double t3 = 0;
-                model.PropFrame.GetCircle(sectionName, ref fileName, ref matProp, ref t3, ref color, ref notes, ref guid);
-                diameter = t3 * lengthToMm;
-                material = matProp;
-                return SectionShapeType.Circular;
-            }
-            case eFramePropType.ConcretePipe:
-            {
-                double diam = 0, tw = 0;
-                model.PropFrame.GetConcretePipe(sectionName, ref fileName, ref matProp, ref diam, ref tw, ref color, ref notes, ref guid);
-                diameter = diam * lengthToMm;
-                material = matProp;
-                return SectionShapeType.Circular;
-            }
-            case eFramePropType.Pipe:
-            {
-                double t3 = 0, tw = 0;
-                model.PropFrame.GetPipe(sectionName, ref fileName, ref matProp, ref t3, ref tw, ref color, ref notes, ref guid);
-                diameter = t3 * lengthToMm;
-                material = matProp;
-                return SectionShapeType.Circular;
-            }
-            default:
-            {
-                model.PropFrame.GetMaterial(sectionName, ref matProp);
-                material = matProp;
-                return SectionShapeType.Rectangular;
-            }
+            var b = r * fc;
+            var name = tableData[b + nameIdx];
+            if (string.IsNullOrEmpty(name)) continue;
+
+            var material = matIdx >= 0 ? tableData[b + matIdx] : "";
+            var height   = ParseDouble(tableData[b + t3Idx]) * lengthToMm;
+            var width    = ParseDouble(tableData[b + t2Idx]) * lengthToMm;
+
+            target[name] = new ConcreteSectionInfo(SectionShapeType.Rectangular, width, height, 0.0, material);
+        }
+    }
+
+    private static void LoadCircularSections(
+        cSapModel model, double lengthToMm,
+        Dictionary<string, ConcreteSectionInfo> target)
+    {
+        string[] fieldsIn = [];
+        string[] fields = [];
+        int tableVersion = 0;
+        string[] tableData = [];
+        int numRecords = 0;
+
+        if (model.DatabaseTables.GetTableForDisplayArray(
+                CircleTableKey, ref fieldsIn, "", ref tableVersion,
+                ref fields, ref numRecords, ref tableData) != 0
+            || numRecords == 0 || fields.Length == 0)
+            return;
+
+        var nameIdx = IndexOf(fields, "Name");
+        var matIdx  = IndexOf(fields, "Material");
+        var diamIdx = IndexOf(fields, "t3", "Diameter", "D");
+
+        if (nameIdx < 0 || diamIdx < 0)
+            return;
+
+        var fc = fields.Length;
+        for (var r = 0; r < numRecords; r++)
+        {
+            var b = r * fc;
+            var name = tableData[b + nameIdx];
+            if (string.IsNullOrEmpty(name)) continue;
+
+            var material = matIdx >= 0 ? tableData[b + matIdx] : "";
+            var diameter = ParseDouble(tableData[b + diamIdx]) * lengthToMm;
+
+            target[name] = new ConcreteSectionInfo(SectionShapeType.Circular, 0.0, 0.0, diameter, material);
         }
     }
 
     private static string BuildUniqueSectionKey(
         string sectionName, SectionShapeType type, double width, double height, double diameter)
-    {
-        if (type == SectionShapeType.Circular)
-        {
-            return $"{sectionName} (D{diameter:0.#})";
-        }
+        => type == SectionShapeType.Circular
+            ? $"{sectionName} (D{diameter:0.#})"
+            : $"{sectionName} ({width:0.#}x{height:0.#})";
 
-        return $"{sectionName} ({width:0.#}x{height:0.#})";
+    private static int IndexOf(string[] fields, params string[] candidates)
+    {
+        foreach (var candidate in candidates)
+        {
+            var idx = Array.FindIndex(fields, f => string.Equals(f, candidate, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0) return idx;
+        }
+        return -1;
     }
+
+    private static double ParseDouble(string s) =>
+        double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0.0;
+
+    private readonly record struct ConcreteSectionInfo(
+        SectionShapeType Type, double Width, double Height, double Diameter, string Material);
 }

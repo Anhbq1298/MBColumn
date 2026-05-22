@@ -9,15 +9,21 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
     private readonly IEtabsConnectionService connectionService;
     private readonly IEtabsColumnImportService columnImportService;
     private readonly IEtabsForceImportService forceImportService;
+    private readonly IEtabsPierShellImportService? pierShellImportService;
+    private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
 
     public EtabsImportDialogService(
         IEtabsConnectionService connectionService,
         IEtabsColumnImportService columnImportService,
-        IEtabsForceImportService forceImportService)
+        IEtabsForceImportService forceImportService,
+        IEtabsPierShellImportService? pierShellImportService = null,
+        IIrregularPierGeometryBuilder? irregularGeometryBuilder = null)
     {
         this.connectionService = connectionService;
         this.columnImportService = columnImportService;
         this.forceImportService = forceImportService;
+        this.pierShellImportService = pierShellImportService;
+        this.irregularGeometryBuilder = irregularGeometryBuilder;
     }
 
     public EtabsImportDialogResult? ShowDialog(
@@ -28,7 +34,9 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
             existingSectionNames,
             connectionService,
             columnImportService,
-            forceImportService);
+            forceImportService,
+            pierShellImportService,
+            irregularGeometryBuilder);
 
         var window = new EtabsImportWindow(vm)
         {

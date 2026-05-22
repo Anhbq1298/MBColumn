@@ -48,7 +48,8 @@ public sealed class EtabsSectionMappingViewModel : ViewModelBase
         this.tieSpacing = tieSpacing;
     }
 
-    public IReadOnlyList<SectionShapeType> SectionTypes { get; } = [SectionShapeType.Rectangular, SectionShapeType.Circular];
+    public IReadOnlyList<SectionShapeType> SectionTypes { get; } =
+        [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
     public string EtabsSectionName { get; }
     public string UniqueSection { get; }
 
@@ -209,20 +210,32 @@ public sealed class EtabsSectionMappingViewModel : ViewModelBase
 
     public bool IsRectangular => SectionType == SectionShapeType.Rectangular;
     public bool IsCircular => SectionType == SectionShapeType.Circular;
+    public bool IsIrregular => SectionType == SectionShapeType.Irregular;
     public int RectangularBarCount => Math.Max(0, (BarsAlongWidth * 2) + (BarsAlongHeight * 2) - 4);
     public int EffectiveBarCount => IsCircular ? TotalBars : RectangularBarCount;
     public string RebarTemplate => $"Equal spacing {BarSize} @ {TieSpacing:0.#}, cover {Cover:0.#} (custom coordinates)";
-    public string Dimensions => IsCircular ? $"D{Diameter:0.#}" : $"{Width:0.#} x {Height:0.#}";
-    public string BoundarySummary => IsCircular ? $"Circular boundary D{Diameter:0.#}" : $"Rectangular boundary {Width:0.#} x {Height:0.#}";
+    public string Dimensions => IsCircular
+        ? $"D{Diameter:0.#}"
+        : IsIrregular
+            ? "Irregular (pier shell)"
+            : $"{Width:0.#} x {Height:0.#}";
+    public string BoundarySummary => IsCircular
+        ? $"Circular boundary D{Diameter:0.#}"
+        : IsIrregular
+            ? "Pier shell irregular boundary"
+            : $"Rectangular boundary {Width:0.#} x {Height:0.#}";
     public string Status => HasValidDefinition ? "Ready" : "Needs review";
-    public bool HasValidDefinition => IsCircular
-        ? Diameter > 0 && Cover > 0 && TieSpacing > 0
-        : Width > 0 && Height > 0 && Cover > 0 && TieSpacing > 0;
+    public bool HasValidDefinition => IsIrregular
+        ? Cover > 0 && TieSpacing > 0
+        : IsCircular
+            ? Diameter > 0 && Cover > 0 && TieSpacing > 0
+            : Width > 0 && Height > 0 && Cover > 0 && TieSpacing > 0;
 
     private void RaiseComputed()
     {
         Raise(nameof(IsRectangular));
         Raise(nameof(IsCircular));
+        Raise(nameof(IsIrregular));
         Raise(nameof(RectangularBarCount));
         Raise(nameof(EffectiveBarCount));
         Raise(nameof(RebarTemplate));

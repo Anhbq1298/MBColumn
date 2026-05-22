@@ -36,7 +36,10 @@ public sealed class AppComposition : IDisposable
         var etabsConnection = new EtabsConnectionService();
         var etabsColumns = new EtabsColumnImportService(etabsConnection);
         var etabsForces = new EtabsForceImportService(etabsConnection);
-        EtabsImportDialogService = new EtabsImportDialogService(etabsConnection, etabsColumns, etabsForces);
+        var etabsPierShells = new EtabsPierShellImportService(etabsConnection);
+        var irregularGeometry = new IrregularPierGeometryBuilder();
+        EtabsImportDialogService = new EtabsImportDialogService(
+            etabsConnection, etabsColumns, etabsForces, etabsPierShells, irregularGeometry);
 
         IDesignCodeService aciCode = new Aci318DesignCodeService();
         IDesignCodeService ec2Code = new Ec2DesignCodeService();
