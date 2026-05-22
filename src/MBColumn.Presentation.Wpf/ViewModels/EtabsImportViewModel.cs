@@ -22,6 +22,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private const string TypeRectangular = "Rectangular";
     private const string TypeCircular = "Circular";
     private const string TypeIrregularPier = "Irregular / Pier";
+    private const string EtabsElementFrame = "Frame";
+    private const string EtabsElementShell = "Shell";
     private const string AllStories = "All Stories";
     private const string AllLabels = "All Labels";
     private const string DefaultEtabsBarSize = "T25";
@@ -36,6 +38,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly IEtabsForceImportService forceImportService;
     private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
+    private readonly UnitSystem targetUnitSystem;
     private readonly Dictionary<string, IReadOnlyList<Point2D>> pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
     private bool pierGroupsLoaded;
     private readonly RelayCommand connectCommand;
@@ -57,6 +60,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private int pierCount;
     private int frameObjectCount;
     private string unitConversionMessage = "Connect to ETABS to read model units.";
+    private string selectedEtabsElementFilter = EtabsElementFrame;
     private string selectedSectionTypeFilter = AllTypes;
     private string selectedStoryFilter = AllStories;
     private string selectedLabelFilter = AllLabels;
@@ -75,7 +79,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IEtabsColumnImportService columnImportService,
         IEtabsForceImportService forceImportService,
         IEtabsPierShellImportService? pierShellImportService = null,
-        IIrregularPierGeometryBuilder? irregularGeometryBuilder = null)
+        IIrregularPierGeometryBuilder? irregularGeometryBuilder = null,
+        UnitSystem targetUnitSystem = UnitSystem.Metric)
     {
         this.existingSectionNames = existingSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         this.connectionService = connectionService;
@@ -83,6 +88,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         this.forceImportService = forceImportService;
         this.pierShellImportService = pierShellImportService;
         this.irregularGeometryBuilder = irregularGeometryBuilder;
+        this.targetUnitSystem = targetUnitSystem;
 
         Columns = [];
         FilteredColumns = CollectionViewSource.GetDefaultView(Columns);
@@ -95,7 +101,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ForceRows = [];
         SummaryRows = [];
 
-        SectionTypeFilters = [AllTypes, TypeRectangular, TypeCircular, TypeIrregularPier];
+        EtabsElementFilters = [EtabsElementFrame, EtabsElementShell];
+        SectionTypeFilters = [AllTypes, TypeRectangular, TypeCircular];
         StoryFilters = [AllStories];
         LabelFilters = [AllLabels];
 
@@ -127,7 +134,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICollectionView FilteredLoadCombinations { get; }
     public ObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
     public ObservableCollection<EtabsImportSummaryRowViewModel> SummaryRows { get; }
-    public IReadOnlyList<string> SectionTypeFilters { get; }
+    public IReadOnlyList<string> EtabsElementFilters { get; }
+    public ObservableCollection<string> SectionTypeFilters { get; }
     public ObservableCollection<string> StoryFilters { get; }
     public ObservableCollection<string> LabelFilters { get; }
     public IReadOnlyList<EtabsDuplicateHandlingOption> DuplicateHandlingOptions { get; }
@@ -175,7 +183,30 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public int FrameObjectCount { get => frameObjectCount; private set => Set(ref frameObjectCount, value); }
     public string UnitConversionMessage { get => unitConversionMessage; private set => Set(ref unitConversionMessage, value); }
 
-    // Section type → Story → Label cascade
+    // ETABS Element → Section Type → Story → Label cascade
+    public string SelectedEtabsElementFilter
+    {
+        get => selectedEtabsElementFilter;
+        set
+        {
+            if (selectedEtabsElementFilter == value) return;
+            selectedEtabsElementFilter = value;
+            Raise();
+            Raise(nameof(IsSectionTypeFilterEnabled));
+            RefreshSectionTypeFilters();
+
+            if (value == EtabsElementShell && !pierGroupsLoaded && isConnected && pierShellImportService is not null)
+            {
+                LoadPierGroupsAsync();
+                return; // LoadPierGroupsAsync calls RebuildStoryFilters when done
+            }
+
+            RebuildStoryFilters();
+        }
+    }
+
+    public bool IsSectionTypeFilterEnabled => selectedEtabsElementFilter == EtabsElementFrame;
+
     public string SelectedSectionTypeFilter
     {
         get => selectedSectionTypeFilter;
@@ -184,14 +215,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (selectedSectionTypeFilter == value) return;
             selectedSectionTypeFilter = value;
             Raise();
-
-            // Lazily load pier groups the first time the user selects this filter
-            if (value == TypeIrregularPier && !pierGroupsLoaded && isConnected && pierShellImportService is not null)
-            {
-                LoadPierGroupsAsync();
-                return; // LoadPierGroupsAsync calls RebuildStoryFilters when done
-            }
-
             RebuildStoryFilters();
         }
     }
@@ -333,7 +356,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         StoryCount = info.StoryCount;
         PierCount = info.PierCount;
         FrameObjectCount = info.FrameObjectCount;
-        UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to kN, mm.";
+        UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to {(targetUnitSystem == UnitSystem.Metric ? "kN, mm" : "kip, in")}.";
 
         Columns.Clear();
         pierBoundaryCache.Clear();
@@ -341,7 +364,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         // Load frame columns (rectangular + circular)
         try
         {
-            foreach (var dto in columnImportService.GetCandidateColumns())
+            foreach (var dto in columnImportService.GetCandidateColumns(targetUnitSystem))
             {
                 Columns.Add(new EtabsColumnImportRowViewModel(
                     OnColumnSelectionChanged,
@@ -386,7 +409,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         {
             try
             {
-                var groups = pierShellImportService!.GetPierGroups();
+                var groups = pierShellImportService!.GetPierGroups(targetUnitSystem);
 
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -528,6 +551,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 continue;
             }
 
+            var defaultBarSize = targetUnitSystem == UnitSystem.Metric ? "T25" : "#8";
+            var defaultCover = targetUnitSystem == UnitSystem.Metric ? 50.0 : 2.0;
+            var defaultSpacing = targetUnitSystem == UnitSystem.Metric ? 150.0 : 6.0;
+
             var mapping = new EtabsSectionMappingViewModel(
                 OnMappingChanged,
                 source.EtabsSectionName,
@@ -537,9 +564,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 source.Height,
                 source.Diameter,
                 source.Material,
-                DefaultEtabsBarSize,
-                DefaultEtabsCoverMm,
-                DefaultEtabsSpacingMm);
+                defaultBarSize,
+                defaultCover,
+                defaultSpacing);
 
             if (source.IsRectangular)
             {
@@ -602,7 +629,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     c.UniqueSection, c.EtabsSectionName, c.Material,
                     c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
 
-                foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos))
+                foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem))
                     AddForceRow(force);
             }
             catch (Exception ex)
@@ -621,7 +648,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         {
             try
             {
-                foreach (var force in forceImportService.GetPierForces(selectedPiers, selectedCombos))
+                foreach (var force in forceImportService.GetPierForces(selectedPiers, selectedCombos, targetUnitSystem))
                     AddForceRow(force);
             }
             catch (Exception ex)
@@ -685,7 +712,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 column.Pier,
                 column.Story,
                 column.Label,
-                SectionShapeType.Irregular,
+                column.SectionType,
                 mapping.BoundarySummary,
                 mapping.RebarTemplate,
                 loadCaseCount,
@@ -744,12 +771,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         var snapshot = new ColumnInputSnapshot
         {
-            UnitSystem = UnitSystem.Metric.ToString(),
+            UnitSystem = targetUnitSystem.ToString(),
             DesignCode = DesignCodeType.Aci318Style.ToString(),
             Ec2Solver = Ec2SolverType.Fiber.ToString(),
             IntegrationMethod = SectionIntegrationMethod.Polygon.ToString(),
             AlphaCc = 0.85,
-            SectionShape = SectionShapeType.Irregular.ToString(),
+            SectionShape = mapping.IsRectangular ? SectionShapeType.Rectangular.ToString()
+                         : mapping.IsCircular    ? SectionShapeType.Circular.ToString()
+                         :                         SectionShapeType.Irregular.ToString(),
             Width = boundingWidth,
             Height = boundingHeight,
             Diameter = Math.Max(boundingWidth, boundingHeight),
@@ -759,25 +788,29 @@ public sealed class EtabsImportViewModel : ViewModelBase
             Es = 200000,
             MaterialLibrary = MaterialLibraryType.Custom.ToString(),
             BarSize = mapping.BarSize,
-            BarCount = rebars.Count,
+            BarCount = mapping.IsRectangular ? mapping.RectangularBarCount
+                     : mapping.IsCircular    ? mapping.TotalBars
+                     :                         rebars.Count,
             Spacing = mapping.TieSpacing,
-            RebarLayoutType = "CustomCoordinates",
-            TopBarCount = 0,
-            BottomBarCount = 0,
-            LeftBarCount = 0,
-            RightBarCount = 0,
+            RebarLayoutType = mapping.IsRectangular ? "SidesDifferent"
+                            : mapping.IsCircular    ? "EqualSpacing"
+                            :                         "CustomCoordinates",
+            TopBarCount    = mapping.IsRectangular ? mapping.BarsAlongWidth  : 0,
+            BottomBarCount = mapping.IsRectangular ? mapping.BarsAlongWidth  : 0,
+            LeftBarCount   = mapping.IsRectangular ? mapping.BarsAlongHeight : 0,
+            RightBarCount  = mapping.IsRectangular ? mapping.BarsAlongHeight : 0,
             IrregularBarSize = mapping.BarSize,
             IrregularSpacing = mapping.TieSpacing,
-            IrregularRebarMode = "CustomCoordinates",
-            BoundaryPoints = boundary
-                .Select((point, index) => new SnapshotBoundaryPoint
-                {
-                    PtIndex = index + 1,
-                    X = Math.Round(point.X, 6),
-                    Y = Math.Round(point.Y, 6)
-                })
-                .ToList(),
-            Rebars = rebars,
+            IrregularRebarMode = mapping.IsIrregular ? "CustomCoordinates" : "EqualSpacing",
+            BoundaryPoints = mapping.IsIrregular
+                ? boundary.Select((point, index) => new SnapshotBoundaryPoint
+                    {
+                        PtIndex = index + 1,
+                        X = Math.Round(point.X, 6),
+                        Y = Math.Round(point.Y, 6)
+                    }).ToList()
+                : [],
+            Rebars = mapping.IsIrregular ? rebars : [],
             Pu = primaryForce?.P ?? 0,
             Mux = primaryForce?.M2 ?? 0,
             Muy = primaryForce?.M3 ?? 0,
@@ -796,7 +829,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
                 ImportedAt = DateTime.UtcNow,
                 ImportedUnits = PresentUnits,
-                MBColumnUnitsAtImport = "kN, kNm",
+                MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
                 SelectedLoadCombinations = loadCases.Select(lc => lc.Label).ToList(),
                 ImportMode = importMode,
                 SourceShellNames = sourceShells,
@@ -822,7 +855,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         try
         {
-            var segments = pierShellImportService.GetSegments(pier, story);
+            var segments = pierShellImportService.GetSegments(pier, story, targetUnitSystem);
             if (segments.Count == 0)
             {
                 return (BuildBoundaryPoints(mapping), [], [],
@@ -981,7 +1014,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         try
         {
-            var segments = pierShellImportService.GetSegments(column.Pier, column.Story);
+            var segments = pierShellImportService.GetSegments(column.Pier, column.Story, targetUnitSystem);
             if (segments.Count == 0) return null;
 
             var result = irregularGeometryBuilder.BuildBoundary(segments);
@@ -1181,13 +1214,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         if (item is not EtabsColumnImportRowViewModel column) return false;
 
-        if (selectedSectionTypeFilter != AllTypes)
+        if (selectedEtabsElementFilter == EtabsElementFrame && column.IsIrregular) return false;
+        if (selectedEtabsElementFilter == EtabsElementShell && !column.IsIrregular) return false;
+
+        if (selectedEtabsElementFilter == EtabsElementFrame && selectedSectionTypeFilter != AllTypes)
         {
             var typeMatch = selectedSectionTypeFilter switch
             {
                 TypeRectangular => column.IsRectangular,
                 TypeCircular => column.IsCircular,
-                TypeIrregularPier => column.IsIrregular,
                 _ => true
             };
             if (!typeMatch) return false;
@@ -1210,21 +1245,53 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void ResetColumnFilters()
     {
-        selectedSectionTypeFilter = AllTypes;
-        Raise(nameof(SelectedSectionTypeFilter));
+        selectedEtabsElementFilter = EtabsElementFrame;
+        Raise(nameof(SelectedEtabsElementFilter));
+        Raise(nameof(IsSectionTypeFilterEnabled));
+        RefreshSectionTypeFilters();
         RebuildStoryFilters();
+    }
+
+    private void RefreshSectionTypeFilters()
+    {
+        SectionTypeFilters.Clear();
+
+        if (selectedEtabsElementFilter == EtabsElementFrame)
+        {
+            SectionTypeFilters.Add(AllTypes);
+            SectionTypeFilters.Add(TypeRectangular);
+            SectionTypeFilters.Add(TypeCircular);
+            selectedSectionTypeFilter = AllTypes;
+        }
+        else
+        {
+            SectionTypeFilters.Add(TypeIrregularPier);
+            selectedSectionTypeFilter = TypeIrregularPier;
+        }
+
+        Raise(nameof(SelectedSectionTypeFilter));
     }
 
     private IEnumerable<EtabsColumnImportRowViewModel> FilteredByType()
     {
-        if (selectedSectionTypeFilter == AllTypes) return Columns;
-        return selectedSectionTypeFilter switch
+        IEnumerable<EtabsColumnImportRowViewModel> source = Columns;
+
+        if (selectedEtabsElementFilter == EtabsElementFrame)
+            source = source.Where(c => !c.IsIrregular);
+        else if (selectedEtabsElementFilter == EtabsElementShell)
+            source = source.Where(c => c.IsIrregular);
+
+        if (selectedEtabsElementFilter == EtabsElementFrame && selectedSectionTypeFilter != AllTypes)
         {
-            TypeRectangular => Columns.Where(c => c.IsRectangular),
-            TypeCircular => Columns.Where(c => c.IsCircular),
-            TypeIrregularPier => Columns.Where(c => c.IsIrregular),
-            _ => Columns
-        };
+            source = selectedSectionTypeFilter switch
+            {
+                TypeRectangular => source.Where(c => c.IsRectangular),
+                TypeCircular => source.Where(c => c.IsCircular),
+                _ => source
+            };
+        }
+
+        return source;
     }
 
     private void RebuildStoryFilters()

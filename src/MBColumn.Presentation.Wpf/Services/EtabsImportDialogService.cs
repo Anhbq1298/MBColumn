@@ -28,7 +28,8 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
 
     public EtabsImportDialogResult? ShowDialog(
         System.Windows.Window? owner,
-        IReadOnlyCollection<string> existingSectionNames)
+        IReadOnlyCollection<string> existingSectionNames,
+        MBColumn.Domain.Enums.UnitSystem targetSystem)
     {
         var vm = new EtabsImportViewModel(
             existingSectionNames,
@@ -36,7 +37,8 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
             columnImportService,
             forceImportService,
             pierShellImportService,
-            irregularGeometryBuilder);
+            irregularGeometryBuilder,
+            targetSystem);
 
         var window = new EtabsImportWindow(vm)
         {

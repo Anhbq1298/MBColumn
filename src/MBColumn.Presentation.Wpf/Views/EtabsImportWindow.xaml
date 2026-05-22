@@ -173,7 +173,7 @@
                               Padding="10">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="78" />
+                                <ColumnDefinition Width="90" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -182,28 +182,39 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="10" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="10" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="Section Type"
+                            <TextBlock Text="ETABS Element"
                                        VerticalAlignment="Center"
                                        Style="{StaticResource FieldLabelTextStyle}" />
                             <ComboBox Grid.Column="1"
-                                      ItemsSource="{Binding SectionTypeFilters}"
-                                      SelectedItem="{Binding SelectedSectionTypeFilter}" />
+                                      ItemsSource="{Binding EtabsElementFilters}"
+                                      SelectedItem="{Binding SelectedEtabsElementFilter}" />
 
                             <TextBlock Grid.Row="2"
-                                       Text="Story"
+                                       Text="Section Type"
                                        VerticalAlignment="Center"
                                        Style="{StaticResource FieldLabelTextStyle}" />
                             <ComboBox Grid.Row="2" Grid.Column="1"
-                                      ItemsSource="{Binding StoryFilters}"
-                                      SelectedItem="{Binding SelectedStoryFilter}" />
+                                      ItemsSource="{Binding SectionTypeFilters}"
+                                      SelectedItem="{Binding SelectedSectionTypeFilter}"
+                                      IsEnabled="{Binding IsSectionTypeFilterEnabled}" />
 
                             <TextBlock Grid.Row="4"
-                                       Text="Label"
+                                       Text="Story"
                                        VerticalAlignment="Center"
                                        Style="{StaticResource FieldLabelTextStyle}" />
                             <ComboBox Grid.Row="4" Grid.Column="1"
+                                      ItemsSource="{Binding StoryFilters}"
+                                      SelectedItem="{Binding SelectedStoryFilter}" />
+
+                            <TextBlock Grid.Row="6"
+                                       Text="Label"
+                                       VerticalAlignment="Center"
+                                       Style="{StaticResource FieldLabelTextStyle}" />
+                            <ComboBox Grid.Row="6" Grid.Column="1"
                                       ItemsSource="{Binding LabelFilters}"
                                       SelectedItem="{Binding SelectedLabelFilter}" />
                         </Grid>

@@ -358,7 +358,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             .ToList();
         var result = etabsImportDialogService.ShowDialog(
             System.Windows.Application.Current?.MainWindow,
-            existingNames);
+            existingNames,
+            Input.UnitSystem);
         if (result is null || result.Sections.Count == 0)
         {
             return;

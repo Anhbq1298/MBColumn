@@ -89,7 +89,22 @@ public sealed class EtabsConnectionService : IEtabsConnectionService
         _ => units.ToString()
     };
 
-    internal static (double ForceToKn, double LengthToMm) GetConversionFactors(eUnits units) => units switch
+    internal static (double ForceFactor, double LengthFactor) GetConversionFactors(eUnits units, MBColumn.Domain.Enums.UnitSystem targetSystem)
+    {
+        var (forceToKn, lengthToMm) = GetMetricConversionFactors(units);
+        
+        if (targetSystem == MBColumn.Domain.Enums.UnitSystem.Metric)
+        {
+            return (forceToKn, lengthToMm);
+        }
+
+        // Convert from Metric (kN, mm) to Imperial (kip, in)
+        // 1 kip = 4.4482216 kN => Force in kip = Force in kN / 4.4482216
+        // 1 inch = 25.4 mm => Length in in = Length in mm / 25.4
+        return (forceToKn / 4.44822, lengthToMm / 25.4);
+    }
+
+    private static (double ForceToKn, double LengthToMm) GetMetricConversionFactors(eUnits units) => units switch
     {
         eUnits.kN_mm_C => (1.0, 1.0),
         eUnits.kN_m_C => (1.0, 1000.0),

@@ -18,13 +18,13 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         this.connection = connection;
     }
 
-    public IReadOnlyList<EtabsColumnImportDto> GetCandidateColumns()
+    public IReadOnlyList<EtabsColumnImportDto> GetCandidateColumns(UnitSystem targetSystem)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
         var units = model.GetPresentUnits();
-        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
+        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
 
         // Two bulk table calls instead of one PropFrame API call per section
         var sections = LoadConcreteSections(model, lengthToMm);

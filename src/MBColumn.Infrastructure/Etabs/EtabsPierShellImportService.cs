@@ -1,6 +1,7 @@
 using ETABSv1;
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.Services.Etabs;
+using MBColumn.Domain.Enums;
 using SMath = System.Math;
 
 namespace MBColumn.Infrastructure.Etabs;
@@ -22,18 +23,19 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
     // Cache is keyed to the model COM object; rebuilds automatically on reconnect.
     private AreaScanCache? _cache;
     private cSapModel? _cacheModel;
+    private UnitSystem? _cacheTargetSystem;
 
     public EtabsPierShellImportService(EtabsConnectionService connection)
     {
         this.connection = connection;
     }
 
-    public IReadOnlyList<(string PierLabel, string StoryName, string SectionProperty)> GetPierGroups()
+    public IReadOnlyList<(string PierLabel, string StoryName, string SectionProperty)> GetPierGroups(UnitSystem targetSystem)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var c = EnsureCache(model);
+        var c = EnsureCache(model, targetSystem);
 
         return [.. c.PierAreaMap.Keys
             .Select(key =>
@@ -46,19 +48,19 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
             .ThenBy(g => g.Story, StringComparer.OrdinalIgnoreCase)];
     }
 
-    public IReadOnlyList<EtabsPierShellSegmentDto> GetSegments(string pierLabel, string storyName)
+    public IReadOnlyList<EtabsPierShellSegmentDto> GetSegments(string pierLabel, string storyName, UnitSystem targetSystem)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var c = EnsureCache(model);
+        var c = EnsureCache(model, targetSystem);
 
         var key = $"{pierLabel.Trim()}|{storyName.Trim()}";
         if (!c.PierAreaMap.TryGetValue(key, out var areaNames) || areaNames.Count == 0)
             return [];
 
         var units = model.GetPresentUnits();
-        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
+        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
 
         var segments = new List<EtabsPierShellSegmentDto>(areaNames.Count);
         foreach (var areaName in areaNames)
@@ -84,19 +86,20 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
     // Cache management
     // -------------------------------------------------------------------
 
-    private AreaScanCache EnsureCache(cSapModel model)
+    private AreaScanCache EnsureCache(cSapModel model, UnitSystem targetSystem)
     {
-        if (_cache != null && ReferenceEquals(_cacheModel, model)) return _cache;
-        _cache = BuildCache(model);
+        if (_cache != null && ReferenceEquals(_cacheModel, model) && _cacheTargetSystem == targetSystem) return _cache;
+        _cache = BuildCache(model, targetSystem);
         _cacheModel = model;
+        _cacheTargetSystem = targetSystem;
         return _cache;
     }
 
     // Two bulk calls cover the whole model; only pier-assigned areas get a GetPier COM call.
-    private static AreaScanCache BuildCache(cSapModel model)
+    private static AreaScanCache BuildCache(cSapModel model, UnitSystem targetSystem)
     {
         var units = model.GetPresentUnits();
-        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
+        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
 
         // ── Bulk 1: label + story for every area (1 COM call) ────────────────────────────
         int nAreas = 0;

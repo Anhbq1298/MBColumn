@@ -1,6 +1,7 @@
 using ETABSv1;
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.Services.Etabs;
+using MBColumn.Domain.Enums;
 using System.Globalization;
 using SMath = System.Math;
 
@@ -19,7 +20,8 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
     public IReadOnlyList<EtabsForceResultDto> GetForces(
         IReadOnlyList<EtabsColumnImportDto> columns,
-        IReadOnlyList<string> loadCombinations)
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
@@ -27,11 +29,11 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         // Present units: used by analysis-results API (FrameForce, PierForce).
         // Database units: used by GetTableForDisplayArray — may differ from display units.
         var units = model.GetPresentUnits();
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
+        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
         var momentFactor = forceToKn * lengthToMm / 1000.0;
 
         var dbUnits = model.GetDatabaseUnits();
-        var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits);
+        var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
         var dbMomentFactor = dbForceToKn * dbLengthToMm / 1000.0;
 
         ConfigureOutput(model, loadCombinations);
@@ -56,7 +58,8 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
     public IReadOnlyList<EtabsForceResultDto> GetPierForces(
         IReadOnlyList<(string PierLabel, string StoryName)> piers,
-        IReadOnlyList<string> loadCombinations)
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
@@ -67,11 +70,11 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         // Present units: used by analysis-results API (FrameForce, PierForce).
         // Database units: used by GetTableForDisplayArray — may differ from display units.
         var units = model.GetPresentUnits();
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(units);
+        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
         var momentFactor = forceToKn * lengthToMm / 1000.0;
 
         var dbUnits = model.GetDatabaseUnits();
-        var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits);
+        var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
         var dbMomentFactor = dbForceToKn * dbLengthToMm / 1000.0;
 
         var requestedPiers = new HashSet<string>(
