@@ -355,84 +355,79 @@
                             <Viewbox Stretch="Uniform"
                                      HorizontalAlignment="Stretch"
                                      VerticalAlignment="Top">
-                                <Canvas Width="220" Height="185">
+                                <Canvas Width="900" Height="1150">
+                                    <Canvas.Resources>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
+                                            <Setter Property="Foreground" Value="#0046d5"/>
+                                        </Style>
+                                    </Canvas.Resources>
 
-                                    <!-- Column: top face (horizontal plane XY) -->
-                                    <Polygon Points="50,40 110,40 140,24 80,24"
-                                             Fill="#BAD4F0" Stroke="#004B85" StrokeThickness="1" />
-                                    <!-- Column: right face (YZ plane) -->
-                                    <Polygon Points="110,40 140,24 140,148 110,168"
-                                             Fill="#9DC0E8" Stroke="#004B85" StrokeThickness="1" />
-                                    <!-- Column: front face (XZ plane) -->
-                                    <Polygon Points="50,40 110,40 110,168 50,168"
-                                             Fill="#D6E8FA" Stroke="#004B85" StrokeThickness="1" />
+                                    <Rectangle Width="900" Height="1150" Fill="White"/>
 
-                                    <!-- Mux: double-headed arrow along X axis (horizontal, left-right on front face) -->
-                                    <!-- Arrow shaft -->
-                                    <Line X1="30" Y1="100" X2="130" Y2="100"
-                                          Stroke="#004B85" StrokeThickness="1.6" />
-                                    <!-- Left arrowhead -->
-                                    <Polygon Points="30,100 38,96 38,104" Fill="#004B85" />
-                                    <!-- Right arrowhead -->
-                                    <Polygon Points="130,100 122,96 122,104" Fill="#004B85" />
-                                    <!-- Label Mux -->
-                                    <TextBlock Canvas.Left="132" Canvas.Top="92"
-                                               Text="Mux" FontSize="10"
-                                               FontWeight="SemiBold" FontStyle="Italic"
-                                               Foreground="#004B85" />
+                                    <!-- Column faces -->
+                                    <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
+                                    <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
+                                    <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
 
-                                    <!-- Muy: double-headed arrow along Y axis (oblique, depth direction) -->
-                                    <!-- Arrow shaft -->
-                                    <Line X1="62" Y1="142" X2="148" Y2="8"
-                                          Stroke="#004B85" StrokeThickness="1.6" />
-                                    <!-- Near arrowhead (bottom-left) -->
-                                    <Polygon Points="62,142 69,136 66,144" Fill="#004B85" />
-                                    <!-- Far arrowhead (top-right) -->
-                                    <Polygon Points="148,8 141,14 144,6" Fill="#004B85" />
-                                    <!-- Label Muy -->
-                                    <TextBlock Canvas.Left="150" Canvas.Top="2"
-                                               Text="Muy" FontSize="10"
-                                               FontWeight="SemiBold" FontStyle="Italic"
-                                               Foreground="#004B85" />
+                                    <!-- Main prism outline -->
+                                    <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                    <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                    <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                    <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                    <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                    <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
-                                    <!-- P: vertical arrow (axial force along Z, downward) -->
-                                    <Line X1="80" Y1="10" X2="80" Y2="40"
-                                          Stroke="#004B85" StrokeThickness="1.6" />
-                                    <Polygon Points="80,40 77,33 83,33" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="72" Canvas.Top="0"
-                                               Text="P" FontSize="10"
-                                               FontWeight="SemiBold" FontStyle="Italic"
-                                               Foreground="#004B85" />
+                                    <!-- Mid section: exact copy of the base/top parallelogram -->
+                                    <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
+                                    <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                    <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
-                                    <!-- XYZ axes gizmo (bottom right) -->
-                                    <!-- Origin point -->
-                                    <Ellipse Canvas.Left="172" Canvas.Top="163"
-                                             Width="3" Height="3"
-                                             Fill="#004B85" />
+                                    <!-- Centroid marker at exact diagonal intersection -->
+                                    <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
+                                    <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
 
-                                    <!-- Z axis (vertical / up) -->
-                                    <Line X1="173" Y1="164" X2="173" Y2="140"
-                                          Stroke="#004B85" StrokeThickness="0.9" />
-                                    <Polygon Points="173,140 175,146 171,146" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="176" Canvas.Top="134"
-                                               Text="z" FontSize="9" FontStyle="Italic"
-                                               Foreground="#004B85" />
+                                    <!-- Axial load P: replaces member Z axis and points downward -->
+                                    <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
+                                    <!-- Arrow marker for P pointing down -->
+                                    <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
+                                    <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="30" />
 
-                                    <!-- X axis (horizontal / right) -->
-                                    <Line X1="173" Y1="164" X2="198" Y2="164"
-                                          Stroke="#004B85" StrokeThickness="0.9" />
-                                    <Polygon Points="198,164 192,166 192,162" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="200" Canvas.Top="158"
-                                               Text="x" FontSize="9" FontStyle="Italic"
-                                               Foreground="#004B85" />
+                                    <!-- MX: global/member X, horizontal, with double arrowhead at far end -->
+                                    <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                    <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                    <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                    <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                    <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="30" />
 
-                                    <!-- Y axis (oblique / depth, going back-right) -->
-                                    <Line X1="173" Y1="164" X2="190" Y2="152"
-                                          Stroke="#004B85" StrokeThickness="0.9" />
-                                    <Polygon Points="190,152 184,155 187,159" Fill="#004B85" />
-                                    <TextBlock Canvas.Left="192" Canvas.Top="146"
-                                               Text="y" FontSize="9" FontStyle="Italic"
-                                               Foreground="#004B85" />
+                                    <!-- MY: global/member Y, parallel to Y projection, with double arrowhead at far end -->
+                                    <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                    <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                    <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                    <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                    <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="30" />
+
+                                    <!-- Coordinate triad -->
+                                    <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
+                                    <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+
+                                    <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
+                                    <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+
+                                    <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
+                                    <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+
+                                    <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                    <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
+
+                                    <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                    <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
+
+                                    <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                    <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
+
+                                    <!-- Title -->
+                                    <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
                                 </Canvas>
                             </Viewbox>
                         </Border>

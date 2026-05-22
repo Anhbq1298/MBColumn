@@ -71,20 +71,16 @@
                 BorderBrush="{DynamicResource BorderGreyBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="14,10">
-            <UniformGrid Columns="4">
+            <UniformGrid Columns="3">
                 <TextBlock Text="1  Connect"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
                            TextAlignment="Center" />
-                <TextBlock Text="2  Define Section"
+                <TextBlock Text="2  Forces"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
                            TextAlignment="Center" />
-                <TextBlock Text="3  Forces"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource PrimaryNavyBrush}"
-                           TextAlignment="Center" />
-                <TextBlock Text="4  Create"
+                <TextBlock Text="3  Create"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
                            TextAlignment="Center" />
@@ -95,8 +91,6 @@
             <Grid Visibility="{Binding IsStep1, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="14" />
-                    <ColumnDefinition Width="310" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -162,9 +156,9 @@
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PresentUnits}" Style="{StaticResource InfoValueStyle}" />
                             <TextBlock Grid.Row="3" Text="Stories / Piers" Style="{StaticResource InfoLabelStyle}" />
                             <TextBlock Grid.Row="3" Grid.Column="1">
-                                <Run Text="{Binding StoryCount}" />
+                                <Run Text="{Binding StoryCount, Mode=OneWay}" />
                                 <Run Text=" / " />
-                                <Run Text="{Binding PierCount}" />
+                                <Run Text="{Binding PierCount, Mode=OneWay}" />
                             </TextBlock>
                             <TextBlock Grid.Row="4" Text="Frame objects" Style="{StaticResource InfoLabelStyle}" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding FrameObjectCount}" Style="{StaticResource InfoValueStyle}" />
@@ -233,175 +227,9 @@
                         <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="90" IsReadOnly="True" />
                     </DataGrid.Columns>
                 </DataGrid>
-
-                <Border Grid.Column="2"
-                        Grid.Row="0"
-                        Grid.RowSpan="2"
-                        Style="{StaticResource WizardPanelStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Preview"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}" />
-                        <TextBlock Text="{Binding ColumnPreviewTitle}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="0,8,0,0"
-                                   TextTrimming="CharacterEllipsis" />
-                        <Canvas Height="230"
-                                Margin="0,14,0,10"
-                                Background="{DynamicResource LightBackgroundBrush}"
-                                ClipToBounds="True">
-                            <Rectangle Canvas.Left="66"
-                                       Canvas.Top="34"
-                                       Width="160"
-                                       Height="120"
-                                       Stroke="{DynamicResource PrimaryNavyBrush}"
-                                       StrokeThickness="2"
-                                       Fill="#1A1E88E5"
-                                       Visibility="{Binding IsColumnPreviewRectangular, Converter={StaticResource BoolToVisibilityConverter}}" />
-                            <Ellipse Canvas.Left="66"
-                                     Canvas.Top="28"
-                                     Width="160"
-                                     Height="160"
-                                     Stroke="{DynamicResource PrimaryNavyBrush}"
-                                     StrokeThickness="2"
-                                     Fill="#1A1E88E5"
-                                     Visibility="{Binding IsColumnPreviewCircular, Converter={StaticResource BoolToVisibilityConverter}}" />
-                            <Ellipse Canvas.Left="82" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="210" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="82" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="210" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="145" Canvas.Top="35" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="145" Canvas.Top="175" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="75" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="215" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
-                        </Canvas>
-                        <TextBlock Text="{Binding ColumnPreviewDimensions}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextDarkBrush}"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding ColumnPreviewRebar}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,0" />
-                        <Separator Margin="0,14,0,10" />
-                        <TextBlock Text="{Binding UnitConversionMessage}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding SelectedColumnCount, StringFormat=Selected columns: {0}}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="0,10,0,0" />
-                    </StackPanel>
-                </Border>
             </Grid>
 
             <Grid Visibility="{Binding IsStep2, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="14" />
-                    <ColumnDefinition Width="310" />
-                </Grid.ColumnDefinitions>
-
-                <DataGrid Grid.Column="0"
-                          ItemsSource="{Binding SectionMappings}"
-                          SelectedItem="{Binding SelectedMapping, Mode=TwoWay}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="ETABS Section" Binding="{Binding EtabsSectionName}" Width="120" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Unique Section" Binding="{Binding UniqueSection}" Width="150" IsReadOnly="True" />
-                        <DataGridTemplateColumn Header="MBColumn Type" Width="125">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding SectionType}" Padding="8,0" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                            <DataGridTemplateColumn.CellEditingTemplate>
-                                <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding SectionTypes}"
-                                              SelectedItem="{Binding SectionType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellEditingTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="b" Binding="{Binding Width, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="65" />
-                        <DataGridTextColumn Header="h" Binding="{Binding Height, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="65" />
-                        <DataGridTextColumn Header="D" Binding="{Binding Diameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="65" />
-                        <DataGridTextColumn Header="Material" Binding="{Binding Material, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="85" />
-                        <DataGridTextColumn Header="Bar" Binding="{Binding BarSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                        <DataGridTextColumn Header="Bars b" Binding="{Binding BarsAlongWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                        <DataGridTextColumn Header="Bars h" Binding="{Binding BarsAlongHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                        <DataGridTextColumn Header="Total" Binding="{Binding TotalBars, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                        <DataGridTextColumn Header="Cover" Binding="{Binding Cover, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="75" />
-                        <DataGridTextColumn Header="Tie dia" Binding="{Binding TieDiameter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="75" />
-                        <DataGridTextColumn Header="Tie spacing" Binding="{Binding TieSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.#}}" Width="90" />
-                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100" IsReadOnly="True" />
-                    </DataGrid.Columns>
-                </DataGrid>
-
-                <Border Grid.Column="2"
-                        Style="{StaticResource WizardPanelStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Rebar Preview"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}" />
-                        <TextBlock Text="{Binding MappingPreviewTitle}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"
-                                   Margin="0,8,0,0" />
-                        <Canvas Height="230"
-                                Margin="0,14,0,10"
-                                Background="{DynamicResource LightBackgroundBrush}"
-                                ClipToBounds="True">
-                            <Rectangle Canvas.Left="66"
-                                       Canvas.Top="34"
-                                       Width="160"
-                                       Height="120"
-                                       Stroke="{DynamicResource PrimaryNavyBrush}"
-                                       StrokeThickness="2"
-                                       Fill="#1A10B981"
-                                       Visibility="{Binding IsMappingPreviewRectangular, Converter={StaticResource BoolToVisibilityConverter}}" />
-                            <Ellipse Canvas.Left="66"
-                                     Canvas.Top="28"
-                                     Width="160"
-                                     Height="160"
-                                     Stroke="{DynamicResource PrimaryNavyBrush}"
-                                     StrokeThickness="2"
-                                     Fill="#1A10B981"
-                                     Visibility="{Binding IsMappingPreviewCircular, Converter={StaticResource BoolToVisibilityConverter}}" />
-                            <Ellipse Canvas.Left="82" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="145" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="210" Canvas.Top="50" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="82" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="145" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="210" Canvas.Top="137" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="75" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
-                            <Ellipse Canvas.Left="215" Canvas.Top="105" Style="{StaticResource PreviewDotStyle}" />
-                        </Canvas>
-                        <TextBlock Text="{Binding MappingPreviewDimensions}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextDarkBrush}"
-                                   TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding MappingPreviewRebar}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,0" />
-                        <TextBlock Text="Section and reinforcement values will be written as ordinary MBColumn inputs."
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,14,0,0" />
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Grid Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="300" />
                     <ColumnDefinition Width="14" />
@@ -496,7 +324,7 @@
                 </Grid>
             </Grid>
 
-            <Grid Visibility="{Binding IsStep4, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />

@@ -1,5 +1,7 @@
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.Persistence;
+using MBColumn.Application.Services.Geometry;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
@@ -17,6 +19,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private const string AllStories = "All Stories";
     private const string AllLabels = "All Labels";
     private const string AllSections = "All Sections";
+    private const string DefaultEtabsBarSize = "T25";
+    private const double DefaultEtabsBarDiameterMm = 25.0;
+    private const double DefaultEtabsBarAreaMm2 = 491.0;
+    private const double DefaultEtabsCoverMm = 50.0;
+    private const double DefaultEtabsSpacingMm = 150.0;
 
     private readonly HashSet<string> existingSectionNames;
     private readonly RelayCommand connectCommand;
@@ -224,7 +231,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (selectedMapping == value) return;
             selectedMapping = value;
             Raise();
-            RaiseMappingPreviewProperties();
         }
     }
 
@@ -236,7 +242,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (selectedDuplicateHandling == value) return;
             selectedDuplicateHandling = value;
             Raise();
-            if (CurrentStep == 4)
+            if (CurrentStep == 3)
             {
                 BuildSummaryRows();
             }
@@ -246,15 +252,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public bool IsStep1 => CurrentStep == 1;
     public bool IsStep2 => CurrentStep == 2;
     public bool IsStep3 => CurrentStep == 3;
-    public bool IsStep4 => CurrentStep == 4;
+    public bool IsStep4 => false;
     public string StepTitle => CurrentStep switch
     {
         1 => "Connect & Select Columns",
-        2 => "Define Section & Rebar",
-        3 => "Import Forces",
+        2 => "Import Forces",
         _ => "Create Sections"
     };
-    public string NextButtonText => CurrentStep == 4 ? "Create Sections" : "Next";
+    public string NextButtonText => CurrentStep == 3 ? "Create Sections" : "Next";
     public int SelectedColumnCount => Columns.Count(c => c.IsSelected);
     public int SelectedLoadCombinationCount => LoadCombinations.Count(c => c.IsSelected);
     public int SelectedForceRowCount => ForceRows.Count(f => f.IsSelected);
@@ -272,11 +277,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public string ColumnPreviewRebar => SelectedColumn is null
         ? "-"
         : SelectedColumn.IsCircular ? "Mock preview: equal angular bars" : "Mock preview: perimeter bars";
-    public string MappingPreviewTitle => SelectedMapping is null ? "No mapping selected" : SelectedMapping.UniqueSection;
-    public bool IsMappingPreviewRectangular => SelectedMapping?.IsRectangular == true;
-    public bool IsMappingPreviewCircular => SelectedMapping?.IsCircular == true;
-    public string MappingPreviewDimensions => SelectedMapping?.Dimensions ?? "-";
-    public string MappingPreviewRebar => SelectedMapping?.RebarTemplate ?? "-";
     public string ForceConventionNote => "Forces are imported using ETABS local axis convention and converted to MBColumn units. Please verify sign convention before design.";
 
     private void Connect()
@@ -338,22 +338,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
         if (CurrentStep == 1)
         {
             BuildSectionMappings();
+            RefreshLoadCombinations();
+            GenerateForceRows();
             CurrentStep = 2;
             return;
         }
 
         if (CurrentStep == 2)
         {
-            RefreshLoadCombinations();
-            GenerateForceRows();
-            CurrentStep = 3;
-            return;
-        }
-
-        if (CurrentStep == 3)
-        {
             BuildSummaryRows();
-            CurrentStep = 4;
+            CurrentStep = 3;
             return;
         }
 
@@ -364,9 +358,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         => CurrentStep switch
         {
             1 => IsConnected && SelectedColumnCount > 0,
-            2 => SectionMappings.Count > 0 && SectionMappings.All(m => m.HasValidDefinition),
-            3 => SelectedLoadCombinationCount > 0 && SelectedForceRowCount > 0,
-            4 => SummaryCreateCount > 0,
+            2 => SelectedLoadCombinationCount > 0 && SelectedForceRowCount > 0,
+            3 => SummaryCreateCount > 0,
             _ => false
         };
 
@@ -411,7 +404,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 source.Width,
                 source.Height,
                 source.Diameter,
-                source.Material);
+                source.Material,
+                DefaultEtabsBarSize,
+                DefaultEtabsCoverMm,
+                DefaultEtabsSpacingMm);
 
             if (source.IsRectangular)
             {
@@ -521,8 +517,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 column.Pier,
                 column.Story,
                 column.Label,
-                mapping.SectionType,
-                mapping.Dimensions,
+                SectionShapeType.Irregular,
+                mapping.BoundarySummary,
                 mapping.RebarTemplate,
                 loadCaseCount,
                 status,
@@ -553,35 +549,46 @@ public sealed class EtabsImportViewModel : ViewModelBase
             })
             .ToList();
 
-        var isCircular = mapping.SectionType == SectionShapeType.Circular;
-        var barCount = isCircular ? mapping.TotalBars : mapping.RectangularBarCount;
+        var boundary = BuildBoundaryPoints(mapping);
+        var rebars = BuildEqualSpacingCustomRebars(mapping, boundary);
+        var boundingWidth = mapping.IsCircular ? mapping.Diameter : mapping.Width;
+        var boundingHeight = mapping.IsCircular ? mapping.Diameter : mapping.Height;
         var snapshot = new ColumnInputSnapshot
         {
             UnitSystem = UnitSystem.Metric.ToString(),
             DesignCode = DesignCodeType.Aci318Style.ToString(),
             Ec2Solver = Ec2SolverType.Fiber.ToString(),
-            IntegrationMethod = SectionIntegrationMethod.Fiber.ToString(),
+            IntegrationMethod = SectionIntegrationMethod.Polygon.ToString(),
             AlphaCc = 0.85,
-            SectionShape = mapping.SectionType.ToString(),
-            Width = isCircular ? mapping.Diameter : mapping.Width,
-            Height = isCircular ? mapping.Diameter : mapping.Height,
-            Diameter = isCircular ? mapping.Diameter : Math.Max(mapping.Width, mapping.Height),
+            SectionShape = SectionShapeType.Irregular.ToString(),
+            Width = boundingWidth,
+            Height = boundingHeight,
+            Diameter = Math.Max(boundingWidth, boundingHeight),
             Cover = mapping.Cover,
             Fc = InferConcreteStrength(mapping.Material),
             Fy = 420,
             Es = 200000,
             MaterialLibrary = MaterialLibraryType.Custom.ToString(),
             BarSize = mapping.BarSize,
-            BarCount = barCount,
+            BarCount = rebars.Count,
             Spacing = mapping.TieSpacing,
-            RebarLayoutType = isCircular ? "EqualSpacing" : "SidesDifferent",
-            TopBarCount = isCircular ? 0 : mapping.BarsAlongWidth,
-            BottomBarCount = isCircular ? 0 : mapping.BarsAlongWidth,
-            LeftBarCount = isCircular ? 0 : mapping.BarsAlongHeight,
-            RightBarCount = isCircular ? 0 : mapping.BarsAlongHeight,
+            RebarLayoutType = "CustomCoordinates",
+            TopBarCount = 0,
+            BottomBarCount = 0,
+            LeftBarCount = 0,
+            RightBarCount = 0,
             IrregularBarSize = mapping.BarSize,
             IrregularSpacing = mapping.TieSpacing,
-            IrregularRebarMode = "EqualSpacing",
+            IrregularRebarMode = "CustomCoordinates",
+            BoundaryPoints = boundary
+                .Select((point, index) => new SnapshotBoundaryPoint
+                {
+                    PtIndex = index + 1,
+                    X = Math.Round(point.X, 6),
+                    Y = Math.Round(point.Y, 6)
+                })
+                .ToList(),
+            Rebars = rebars,
             Pu = primaryForce?.P ?? 0,
             Mux = primaryForce?.M2 ?? 0,
             Muy = primaryForce?.M3 ?? 0,
@@ -606,6 +613,134 @@ public sealed class EtabsImportViewModel : ViewModelBase
         };
 
         return snapshot;
+    }
+
+    private static IReadOnlyList<Point2D> BuildBoundaryPoints(EtabsSectionMappingViewModel mapping)
+    {
+        IReadOnlyList<Point2D> points;
+        if (mapping.IsCircular)
+        {
+            var radius = mapping.Diameter / 2.0;
+            const int segmentCount = 32;
+            points = Enumerable.Range(0, segmentCount)
+                .Select(index =>
+                {
+                    var angle = Math.PI / 2.0 - 2.0 * Math.PI * index / segmentCount;
+                    return new Point2D(
+                        Math.Round(radius * Math.Cos(angle), 6),
+                        Math.Round(radius * Math.Sin(angle), 6));
+                })
+                .ToList();
+        }
+        else
+        {
+            var halfWidth = mapping.Width / 2.0;
+            var halfHeight = mapping.Height / 2.0;
+            points =
+            [
+                new Point2D(-halfWidth, halfHeight),
+                new Point2D(halfWidth, halfHeight),
+                new Point2D(halfWidth, -halfHeight),
+                new Point2D(-halfWidth, -halfHeight)
+            ];
+        }
+
+        return PolygonGeometry.EnsureClockwise(points);
+    }
+
+    private static List<SnapshotRebar> BuildEqualSpacingCustomRebars(
+        EtabsSectionMappingViewModel mapping,
+        IReadOnlyList<Point2D> boundary)
+    {
+        var (barDiameter, barArea) = ResolveMetricBar(mapping.BarSize);
+        var offset = mapping.Cover + barDiameter / 2.0;
+        var insetPolygon = PolygonGeometry.OffsetPolygon(boundary, offset);
+        if (insetPolygon.Count < 3)
+        {
+            return [];
+        }
+
+        var perimeter = PolygonPerimeter(insetPolygon);
+        var spacing = mapping.TieSpacing > 0 ? mapping.TieSpacing : DefaultEtabsSpacingMm;
+        if (!double.IsFinite(perimeter) || perimeter <= 0.0 || !double.IsFinite(spacing) || spacing <= 0.0)
+        {
+            return [];
+        }
+
+        var barCount = (int)Math.Max(4, Math.Round(perimeter / spacing));
+        var rebars = new List<SnapshotRebar>(barCount);
+        for (var index = 0; index < barCount; index++)
+        {
+            var point = PointAtDistance(insetPolygon, perimeter * index / barCount);
+            rebars.Add(new SnapshotRebar
+            {
+                RebarIndex = (index + 1).ToString(),
+                X = Math.Round(point.X, 6),
+                Y = Math.Round(point.Y, 6),
+                BarSize = mapping.BarSize,
+                AreaMm2 = Math.Round(barArea, 6)
+            });
+        }
+
+        return rebars;
+    }
+
+    private static double PolygonPerimeter(IReadOnlyList<Point2D> polygon)
+    {
+        var perimeter = 0.0;
+        for (var index = 0; index < polygon.Count; index++)
+        {
+            perimeter += Distance(polygon[index], polygon[(index + 1) % polygon.Count]);
+        }
+
+        return perimeter;
+    }
+
+    private static Point2D PointAtDistance(IReadOnlyList<Point2D> polygon, double targetDistance)
+    {
+        var remaining = targetDistance;
+        for (var index = 0; index < polygon.Count; index++)
+        {
+            var start = polygon[index];
+            var end = polygon[(index + 1) % polygon.Count];
+            var length = Distance(start, end);
+            if (remaining <= length || index == polygon.Count - 1)
+            {
+                var t = length <= 1e-9 ? 0.0 : Math.Clamp(remaining / length, 0.0, 1.0);
+                return new Point2D(
+                    start.X + (end.X - start.X) * t,
+                    start.Y + (end.Y - start.Y) * t);
+            }
+
+            remaining -= length;
+        }
+
+        return polygon[0];
+    }
+
+    private static double Distance(Point2D start, Point2D end)
+    {
+        var dx = end.X - start.X;
+        var dy = end.Y - start.Y;
+        return Math.Sqrt(dx * dx + dy * dy);
+    }
+
+    private static (double Diameter, double Area) ResolveMetricBar(string barSize)
+    {
+        var match = Regex.Match(barSize, @"T(?<diameter>\d+)", RegexOptions.IgnoreCase);
+        if (!match.Success || !double.TryParse(match.Groups["diameter"].Value, out var diameter) || diameter <= 0.0)
+        {
+            return (DefaultEtabsBarDiameterMm, DefaultEtabsBarAreaMm2);
+        }
+
+        var area = diameter switch
+        {
+            25 => 491.0,
+            20 => 314.0,
+            _ => Math.PI * diameter * diameter / 4.0
+        };
+
+        return (diameter, area);
     }
 
     private bool FilterColumn(object item)
@@ -686,8 +821,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void OnMappingChanged()
     {
-        RaiseMappingPreviewProperties();
-        if (CurrentStep == 4)
+        if (CurrentStep == 3)
         {
             BuildSummaryRows();
         }
@@ -721,7 +855,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(IsStep1));
         Raise(nameof(IsStep2));
         Raise(nameof(IsStep3));
-        Raise(nameof(IsStep4));
         Raise(nameof(StepTitle));
         Raise(nameof(NextButtonText));
     }
@@ -733,15 +866,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(IsColumnPreviewCircular));
         Raise(nameof(ColumnPreviewDimensions));
         Raise(nameof(ColumnPreviewRebar));
-    }
-
-    private void RaiseMappingPreviewProperties()
-    {
-        Raise(nameof(MappingPreviewTitle));
-        Raise(nameof(IsMappingPreviewRectangular));
-        Raise(nameof(IsMappingPreviewCircular));
-        Raise(nameof(MappingPreviewDimensions));
-        Raise(nameof(MappingPreviewRebar));
     }
 
     private void RaiseCommandStates()
