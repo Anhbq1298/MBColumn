@@ -37,6 +37,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly IEtabsConnectionService connectionService;
     private readonly IEtabsColumnImportService columnImportService;
     private readonly IEtabsForceImportService forceImportService;
+    private readonly IEtabsForceCacheService? forceCacheService;
     private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
     private readonly UnitSystem targetUnitSystem;
@@ -45,16 +46,20 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private bool pierGroupsLoaded;
     private readonly RelayCommand connectCommand;
     private readonly RelayCommand disconnectCommand;
-    private readonly RelayCommand backCommand;
-    private readonly RelayCommand nextCommand;
     private readonly RelayCommand cancelCommand;
     private readonly RelayCommand selectAllCombosCommand;
     private readonly RelayCommand clearAllCombosCommand;
     private readonly RelayCommand refreshCombosCommand;
     private readonly RelayCommand addTargetGroupCommand;
+    private readonly RelayCommand applyImportCommand;
+    private readonly RelayCommand createImportGroupCommand;
+    private readonly RelayCommand<ImportGroupViewModel> assignToGroupCommand;
+    private readonly RelayCommand<ImportGroupViewModel> deleteImportGroupCommand;
+    private readonly AsyncRelayCommand buildForceCacheCommand;
 
-    private int currentStep = 1;
     private bool isConnected;
+    private ImportGroupViewModel? selectedImportGroup;
+    private string forceCacheStatus = "Not built";
     private string connectionStatus = "Not connected";
     private string modelName = "-";
     private string modelPath = "-";
@@ -93,6 +98,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IEtabsConnectionService connectionService,
         IEtabsColumnImportService columnImportService,
         IEtabsForceImportService forceImportService,
+        IEtabsForceCacheService? forceCacheService = null,
         IEtabsPierShellImportService? pierShellImportService = null,
         IIrregularPierGeometryBuilder? irregularGeometryBuilder = null,
         UnitSystem targetUnitSystem = UnitSystem.Metric)
@@ -101,6 +107,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         this.connectionService = connectionService;
         this.columnImportService = columnImportService;
         this.forceImportService = forceImportService;
+        this.forceCacheService = forceCacheService;
         this.pierShellImportService = pierShellImportService;
         this.irregularGeometryBuilder = irregularGeometryBuilder;
         this.targetUnitSystem = targetUnitSystem;
@@ -133,6 +140,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         FilteredLoadCombinations.Filter = FilterLoadCombination;
         ForceRows = [];
         SummaryRows = [];
+        ImportGroups = [];
 
         EtabsElementFilters = [EtabsElementFrame, EtabsElementShell];
         SectionTypeFilters = [AllTypes, TypeRectangular, TypeCircular];
@@ -149,13 +157,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         connectCommand = new RelayCommand(Connect, () => !IsConnected);
         disconnectCommand = new RelayCommand(Disconnect, () => IsConnected);
-        backCommand = new RelayCommand(Back, () => CurrentStep > 1);
-        nextCommand = new RelayCommand(Next, CanMoveNext);
         cancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         selectAllCombosCommand = new RelayCommand(() => SetAllLoadCombinations(true), () => LoadCombinations.Count > 0);
         clearAllCombosCommand = new RelayCommand(() => SetAllLoadCombinations(false), () => LoadCombinations.Count > 0);
         refreshCombosCommand = new RelayCommand(RefreshLoadCombinations, () => IsConnected);
         addTargetGroupCommand = new RelayCommand(AddTargetGroup);
+        applyImportCommand = new RelayCommand(ApplyImport, () => ImportGroups.Any(g => g.Items.Count > 0));
+        createImportGroupCommand = new RelayCommand(CreateNewImportGroup);
+        assignToGroupCommand = new RelayCommand<ImportGroupViewModel>(AssignSelectedItemsToGroup);
+        deleteImportGroupCommand = new RelayCommand<ImportGroupViewModel>(DeleteImportGroup);
+        buildForceCacheCommand = new AsyncRelayCommand(BuildForceCacheAsync,
+            () => IsConnected && forceCacheService is not null && LoadCombinations.Count > 0);
     }
 
     public event EventHandler<bool>? RequestClose;
@@ -172,6 +184,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICollectionView FilteredLoadCombinations { get; }
     public ObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
     public ObservableCollection<EtabsImportSummaryRowViewModel> SummaryRows { get; }
+    public ObservableCollection<ImportGroupViewModel> ImportGroups { get; }
     public IReadOnlyList<string> EtabsElementFilters { get; }
     public ObservableCollection<string> SectionTypeFilters { get; }
     public ObservableCollection<string> StoryFilters { get; }
@@ -180,26 +193,39 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     public ICommand ConnectCommand => connectCommand;
     public ICommand DisconnectCommand => disconnectCommand;
-    public ICommand BackCommand => backCommand;
-    public ICommand NextCommand => nextCommand;
     public ICommand CancelCommand => cancelCommand;
     public ICommand SelectAllCombosCommand => selectAllCombosCommand;
     public ICommand ClearAllCombosCommand => clearAllCombosCommand;
     public ICommand RefreshCombosCommand => refreshCombosCommand;
     public ICommand AddTargetGroupCommand => addTargetGroupCommand;
+    public ICommand ApplyImportCommand => applyImportCommand;
+    public ICommand CreateImportGroupCommand => createImportGroupCommand;
+    public ICommand AssignToGroupCommand => assignToGroupCommand;
+    public ICommand DeleteImportGroupCommand => deleteImportGroupCommand;
+    public ICommand BuildForceCacheCommand => buildForceCacheCommand;
+    public bool IsForceCacheAvailable => forceCacheService is not null;
 
-    public int CurrentStep
+    public ImportGroupViewModel? SelectedImportGroup
     {
-        get => currentStep;
-        private set
-        {
-            if (currentStep == value) return;
-            currentStep = value;
-            Raise();
-            RaiseStepProperties();
-            RaiseCommandStates();
-        }
+        get => selectedImportGroup;
+        set => Set(ref selectedImportGroup, value);
     }
+
+    public string ForceCacheStatus
+    {
+        get => forceCacheStatus;
+        private set => Set(ref forceCacheStatus, value);
+    }
+
+    public int UnassignedCount => Columns.Count(c =>
+        FilterColumn(c) && string.IsNullOrEmpty(c.ImportGroupName));
+
+    public int AssignedCount => Columns.Count(c =>
+        FilterColumn(c) && !string.IsNullOrEmpty(c.ImportGroupName));
+
+    public int ImportGroupsReadyCount => ImportGroups.Count(g => g.Items.Count > 0);
+
+    public bool CanApplyImport => ImportGroups.Any(g => g.Items.Count > 0);
 
     public bool IsConnected
     {
@@ -281,6 +307,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             selectedLabelFilter = value;
             Raise();
             FilteredColumns.Refresh();
+            RaiseImportSummary();
         }
     }
 
@@ -456,10 +483,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (selectedDuplicateHandling == value) return;
             selectedDuplicateHandling = value;
             Raise();
-            if (CurrentStep == 4)
-            {
-                BuildSummaryRows();
-            }
         }
     }
 
@@ -474,19 +497,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public string PreviewStatusText { get => previewStatusText; private set => Set(ref previewStatusText, value); }
     public bool HasBoundaryPreview => BoundaryPreviewPointCollection is { Count: >= 3 };
 
-    public bool IsStep1 => CurrentStep == 1;
-    public bool IsStep2 => CurrentStep == 2;
-    public bool IsStep3 => CurrentStep == 3;
-    public bool IsStep4 => CurrentStep == 4;
-    public string StepTitle => CurrentStep switch
-    {
-        1 => "Target Group, Shape & Section",
-        2 => "Build Design Tier",
-        3 => "Import Forces",
-        4 => "Preview & Apply",
-        _ => ""
-    };
-    public string NextButtonText => CurrentStep == 4 ? "Apply Import" : "Next";
     public int SelectedColumnCount => Columns.Count(c => c.IsSelected);
     public int MatchedTierObjectCount => Columns.Count(c => FilterTierObjectCandidate(c));
     public int SelectedLoadCombinationCount => LoadCombinations.Count(c => c.IsSelected);
@@ -663,85 +673,334 @@ public sealed class EtabsImportViewModel : ViewModelBase
         StoryOptions.Clear();
         ForceRows.Clear();
         SummaryRows.Clear();
+        ImportGroups.Clear();
+        SelectedImportGroup = null;
+        forceCacheService?.Clear();
+        ForceCacheStatus = forceCacheService is not null ? "Not built" : "Unavailable";
         pierBoundaryCache.Clear();
         pierGroupsLoaded = false;
         SelectedColumn = null;
         SelectedMapping = null;
         selectedUniqueSection = null;
         Raise(nameof(SelectedUniqueSection));
-        CurrentStep = 1;
         ResetColumnFilters();
         TierObjectCandidatesView.Refresh();
         RaiseCounts();
         RaiseTierProperties();
     }
 
-    private void Back()
+    private void CreateNewImportGroup()
     {
-        if (CurrentStep > 1)
-        {
-            CurrentStep--;
-        }
+        var section = SelectedUniqueSection?.SectionName ?? "Group";
+        var storyRange = string.IsNullOrWhiteSpace(StoryFrom) ? ""
+            : string.Equals(StoryFrom, StoryTo, StringComparison.OrdinalIgnoreCase)
+                ? StoryFrom
+                : $"{StoryFrom}-{StoryTo}";
+        var label = string.IsNullOrWhiteSpace(LabelTextFilter) ? "" : LabelTextFilter.Trim();
+
+        var parts = new[] { section, storyRange, label }
+            .Where(p => !string.IsNullOrWhiteSpace(p));
+        var baseName = SanitizeName(string.Join("_", parts));
+
+        var existingNames = ImportGroups.Select(g => g.GroupName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var name = NextAvailableGroupName(baseName, existingNames);
+
+        var group = new ImportGroupViewModel(name, OnImportGroupChanged);
+        ImportGroups.Add(group);
+        SelectedImportGroup = group;
+        RaiseImportSummary();
+        applyImportCommand.RaiseCanExecuteChanged();
     }
 
-    private void Next()
+    public void AssignSelectedItemsToGroup(ImportGroupViewModel targetGroup)
     {
-        if (CurrentStep == 1)
+        foreach (var col in Columns.Where(c => c.IsSelected).ToList())
         {
-            PrepareTierBuilder();
-            CurrentStep = 2;
-            return;
+            // Remove from any existing group
+            foreach (var existing in ImportGroups)
+                existing.RemoveItem(col);
+
+            targetGroup.AddItem(col);
         }
 
-        if (CurrentStep == 2)
-        {
-            BuildSectionMappings();
-            RefreshLoadCombinations();
-            GenerateForceRows();
-            CurrentStep = 3;
-            return;
-        }
-
-        if (CurrentStep == 3)
-        {
-            BuildSummaryRows();
-            CurrentStep = 4;
-            return;
-        }
-
-        CreateSections();
+        FilteredColumns.Refresh();
+        RaiseImportSummary();
+        applyImportCommand.RaiseCanExecuteChanged();
     }
 
-    private bool CanMoveNext()
-        => CurrentStep switch
-        {
-            1 => IsConnected && SelectedTargetGroup is not null && SelectedUniqueSection is not null,
-            2 => SelectedColumnCount > 0 && !string.IsNullOrWhiteSpace(TierName),
-            3 => SelectedLoadCombinationCount > 0 && SelectedForceRowCount > 0,
-            4 => SummaryCreateCount > 0,
-            _ => false
-        };
-
-    private void CreateSections()
+    public void RemoveItemFromGroup(ImportGroupViewModel group, EtabsColumnImportRowViewModel item)
     {
-        var sections = SummaryRows
-            .Where(row => !row.IsSkipped)
-            .Select(row => new EtabsImportedSectionInput(
-                row.NewSectionName,
-                CreateTierSnapshot(row),
-                row.UpdateExisting,
+        group.RemoveItem(item);
+        FilteredColumns.Refresh();
+        RaiseImportSummary();
+        applyImportCommand.RaiseCanExecuteChanged();
+    }
+
+    public void DeleteImportGroup(ImportGroupViewModel group)
+    {
+        foreach (var item in group.Items.ToList())
+            group.RemoveItem(item);
+
+        ImportGroups.Remove(group);
+        if (SelectedImportGroup == group)
+            SelectedImportGroup = ImportGroups.FirstOrDefault();
+
+        RaiseImportSummary();
+        applyImportCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ApplyImport()
+    {
+        var sections = new List<EtabsImportedSectionInput>();
+        var reservedNames = existingSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in ImportGroups.Where(g => g.Items.Count > 0))
+        {
+            var snapshot = CreateGroupSnapshot(group);
+            if (snapshot is null) continue;
+
+            var baseName = SanitizeName(group.GroupName);
+            var finalName = NextAvailableName(baseName, reservedNames);
+            reservedNames.Add(finalName);
+
+            sections.Add(new EtabsImportedSectionInput(
+                finalName,
+                snapshot,
+                UpdateExisting: false,
                 SelectedTargetGroup?.GroupId,
                 SelectedTargetGroup?.GroupName ?? "",
-                SelectedTargetGroup?.CreateGroup == true))
-            .ToList();
-
-        if (sections.Count == 0)
-        {
-            return;
+                SelectedTargetGroup?.CreateGroup == true));
         }
+
+        if (sections.Count == 0) return;
 
         ImportResult = new EtabsImportDialogResult(sections);
         RequestClose?.Invoke(this, true);
+    }
+
+    private ColumnInputSnapshot? CreateGroupSnapshot(ImportGroupViewModel group)
+    {
+        if (group.Items.Count == 0) return null;
+
+        var sourceColumn = group.Items[0];
+        var mapping = SectionMappings.FirstOrDefault(m =>
+            string.Equals(m.UniqueSection, sourceColumn.UniqueSection, StringComparison.OrdinalIgnoreCase))
+            ?? SectionMappings.FirstOrDefault();
+
+        if (mapping is null)
+        {
+            BuildSectionMappings();
+            mapping = SectionMappings.FirstOrDefault(m =>
+                string.Equals(m.UniqueSection, sourceColumn.UniqueSection, StringComparison.OrdinalIgnoreCase))
+                ?? SectionMappings.FirstOrDefault();
+        }
+
+        if (mapping is null) return null;
+
+        var objectNames = group.Items.Select(i => i.ObjectName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var selectedForces = ForceRows
+            .Where(f => f.IsSelected && objectNames.Contains(f.ObjectName))
+            .ToList();
+
+        var loadCases = selectedForces
+            .Select((force, index) =>
+            {
+                var station = NormalizeDemandStation(force.Station, force.Status);
+                var sourceLabel = string.IsNullOrWhiteSpace(force.Label) ? force.Pier : force.Label;
+                return new SnapshotLoadCase
+                {
+                    Id = $"etabs_{index + 1}",
+                    OriginalLoadCaseName = force.LoadCombination,
+                    SourceObjectName = force.ObjectName,
+                    SourceObjectLabel = sourceLabel,
+                    Story = force.Story,
+                    Station = station,
+                    Source = "ETABS",
+                    Label = BuildDemandCaseLabel(force.LoadCombination, sourceLabel, force.Story, station),
+                    Pu = force.P,
+                    Mux = force.M2,
+                    Muy = force.M3,
+                    IsActive = true
+                };
+            })
+            .ToList();
+
+        IReadOnlyList<Point2D> boundary;
+        IReadOnlyList<IReadOnlyList<Point2D>> openings = [];
+        string importMode = "FrameSection";
+        List<string> sourceShells = [];
+        List<string> sourceSectionProps = [];
+        string? boundaryWarning = null;
+
+        if (mapping.IsIrregular)
+        {
+            var (irr, ops, shells, props, warn) = BuildIrregularBoundary(
+                sourceColumn.Pier, sourceColumn.Story, mapping);
+            boundary = irr;
+            openings = ops;
+            sourceShells = shells;
+            sourceSectionProps = props;
+            boundaryWarning = warn;
+            importMode = "IrregularPierShell";
+        }
+        else
+        {
+            boundary = BuildBoundaryPoints(mapping);
+        }
+
+        var rebars = BuildEqualSpacingCustomRebars(mapping, boundary);
+        var bbox = PolygonGeometry.BoundingBox(boundary);
+        var boundingWidth = mapping.IsCircular ? mapping.Diameter : (mapping.IsIrregular ? bbox.Width : mapping.Width);
+        var boundingHeight = mapping.IsCircular ? mapping.Diameter : (mapping.IsIrregular ? bbox.Height : mapping.Height);
+        var primaryForce = loadCases.FirstOrDefault();
+
+        var snapshot = new ColumnInputSnapshot
+        {
+            UnitSystem = targetUnitSystem.ToString(),
+            DesignCode = DesignCodeType.Aci318Style.ToString(),
+            Ec2Solver = Ec2SolverType.Fiber.ToString(),
+            IntegrationMethod = SectionIntegrationMethod.Polygon.ToString(),
+            AlphaCc = 0.85,
+            SectionShape = mapping.IsRectangular ? SectionShapeType.Rectangular.ToString()
+                         : mapping.IsCircular    ? SectionShapeType.Circular.ToString()
+                         :                         SectionShapeType.Irregular.ToString(),
+            Width = boundingWidth,
+            Height = boundingHeight,
+            Diameter = Math.Max(boundingWidth, boundingHeight),
+            Cover = mapping.Cover,
+            Fc = InferConcreteStrength(mapping.Material),
+            Fy = 420,
+            Es = 200000,
+            MaterialLibrary = MaterialLibraryType.Custom.ToString(),
+            BarSize = mapping.BarSize,
+            BarCount = mapping.IsRectangular ? mapping.RectangularBarCount
+                     : mapping.IsCircular    ? mapping.TotalBars
+                     :                         rebars.Count,
+            Spacing = mapping.TieSpacing,
+            RebarLayoutType = mapping.IsRectangular ? "SidesDifferent"
+                            : mapping.IsCircular    ? "EqualSpacing"
+                            :                         "CustomCoordinates",
+            TopBarCount    = mapping.IsRectangular ? mapping.BarsAlongWidth  : 0,
+            BottomBarCount = mapping.IsRectangular ? mapping.BarsAlongWidth  : 0,
+            LeftBarCount   = mapping.IsRectangular ? mapping.BarsAlongHeight : 0,
+            RightBarCount  = mapping.IsRectangular ? mapping.BarsAlongHeight : 0,
+            IrregularBarSize = mapping.BarSize,
+            IrregularSpacing = mapping.TieSpacing,
+            IrregularRebarMode = mapping.IsIrregular ? "CustomCoordinates" : "EqualSpacing",
+            BoundaryPoints = mapping.IsIrregular
+                ? boundary.Select((pt, i) => new SnapshotBoundaryPoint { PtIndex = i + 1, X = Math.Round(pt.X, 6), Y = Math.Round(pt.Y, 6) }).ToList()
+                : [],
+            OpeningPoints = mapping.IsIrregular
+                ? openings.Select(op => op.Select((pt, j) => new SnapshotBoundaryPoint { PtIndex = j + 1, X = Math.Round(pt.X, 6), Y = Math.Round(pt.Y, 6) }).ToList()).ToList()
+                : [],
+            Rebars = mapping.IsIrregular ? rebars : [],
+            Pu = primaryForce?.Pu ?? 0,
+            Mux = primaryForce?.Mux ?? 0,
+            Muy = primaryForce?.Muy ?? 0,
+            PmAngleDegrees = 0,
+            AxialLoad = 0,
+            LoadCases = loadCases,
+            DesignTierName = group.GroupName,
+            DesignTierSource = "ETABS",
+            EtabsMetadata = new EtabsImportMetadataDto
+            {
+                SourceModelPath = ModelPath,
+                SourceModelName = ModelName,
+                EtabsObjectName = sourceColumn.ObjectName,
+                PierName = sourceColumn.Pier,
+                StoryName = sourceColumn.Story,
+                Label = sourceColumn.Label,
+                EtabsSectionName = sourceColumn.EtabsSectionName,
+                UniqueSectionDisplayName = sourceColumn.UniqueSection,
+                ImportedAt = DateTime.UtcNow,
+                ImportedUnits = PresentUnits,
+                MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+                SelectedLoadCombinations = loadCases.Select(lc => lc.OriginalLoadCaseName).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                ImportMode = importMode,
+                SourceShellNames = sourceShells,
+                SourceAreaSectionProperties = sourceSectionProps,
+                IrregularBoundaryWarning = boundaryWarning,
+                OpeningCount = openings.Count
+            },
+            EtabsTierMetadata = new EtabsTierImportMetadataDto
+            {
+                SourceModelPath = ModelPath,
+                SourceModelName = ModelName,
+                ImportedUnits = PresentUnits,
+                MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+                ShapeType = mapping.IsRectangular ? "Rectangular" : mapping.IsCircular ? "Circular" : "Irregular",
+                SourceSectionName = sourceColumn.EtabsSectionName,
+                UniqueSectionDisplayName = sourceColumn.UniqueSection,
+                TargetGroupName = SelectedTargetGroup?.GroupName ?? "",
+                TargetGroupId = SelectedTargetGroup?.GroupId,
+                TierName = group.GroupName,
+                StoryFrom = group.Items.Select(i => i.Story).OrderBy(s => s).FirstOrDefault() ?? "",
+                StoryTo = group.Items.Select(i => i.Story).OrderBy(s => s).LastOrDefault() ?? "",
+                LabelFilter = "",
+                SourceObjects = group.Items.Select(i => new EtabsSourceObjectRefDto
+                {
+                    ObjectName = i.ObjectName,
+                    Label = i.Label,
+                    Story = i.Story,
+                    SectionName = i.EtabsSectionName
+                }).ToList(),
+                SelectedLoadCombinations = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList(),
+                ImportTop = ImportTop,
+                ImportBottom = ImportBottom,
+                ImportMid = ImportMid,
+                ImportedAt = DateTime.UtcNow
+            }
+        };
+
+        return snapshot;
+    }
+
+    private async Task BuildForceCacheAsync()
+    {
+        if (forceCacheService is null) return;
+
+        ForceCacheStatus = "Building…";
+        buildForceCacheCommand.RaiseCanExecuteChanged();
+
+        var allCombos = LoadCombinations.Select(c => c.Name).ToList();
+        var result = await Task.Run(() =>
+        {
+            var forces = new List<EtabsForceResultDto>();
+
+            var frameColumns = Columns.Where(c => !c.IsIrregular).ToList();
+            if (frameColumns.Count > 0)
+            {
+                var dtos = frameColumns.Select(c => new EtabsColumnImportDto(
+                    c.ObjectName, c.Pier, c.Story, c.Label,
+                    c.UniqueSection, c.EtabsSectionName, c.Material,
+                    c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                forces.AddRange(forceImportService.GetForces(dtos, allCombos, targetUnitSystem));
+            }
+
+            var piers = Columns.Where(c => c.IsIrregular)
+                .Select(c => (c.Pier, c.Story)).ToList();
+            if (piers.Count > 0)
+                forces.AddRange(forceImportService.GetPierForces(piers, allCombos, targetUnitSystem));
+
+            return forceCacheService.Build(forces);
+        });
+
+        ForceCacheStatus = result.Message;
+        buildForceCacheCommand.RaiseCanExecuteChanged();
+    }
+
+    private void OnImportGroupChanged()
+    {
+        RaiseImportSummary();
+        applyImportCommand.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseImportSummary()
+    {
+        Raise(nameof(UnassignedCount));
+        Raise(nameof(AssignedCount));
+        Raise(nameof(ImportGroupsReadyCount));
+        Raise(nameof(CanApplyImport));
     }
 
     private void PrepareTierBuilder()
@@ -990,42 +1249,54 @@ public sealed class EtabsImportViewModel : ViewModelBase
             return;
         }
 
-        // Frame column forces
-        var selectedFrameColumns = Columns.Where(c => c.IsSelected && !c.IsIrregular).ToList();
-        if (selectedFrameColumns.Count > 0)
-        {
-            try
-            {
-                var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
-                    c.ObjectName, c.Pier, c.Story, c.Label,
-                    c.UniqueSection, c.EtabsSectionName, c.Material,
-                    c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+        var selectedObjects = Columns.Where(c => c.IsSelected).Select(c => c.ObjectName).ToList();
 
-                foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem))
-                    AddForceRow(force);
-            }
-            catch (Exception ex)
-            {
-                ConnectionStatus = $"Warning: could not load frame forces — {ex.Message}";
-            }
+        // Use cache when available, otherwise fall back to live COM calls.
+        if (forceCacheService?.IsBuilt == true)
+        {
+            var query = new EtabsForceCacheQuery(selectedObjects, selectedCombos);
+            foreach (var force in forceCacheService.Query(query))
+                AddForceRow(force);
         }
-
-        // Pier forces (Bottom + Top per story+pier+combo)
-        var selectedPiers = Columns
-            .Where(c => c.IsSelected && c.IsIrregular)
-            .Select(c => (c.Pier, c.Story))
-            .ToList();
-
-        if (selectedPiers.Count > 0)
+        else
         {
-            try
+            // Frame column forces (live COM)
+            var selectedFrameColumns = Columns.Where(c => c.IsSelected && !c.IsIrregular).ToList();
+            if (selectedFrameColumns.Count > 0)
             {
-                foreach (var force in forceImportService.GetPierForces(selectedPiers, selectedCombos, targetUnitSystem))
-                    AddForceRow(force);
+                try
+                {
+                    var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
+                        c.ObjectName, c.Pier, c.Story, c.Label,
+                        c.UniqueSection, c.EtabsSectionName, c.Material,
+                        c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+
+                    foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem))
+                        AddForceRow(force);
+                }
+                catch (Exception ex)
+                {
+                    ConnectionStatus = $"Warning: could not load frame forces — {ex.Message}";
+                }
             }
-            catch (Exception ex)
+
+            // Pier forces (live COM)
+            var selectedPiers = Columns
+                .Where(c => c.IsSelected && c.IsIrregular)
+                .Select(c => (c.Pier, c.Story))
+                .ToList();
+
+            if (selectedPiers.Count > 0)
             {
-                ConnectionStatus = $"Warning: could not load pier forces — {ex.Message}";
+                try
+                {
+                    foreach (var force in forceImportService.GetPierForces(selectedPiers, selectedCombos, targetUnitSystem))
+                        AddForceRow(force);
+                }
+                catch (Exception ex)
+                {
+                    ConnectionStatus = $"Warning: could not load pier forces — {ex.Message}";
+                }
             }
         }
 
@@ -1823,11 +2094,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void OnMappingChanged()
     {
-        if (CurrentStep == 4)
-        {
-            BuildSummaryRows();
-        }
-
         RaiseCommandStates();
     }
 
@@ -1908,16 +2174,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(PreviewStationsText));
     }
 
-    private void RaiseStepProperties()
-    {
-        Raise(nameof(IsStep1));
-        Raise(nameof(IsStep2));
-        Raise(nameof(IsStep3));
-        Raise(nameof(IsStep4));
-        Raise(nameof(StepTitle));
-        Raise(nameof(NextButtonText));
-    }
-
     private void RaiseColumnPreviewProperties()
     {
         Raise(nameof(ColumnPreviewTitle));
@@ -1931,8 +2187,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         connectCommand.RaiseCanExecuteChanged();
         disconnectCommand.RaiseCanExecuteChanged();
-        backCommand.RaiseCanExecuteChanged();
-        nextCommand.RaiseCanExecuteChanged();
+        applyImportCommand.RaiseCanExecuteChanged();
         selectAllCombosCommand.RaiseCanExecuteChanged();
         clearAllCombosCommand.RaiseCanExecuteChanged();
         refreshCombosCommand.RaiseCanExecuteChanged();

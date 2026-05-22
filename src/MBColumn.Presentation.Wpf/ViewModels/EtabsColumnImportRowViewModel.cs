@@ -6,6 +6,7 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
 {
     private readonly Action selectionChanged;
     private bool isSelected;
+    private string importGroupName = "";
 
     public EtabsColumnImportRowViewModel(
         Action selectionChanged,
@@ -75,4 +76,12 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
         _ => SectionType.ToString()
     };
     public string SectionKey => $"{EtabsSectionName}|{UniqueSection}|{SectionType}";
+
+    public string ImportGroupName
+    {
+        get => importGroupName;
+        set => Set(ref importGroupName, value);
+    }
+
+    public bool IsAssigned => !string.IsNullOrEmpty(importGroupName);
 }

@@ -129,56 +129,11 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.15*"
-                              MinWidth="220" />
-            <ColumnDefinition Width="0.35*"
-                              MinWidth="300" />
-            <ColumnDefinition Width="*"
-                              MinWidth="550" />
-        </Grid.ColumnDefinitions>
-
-        <!-- Frozen header row -->
-        <Border Grid.Row="0"
-                Grid.ColumnSpan="3"
-                Background="White"
-                BorderBrush="{DynamicResource BorderGreyBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="0,6,0,6">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="0.15*"
-                                      MinWidth="220" />
-                    <ColumnDefinition Width="0.35*"
-                                      MinWidth="300" />
-                    <ColumnDefinition Width="*"
-                                      MinWidth="550" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="Project Settings"
-                           Style="{StaticResource ColumnHeaderTextStyle}"
-                           Margin="0" />
-                <TextBlock Grid.Column="1"
-                           Text="Demand Cases"
-                           Style="{StaticResource ColumnHeaderTextStyle}"
-                           Margin="0" />
-                <TextBlock Grid.Column="2"
-                           Text="Section + Rebar"
-                           Style="{StaticResource ColumnHeaderTextStyle}"
-                           Margin="0" />
-            </Grid>
-        </Border>
-
-        <ScrollViewer Grid.Row="1"
-                      Grid.Column="0"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Margin="0,0,14,0">
+    <TabControl>
+        <TabItem Header="General Settings">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="4,6,4,4">
             <StackPanel>
                 <GroupBox Header="General"
                           Background="White"
@@ -329,11 +284,11 @@
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
-        <ScrollViewer Grid.Row="1"
-                      Grid.Column="1"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Margin="0,0,14,0">
+        </TabItem>
+        <TabItem Header="Load Cases">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="4,6,4,4">
             <StackPanel>
                 <GroupBox Header="Demand Cases"
                           Background="White"
@@ -524,10 +479,11 @@
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
-        <ScrollViewer Grid.Row="1"
-                      Grid.Column="2"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+        </TabItem>
+        <TabItem Header="Section + Rebar">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="4,6,4,4">
             <StackPanel>
                 <Border Style="{StaticResource CardBorderStyle}"
                         Padding="18"
@@ -1424,5 +1380,6 @@
                 </Grid>
             </StackPanel>
         </ScrollViewer>
-    </Grid>
+        </TabItem>
+    </TabControl>
 </UserControl>

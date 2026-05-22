@@ -10,6 +10,7 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
     private readonly IEtabsConnectionService connectionService;
     private readonly IEtabsColumnImportService columnImportService;
     private readonly IEtabsForceImportService forceImportService;
+    private readonly IEtabsForceCacheService? forceCacheService;
     private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
 
@@ -17,12 +18,14 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         IEtabsConnectionService connectionService,
         IEtabsColumnImportService columnImportService,
         IEtabsForceImportService forceImportService,
+        IEtabsForceCacheService? forceCacheService = null,
         IEtabsPierShellImportService? pierShellImportService = null,
         IIrregularPierGeometryBuilder? irregularGeometryBuilder = null)
     {
         this.connectionService = connectionService;
         this.columnImportService = columnImportService;
         this.forceImportService = forceImportService;
+        this.forceCacheService = forceCacheService;
         this.pierShellImportService = pierShellImportService;
         this.irregularGeometryBuilder = irregularGeometryBuilder;
     }
@@ -41,6 +44,7 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
             connectionService,
             columnImportService,
             forceImportService,
+            forceCacheService,
             pierShellImportService,
             irregularGeometryBuilder,
             targetSystem);

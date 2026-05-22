@@ -156,6 +156,7 @@
                             Background="{DynamicResource PrimaryNavyBrush}"
                             Padding="10,6">
                         <DockPanel>
+                            <!-- + Section button -->
                             <Button DockPanel.Dock="Right"
                                     Click="AddSectionButton_Click"
                                     ToolTip="Add Section"
@@ -175,6 +176,20 @@
                                                   Command="{Binding Path=PlacementTarget.DataContext.ImportFromEtabsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                     </ContextMenu>
                                 </Button.ContextMenu>
+                            </Button>
+                            <!-- + Group button -->
+                            <Button DockPanel.Dock="Right"
+                                    Command="{Binding Explorer.AddGroupCommand}"
+                                    ToolTip="Add Group"
+                                    Width="22" Height="22"
+                                    Padding="0"
+                                    Margin="0,0,4,0"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    MinHeight="0"
+                                    Cursor="Hand">
+                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Button>
                             <TextBlock Text="{Binding Explorer.ProjectName}"
                                        Foreground="White"
