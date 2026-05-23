@@ -68,6 +68,34 @@
         <Style x:Key="StepCircleActiveStyle" TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
             <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
         </Style>
+        <Style x:Key="StepButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource BorderSoftBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
@@ -114,136 +142,143 @@
                         VerticalAlignment="Center">
 
                 <!-- Step 1 -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Margin="0,0,8,0">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFlow1}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   FontSize="12" FontWeight="SemiBold">
+                <Button Command="{Binding GoToFlow1Command}" Style="{StaticResource StepButtonStyle}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Margin="0,0,8,0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlow1}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="12" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFlow1}" Value="True">
+                                                <Setter Property="Foreground" Value="White" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                        <TextBlock Text="Group Filtering" VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="12" />
                                     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsFlow1}" Value="True">
-                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                    </Border>
-                    <TextBlock Text="Group Filtering" VerticalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontSize" Value="12" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFlow1}" Value="True">
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                    </StackPanel>
+                </Button>
 
                 <Rectangle Width="50" Height="1" Fill="{DynamicResource BorderGreyBrush}"
                            VerticalAlignment="Center" Margin="14,0" />
 
                 <!-- Step 2 -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Margin="0,0,8,0">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFlow2}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   FontSize="12" FontWeight="SemiBold">
+                <Button Command="{Binding GoToFlow2Command}" Style="{StaticResource StepButtonStyle}"
+                        ToolTip="Connect to ETABS first to access Force Import">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Margin="0,0,8,0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlow2}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="12" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFlow2}" Value="True">
+                                                <Setter Property="Foreground" Value="White" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                        <TextBlock Text="Force Import" VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="12" />
                                     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsFlow2}" Value="True">
-                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                    </Border>
-                    <TextBlock Text="Force Import" VerticalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontSize" Value="12" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFlow2}" Value="True">
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                    </StackPanel>
+                </Button>
 
                 <Rectangle Width="50" Height="1" Fill="{DynamicResource BorderGreyBrush}"
                            VerticalAlignment="Center" Margin="14,0" />
 
                 <!-- Step 3 -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Margin="0,0,8,0">
-                        <Border.Style>
-                            <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFlow3}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   FontSize="12" FontWeight="SemiBold">
+                <Button Command="{Binding GoToFlow3Command}" Style="{StaticResource StepButtonStyle}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Margin="0,0,8,0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource StepCircleStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlow3}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="12" FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFlow3}" Value="True">
+                                                <Setter Property="Foreground" Value="White" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                        <TextBlock Text="Review &amp; Import" VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize" Value="12" />
                                     <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsFlow3}" Value="True">
-                                            <Setter Property="Foreground" Value="White" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                    </Border>
-                    <TextBlock Text="Review &amp; Import" VerticalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontSize" Value="12" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsFlow3}" Value="True">
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Border>
 
@@ -694,10 +729,30 @@
                                     ToolTip="Refresh load combinations from ETABS" />
                         </StackPanel>
                     </DockPanel>
-                    <TextBox DockPanel.Dock="Top"
-                             Text="{Binding LoadCombinationFilterText, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,0,6"
-                             FontSize="11" />
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <TextBox Text="{Binding LoadCombinationFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="11" />
+                        <TextBlock Text="Search combinations..."
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   IsHitTestVisible="False"
+                                   Margin="6,0,0,0"
+                                   VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding LoadCombinationFilterText}" Value="">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding LoadCombinationFilterText}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
                     <ListBox ItemsSource="{Binding FilteredLoadCombinations}"
                              BorderBrush="{DynamicResource BorderGreyBrush}"
                              FontSize="12">

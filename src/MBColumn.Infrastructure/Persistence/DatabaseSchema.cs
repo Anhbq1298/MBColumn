@@ -4,7 +4,8 @@ namespace MBColumn.Infrastructure.Persistence;
 
 internal static class DatabaseSchema
 {
-    private const int CurrentVersion = 2;
+    private const int CurrentVersion = 4;
+    public const string AppVersion = "1.0.0";
 
     public static void EnsureCreated(SqliteConnection connection, string projectName)
     {
@@ -22,6 +23,7 @@ internal static class DatabaseSchema
                 Id          INTEGER PRIMARY KEY,
                 Name        TEXT NOT NULL,
                 Description TEXT,
+                AppVersion  TEXT NOT NULL DEFAULT '1.0.0',
                 CreatedAt   TEXT NOT NULL,
                 ModifiedAt  TEXT NOT NULL
             )
@@ -46,6 +48,7 @@ internal static class DatabaseSchema
                 Name       TEXT NOT NULL,
                 SortOrder  INTEGER NOT NULL DEFAULT 0,
                 InputJson  TEXT NOT NULL DEFAULT '{}',
+                ResultJson TEXT,
                 CreatedAt  TEXT NOT NULL,
                 ModifiedAt TEXT NOT NULL
             )
@@ -70,8 +73,9 @@ internal static class DatabaseSchema
             vCmd.ExecuteNonQuery();
 
             using var pCmd = connection.CreateCommand();
-            pCmd.CommandText = "INSERT INTO Project (Name, Description, CreatedAt, ModifiedAt) VALUES (@name, NULL, @now, @now)";
+            pCmd.CommandText = "INSERT INTO Project (Name, Description, AppVersion, CreatedAt, ModifiedAt) VALUES (@name, NULL, @ver, @now, @now)";
             pCmd.Parameters.AddWithValue("@name", projectName);
+            pCmd.Parameters.AddWithValue("@ver", AppVersion);
             pCmd.Parameters.AddWithValue("@now", now);
             pCmd.ExecuteNonQuery();
         }
@@ -84,10 +88,36 @@ internal static class DatabaseSchema
             if (version < 2)
             {
                 Exec(connection, "ALTER TABLE Column ADD COLUMN GroupId INTEGER REFERENCES SectionGroup(Id) ON DELETE SET NULL;");
-                
+
                 using var vCmd = connection.CreateCommand();
                 vCmd.CommandText = "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (@v, @now)";
                 vCmd.Parameters.AddWithValue("@v", 2);
+                vCmd.Parameters.AddWithValue("@now", now);
+                vCmd.ExecuteNonQuery();
+
+                version = 2;
+            }
+
+            if (version < 3)
+            {
+                try { Exec(connection, "ALTER TABLE Project ADD COLUMN AppVersion TEXT NOT NULL DEFAULT '1.0.0';"); } catch { }
+
+                using var vCmd = connection.CreateCommand();
+                vCmd.CommandText = "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (@v, @now)";
+                vCmd.Parameters.AddWithValue("@v", 3);
+                vCmd.Parameters.AddWithValue("@now", now);
+                vCmd.ExecuteNonQuery();
+
+                version = 3;
+            }
+
+            if (version < 4)
+            {
+                try { Exec(connection, "ALTER TABLE Column ADD COLUMN ResultJson TEXT;"); } catch { }
+
+                using var vCmd = connection.CreateCommand();
+                vCmd.CommandText = "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (@v, @now)";
+                vCmd.Parameters.AddWithValue("@v", 4);
                 vCmd.Parameters.AddWithValue("@now", now);
                 vCmd.ExecuteNonQuery();
             }

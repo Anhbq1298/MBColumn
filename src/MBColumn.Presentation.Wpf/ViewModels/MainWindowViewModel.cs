@@ -226,9 +226,12 @@ public sealed class MainWindowViewModel : ViewModelBase
             SelectedMainTabIndex = 1;
             RaiseResultStateProperties();
 
-            // Auto-save column input after successful calculation
+            // Auto-save column input and result after successful calculation
             if (currentColumn is not null)
+            {
                 SaveCurrentColumnInput();
+                projectService.SaveColumnResult(currentColumn.Id, result);
+            }
 
             RefreshReportFromCurrentWorkspace();
         }
@@ -269,6 +272,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                     Input.LoadFromSnapshot(snapshot);
                     var result = calculationService.Calculate(Input.ToDto());
                     projectSession.StoreColumnResult(column.Id, result);
+                    projectService.SaveColumnResult(column.Id, result);
                     Explorer.SetSectionStatus(column.Id, SectionStatus.Calculated);
                 }
                 catch (Exception ex)
@@ -697,12 +701,32 @@ public sealed class MainWindowViewModel : ViewModelBase
                     IsCalculationOutdated ? SectionStatus.Outdated : SectionStatus.Calculated);
             }
         }
+        else if (currentColumn is not null)
+        {
+            // Try restoring persisted result from the last saved calculation
+            var persisted = projectService.LoadColumnResult(currentColumn.Id);
+            if (persisted is not null)
+            {
+                projectSession.StoreColumnResult(currentColumn.Id, persisted);
+                Result.Result = persisted;
+                IsCalculationOutdated = false;
+                if (Explorer is not null)
+                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
+            }
+            else
+            {
+                Result.Result = null;
+                IsCalculationOutdated = false;
+                if (Explorer is not null)
+                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.NotCalculated);
+                if (SelectedMainTabIndex == 1)
+                    SelectedMainTabIndex = 0;
+            }
+        }
         else
         {
             Result.Result = null;
             IsCalculationOutdated = false;
-            if (Explorer is not null && currentColumn is not null)
-                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.NotCalculated);
             if (SelectedMainTabIndex == 1)
                 SelectedMainTabIndex = 0;
         }

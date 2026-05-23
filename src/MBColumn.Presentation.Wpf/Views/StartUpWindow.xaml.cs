@@ -33,6 +33,7 @@ public partial class StartUpWindow : Window
         BtnOpen.Click += BtnOpen_Click;
         BtnInfo.Click += BtnInfo_Click;
         BtnCancel.Click += (_, _) => { DialogResult = false; };
+        BtnClearRecent.Click += (_, _) => { recentService.ClearRecent(); LoadRecents(); ClearProjectPreview(); };
     }
 
     protected override void OnActivated(EventArgs e)
@@ -45,7 +46,7 @@ public partial class StartUpWindow : Window
     private void LoadRecents()
     {
         var items = recentService.GetRecent()
-            .Where(File.Exists)
+            .Where(p => File.Exists(p) && p.EndsWith(".mbc", StringComparison.OrdinalIgnoreCase))
             .Select(p => new RecentFileItem { FilePath = p })
             .ToList();
         RecentList.ItemsSource = items;
@@ -154,7 +155,7 @@ public partial class StartUpWindow : Window
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Open MBColumn Project",
-            Filter = "MBColumn Project (*.mbc;*.msd)|*.mbc;*.msd|Legacy MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*",
+            Filter = "MBColumn Project (*.mbc)|*.mbc",
             DefaultExt = ".mbc"
         };
 

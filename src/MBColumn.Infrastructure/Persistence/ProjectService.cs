@@ -1,4 +1,5 @@
 using Dapper;
+using MBColumn.Application.DTOs;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using Microsoft.Data.Sqlite;
@@ -343,6 +344,35 @@ public sealed class ProjectService : IProjectService, IDisposable
         if (string.IsNullOrWhiteSpace(json) || json == "{}") return null;
         return JsonSerializer.Deserialize<ColumnInputSnapshot>(json);
     }
+
+    public void SaveColumnResult(int columnId, CalculationResultDto result)
+    {
+        EnsureConnection();
+        var json = JsonSerializer.Serialize(result, ResultJsonOptions);
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        conn.Execute(
+            "UPDATE Column SET ResultJson = @json WHERE Id = @id",
+            new { json, id = columnId });
+    }
+
+    public CalculationResultDto? LoadColumnResult(int columnId)
+    {
+        if (connectionString is null) return null;
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var json = conn.ExecuteScalar<string>(
+            "SELECT ResultJson FROM Column WHERE Id = @id", new { id = columnId });
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return JsonSerializer.Deserialize<CalculationResultDto>(json, ResultJsonOptions); }
+        catch { return null; }
+    }
+
+    private static readonly System.Text.Json.JsonSerializerOptions ResultJsonOptions = new()
+    {
+        IncludeFields = false,
+        WriteIndented = false
+    };
 
     public void MarkModified()
     {

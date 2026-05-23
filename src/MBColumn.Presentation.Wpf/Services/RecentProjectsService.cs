@@ -34,6 +34,11 @@ public sealed class RecentProjectsService
         }
     }
 
+    public void ClearRecent()
+    {
+        try { File.WriteAllText(filePath, "[]"); } catch { }
+    }
+
     public void AddRecent(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return;

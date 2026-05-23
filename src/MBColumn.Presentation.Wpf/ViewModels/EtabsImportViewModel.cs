@@ -213,6 +213,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICommand AssignToGroupCommand => assignToGroupCommand;
     public ICommand DeleteImportGroupCommand => deleteImportGroupCommand;
     public ICommand BuildForceCacheCommand => buildForceCacheCommand;
+    public ICommand GoToFlow1Command => goToFlow1Command;
     public ICommand GoToFlow2Command => goToFlow2Command;
     public ICommand GoToFlow3Command => goToFlow3Command;
     public ICommand GoBackCommand => goBackCommand;

@@ -8,8 +8,8 @@ public interface IProjectFileDialogService
 
 public sealed class ProjectFileDialogService : IProjectFileDialogService
 {
-    private const string OpenProjectFilter = "MBColumn Project (*.mbc;*.msd)|*.mbc;*.msd|Legacy MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*";
-    private const string SaveProjectFilter = "MBColumn Project (*.mbc)|*.mbc|Legacy MBColumn Project (*.msd)|*.msd|All Files (*.*)|*.*";
+    private const string OpenProjectFilter = "MBColumn Project (*.mbc)|*.mbc";
+    private const string SaveProjectFilter = "MBColumn Project (*.mbc)|*.mbc";
 
     public string? ShowOpenProjectDialog()
     {

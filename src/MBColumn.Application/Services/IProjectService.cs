@@ -1,3 +1,4 @@
+using MBColumn.Application.DTOs;
 using MBColumn.Application.DTOs.Persistence;
 
 namespace MBColumn.Application.Services;
@@ -34,6 +35,9 @@ public interface IProjectService
 
     void SaveColumnInput(int columnId, ColumnInputSnapshot snapshot);
     ColumnInputSnapshot? LoadColumnInput(int columnId);
+
+    void SaveColumnResult(int columnId, CalculationResultDto result);
+    CalculationResultDto? LoadColumnResult(int columnId);
 
     void MarkModified();
 
