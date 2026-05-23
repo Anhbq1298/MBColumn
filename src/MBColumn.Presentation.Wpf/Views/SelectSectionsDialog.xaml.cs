@@ -10,7 +10,7 @@ public partial class SelectSectionsDialog : Window
     public class SectionSelectionItem
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public bool IsSelected { get; set; }
     }
 

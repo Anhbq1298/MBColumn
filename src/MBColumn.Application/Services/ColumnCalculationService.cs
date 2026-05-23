@@ -147,16 +147,18 @@ public sealed class ColumnCalculationService(
             activeCases = [new LoadCaseDto("default", "LC1", input.Pu, input.Mux, input.Muy, true, input.ForceUnit, input.MomentUnit)];
         }
 
-        // Check every load case against the surface
-        var caseResults = new List<(LoadCaseDto Case, LoadDemand Demand, RatioResult Ratio)>();
-        foreach (var lc in activeCases)
+        // Check every load case against the surface using batch processing
+        var demands = activeCases.Select(lc => new LoadDemand(
+            units.ForceToN(lc.Pu, lc.ForceUnit),
+            units.MomentToNmm(lc.Mux, lc.MomentUnit),
+            units.MomentToNmm(lc.Muy, lc.MomentUnit))).ToList();
+
+        var batchRatios = ratioCheck.CheckBatch(surface, demands);
+
+        var caseResults = new List<(LoadCaseDto Case, LoadDemand Demand, RatioResult Ratio)>(activeCases.Count);
+        for (int i = 0; i < activeCases.Count; i++)
         {
-            var lcDemand = new LoadDemand(
-                units.ForceToN(lc.Pu, lc.ForceUnit),
-                units.MomentToNmm(lc.Mux, lc.MomentUnit),
-                units.MomentToNmm(lc.Muy, lc.MomentUnit));
-            var lcRatio = ratioCheck.Check(surface, lcDemand);
-            caseResults.Add((lc, lcDemand, lcRatio));
+            caseResults.Add((activeCases[i], demands[i], batchRatios[i]));
         }
 
         // Governing = highest demand/capacity ratio
@@ -183,7 +185,12 @@ public sealed class ColumnCalculationService(
                 r.Ratio.Status,
                 govPt.Phi,
                 govPt.ThetaDegrees,
-                govPt.NeutralAxisDepthMm);
+                govPt.NeutralAxisDepthMm)
+            {
+                CapacityPDisplay = units.ForceFromN(r.Ratio.CapacityPn, input.ForceUnit),
+                CapacityMxDisplay = units.MomentFromNmm(r.Ratio.CapacityMnx, input.MomentUnit),
+                CapacityMyDisplay = units.MomentFromNmm(r.Ratio.CapacityMny, input.MomentUnit)
+            };
         }).ToList();
 
         var specialEntries = SpecialCapacityPointsService.Build(surface, section, fyMpa, esMpa, fcMpa, codeService);

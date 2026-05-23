@@ -1,6 +1,7 @@
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
+using MBColumn.Presentation.Wpf.Collections;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -36,7 +37,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         this.promptSelectSections = promptSelectSections;
         this.messageService = messageService;
 
-        Nodes = new ObservableCollection<ExplorerNodeViewModel>();
+        Nodes = new BulkObservableCollection<ExplorerNodeViewModel>();
 
         AddGroupCommand = new RelayCommand(AddGroup);
         AddColumnCommand = new RelayCommand(() => AddColumn(null));
@@ -57,7 +58,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         private set => Set(ref projectName, value);
     }
 
-    public ObservableCollection<ExplorerNodeViewModel> Nodes { get; }
+    public BulkObservableCollection<ExplorerNodeViewModel> Nodes { get; }
 
     public ExplorerNodeViewModel? SelectedNode
     {
@@ -282,12 +283,16 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         var groups = projectService.GetGroups();
         var groupDict = new Dictionary<int, GroupItemViewModel>();
         
+        var rootNodes = new List<ExplorerNodeViewModel>();
+
         foreach (var groupRecord in groups)
         {
             var groupVm = CreateItem(groupRecord);
             groupDict[groupRecord.Id] = groupVm;
-            Nodes.Add(groupVm);
+            rootNodes.Add(groupVm);
         }
+
+        var columnGroups = new Dictionary<int, List<ColumnItemViewModel>>();
 
         foreach (var record in projectService.GetColumns())
         {
@@ -302,15 +307,30 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
                 }
             }
 
-            if (record.GroupId.HasValue && groupDict.TryGetValue(record.GroupId.Value, out var parentGroup))
+            if (record.GroupId.HasValue)
             {
-                parentGroup.Columns.Add(item);
+                if (!columnGroups.TryGetValue(record.GroupId.Value, out var list))
+                {
+                    list = new List<ColumnItemViewModel>();
+                    columnGroups[record.GroupId.Value] = list;
+                }
+                list.Add(item);
             }
             else
             {
-                Nodes.Add(item);
+                rootNodes.Add(item);
             }
         }
+
+        foreach (var groupVm in groupDict.Values)
+        {
+            if (columnGroups.TryGetValue(groupVm.Id, out var children))
+            {
+                groupVm.Columns.AddRange(children);
+            }
+        }
+
+        Nodes.AddRange(rootNodes);
 
         var currentIds = Nodes.OfType<ColumnItemViewModel>().Select(c => c.Id)
             .Concat(Nodes.OfType<GroupItemViewModel>().SelectMany(g => g.Columns).Select(c => c.Id))

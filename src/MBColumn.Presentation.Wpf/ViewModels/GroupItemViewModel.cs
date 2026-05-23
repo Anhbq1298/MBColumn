@@ -1,5 +1,6 @@
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
+using MBColumn.Presentation.Wpf.Collections;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -25,7 +26,7 @@ public sealed class GroupItemViewModel : ExplorerNodeViewModel
         AddExistingSectionsCommand = new RelayCommand(() => onAddExisting(this));
     }
 
-    public ObservableCollection<ColumnItemViewModel> Columns { get; } = new();
+    public BulkObservableCollection<ColumnItemViewModel> Columns { get; } = new();
 
     public ICommand AddSectionCommand { get; }
     public ICommand AddExistingSectionsCommand { get; }

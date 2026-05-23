@@ -325,7 +325,7 @@ public sealed class ProjectService : IProjectService, IDisposable
     public void SaveColumnInput(int columnId, ColumnInputSnapshot snapshot)
     {
         EnsureConnection();
-        var json = JsonSerializer.Serialize(snapshot);
+        var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
         conn.Execute(
@@ -342,7 +342,7 @@ public sealed class ProjectService : IProjectService, IDisposable
         var json = conn.ExecuteScalar<string>(
             "SELECT InputJson FROM Column WHERE Id = @id", new { id = columnId });
         if (string.IsNullOrWhiteSpace(json) || json == "{}") return null;
-        return JsonSerializer.Deserialize<ColumnInputSnapshot>(json);
+        return JsonSerializer.Deserialize<ColumnInputSnapshot>(json, ResultJsonOptions);
     }
 
     public void SaveColumnResult(int columnId, CalculationResultDto result)
@@ -371,7 +371,8 @@ public sealed class ProjectService : IProjectService, IDisposable
     private static readonly System.Text.Json.JsonSerializerOptions ResultJsonOptions = new()
     {
         IncludeFields = false,
-        WriteIndented = false
+        WriteIndented = false,
+        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
     };
 
     public void MarkModified()

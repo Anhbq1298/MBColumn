@@ -4,12 +4,12 @@ namespace MBColumn.Presentation.Wpf.ViewModels;
 
 public sealed class EtabsColumnImportRowViewModel : ViewModelBase
 {
-    private readonly Action selectionChanged;
+    private readonly Action<EtabsColumnImportRowViewModel> selectionChanged;
     private bool isSelected;
     private string importGroupName = "";
 
     public EtabsColumnImportRowViewModel(
-        Action selectionChanged,
+        Action<EtabsColumnImportRowViewModel> selectionChanged,
         string objectName,
         string pier,
         string story,
@@ -48,7 +48,7 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
             if (isSelected == value) return;
             isSelected = value;
             Raise();
-            selectionChanged();
+            selectionChanged(this);
         }
     }
 

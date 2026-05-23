@@ -508,5 +508,34 @@
                 </StackPanel>
             </Border>
         </Border>
+
+        <!-- Importing Spinner Overlay (subtle top bar) -->
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,52,24,0"
+                Visibility="{Binding IsImporting, Converter={StaticResource BoolToVisibilityConverter}}"
+                IsHitTestVisible="False">
+            <Border CornerRadius="10"
+                    Padding="16,12,20,12"
+                    MinWidth="260"
+                    Background="{DynamicResource PrimaryNavyBrush}"
+                    Effect="{StaticResource CardElevationEffect}">
+                <StackPanel>
+                    <TextBlock Text="{Binding ImportStatusText}"
+                               Foreground="White"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10" />
+                    <ProgressBar Height="6"
+                                 Minimum="0"
+                                 Maximum="{Binding ImportProgressMax, Mode=OneWay}"
+                                 Value="{Binding ImportProgressValue, Mode=OneWay}"
+                                 Foreground="{DynamicResource AccentBlueBrush}"
+                                 Background="{DynamicResource PanelBackgroundBrush}"
+                                 BorderThickness="0" />
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </Window>

@@ -28,6 +28,10 @@ public sealed class MainWindowViewModel : ViewModelBase
     private int selectedMainTabIndex;
     private bool suppressModified;
     private bool isSaving;
+    private bool isImporting;
+    private int importProgressValue;
+    private int importProgressMax;
+    private string importStatusText = "";
     private bool isSaveNotificationVisible;
     private string saveNotificationText = "";
     private CancellationTokenSource? saveNotificationCts;
@@ -68,7 +72,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new RelayCommand(OpenProject);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
-        ImportFromEtabsCommand = new RelayCommand(ImportFromEtabs);
+        ImportFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
 
         SubscribeToInputChanges();
         UpdateWindowTitle();
@@ -139,6 +143,30 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         get => isSaving;
         private set => Set(ref isSaving, value);
+    }
+
+    public bool IsImporting
+    {
+        get => isImporting;
+        private set => Set(ref isImporting, value);
+    }
+
+    public int ImportProgressValue
+    {
+        get => importProgressValue;
+        set => Set(ref importProgressValue, value);
+    }
+
+    public int ImportProgressMax
+    {
+        get => importProgressMax;
+        set => Set(ref importProgressMax, value);
+    }
+
+    public string ImportStatusText
+    {
+        get => importStatusText;
+        private set => Set(ref importStatusText, value);
     }
 
     public bool IsSaveNotificationVisible
@@ -361,7 +389,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void ImportFromEtabs()
+    private async Task ImportFromEtabsAsync()
     {
         SaveCurrentColumnInput();
 
@@ -388,6 +416,14 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         try
         {
+            IsImporting = true;
+            ImportProgressMax = result.Sections.Count;
+            ImportProgressValue = 0;
+            ImportStatusText = $"Importing 0 of {result.Sections.Count} sections...";
+
+            // Yield to UI to show the overlay
+            await Task.Yield();
+
             var columnsByName = projectService.GetColumns()
                 .ToDictionary(column => column.Name, StringComparer.OrdinalIgnoreCase);
             int created = 0;
@@ -414,16 +450,24 @@ public sealed class MainWindowViewModel : ViewModelBase
                     Explorer.SetSectionStatus(existing.Id, SectionStatus.NotCalculated);
                     lastImportedId = existing.Id;
                     updated++;
-                    continue;
+                }
+                else
+                {
+                    var record = projectService.AddColumn(imported.SectionName, targetGroupId);
+                    projectService.SaveColumnInput(record.Id, imported.Snapshot);
+                    projectSession.ClearColumnResult(record.Id);
+                    Explorer.SetSectionStatus(record.Id, SectionStatus.NotCalculated);
+                    columnsByName[record.Name] = record;
+                    lastImportedId = record.Id;
+                    created++;
                 }
 
-                var record = projectService.AddColumn(imported.SectionName, targetGroupId);
-                projectService.SaveColumnInput(record.Id, imported.Snapshot);
-                projectSession.ClearColumnResult(record.Id);
-                Explorer.SetSectionStatus(record.Id, SectionStatus.NotCalculated);
-                columnsByName[record.Name] = record;
-                lastImportedId = record.Id;
-                created++;
+                ImportProgressValue++;
+                ImportStatusText = $"Importing {ImportProgressValue} of {ImportProgressMax} sections...";
+                
+                // Yield to UI thread occasionally to keep progress bar smooth (every 5 items)
+                if (ImportProgressValue % 5 == 0)
+                    await Task.Yield();
             }
 
             if (lastImportedId is not null)
@@ -435,6 +479,10 @@ public sealed class MainWindowViewModel : ViewModelBase
             ValidationMessage = "";
             RaiseStatusProperties();
             var importedTier = result.Sections.Count == 1 ? result.Sections[0] : null;
+            
+            // Hide progress overlay before showing dialog
+            IsImporting = false;
+            
             messageService.ShowInformation(
                 importedTier is not null
                     ? $"Imported ETABS design tier '{importedTier.SectionName}' into '{importedTier.TargetGroupName}' with {importedTier.Snapshot.EtabsTierMetadata?.SourceObjects.Count ?? 0} objects and {importedTier.Snapshot.LoadCases.Count} demand cases."
@@ -443,7 +491,12 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            IsImporting = false;
             messageService.ShowError($"Failed to import ETABS sections:\n{ex.Message}", "ETABS Import");
+        }
+        finally
+        {
+            IsImporting = false;
         }
     }
 

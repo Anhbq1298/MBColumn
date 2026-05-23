@@ -1,5 +1,6 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using MBColumn.Application.DTOs;
+using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -46,6 +47,7 @@ public sealed class PM3DViewModel : ViewModelBase
             Raise(nameof(DemandPoint));
         }
     }
+    public IReadOnlyList<ControlPointDto> CapacityIntersectionPoints { get; private set; } = [];
     public ControlPointDto? GoverningPoint { get; private set; }
     public string AxisLabels { get; private set; } = "Mx, My, P";
     public string UnitLabels { get; private set; } = "";
@@ -79,12 +81,30 @@ public sealed class PM3DViewModel : ViewModelBase
         SurfacePoints = points.Where(p => !p.IsDemand && !p.IsGoverning).ToList();
         SpecialCapacityPoints = result?.PmmSurface.SpecialCapacityPoints ?? [];
         DemandPoints = points.Where(p => p.IsDemand).ToList();
+        
+        if (result?.LoadCaseResults != null)
+        {
+            CapacityIntersectionPoints = result.LoadCaseResults
+                .Select((lc, i) => new ControlPointDto(
+                    DiagramType.Pm3D,
+                    lc.CapacityMxDisplay, lc.CapacityMyDisplay, lc.CapacityPDisplay,
+                    lc.CapacityPDisplay, lc.CapacityMxDisplay, lc.CapacityMyDisplay,
+                    lc.Phi, lc.GoverningThetaDegrees, lc.GoverningNeutralAxisDepth,
+                    lc.LoadCaseName + " Capacity", "CapacityIntersection", false, false, false, false, i, lc.LoadCaseId))
+                .ToList();
+        }
+        else
+        {
+            CapacityIntersectionPoints = [];
+        }
+
         GoverningPoint = null;
         SelectedPmAngle = result?.GoverningThetaDegrees ?? 0;
         SelectedAxialLoad = result?.PuDisplay ?? 0;
         Raise(nameof(SurfacePoints)); Raise(nameof(SurfaceMesh)); Raise(nameof(WireframeLines));
         Raise(nameof(SpecialCapacityPoints));
         Raise(nameof(DemandPoints)); Raise(nameof(DemandPoint)); Raise(nameof(GoverningPoint)); Raise(nameof(UnitLabels));
+        Raise(nameof(CapacityIntersectionPoints));
         RaiseSliceLabels();
     }
 

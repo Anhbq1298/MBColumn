@@ -2,11 +2,11 @@ namespace MBColumn.Presentation.Wpf.ViewModels;
 
 public sealed class EtabsForceImportRowViewModel : ViewModelBase
 {
-    private readonly Action selectionChanged;
+    private readonly Action<EtabsForceImportRowViewModel> selectionChanged;
     private bool isSelected = true;
 
     public EtabsForceImportRowViewModel(
-        Action selectionChanged,
+        Action<EtabsForceImportRowViewModel> selectionChanged,
         string objectName,
         string pier,
         string story,
@@ -45,7 +45,7 @@ public sealed class EtabsForceImportRowViewModel : ViewModelBase
             if (isSelected == value) return;
             isSelected = value;
             Raise();
-            selectionChanged();
+            selectionChanged(this);
         }
     }
 

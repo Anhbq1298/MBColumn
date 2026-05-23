@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Enums;
+using MBColumn.Domain.Enums;
 
 namespace MBColumn.Application.DTOs;
 
@@ -12,5 +12,10 @@ public sealed record LoadCaseResultDto(
     CapacityStatus Status,
     double Phi,
     double GoverningThetaDegrees,
-    double GoverningNeutralAxisDepth);
+    double GoverningNeutralAxisDepth)
+{
+    public double CapacityPDisplay { get; init; }
+    public double CapacityMxDisplay { get; init; }
+    public double CapacityMyDisplay { get; init; }
+}
 

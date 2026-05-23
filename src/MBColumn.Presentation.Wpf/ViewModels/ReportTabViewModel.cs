@@ -115,7 +115,11 @@ public sealed class ReportTabViewModel : ViewModelBase
                 loadCase.Pu,
                 loadCase.Mux,
                 loadCase.Muy,
-                string.IsNullOrWhiteSpace(loadCase.Source) ? "Manual" : loadCase.Source));
+                string.IsNullOrWhiteSpace(loadCase.Source) ? "Manual" : loadCase.Source,
+                result.Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == loadCase.Id)?.PmmRatio ?? 0,
+                result.Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == loadCase.Id)?.CapacityPDisplay ?? 0,
+                result.Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == loadCase.Id)?.CapacityMxDisplay ?? 0,
+                result.Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == loadCase.Id)?.CapacityMyDisplay ?? 0));
         }
 
         GeneratePreview();
@@ -157,6 +161,10 @@ public sealed record ReportDemandCaseRowViewModel(
     double Pu,
     double Mux,
     double Muy,
-    string Source);
+    string Source,
+    double PmmRatio,
+    double CapacityP,
+    double CapacityMx,
+    double CapacityMy);
 
 public sealed record ReportChartPreviewViewModel(int AngleDegrees, string Title);

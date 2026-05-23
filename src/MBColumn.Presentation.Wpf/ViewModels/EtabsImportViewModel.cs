@@ -5,6 +5,7 @@ using MBColumn.Application.Services.Etabs;
 using MBColumn.Application.Services.Geometry;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
+using MBColumn.Presentation.Wpf.Collections;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using System.Collections.ObjectModel;
@@ -118,7 +119,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         this.irregularGeometryBuilder = irregularGeometryBuilder;
         this.targetUnitSystem = targetUnitSystem;
 
-        Columns = [];
+        Columns = new BulkObservableCollection<EtabsColumnImportRowViewModel>();
         FilteredColumns = new ListCollectionView(Columns);
         FilteredColumns.Filter = FilterColumn;
         TierObjectCandidatesView = new ListCollectionView(Columns);
@@ -141,10 +142,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         UniqueSectionOptions = [];
         StoryOptions = [];
-        LoadCombinations = [];
+        LoadCombinations = new BulkObservableCollection<EtabsLoadCombinationViewModel>();
         FilteredLoadCombinations = new ListCollectionView(LoadCombinations);
         FilteredLoadCombinations.Filter = FilterLoadCombination;
-        ForceRows = [];
+        ForceRows = new BulkObservableCollection<EtabsForceImportRowViewModel>();
         SummaryRows = [];
         ImportGroups = [];
 
@@ -183,16 +184,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public event EventHandler<bool>? RequestClose;
 
     public EtabsImportDialogResult? ImportResult { get; private set; }
-    public ObservableCollection<EtabsColumnImportRowViewModel> Columns { get; }
+    public BulkObservableCollection<EtabsColumnImportRowViewModel> Columns { get; }
     public ICollectionView FilteredColumns { get; }
     public ICollectionView TierObjectCandidatesView { get; }
     public ObservableCollection<EtabsSectionMappingViewModel> SectionMappings { get; }
     public ObservableCollection<ProjectGroupOptionViewModel> TargetGroups { get; }
     public ObservableCollection<EtabsUniqueSectionOptionViewModel> UniqueSectionOptions { get; }
     public ObservableCollection<EtabsStoryOptionViewModel> StoryOptions { get; }
-    public ObservableCollection<EtabsLoadCombinationViewModel> LoadCombinations { get; }
+    public BulkObservableCollection<EtabsLoadCombinationViewModel> LoadCombinations { get; }
     public ICollectionView FilteredLoadCombinations { get; }
-    public ObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
+    public BulkObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
     public ObservableCollection<EtabsImportSummaryRowViewModel> SummaryRows { get; }
     public ObservableCollection<ImportGroupViewModel> ImportGroups { get; }
     public IReadOnlyList<string> EtabsElementFilters { get; }
@@ -271,15 +272,33 @@ public sealed class EtabsImportViewModel : ViewModelBase
         private set => Set(ref forceCacheStatus, value);
     }
 
-    public int UnassignedCount => Columns.Count(c =>
-        FilterColumn(c) && string.IsNullOrEmpty(c.ImportGroupName));
+    private int unassignedCount;
+    public int UnassignedCount
+    {
+        get => unassignedCount;
+        private set => Set(ref unassignedCount, value);
+    }
 
-    public int AssignedCount => Columns.Count(c =>
-        FilterColumn(c) && !string.IsNullOrEmpty(c.ImportGroupName));
+    private int assignedCount;
+    public int AssignedCount
+    {
+        get => assignedCount;
+        private set => Set(ref assignedCount, value);
+    }
 
-    public int ImportGroupsReadyCount => ImportGroups.Count(g => g.Items.Count > 0);
+    private int importGroupsReadyCount;
+    public int ImportGroupsReadyCount
+    {
+        get => importGroupsReadyCount;
+        private set => Set(ref importGroupsReadyCount, value);
+    }
 
-    public bool CanApplyImport => ImportGroups.Any(g => g.Items.Count > 0);
+    private bool canApplyImport;
+    public bool CanApplyImport
+    {
+        get => canApplyImport;
+        private set => Set(ref canApplyImport, value);
+    }
 
     public bool IsConnected
     {
@@ -551,12 +570,47 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public string PreviewStatusText { get => previewStatusText; private set => Set(ref previewStatusText, value); }
     public bool HasBoundaryPreview => BoundaryPreviewPointCollection is { Count: >= 3 };
 
-    public int SelectedColumnCount => Columns.Count(c => c.IsSelected);
-    public int MatchedTierObjectCount => Columns.Count(c => FilterTierObjectCandidate(c));
-    public int SelectedLoadCombinationCount => LoadCombinations.Count(c => c.IsSelected);
-    public int SelectedForceRowCount => ForceRows.Count(f => f.IsSelected);
-    public int SummaryCreateCount => SummaryRows.Count(r => !r.IsSkipped);
-    public int TierDemandCaseCount => SelectedForceRowCount;
+    private int selectedColumnCount;
+    public int SelectedColumnCount
+    {
+        get => selectedColumnCount;
+        private set => Set(ref selectedColumnCount, value);
+    }
+
+    private int matchedTierObjectCount;
+    public int MatchedTierObjectCount
+    {
+        get => matchedTierObjectCount;
+        private set => Set(ref matchedTierObjectCount, value);
+    }
+
+    private int selectedLoadCombinationCount;
+    public int SelectedLoadCombinationCount
+    {
+        get => selectedLoadCombinationCount;
+        private set => Set(ref selectedLoadCombinationCount, value);
+    }
+
+    private int selectedForceRowCount;
+    public int SelectedForceRowCount
+    {
+        get => selectedForceRowCount;
+        private set => Set(ref selectedForceRowCount, value);
+    }
+
+    private int summaryCreateCount;
+    public int SummaryCreateCount
+    {
+        get => summaryCreateCount;
+        private set => Set(ref summaryCreateCount, value);
+    }
+
+    private int tierDemandCaseCount;
+    public int TierDemandCaseCount
+    {
+        get => tierDemandCaseCount;
+        private set => Set(ref tierDemandCaseCount, value);
+    }
     public string PreviewTargetGroupName => SelectedTargetGroup?.GroupName ?? "";
     public string PreviewUniqueSectionName => SelectedUniqueSection?.SectionName ?? "";
     public string PreviewStationsText
@@ -614,23 +668,25 @@ public sealed class EtabsImportViewModel : ViewModelBase
         // Load frame columns (rectangular + circular)
         try
         {
-            foreach (var dto in columnImportService.GetCandidateColumns(targetUnitSystem))
+            using (FilteredColumns.DeferRefresh())
+            using (TierObjectCandidatesView.DeferRefresh())
             {
-                Columns.Add(new EtabsColumnImportRowViewModel(
-                    OnColumnSelectionChanged,
-                    dto.ObjectName,
-                    dto.PierName,
-                    dto.StoryName,
-                    dto.Label,
-                    dto.UniqueSectionDisplayName,
-                    dto.EtabsSectionName,
-                    dto.MaterialName,
-                    dto.SectionType,
-                    dto.Width,
-                    dto.Height,
-                    dto.Diameter,
-                    dto.LinkedSection,
-                    dto.Status));
+                Columns.AddRange(columnImportService.GetCandidateColumns(targetUnitSystem)
+                    .Select(dto => new EtabsColumnImportRowViewModel(
+                        OnColumnSelectionChanged,
+                        dto.ObjectName,
+                        dto.PierName,
+                        dto.StoryName,
+                        dto.Label,
+                        dto.UniqueSectionDisplayName,
+                        dto.EtabsSectionName,
+                        dto.MaterialName,
+                        dto.SectionType,
+                        dto.Width,
+                        dto.Height,
+                        dto.Diameter,
+                        dto.LinkedSection,
+                        dto.Status)));
             }
         }
         catch (Exception ex)
@@ -667,24 +723,29 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 {
                     // Remove any stale pier rows first (e.g. from a previous partial load)
                     var staleRows = Columns.Where(c => c.IsIrregular).ToList();
-                    foreach (var row in staleRows)
-                        Columns.Remove(row);
-
-                    foreach (var (pier, story, sectionProp) in groups)
+                    using (FilteredColumns.DeferRefresh())
+                    using (TierObjectCandidatesView.DeferRefresh())
                     {
-                        Columns.Add(new EtabsColumnImportRowViewModel(
-                            OnColumnSelectionChanged,
-                            $"pier:{pier}:{story}",
-                            pier,
-                            story,
-                            pier,
-                            $"{pier}|{story}",
-                            pier,
-                            sectionProp,
-                            SectionShapeType.Irregular,
-                            0, 0, 0,
-                            "",
-                            "Ready"));
+                        foreach (var row in staleRows)
+                            Columns.Remove(row);
+
+                        Columns.AddRange(groups.Select(g =>
+                        {
+                            var (pier, story, sectionProp) = g;
+                            return new EtabsColumnImportRowViewModel(
+                                OnColumnSelectionChanged,
+                                $"pier:{pier}:{story}",
+                                pier,
+                                story,
+                                pier,
+                                $"{pier}|{story}",
+                                pier,
+                                sectionProp,
+                                SectionShapeType.Irregular,
+                                0, 0, 0,
+                                "",
+                                "Ready");
+                        }));
                     }
 
                     ConnectionStatus = groups.Count == 0
@@ -1064,10 +1125,22 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void RaiseImportSummary()
     {
-        Raise(nameof(UnassignedCount));
-        Raise(nameof(AssignedCount));
-        Raise(nameof(ImportGroupsReadyCount));
-        Raise(nameof(CanApplyImport));
+        int unassigned = 0;
+        int assigned = 0;
+        foreach (var c in Columns)
+        {
+            if (FilterColumn(c))
+            {
+                if (string.IsNullOrEmpty(c.ImportGroupName))
+                    unassigned++;
+                else
+                    assigned++;
+            }
+        }
+        UnassignedCount = unassigned;
+        AssignedCount = assigned;
+        ImportGroupsReadyCount = ImportGroups.Count(g => g.Items.Count > 0);
+        CanApplyImport = ImportGroupsReadyCount > 0;
     }
 
     private void PrepareTierBuilder()
@@ -1290,9 +1363,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
         LoadCombinations.Clear();
         try
         {
-            foreach (var name in columnImportService.GetLoadCombinations())
+            using (FilteredLoadCombinations.DeferRefresh())
             {
-                LoadCombinations.Add(new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged));
+                LoadCombinations.AddRange(
+                    columnImportService.GetLoadCombinations()
+                        .Select(name => new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged)));
             }
         }
         catch (Exception ex)
@@ -1317,13 +1392,13 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
 
         var selectedObjects = Columns.Where(c => c.IsSelected).Select(c => c.ObjectName).ToList();
+        var rows = new List<EtabsForceImportRowViewModel>();
 
         // Use cache when available, otherwise fall back to live COM calls.
         if (forceCacheService?.IsBuilt == true)
         {
             var query = new EtabsForceCacheQuery(selectedObjects, selectedCombos);
-            foreach (var force in forceCacheService.Query(query))
-                AddForceRow(force);
+            rows.AddRange(forceCacheService.Query(query).Select(CreateForceRow));
         }
         else
         {
@@ -1338,8 +1413,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         c.UniqueSection, c.EtabsSectionName, c.Material,
                         c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
 
-                    foreach (var force in forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem))
-                        AddForceRow(force);
+                    rows.AddRange(forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
                 catch (Exception ex)
                 {
@@ -1357,8 +1431,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             {
                 try
                 {
-                    foreach (var force in forceImportService.GetPierForces(selectedPiers, selectedCombos, targetUnitSystem))
-                        AddForceRow(force);
+                    rows.AddRange(forceImportService.GetPierForces(selectedPiers, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
                 catch (Exception ex)
                 {
@@ -1367,14 +1440,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
             }
         }
 
+        ForceRows.AddRange(rows);
         ApplyStationSelection();
         RaiseCounts();
         RaiseCommandStates();
     }
 
-    private void AddForceRow(EtabsForceResultDto force)
-    {
-        ForceRows.Add(new EtabsForceImportRowViewModel(
+    private EtabsForceImportRowViewModel CreateForceRow(EtabsForceResultDto force)
+        => new(
             OnForceSelectionChanged,
             force.ObjectName,
             force.PierName,
@@ -1388,8 +1461,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             force.V2,
             force.V3,
             force.Station,
-            force.Status));
-    }
+            force.Status);
 
     private void BuildSummaryRows()
     {
@@ -2157,9 +2229,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
         RaiseCommandStates();
     }
 
-    private void OnColumnSelectionChanged()
+    private void OnColumnSelectionChanged(EtabsColumnImportRowViewModel row)
     {
-        Raise(nameof(SelectedColumnCount));
+        SelectedColumnCount += row.IsSelected ? 1 : -1;
+        if (FilterTierObjectCandidate(row))
+            MatchedTierObjectCount += row.IsSelected ? 1 : -1;
         RaiseTierProperties();
         RaiseCommandStates();
     }
@@ -2169,16 +2243,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
         RaiseCommandStates();
     }
 
-    private void OnLoadCombinationSelectionChanged()
+    private void OnLoadCombinationSelectionChanged(EtabsLoadCombinationViewModel row)
     {
+        SelectedLoadCombinationCount += row.IsSelected ? 1 : -1;
         GenerateForceRows();
-        RaiseCounts();
         RaiseCommandStates();
     }
 
-    private void OnForceSelectionChanged()
+    private void OnForceSelectionChanged(EtabsForceImportRowViewModel row)
     {
-        Raise(nameof(SelectedForceRowCount));
+        SelectedForceRowCount += row.IsSelected ? 1 : -1;
+        TierDemandCaseCount = SelectedForceRowCount;
         RaiseTierProperties();
         RaiseCommandStates();
     }
@@ -2229,12 +2304,23 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void RaiseCounts()
     {
-        Raise(nameof(SelectedColumnCount));
-        Raise(nameof(MatchedTierObjectCount));
-        Raise(nameof(SelectedLoadCombinationCount));
-        Raise(nameof(SelectedForceRowCount));
-        Raise(nameof(SummaryCreateCount));
-        Raise(nameof(TierDemandCaseCount));
+        int selectedCols = 0, matchedTier = 0;
+        foreach (var c in Columns)
+        {
+            if (c.IsSelected) selectedCols++;
+            if (FilterTierObjectCandidate(c)) matchedTier++;
+        }
+
+        int selectedCombos = LoadCombinations.Count(c => c.IsSelected);
+        int selectedForces = ForceRows.Count(f => f.IsSelected);
+        int summaryCreate = SummaryRows.Count(r => !r.IsSkipped);
+
+        SelectedColumnCount = selectedCols;
+        MatchedTierObjectCount = matchedTier;
+        SelectedLoadCombinationCount = selectedCombos;
+        SelectedForceRowCount = selectedForces;
+        SummaryCreateCount = summaryCreate;
+        TierDemandCaseCount = selectedForces;
     }
 
     private void RaiseTierProperties()
@@ -2331,10 +2417,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
 public sealed class EtabsLoadCombinationViewModel : ViewModelBase
 {
-    private readonly Action selectionChanged;
+    private readonly Action<EtabsLoadCombinationViewModel> selectionChanged;
     private bool isSelected;
 
-    public EtabsLoadCombinationViewModel(string name, Action selectionChanged, bool isSelected = false)
+    public EtabsLoadCombinationViewModel(string name, Action<EtabsLoadCombinationViewModel> selectionChanged, bool isSelected = false)
     {
         Name = name;
         this.selectionChanged = selectionChanged;
@@ -2351,7 +2437,7 @@ public sealed class EtabsLoadCombinationViewModel : ViewModelBase
             if (isSelected == value) return;
             isSelected = value;
             Raise();
-            selectionChanged();
+            selectionChanged(this);
         }
     }
 
