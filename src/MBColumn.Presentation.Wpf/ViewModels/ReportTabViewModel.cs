@@ -1,3 +1,4 @@
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
@@ -10,8 +11,10 @@ public sealed class ReportTabViewModel : ViewModelBase
     private bool includeInputData = true;
     private bool includeBoundaryCoordinates = true;
     private bool includeRebarCoordinates = true;
+    private bool includeValidation = true;
     private bool includeDemandCases = true;
     private bool includePmCharts = true;
+    private HandCalcValidationReport? handCalcValidation;
     private int chartAngleStepDegrees = 30;
     private bool isOutdated;
     private string resultStatusText = "No result";
@@ -37,8 +40,24 @@ public sealed class ReportTabViewModel : ViewModelBase
     public bool IncludeInputData { get => includeInputData; set => Set(ref includeInputData, value); }
     public bool IncludeBoundaryCoordinates { get => includeBoundaryCoordinates; set => Set(ref includeBoundaryCoordinates, value); }
     public bool IncludeRebarCoordinates { get => includeRebarCoordinates; set => Set(ref includeRebarCoordinates, value); }
+    public bool IncludeValidation { get => includeValidation; set => Set(ref includeValidation, value); }
     public bool IncludeDemandCases { get => includeDemandCases; set => Set(ref includeDemandCases, value); }
     public bool IncludePmCharts { get => includePmCharts; set => Set(ref includePmCharts, value); }
+    public HandCalcValidationReport? HandCalcValidation
+    {
+        get => handCalcValidation;
+        private set
+        {
+            Set(ref handCalcValidation, value);
+            Raise(nameof(HasValidationData));
+            Raise(nameof(HasSupportedValidation));
+            Raise(nameof(HasUnsupportedValidation));
+        }
+    }
+
+    public bool HasValidationData     => handCalcValidation is not null;
+    public bool HasSupportedValidation  => handCalcValidation is { IsSupported: true };
+    public bool HasUnsupportedValidation => handCalcValidation is { IsSupported: false };
     public int ChartAngleStepDegrees
     {
         get => chartAngleStepDegrees;
@@ -70,6 +89,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         RebarSummary = "";
         ResultStatusText = "No result";
         IsOutdated = false;
+        HandCalcValidation = null;
         DemandCases.Clear();
         ChartPreviews.Clear();
     }
@@ -122,6 +142,7 @@ public sealed class ReportTabViewModel : ViewModelBase
                 result.Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == loadCase.Id)?.CapacityMyDisplay ?? 0));
         }
 
+        HandCalcValidation = result.Result?.HandCalcValidation;
         GeneratePreview();
     }
 

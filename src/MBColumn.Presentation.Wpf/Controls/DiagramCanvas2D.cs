@@ -505,9 +505,21 @@ public class DiagramCanvas2D : FrameworkElement
         // Draw highlighted demand point on top with ring + label
         foreach (var p in demandPoints.Where(p => hasHighlight && string.Equals(p.Label, highlighted, StringComparison.OrdinalIgnoreCase)))
         {
+            if (p.Utilization > 0)
+            {
+                var originPt = transform.ToScreen(0, 0);
+                var capacityPt = transform.ToScreen(p.X / p.Utilization, p.Y / p.Utilization);
+                
+                var rayPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 227, 27, 35)), 1.2) { DashStyle = DashStyles.Dash };
+                rayPen.Freeze();
+                dc.DrawLine(rayPen, originPt, capacityPt);
+            }
+
             var pt = transform.ToScreen(p.X, p.Y);
             var redBrush = new SolidColorBrush(Color.FromRgb(227, 27, 35));
             var ringPen = new Pen(new SolidColorBrush(Color.FromRgb(31, 41, 51)), 1.5);
+            redBrush.Freeze();
+            ringPen.Freeze();
             dc.DrawEllipse(redBrush, ringPen, pt, 7, 7);
             DrawText(dc, p.Label, 11, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
         }

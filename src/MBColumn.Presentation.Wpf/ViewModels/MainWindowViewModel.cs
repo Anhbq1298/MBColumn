@@ -36,10 +36,13 @@ public sealed class MainWindowViewModel : ViewModelBase
     private string saveNotificationText = "";
     private CancellationTokenSource? saveNotificationCts;
 
+    private readonly Func<InputViewModel> inputFactory;
+
     public MainWindowViewModel(
         ColumnCalculationService calculationService,
         IProjectService projectService,
         InputViewModel input,
+        Func<InputViewModel> inputFactory,
         IMessageService messageService,
         IProjectFileDialogService projectFileDialogService,
         IProjectNameDialogService projectNameDialogService,
@@ -48,6 +51,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         this.calculationService = calculationService;
         this.projectService = projectService;
+        this.inputFactory = inputFactory;
         this.messageService = messageService;
         this.projectFileDialogService = projectFileDialogService;
         this.projectNameDialogService = projectNameDialogService;
@@ -69,7 +73,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         CalculateCurrentColumnCommand = CalculateCommand;
         CalculateAllColumnsCommand = new AsyncRelayCommand(CalculateAllColumnsAsync, () => !IsCalculating && HasSections);
         NewProjectCommand = new RelayCommand(NewProject);
-        OpenProjectCommand = new RelayCommand(OpenProject);
+        OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
         ImportFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
@@ -213,12 +217,16 @@ public sealed class MainWindowViewModel : ViewModelBase
     public bool IsResultsTabAvailable => true;
 
     private async Task CalculateCurrentColumnAsync()
-        => await RunWithProgressAsync("Calculating this section...", CalculateCurrentColumn);
+        => await RunWithProgressAsync("Calculating this section...", async () =>
+        {
+            await Task.Yield();
+            CalculateCurrentColumn();
+        });
 
     private async Task CalculateAllColumnsAsync()
-        => await RunWithProgressAsync("Calculating all sections...", CalculateAllColumns);
+        => await RunWithProgressAsync("Calculating all sections...", CalculateAllColumnsBackgroundAsync);
 
-    private async Task RunWithProgressAsync(string status, Action calculate)
+    private async Task RunWithProgressAsync(string status, Func<Task> calculateAsync)
     {
         IsCalculating = true;
         CalculationStatus = status;
@@ -226,8 +234,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         try
         {
-            await Task.Yield();
-            calculate();
+            await calculateAsync();
         }
         finally
         {
@@ -273,40 +280,62 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void CalculateAllColumns()
+    private async Task CalculateAllColumnsBackgroundAsync()
     {
         var columns = projectService.GetColumns();
-        if (columns.Count == 0)
-        {
-            return;
-        }
+        if (columns.Count == 0) return;
 
         SaveCurrentColumnInput();
 
         var selectedId = currentColumn?.Id;
         var failedColumns = new List<string>();
 
-        suppressModified = true;
-        try
-        {
-            foreach (var column in columns)
+        var inputs = columns
+            .Select(c => new
             {
-                var snapshot = projectService.LoadColumnInput(column.Id);
-                if (snapshot is null)
-                    continue;
+                Column = c,
+                Snapshot = projectService.LoadColumnInput(c.Id)
+            })
+            .Where(x => x.Snapshot is not null)
+            .ToList();
 
+        var backgroundResults = await Task.Run(() =>
+        {
+            var results = new List<(int ColumnId, string Name, MBColumn.Application.DTOs.CalculationResultDto? Result, string? Error)>();
+            var localInput = inputFactory();
+
+            foreach (var item in inputs)
+            {
                 try
                 {
-                    Input.LoadFromSnapshot(snapshot);
-                    var result = calculationService.Calculate(Input.ToDto());
-                    projectSession.StoreColumnResult(column.Id, result);
-                    projectService.SaveColumnResult(column.Id, result);
-                    Explorer.SetSectionStatus(column.Id, SectionStatus.Calculated);
+                    localInput.LoadFromSnapshot(item.Snapshot!);
+                    var result = calculationService.Calculate(localInput.ToDto());
+                    results.Add((item.Column.Id, item.Column.Name, result, null));
                 }
                 catch (Exception ex)
                 {
-                    Explorer.SetSectionStatus(column.Id, SectionStatus.Error);
-                    failedColumns.Add($"{column.Name}: {ex.Message}");
+                    results.Add((item.Column.Id, item.Column.Name, null, ex.Message));
+                }
+            }
+            return results;
+        });
+
+        suppressModified = true;
+        try
+        {
+            foreach (var item in backgroundResults)
+            {
+                var columnId = item.ColumnId;
+                if (item.Result is not null)
+                {
+                    projectSession.StoreColumnResult(columnId, item.Result);
+                    projectService.SaveColumnResult(columnId, item.Result);
+                    Explorer.SetSectionStatus(columnId, SectionStatus.Calculated);
+                }
+                else if (item.Error is not null)
+                {
+                    Explorer.SetSectionStatus(columnId, SectionStatus.Error);
+                    failedColumns.Add($"{item.Name}: {item.Error}");
                 }
             }
 
@@ -360,7 +389,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         RaiseStatusProperties();
     }
 
-    private void OpenProject()
+    private async Task OpenProjectAsync()
     {
         if (!ConfirmDiscardChanges()) return;
 
@@ -374,7 +403,11 @@ public sealed class MainWindowViewModel : ViewModelBase
             currentColumn = null;
             projectSession.SelectColumn(null);
 
-            projectService.OpenProject(filePath);
+            CalculationStatus = "Opening project...";
+            IsCalculating = true;
+
+            await Task.Run(() => projectService.OpenProject(filePath));
+
             ClearResults();
             Report.Clear();
             Explorer.ClearSectionStatuses();
@@ -386,6 +419,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             messageService.ShowError($"Failed to open project:\n{ex.Message}");
+        }
+        finally
+        {
+            CalculationStatus = "";
+            IsCalculating = false;
         }
     }
 

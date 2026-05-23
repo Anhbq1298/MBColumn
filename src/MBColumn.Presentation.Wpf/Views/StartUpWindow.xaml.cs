@@ -34,13 +34,13 @@ public partial class StartUpWindow : Window
         BtnInfo.Click += BtnInfo_Click;
         BtnCancel.Click += (_, _) => { DialogResult = false; };
         BtnClearRecent.Click += (_, _) => { recentService.ClearRecent(); LoadRecents(); ClearProjectPreview(); };
+        RecentList.MouseDoubleClick += RecentList_MouseDoubleClick;
     }
 
     protected override void OnActivated(EventArgs e)
     {
         base.OnActivated(e);
         LoadRecents();
-        RecentList.MouseDoubleClick += RecentList_MouseDoubleClick;
     }
 
     private void LoadRecents()
@@ -130,18 +130,22 @@ public partial class StartUpWindow : Window
 
     private void BtnNew_Click(object? sender, RoutedEventArgs e)
     {
-        var dlg = new ProjectNameDialog("New Project", "New Project");
-        if (dlg.ShowDialog() != true) return;
-        var name = dlg.ProjectName?.Trim();
-        if (string.IsNullOrWhiteSpace(name))
+        var dlg = new Microsoft.Win32.SaveFileDialog
         {
-            MessageBox.Show("Project name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
+            Title = "Create New Project",
+            Filter = "MBColumn Project (*.mbc)|*.mbc",
+            DefaultExt = ".mbc",
+            FileName = "New Project.mbc"
+        };
+        
+        if (dlg.ShowDialog() != true) return;
 
         try
         {
+            var name = System.IO.Path.GetFileNameWithoutExtension(dlg.FileName);
             projectService.NewProject(name);
+            projectService.SaveProjectAs(dlg.FileName);
+            recentService.AddRecent(dlg.FileName);
             DialogResult = true;
         }
         catch (Exception ex)

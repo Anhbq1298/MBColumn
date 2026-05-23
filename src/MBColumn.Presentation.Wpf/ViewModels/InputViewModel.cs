@@ -524,6 +524,7 @@ public sealed class InputViewModel : ViewModelBase
     public ICommand DeleteLoadCaseCommand { get; }
     public ICommand DeleteSelectedLoadCasesCommand { get; }
     public ICommand RemoveDuplicateLoadCasesCommand { get; }
+
     public string SectionPreviewLabel { get => sectionPreviewLabel; private set => Set(ref sectionPreviewLabel, value); }
     public string RebarPreviewLabel { get => rebarPreviewLabel; private set => Set(ref rebarPreviewLabel, value); }
     public string CoverPreviewLabel { get => coverPreviewLabel; private set => Set(ref coverPreviewLabel, value); }
@@ -1727,7 +1728,7 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         if (LoadCases.Count == 0) AddPrimaryLoadCase();
-
+        
         _generatingRebarsDepth++;
         try
         {

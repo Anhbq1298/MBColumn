@@ -26,5 +26,9 @@
     <Resource Include="icon\*.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="WpfMath" Version="2.1.0" />
+  </ItemGroup>
+
 </Project>
 

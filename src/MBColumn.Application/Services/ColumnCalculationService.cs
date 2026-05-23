@@ -244,7 +244,20 @@ public sealed class ColumnCalculationService(
             SectionHeightMm = sectionHeightMm,
             CoverMm = units.LengthToMm(input.Cover, input.LengthUnit),
             RebarCoordinates = coordinateList,
-            CapacityDebugPoints = debugPoints
+            CapacityDebugPoints = debugPoints,
+            HandCalcValidation = ReportHandCalcService.Build(
+                section.Shape,
+                sectionWidthMm,
+                sectionHeightMm,
+                fcMpa,
+                fyMpa,
+                esMpa,
+                coordinateList,
+                cpTable,
+                codeService,
+                units,
+                input.UnitSystem,
+                input.DesignCode)
         };
     }
 

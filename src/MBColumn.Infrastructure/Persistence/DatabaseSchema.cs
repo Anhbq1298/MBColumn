@@ -4,7 +4,7 @@ namespace MBColumn.Infrastructure.Persistence;
 
 internal static class DatabaseSchema
 {
-    private const int CurrentVersion = 4;
+    private const int CurrentVersion = 5;
     public const string AppVersion = "1.0.0";
 
     public static void EnsureCreated(SqliteConnection connection, string projectName)
@@ -51,6 +51,25 @@ internal static class DatabaseSchema
                 ResultJson TEXT,
                 CreatedAt  TEXT NOT NULL,
                 ModifiedAt TEXT NOT NULL
+            )
+            """);
+
+        Exec(connection, """
+            CREATE TABLE IF NOT EXISTS DemandCase (
+                Id INTEGER PRIMARY KEY,
+                ColumnId INTEGER NOT NULL REFERENCES Column(Id) ON DELETE CASCADE,
+                IdString TEXT,
+                Label TEXT,
+                OriginalLoadCaseName TEXT,
+                SourceObjectName TEXT,
+                SourceObjectLabel TEXT,
+                Story TEXT,
+                Station TEXT,
+                Source TEXT,
+                Pu REAL NOT NULL,
+                Mux REAL NOT NULL,
+                Muy REAL NOT NULL,
+                IsActive INTEGER NOT NULL DEFAULT 1
             )
             """);
 
@@ -120,6 +139,36 @@ internal static class DatabaseSchema
                 vCmd.Parameters.AddWithValue("@v", 4);
                 vCmd.Parameters.AddWithValue("@now", now);
                 vCmd.ExecuteNonQuery();
+                
+                version = 4;
+            }
+
+            if (version < 5)
+            {
+                Exec(connection, """
+                    CREATE TABLE IF NOT EXISTS DemandCase (
+                        Id INTEGER PRIMARY KEY,
+                        ColumnId INTEGER NOT NULL REFERENCES Column(Id) ON DELETE CASCADE,
+                        IdString TEXT,
+                        Label TEXT,
+                        OriginalLoadCaseName TEXT,
+                        SourceObjectName TEXT,
+                        SourceObjectLabel TEXT,
+                        Story TEXT,
+                        Station TEXT,
+                        Source TEXT,
+                        Pu REAL NOT NULL,
+                        Mux REAL NOT NULL,
+                        Muy REAL NOT NULL,
+                        IsActive INTEGER NOT NULL DEFAULT 1
+                    )
+                    """);
+
+                using var vCmd = connection.CreateCommand();
+                vCmd.CommandText = "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (@v, @now)";
+                vCmd.Parameters.AddWithValue("@v", 5);
+                vCmd.Parameters.AddWithValue("@now", now);
+                vCmd.ExecuteNonQuery();
             }
         }
     }
@@ -129,6 +178,20 @@ internal static class DatabaseSchema
         if (connection.State != System.Data.ConnectionState.Open)
             connection.Open();
         EnsureCreated(connection, "Project");
+    }
+
+    public static void OpenResultDb(SqliteConnection connection)
+    {
+        if (connection.State != System.Data.ConnectionState.Open)
+            connection.Open();
+        
+        Exec(connection, """
+            CREATE TABLE IF NOT EXISTS ColumnResult (
+                ColumnId INTEGER PRIMARY KEY,
+                InputHash TEXT NOT NULL,
+                ResultJson TEXT NOT NULL
+            )
+            """);
     }
 
     private static void Exec(SqliteConnection connection, string sql)

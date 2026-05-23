@@ -422,15 +422,12 @@
                           Foreground="{DynamicResource DarkNavyBrush}"
                           Padding="0">
                     <DataGrid ItemsSource="{Binding TierObjectCandidatesView}"
-                              SelectedItem="{Binding SelectedColumn, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               SelectionMode="Extended"
+                              SelectionChanged="OnDataGridSelectionChanged"
                               ContextMenuOpening="OnAvailableItemsContextMenuOpening">
                         <DataGrid.Columns>
-                            <DataGridCheckBoxColumn Header="✓"
-                                                    Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="36" />
                             <DataGridTextColumn Header="Type" Binding="{Binding SectionTypeDisplay}" Width="90" IsReadOnly="True" />
                             <DataGridTextColumn Header="Section / Pier" Binding="{Binding EtabsSectionName}" Width="130" IsReadOnly="True" />
                             <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" IsReadOnly="True" />
@@ -755,14 +752,10 @@
                     </Grid>
                     <ListBox ItemsSource="{Binding FilteredLoadCombinations}"
                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                             FontSize="12">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}"
-                                          IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Margin="2,2" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
+                             FontSize="12"
+                             SelectionMode="Extended"
+                             SelectionChanged="OnListBoxSelectionChanged"
+                             DisplayMemberPath="Name">
                     </ListBox>
                 </DockPanel>
             </GroupBox>
@@ -798,7 +791,7 @@
                           BorderBrush="{DynamicResource BorderGreyBrush}"
                           Foreground="{DynamicResource DarkNavyBrush}"
                           Padding="12"
-                          Visibility="{Binding IsForceCacheAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                          Visibility="Collapsed">
                     <StackPanel>
                         <TextBlock Text="Pre-load all forces from ETABS into an in-memory cache for faster repeated queries."
                                    TextWrapping="Wrap"
@@ -874,11 +867,18 @@
                                     <Border Style="{StaticResource GroupCardStyle}">
                                         <StackPanel>
                                             <DockPanel>
-                                                <TextBlock DockPanel.Dock="Right"
-                                                           Text="{Binding ItemCount, StringFormat='{}{0} item(s)'}"
-                                                           FontSize="11"
-                                                           Foreground="{DynamicResource TextMutedBrush}"
-                                                           VerticalAlignment="Center" />
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="Target:" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                                                    <ComboBox ItemsSource="{Binding DataContext.TargetGroups, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              DisplayMemberPath="DisplayName"
+                                                              SelectedItem="{Binding SelectedTargetGroup, Mode=TwoWay}"
+                                                              Width="130"
+                                                              Margin="6,0,0,0" />
+                                                    <Button Content="+"
+                                                            Command="{Binding DataContext.AddTargetGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            Style="{StaticResource SecondaryButtonStyle}"
+                                                            Margin="4,0,0,0" Padding="6,2" />
+                                                </StackPanel>
                                                 <TextBlock Text="{Binding GroupName}"
                                                            FontSize="12"
                                                            FontWeight="SemiBold"
@@ -911,32 +911,6 @@
 
             <!-- Right panel: Target Group + Model Info -->
             <StackPanel Grid.Column="2">
-                <!-- Target Project Group -->
-                <GroupBox Header="Target Project Group"
-                          BorderBrush="{DynamicResource BorderGreyBrush}"
-                          Foreground="{DynamicResource DarkNavyBrush}"
-                          Padding="12"
-                          Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="Imported sections will be added to:"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   Margin="0,0,0,8" />
-                        <DockPanel Margin="0,0,0,6">
-                            <Button DockPanel.Dock="Right"
-                                    Content="+ New"
-                                    Command="{Binding AddTargetGroupCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="8,3"
-                                    MinHeight="26"
-                                    Margin="6,0,0,0" />
-                            <ComboBox ItemsSource="{Binding TargetGroups}"
-                                      DisplayMemberPath="DisplayName"
-                                      SelectedItem="{Binding SelectedTargetGroup}" />
-                        </DockPanel>
-                    </StackPanel>
-                </GroupBox>
-
                 <!-- Model Info -->
                 <GroupBox Header="Model"
                           BorderBrush="{DynamicResource BorderGreyBrush}"

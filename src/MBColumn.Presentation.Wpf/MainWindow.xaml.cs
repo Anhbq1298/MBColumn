@@ -73,6 +73,18 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ColumnContextMenu_Opened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu)
+            return;
+
+        if (menu.PlacementTarget is FrameworkElement element &&
+            element.DataContext is ColumnItemViewModel column)
+        {
+            Explorer().RefreshMoveToGroupOptions(column);
+        }
+    }
+
     private ProjectExplorerViewModel Explorer()
         => ((MainWindowViewModel)DataContext).Explorer;
 }

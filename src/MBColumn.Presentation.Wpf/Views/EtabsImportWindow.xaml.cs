@@ -1,3 +1,4 @@
+using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Presentation.Wpf.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -44,5 +45,33 @@ public partial class EtabsImportWindow : Window
         }
 
         ((FrameworkElement)sender).ContextMenu = cm;
+    }
+
+    private void OnDataGridSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        foreach (var item in e.AddedItems)
+        {
+            if (item is EtabsColumnImportRowViewModel col)
+                col.IsSelected = true;
+        }
+        foreach (var item in e.RemovedItems)
+        {
+            if (item is EtabsColumnImportRowViewModel col)
+                col.IsSelected = false;
+        }
+    }
+
+    private void OnListBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        foreach (var item in e.AddedItems)
+        {
+            if (item is EtabsLoadCombinationViewModel combo)
+                combo.IsSelected = true;
+        }
+        foreach (var item in e.RemovedItems)
+        {
+            if (item is EtabsLoadCombinationViewModel combo)
+                combo.IsSelected = false;
+        }
     }
 }

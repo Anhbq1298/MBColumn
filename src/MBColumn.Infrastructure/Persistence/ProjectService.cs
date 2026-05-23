@@ -10,6 +10,7 @@ namespace MBColumn.Infrastructure.Persistence;
 public sealed class ProjectService : IProjectService, IDisposable
 {
     private string? connectionString;
+    private string? resultConnectionString;
     private SqliteConnection? _keepAliveConnection; // holds named in-memory DB alive
     private bool isModified;
 
@@ -33,6 +34,7 @@ public sealed class ProjectService : IProjectService, IDisposable
         CurrentFilePath = null;
         ProjectName = name;
         connectionString = null;
+        resultConnectionString = null;
         isModified = false;
         ProjectChanged?.Invoke(this, EventArgs.Empty);
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
@@ -48,8 +50,13 @@ public sealed class ProjectService : IProjectService, IDisposable
     public void OpenProject(string filePath)
     {
         connectionString = BuildConnectionString(filePath);
+        resultConnectionString = BuildConnectionString(filePath + "r");
+        
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
+        
+        using var rConn = new SqliteConnection(resultConnectionString);
+        DatabaseSchema.OpenResultDb(rConn);
 
         var project = conn.QuerySingleOrDefault<ProjectRow>(
             "SELECT Name FROM Project LIMIT 1");
@@ -208,18 +215,15 @@ public sealed class ProjectService : IProjectService, IDisposable
         if (string.IsNullOrWhiteSpace(normalizedName))
             throw new InvalidOperationException("Section name cannot be empty.");
 
+        var snapshot = LoadColumnInput(sourceColumnId);
+        if (snapshot is null) throw new InvalidOperationException("Source section no longer exists.");
+
         EnsureConnection();
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
         var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
 
         EnsureUniqueColumnName(conn, projectId, normalizedName);
-
-        var source = conn.QuerySingleOrDefault<ColumnInputRow>(
-            "SELECT InputJson FROM Column WHERE Id = @id AND ProjectId = @pid",
-            new { id = sourceColumnId, pid = projectId });
-        if (source is null)
-            throw new InvalidOperationException("Source section no longer exists.");
 
         var now = DateTime.UtcNow.ToString("O");
         var sortOrder = conn.ExecuteScalar<int>(
@@ -228,10 +232,12 @@ public sealed class ProjectService : IProjectService, IDisposable
 
         var id = conn.ExecuteScalar<int>("""
             INSERT INTO Column (ProjectId, GroupId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt)
-            VALUES (@pid, @gid, @name, @sort, @json, @now, @now);
+            VALUES (@pid, @gid, @name, @sort, '{}', @now, @now);
             SELECT last_insert_rowid();
             """,
-            new { pid = projectId, gid = groupId, name = normalizedName, sort = sortOrder, json = source.InputJson, now });
+            new { pid = projectId, gid = groupId, name = normalizedName, sort = sortOrder, now });
+            
+        SaveColumnInput(id, snapshot);
 
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
@@ -325,12 +331,32 @@ public sealed class ProjectService : IProjectService, IDisposable
     public void SaveColumnInput(int columnId, ColumnInputSnapshot snapshot)
     {
         EnsureConnection();
-        var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
+
+        var loadCases = snapshot.LoadCases.ToList();
+        snapshot.LoadCases.Clear();
+        var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
+        snapshot.LoadCases = loadCases;
+
         conn.Execute(
             "UPDATE Column SET InputJson = @json, ModifiedAt = @now WHERE Id = @id",
             new { json, now = DateTime.UtcNow.ToString("O"), id = columnId });
+
+        conn.Execute("DELETE FROM DemandCase WHERE ColumnId = @id", new { id = columnId });
+        
+        foreach (var lc in loadCases)
+        {
+            conn.Execute(@"
+                INSERT INTO DemandCase (ColumnId, IdString, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive)
+                VALUES (@cid, @idstr, @label, @orig, @son, @sol, @story, @station, @source, @pu, @mux, @muy, @active)",
+                new { 
+                    cid = columnId, idstr = lc.Id, label = lc.Label, orig = lc.OriginalLoadCaseName,
+                    son = lc.SourceObjectName, sol = lc.SourceObjectLabel, story = lc.Story,
+                    station = lc.Station, source = lc.Source, pu = lc.Pu, mux = lc.Mux, muy = lc.Muy, active = lc.IsActive ? 1 : 0
+                });
+        }
+
         MarkModified();
     }
 
@@ -342,30 +368,115 @@ public sealed class ProjectService : IProjectService, IDisposable
         var json = conn.ExecuteScalar<string>(
             "SELECT InputJson FROM Column WHERE Id = @id", new { id = columnId });
         if (string.IsNullOrWhiteSpace(json) || json == "{}") return null;
-        return JsonSerializer.Deserialize<ColumnInputSnapshot>(json, ResultJsonOptions);
+        var snapshot = JsonSerializer.Deserialize<ColumnInputSnapshot>(json, ResultJsonOptions);
+        if (snapshot == null) return null;
+
+        if (snapshot.LoadCases.Count == 0)
+        {
+            var cases = conn.Query<SnapshotLoadCase>(@"
+                SELECT IdString as Id, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive
+                FROM DemandCase WHERE ColumnId = @id", new { id = columnId });
+            snapshot.LoadCases.AddRange(cases);
+        }
+        return snapshot;
+    }
+
+    private static string ComputeHash(ColumnInputSnapshot snapshot)
+    {
+        var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        var hash = sha256.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
     }
 
     public void SaveColumnResult(int columnId, CalculationResultDto result)
     {
+        if (resultConnectionString is null) return;
         EnsureConnection();
+        var snapshot = LoadColumnInput(columnId);
+        if (snapshot is null) return;
+        var hash = ComputeHash(snapshot);
+
         var json = JsonSerializer.Serialize(result, ResultJsonOptions);
-        using var conn = new SqliteConnection(connectionString);
-        DatabaseSchema.Open(conn);
-        conn.Execute(
-            "UPDATE Column SET ResultJson = @json WHERE Id = @id",
-            new { json, id = columnId });
+        var compressedJson = CompressBase64(json);
+        
+        using var rConn = new SqliteConnection(resultConnectionString);
+        DatabaseSchema.OpenResultDb(rConn);
+        rConn.Execute("DELETE FROM ColumnResult WHERE ColumnId = @id", new { id = columnId });
+        rConn.Execute(
+            "INSERT INTO ColumnResult (ColumnId, InputHash, ResultJson) VALUES (@id, @hash, @json)",
+            new { id = columnId, hash, json = compressedJson });
     }
 
     public CalculationResultDto? LoadColumnResult(int columnId)
     {
-        if (connectionString is null) return null;
-        using var conn = new SqliteConnection(connectionString);
-        DatabaseSchema.Open(conn);
-        var json = conn.ExecuteScalar<string>(
-            "SELECT ResultJson FROM Column WHERE Id = @id", new { id = columnId });
+        if (connectionString is null || resultConnectionString is null) return null;
+        var snapshot = LoadColumnInput(columnId);
+        if (snapshot is null) return null;
+        var hash = ComputeHash(snapshot);
+
+        using var rConn = new SqliteConnection(resultConnectionString);
+        DatabaseSchema.OpenResultDb(rConn);
+        
+        var row = rConn.QuerySingleOrDefault(
+            "SELECT InputHash, ResultJson FROM ColumnResult WHERE ColumnId = @id", new { id = columnId });
+        
+        string? json = null;
+        if (row != null && (string?)row.InputHash == hash)
+        {
+            json = (string?)row.ResultJson;
+        }
+        else if (row == null)
+        {
+            // Fallback for older projects: check ResultJson in Column table
+            using var conn = new SqliteConnection(connectionString);
+            json = conn.ExecuteScalar<string>(
+                "SELECT ResultJson FROM Column WHERE Id = @id", new { id = columnId });
+        }
+
         if (string.IsNullOrWhiteSpace(json)) return null;
-        try { return JsonSerializer.Deserialize<CalculationResultDto>(json, ResultJsonOptions); }
+        try 
+        { 
+            var decompressedJson = DecompressBase64(json);
+            return JsonSerializer.Deserialize<CalculationResultDto>(decompressedJson, ResultJsonOptions); 
+        }
         catch { return null; }
+    }
+
+    private static string CompressBase64(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+        using var msi = new System.IO.MemoryStream(bytes);
+        using var mso = new System.IO.MemoryStream();
+        using (var gs = new System.IO.Compression.GZipStream(mso, System.IO.Compression.CompressionMode.Compress))
+        {
+            msi.CopyTo(gs);
+        }
+        return Convert.ToBase64String(mso.ToArray());
+    }
+
+    private static string DecompressBase64(string compressed)
+    {
+        if (string.IsNullOrWhiteSpace(compressed)) return compressed;
+        if (compressed.StartsWith("{") || compressed.StartsWith("[")) return compressed; // Uncompressed JSON fallback
+
+        try
+        {
+            var bytes = Convert.FromBase64String(compressed);
+            using var msi = new System.IO.MemoryStream(bytes);
+            using var mso = new System.IO.MemoryStream();
+            using (var gs = new System.IO.Compression.GZipStream(msi, System.IO.Compression.CompressionMode.Decompress))
+            {
+                gs.CopyTo(mso);
+            }
+            return System.Text.Encoding.UTF8.GetString(mso.ToArray());
+        }
+        catch
+        {
+            return compressed;
+        }
     }
 
     private static readonly System.Text.Json.JsonSerializerOptions ResultJsonOptions = new()
@@ -386,35 +497,49 @@ public sealed class ProjectService : IProjectService, IDisposable
 
     private void SaveToFile(string filePath)
     {
+        var newCs = BuildConnectionString(filePath);
+        var newResultCs = BuildConnectionString(filePath + "r");
+
         if (connectionString is null)
         {
-            var newCs = BuildConnectionString(filePath);
             using var conn = new SqliteConnection(newCs);
             DatabaseSchema.EnsureCreated(conn, ProjectName);
+            using var rConn = new SqliteConnection(newResultCs);
+            DatabaseSchema.OpenResultDb(rConn);
             connectionString = newCs;
+            resultConnectionString = newResultCs;
         }
         else if (_keepAliveConnection is not null && CurrentFilePath is null)
         {
-            var newCs = BuildConnectionString(filePath);
             using var conn = new SqliteConnection(newCs);
-            DatabaseSchema.EnsureCreated(conn, ProjectName);
+            conn.Open();
+            _keepAliveConnection.BackupDatabase(conn);
+            using var rConn = new SqliteConnection(newResultCs);
+            DatabaseSchema.OpenResultDb(rConn);
             _keepAliveConnection.Dispose();
             _keepAliveConnection = null;
             connectionString = newCs;
+            resultConnectionString = newResultCs;
         }
         else if (CurrentFilePath is null || !string.Equals(CurrentFilePath, filePath, StringComparison.OrdinalIgnoreCase))
         {
             if (CurrentFilePath is not null && System.IO.File.Exists(CurrentFilePath))
             {
                 System.IO.File.Copy(CurrentFilePath, filePath, overwrite: true);
+                if (System.IO.File.Exists(CurrentFilePath + "r"))
+                {
+                    System.IO.File.Copy(CurrentFilePath + "r", filePath + "r", overwrite: true);
+                }
             }
             else
             {
-                var newCs = BuildConnectionString(filePath);
                 using var conn = new SqliteConnection(newCs);
                 DatabaseSchema.EnsureCreated(conn, ProjectName);
+                using var rConn = new SqliteConnection(newResultCs);
+                DatabaseSchema.OpenResultDb(rConn);
             }
-            connectionString = BuildConnectionString(filePath);
+            connectionString = newCs;
+            resultConnectionString = newResultCs;
         }
 
         if (_keepAliveConnection is null)

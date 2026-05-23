@@ -201,17 +201,29 @@
                     </Border>
 
                     <!-- Section list -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <TreeView ItemsSource="{Binding Explorer.Nodes}"
-                                  SelectedItemChanged="TreeView_SelectedItemChanged"
-                                  BorderThickness="0" Background="Transparent">
-                            <TreeView.ItemContainerStyle>
-                                <Style TargetType="TreeViewItem">
-                                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
-                                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                                    <Setter Property="Padding" Value="4,4" />
-                                </Style>
-                            </TreeView.ItemContainerStyle>
+                    <TreeView ItemsSource="{Binding Explorer.Nodes}"
+                              SelectedItemChanged="TreeView_SelectedItemChanged"
+                              BorderThickness="0" Background="Transparent"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.CanContentScroll="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.IsVirtualizingWhenGrouping="True">
+                        <TreeView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel />
+                            </ItemsPanelTemplate>
+                        </TreeView.ItemsPanel>
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem">
+                                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                                <Setter Property="Padding" Value="4,4" />
+                                <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+                                <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+                            </Style>
+                        </TreeView.ItemContainerStyle>
                             <TreeView.Resources>
                                 <!-- Group Template -->
                                 <HierarchicalDataTemplate DataType="{x:Type vm:GroupItemViewModel}" ItemsSource="{Binding Columns}">
@@ -244,7 +256,7 @@
                                             <TextBlock Text="📄 " />
                                             <TextBlock Text="{Binding Name}" />
                                             <StackPanel.ContextMenu>
-                                                <ContextMenu>
+                                                <ContextMenu Opened="ColumnContextMenu_Opened">
                                                     <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
                                                     <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
                                                     <Separator />
@@ -270,7 +282,6 @@
                                 </DataTemplate>
                             </TreeView.Resources>
                         </TreeView>
-                    </ScrollViewer>
                 </DockPanel>
             </Border>
 

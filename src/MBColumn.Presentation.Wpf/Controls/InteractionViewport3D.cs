@@ -133,7 +133,7 @@ public sealed class InteractionViewport3D : FrameworkElement
         double sliceDirY = Math.Sin(angleRad);
         double sliceExtent = Math.Max(bounds.MaxX - bounds.MinX, bounds.MaxY - bounds.MinY) * 0.68;
 
-        var demandPts = demands.Select(p => (p.X, p.Y, p.Z, p.Label)).ToList();
+        var demandPts = demands.Select(p => (p.X, p.Y, p.Z, p.Label, p.Utilization)).ToList();
 
         cachedScene = new CachedScene(
             bounds,
@@ -545,15 +545,21 @@ public sealed class InteractionViewport3D : FrameworkElement
         }
     }
 
-    private void DrawDemandMarkers(DrawingContext dc, IReadOnlyList<(double X, double Y, double Z, string Label)> points, Func<double, double, double, ProjectedPoint> proj)
+    private void DrawDemandMarkers(DrawingContext dc, IReadOnlyList<(double X, double Y, double Z, string Label, double Utilization)> points, Func<double, double, double, ProjectedPoint> proj)
     {
+        double maxUtilization = points.Count > 0 ? points.Max(p => p.Utilization) : -1;
+
         foreach (var point in points)
         {
-            DrawMarker(dc, (point.X, point.Y, point.Z), proj, Color.FromRgb(227, 27, 35), string.IsNullOrWhiteSpace(point.Label) ? "Demand" : point.Label);
+            bool isMax = points.Count > 0 && point.Utilization >= maxUtilization && maxUtilization >= 0;
+            DrawMarker(dc, (point.X, point.Y, point.Z), proj, 
+                isMax ? Color.FromRgb(255, 0, 0) : Color.FromRgb(180, 80, 80), 
+                isMax ? (string.IsNullOrWhiteSpace(point.Label) ? "Demand" : point.Label) : "", 
+                isMax);
         }
     }
 
-    private void DrawMarker(DrawingContext dc, (double X, double Y, double Z)? pt, Func<double, double, double, ProjectedPoint> proj, Color color, string label)
+    private void DrawMarker(DrawingContext dc, (double X, double Y, double Z)? pt, Func<double, double, double, ProjectedPoint> proj, Color color, string label, bool isHighlighted = false)
     {
         if (pt is null) return;
         var p = proj(pt.Value.X, pt.Value.Y, pt.Value.Z).Screen;
@@ -561,8 +567,13 @@ public sealed class InteractionViewport3D : FrameworkElement
 
         var brush = new SolidColorBrush(color);
         brush.Freeze();
-        dc.DrawEllipse(brush, new Pen(Brushes.White, 1.2), p, 5.6, 5.6);
-        if (ShowLabels) DrawText(dc, label, 11, brush, new Point(p.X + 7, p.Y - 12));
+        double radius = isHighlighted ? 6.5 : 4.0;
+        dc.DrawEllipse(brush, new Pen(Brushes.White, isHighlighted ? 1.5 : 1.0), p, radius, radius);
+        
+        if (ShowLabels && !string.IsNullOrEmpty(label)) 
+        {
+            DrawText(dc, label, isHighlighted ? 12 : 11, brush, new Point(p.X + radius + 2, p.Y - 12));
+        }
     }
 
     private ProjectedPoint Project(double x, double y, double z, Bounds3D b)
@@ -708,6 +719,6 @@ public sealed class InteractionViewport3D : FrameworkElement
         double SliceDirX,
         double SliceDirY,
         double SliceExtent,
-        IReadOnlyList<(double X, double Y, double Z, string Label)> DemandPts);
+        IReadOnlyList<(double X, double Y, double Z, string Label, double Utilization)> DemandPts);
 }
 

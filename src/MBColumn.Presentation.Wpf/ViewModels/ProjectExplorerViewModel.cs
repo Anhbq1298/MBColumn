@@ -44,10 +44,19 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
         projectService.ProjectChanged += (_, _) =>
         {
-            UpdateProjectName();
+            System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                UpdateProjectName();
+            });
         };
 
-        projectService.ColumnsChanged += (_, _) => RefreshColumns();
+        projectService.ColumnsChanged += (_, _) =>
+        {
+            System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                RefreshColumns();
+            });
+        };
 
         RefreshColumns();
     }
@@ -297,15 +306,6 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         foreach (var record in projectService.GetColumns())
         {
             var item = CreateItem(record);
-            
-            item.MoveToGroupOptions.Add(new GroupActionViewModel("(None)", () => MoveColumn(item.Id, null)));
-            foreach (var groupVm in groupDict.Values)
-            {
-                if (record.GroupId != groupVm.Id)
-                {
-                    item.MoveToGroupOptions.Add(new GroupActionViewModel(groupVm.Name, () => MoveColumn(item.Id, groupVm.Id)));
-                }
-            }
 
             if (record.GroupId.HasValue)
             {
@@ -434,4 +434,24 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         => message
             .Replace("Column", "Section", StringComparison.Ordinal)
             .Replace("column", "section", StringComparison.Ordinal);
+
+    public void RefreshMoveToGroupOptions(ColumnItemViewModel item)
+    {
+        item.MoveToGroupOptions.Clear();
+
+        item.MoveToGroupOptions.Add(
+            new GroupActionViewModel("(None)", () => MoveColumn(item.Id, null)));
+
+        foreach (var group in projectService.GetGroups())
+        {
+            if (item.GroupId == group.Id)
+                continue;
+
+            int targetGroupId = group.Id;
+            string targetGroupName = group.Name;
+
+            item.MoveToGroupOptions.Add(
+                new GroupActionViewModel(targetGroupName, () => MoveColumn(item.Id, targetGroupId)));
+        }
+    }
 }

@@ -76,6 +76,7 @@ public sealed class AppComposition : IDisposable
             calculationService,
             ProjectService,
             input,
+            () => new InputViewModel(metricBars, imperialBars, rebarCoordinates, new DxfImportDialogService()),
             MessageService,
             ProjectFileDialogService,
             ProjectNameDialogService,

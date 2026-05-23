@@ -9,7 +9,8 @@ namespace MBColumn.Infrastructure.Etabs;
 
 public sealed class EtabsForceImportService : IEtabsForceImportService
 {
-    private const string DesignForcesTableKey = "Design Forces - Columns";
+    private static readonly string[] DesignForcesTableKeys = ["Design Forces - Columns", "Concrete Column Design Forces", "Concrete Design 1 - Column Summary", "Concrete Column Design Summary"];
+    private static readonly string[] PierDesignForcesTableKeys = ["Design Forces - Piers", "Shear Wall Pier Design Forces", "Shear Wall 1 - Pier Summary", "Shear Wall Pier Summary"];
 
     private readonly EtabsConnectionService connection;
 
@@ -26,31 +27,19 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        // Present units: used by analysis-results API (FrameForce, PierForce).
-        // Database units: used by GetTableForDisplayArray — may differ from display units.
-        var units = model.GetPresentUnits();
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
-
         var dbUnits = model.GetDatabaseUnits();
         var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
         var dbMomentFactor = dbForceToKn * dbLengthToMm / 1000.0;
 
         ConfigureOutput(model, loadCombinations);
 
-        var results = new List<EtabsForceResultDto>();
         var selectedComboSet = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
 
-        foreach (var column in columns)
-        {
-            results.AddRange(QueryColumnForces(model, column, selectedComboSet, forceToKn, momentFactor));
-        }
+        var results = QueryDesignForcesTable(model, columns, selectedComboSet, dbForceToKn, dbMomentFactor);
 
-        // No element forces means the model hasn't been analyzed yet —
-        // fall back to the design forces table (single bulk call).
-        if (results.Count == 0)
+        if (results.Count == 0 && columns.Count > 0)
         {
-            results.AddRange(QueryDesignForcesTable(model, columns, selectedComboSet, dbForceToKn, dbMomentFactor));
+            throw new InvalidOperationException(GetAvailableTablesErrorMsg(model, "Column Design Forces"));
         }
 
         return results;
@@ -67,168 +56,44 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        // Present units: used by analysis-results API (FrameForce, PierForce).
-        // Database units: used by GetTableForDisplayArray — may differ from display units.
-        var units = model.GetPresentUnits();
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
-
         var dbUnits = model.GetDatabaseUnits();
         var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
         var dbMomentFactor = dbForceToKn * dbLengthToMm / 1000.0;
+
+        ConfigureOutput(model, loadCombinations);
 
         var requestedPiers = new HashSet<string>(
             piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
             StringComparer.OrdinalIgnoreCase);
         var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
 
-        // Primary: bulk design-forces table (populated after ETABS design run)
         var results = QueryPierDesignForcesTable(model, requestedPiers, selectedCombos, dbForceToKn, dbMomentFactor);
 
-        // Fallback: analysis results API (requires analysis output to be set up)
-        if (results.Count == 0)
+        if (results.Count == 0 && piers.Count > 0)
         {
-            ConfigureOutput(model, loadCombinations);
-            results = QueryPierForceApi(model, requestedPiers, selectedCombos, forceToKn, momentFactor);
+            throw new InvalidOperationException(GetAvailableTablesErrorMsg(model, "Pier Design Forces"));
         }
 
         return results;
     }
 
-    private const string PierDesignForcesTableKey = "Design Forces - Piers";
-
-    private static List<EtabsForceResultDto> QueryPierDesignForcesTable(
-        cSapModel model,
-        HashSet<string> requestedPiers,
-        HashSet<string> selectedCombos,
-        double forceToKn,
-        double momentFactor)
+    private static string GetAvailableTablesErrorMsg(cSapModel model, string label)
     {
-        string[] fieldsIn = [];
-        string[] fields = [];
-        int tableVersion = 0;
-        string[] tableData = [];
-        int numRecords = 0;
-
-        var ret = model.DatabaseTables.GetTableForDisplayArray(
-            PierDesignForcesTableKey, ref fieldsIn, "",
-            ref tableVersion, ref fields, ref numRecords, ref tableData);
-
-        if (ret != 0 || numRecords == 0 || fields.Length == 0)
-            return [];
-
-        var storyIdx  = IndexOf(fields, "Story");
-        var pierIdx   = IndexOf(fields, "Pier", "Label", "Pier Name");
-        var comboIdx  = IndexOf(fields, "Combo", "Load Combo", "LoadCombo");
-        var locIdx    = IndexOf(fields, "Location", "Loc");
-        var pIdx      = IndexOf(fields, "P");
-        var v2Idx     = IndexOf(fields, "V2");
-        var v3Idx     = IndexOf(fields, "V3");
-        var m2Idx     = IndexOf(fields, "M2");
-        var m3Idx     = IndexOf(fields, "M3");
-
-        if (storyIdx < 0 || pierIdx < 0 || comboIdx < 0 || pIdx < 0)
-            return [];
-
-        var results = new List<EtabsForceResultDto>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var fc = fields.Length;
-
-        for (var r = 0; r < numRecords; r++)
+        int tableCount = 0;
+        string[] allTables = [];
+        string[] importTypes = [];
+        int[] empty = [];
+        bool[] isEmpty = [];
+        try
         {
-            var b = r * fc;
-            var story = tableData[b + storyIdx] ?? "";
-            var pier  = tableData[b + pierIdx]  ?? "";
-            var combo = tableData[b + comboIdx] ?? "";
-            var loc   = locIdx >= 0 ? tableData[b + locIdx] ?? "" : "";
-
-            if (!selectedCombos.Contains(combo)) continue;
-            if (!requestedPiers.Contains($"{pier.Trim()}|{story.Trim()}")) continue;
-
-            var key = $"{pier}|{story}|{combo}|{loc}";
-            if (!seen.Add(key)) continue;
-
-            var p  = ParseDouble(tableData[b + pIdx]);
-            var v2 = v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0;
-            var v3 = v3Idx >= 0 ? ParseDouble(tableData[b + v3Idx]) : 0.0;
-            var m2 = m2Idx >= 0 ? ParseDouble(tableData[b + m2Idx]) : 0.0;
-            var m3 = m3Idx >= 0 ? ParseDouble(tableData[b + m3Idx]) : 0.0;
-
-            var status = string.Equals(loc, "Bottom", StringComparison.OrdinalIgnoreCase)
-                ? "Design Bottom"
-                : string.IsNullOrEmpty(loc) ? "Design Force" : $"Design {loc}";
-
-            results.Add(new EtabsForceResultDto(
-                $"pier:{pier}:{story}",
-                pier, story, pier, pier,
-                combo,
-                SMath.Round(p  * forceToKn,    3),
-                SMath.Round(m2 * momentFactor,  3),
-                SMath.Round(m3 * momentFactor,  3),
-                SMath.Round(v2 * forceToKn,     3),
-                SMath.Round(v3 * forceToKn,     3),
-                NormalizeStation(loc),
-                status));
+            model.DatabaseTables.GetAllTables(ref tableCount, ref allTables, ref importTypes, ref empty, ref isEmpty);
+            var tableList = string.Join(", ", allTables.Where(t => t.Contains("Design", StringComparison.OrdinalIgnoreCase) || t.Contains("Force", StringComparison.OrdinalIgnoreCase)));
+            return $"Could not find {label}. Available related tables: {tableList}";
         }
-
-        return results;
-    }
-
-    private static List<EtabsForceResultDto> QueryPierForceApi(
-        cSapModel model,
-        HashSet<string> requestedPiers,
-        HashSet<string> selectedCombos,
-        double forceToKn,
-        double momentFactor)
-    {
-        int numberResults = 0;
-        string[] storyName = [];
-        string[] pierName  = [];
-        string[] loadCase  = [];
-        string[] location  = [];
-        double[] p = [], v2 = [], v3 = [], t = [], m2 = [], m3 = [];
-
-        var ret = model.Results.PierForce(
-            ref numberResults,
-            ref storyName, ref pierName, ref loadCase, ref location,
-            ref p, ref v2, ref v3, ref t, ref m2, ref m3);
-
-        if (ret != 0 || numberResults == 0)
-            return [];
-
-        var results = new List<EtabsForceResultDto>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (var i = 0; i < numberResults; i++)
+        catch
         {
-            var combo = loadCase[i]  ?? "";
-            var pier  = pierName[i]  ?? "";
-            var story = storyName[i] ?? "";
-            var loc   = location[i]  ?? "";
-
-            if (!selectedCombos.Contains(combo)) continue;
-            if (!requestedPiers.Contains($"{pier.Trim()}|{story.Trim()}")) continue;
-
-            var key = $"{pier}|{story}|{combo}|{loc}";
-            if (!seen.Add(key)) continue;
-
-            var status = string.Equals(loc, "Bottom", StringComparison.OrdinalIgnoreCase)
-                ? "Pier Bottom" : "Pier Top";
-
-            results.Add(new EtabsForceResultDto(
-                $"pier:{pier}:{story}",
-                pier, story, pier, pier,
-                combo,
-                SMath.Round(p[i]  * forceToKn,   3),
-                SMath.Round(m2[i] * momentFactor, 3),
-                SMath.Round(m3[i] * momentFactor, 3),
-                SMath.Round(v2[i] * forceToKn,    3),
-                SMath.Round(v3[i] * forceToKn,    3),
-                NormalizeStation(loc),
-                status));
+            return $"Could not find {label}. Please ensure you have run Design in ETABS.";
         }
-
-        return results;
     }
 
     private static void ConfigureOutput(cSapModel model, IReadOnlyList<string> loadCombinations)
@@ -239,11 +104,10 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             model.Results.Setup.SetComboSelectedForOutput(combo, true);
         }
 
-        // Envelope mode: returns Max and Min rows per combo
         model.Results.Setup.SetOptionMultiValuedCombo(0);
     }
 
-    private static IReadOnlyList<EtabsForceResultDto> QueryDesignForcesTable(
+    private static List<EtabsForceResultDto> QueryDesignForcesTable(
         cSapModel model,
         IReadOnlyList<EtabsColumnImportDto> columns,
         HashSet<string> selectedCombos,
@@ -255,34 +119,44 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         int tableVersion = 0;
         string[] tableData = [];
         int numRecords = 0;
+        int ret = -1;
 
-        var ret = model.DatabaseTables.GetTableForDisplayArray(
-            DesignForcesTableKey,
-            ref fieldsKeysIncluded,
-            "",
-            ref tableVersion,
-            ref fields,
-            ref numRecords,
-            ref tableData);
+        foreach (var key in DesignForcesTableKeys)
+        {
+            ret = model.DatabaseTables.GetTableForDisplayArray(
+                key,
+                ref fieldsKeysIncluded,
+                "",
+                ref tableVersion,
+                ref fields,
+                ref numRecords,
+                ref tableData);
+            if (ret == 0 && numRecords > 0 && fields.Length > 0)
+                break;
+        }
 
         if (ret != 0 || numRecords == 0 || fields.Length == 0)
             return [];
 
         var storyIdx = IndexOf(fields, "Story");
-        var labelIdx = IndexOf(fields, "Label");
-        var comboIdx = IndexOf(fields, "Combo");
-        var pIdx = IndexOf(fields, "P");
-        // ETABS may expose either M2/M3 or M2 Top/M3 Top depending on version
-        var m2Idx = IndexOf(fields, "M2", "M2 Top", "M2-Top");
-        var m3Idx = IndexOf(fields, "M3", "M3 Top", "M3-Top");
-        var v2Idx = IndexOf(fields, "V2");
+        var labelIdx = IndexOf(fields, "Label", "Column", "UniqueName");
+        var comboIdx = IndexOf(fields, "Combo", "DesignCombo", "Design Combo");
+        var pIdx = IndexOf(fields, "P", "Pu");
+        var m2Idx = IndexOf(fields, "M2", "M2 Top", "M2-Top", "Mu2");
+        var m3Idx = IndexOf(fields, "M3", "M3 Top", "M3-Top", "Mu3");
+        var v2Idx = IndexOf(fields, "V2", "Vu2");
+        var locIdx = IndexOf(fields, "Location", "Station");
 
         if (storyIdx < 0 || labelIdx < 0 || comboIdx < 0 || pIdx < 0)
-            return [];
+        {
+            throw new InvalidOperationException($"Found Column Design Forces table but it is missing required columns. Available columns: {string.Join(", ", fields)}");
+        }
 
         var columnByStoryLabel = new Dictionary<(string Story, string Label), EtabsColumnImportDto>();
         foreach (var col in columns)
+        {
             columnByStoryLabel.TryAdd((col.StoryName, col.Label), col);
+        }
 
         var results = new List<EtabsForceResultDto>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -301,7 +175,10 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             if (!columnByStoryLabel.TryGetValue((story, label), out var column))
                 continue;
 
-            var key = $"{column.ObjectName}|{combo}";
+            var loc = locIdx >= 0 ? tableData[b + locIdx] : "Top";
+            var status = "Design Force";
+
+            var key = $"{column.ObjectName}|{combo}|{loc}";
             if (!seen.Add(key))
                 continue;
 
@@ -322,12 +199,101 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
                 0.0,
-                "Top",
-                "Design Force"));
+                NormalizeStation(loc),
+                status));
         }
 
         return results;
     }
+
+    private static List<EtabsForceResultDto> QueryPierDesignForcesTable(
+        cSapModel model,
+        HashSet<string> requestedPiers,
+        HashSet<string> selectedCombos,
+        double forceToKn,
+        double momentFactor)
+    {
+        string[] fieldsIn = [];
+        string[] fields = [];
+        int tableVersion = 0;
+        string[] tableData = [];
+        int numRecords = 0;
+        int ret = -1;
+
+        foreach (var key in PierDesignForcesTableKeys)
+        {
+            ret = model.DatabaseTables.GetTableForDisplayArray(
+                key, ref fieldsIn, "", ref tableVersion, ref fields, ref numRecords, ref tableData);
+            if (ret == 0 && numRecords > 0 && fields.Length > 0)
+                break;
+        }
+
+        if (ret != 0 || numRecords == 0 || fields.Length == 0)
+            return [];
+
+        var storyIdx = IndexOf(fields, "Story");
+        var pierIdx = IndexOf(fields, "Pier", "Label", "Pier Name");
+        var comboIdx = IndexOf(fields, "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo");
+        var pIdx = IndexOf(fields, "P", "Pu");
+        var m2Idx = IndexOf(fields, "M2", "M2 Top", "M2-Top", "Mu2");
+        var m3Idx = IndexOf(fields, "M3", "M3 Top", "M3-Top", "Mu3");
+        var v2Idx = IndexOf(fields, "V2", "Vu2");
+        var v3Idx = IndexOf(fields, "V3", "Vu3");
+        var locIdx = IndexOf(fields, "Location", "Station", "Loc");
+
+        if (storyIdx < 0 || pierIdx < 0 || comboIdx < 0 || pIdx < 0)
+        {
+            throw new InvalidOperationException($"Found Pier Design Forces table but it is missing required columns. Available columns: {string.Join(", ", fields)}");
+        }
+
+        var results = new List<EtabsForceResultDto>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var fieldCount = fields.Length;
+
+        for (var r = 0; r < numRecords; r++)
+        {
+            var b = r * fieldCount;
+            var story = tableData[b + storyIdx] ?? "";
+            var pier = tableData[b + pierIdx] ?? "";
+            var combo = tableData[b + comboIdx] ?? "";
+            var loc = locIdx >= 0 ? tableData[b + locIdx] ?? "" : "Top";
+
+            if (!selectedCombos.Contains(combo)) continue;
+            if (!requestedPiers.Contains($"{pier.Trim()}|{story.Trim()}")) continue;
+
+            var key = $"{pier}|{story}|{combo}|{loc}";
+            if (!seen.Add(key)) continue;
+
+            var p = ParseDouble(tableData[b + pIdx]);
+            var m2 = m2Idx >= 0 ? ParseDouble(tableData[b + m2Idx]) : 0.0;
+            var m3 = m3Idx >= 0 ? ParseDouble(tableData[b + m3Idx]) : 0.0;
+            var v2 = v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0;
+            var v3 = v3Idx >= 0 ? ParseDouble(tableData[b + v3Idx]) : 0.0;
+
+            var status = string.Equals(loc, "Bottom", StringComparison.OrdinalIgnoreCase)
+                ? "Design Bottom"
+                : string.IsNullOrEmpty(loc) ? "Design Force" : $"Design {loc}";
+
+            results.Add(new EtabsForceResultDto(
+                $"pier:{pier}:{story}",
+                pier, story, pier, pier,
+                combo,
+                SMath.Round(p * forceToKn, 3),
+                SMath.Round(m2 * momentFactor, 3),
+                SMath.Round(m3 * momentFactor, 3),
+                SMath.Round(v2 * forceToKn, 3),
+                SMath.Round(v3 * forceToKn, 3),
+                NormalizeStation(loc),
+                status));
+        }
+
+        return results;
+    }
+
+    private static string NormalizeStation(string station) =>
+        string.Equals(station, "Top", StringComparison.OrdinalIgnoreCase) ? "Top" :
+        string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase) ? "Bottom" :
+        station;
 
     private static int IndexOf(string[] fields, params string[] candidates)
     {
@@ -341,113 +307,4 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
     private static double ParseDouble(string s) =>
         double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0.0;
-
-    private static IEnumerable<EtabsForceResultDto> QueryColumnForces(
-        cSapModel model,
-        EtabsColumnImportDto column,
-        HashSet<string> selectedCombos,
-        double forceToKn,
-        double momentFactor)
-    {
-        int numResults = 0;
-        string[] obj = [];
-        double[] objSta = [];
-        string[] elm = [];
-        double[] elmSta = [];
-        string[] loadCase = [];
-        string[] stepType = [];
-        double[] stepNum = [];
-        double[] p = [];
-        double[] v2 = [];
-        double[] v3 = [];
-        double[] t = [];
-        double[] m2 = [];
-        double[] m3 = [];
-
-        var ret = model.Results.FrameForce(
-            column.ObjectName,
-            eItemTypeElm.ObjectElm,
-            ref numResults,
-            ref obj,
-            ref objSta,
-            ref elm,
-            ref elmSta,
-            ref loadCase,
-            ref stepType,
-            ref stepNum,
-            ref p,
-            ref v2,
-            ref v3,
-            ref t,
-            ref m2,
-            ref m3);
-
-        if (ret != 0 || numResults == 0)
-            yield break;
-
-        var indices = Enumerable.Range(0, numResults)
-            .Where(i => selectedCombos.Contains(loadCase[i] ?? ""))
-            .GroupBy(i => $"{loadCase[i]}|{stepType[i]}", StringComparer.OrdinalIgnoreCase);
-
-        foreach (var group in indices)
-        {
-            var rows = group
-                .OrderBy(i => StationValue(objSta, elmSta, i))
-                .ToList();
-            if (rows.Count == 0)
-                continue;
-
-            var bottomIndex = rows.First();
-            var topIndex = rows.Last();
-            foreach (var (index, station) in DistinctStationRows(bottomIndex, topIndex))
-            {
-                var combo = loadCase[index];
-                var baseStatus = stepType[index] switch
-                {
-                    "Max" => "Envelope Max",
-                    "Min" => "Envelope Min",
-                    _ => stepType[index]
-                };
-
-                yield return new EtabsForceResultDto(
-                    column.ObjectName,
-                    column.PierName,
-                    column.StoryName,
-                    column.Label,
-                    column.EtabsSectionName,
-                    combo,
-                    SMath.Round(p[index] * forceToKn, 3),
-                    SMath.Round(m2[index] * momentFactor, 3),
-                    SMath.Round(m3[index] * momentFactor, 3),
-                    SMath.Round(v2[index] * forceToKn, 3),
-                    SMath.Round(v3[index] * forceToKn, 3),
-                    station,
-                    $"{baseStatus} {station}");
-            }
-        }
-    }
-
-    private static double StationValue(double[] objSta, double[] elmSta, int index)
-        => index < objSta.Length ? objSta[index]
-            : index < elmSta.Length ? elmSta[index]
-            : 0.0;
-
-    private static IEnumerable<(int Index, string Station)> DistinctStationRows(int bottomIndex, int topIndex)
-    {
-        yield return (bottomIndex, "Bottom");
-        if (topIndex != bottomIndex)
-            yield return (topIndex, "Top");
-    }
-
-    private static string NormalizeStation(string value)
-    {
-        if (value.Contains("bottom", StringComparison.OrdinalIgnoreCase))
-            return "Bottom";
-        if (value.Contains("mid", StringComparison.OrdinalIgnoreCase))
-            return "Mid";
-        if (value.Contains("top", StringComparison.OrdinalIgnoreCase))
-            return "Top";
-
-        return "";
-    }
 }

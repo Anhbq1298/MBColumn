@@ -43,5 +43,6 @@ public sealed record CalculationResultDto(
     public IReadOnlyList<RebarCoordinateDto> RebarCoordinates { get; init; } = [];
     public IReadOnlyList<CapacityDebugPointDto> CapacityDebugPoints { get; init; } = [];
     public IReadOnlyList<InsetPointDto> IrregularSectionBoundaryPoints { get; init; } = [];
+    public HandCalcValidationReport? HandCalcValidation { get; init; }
 }
 

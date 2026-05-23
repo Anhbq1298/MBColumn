@@ -820,7 +820,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var existingNames = ImportGroups.Select(g => g.GroupName).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var name = NextAvailableGroupName(baseName, existingNames);
 
-        var group = new ImportGroupViewModel(name, OnImportGroupChanged);
+        var group = new ImportGroupViewModel(name, OnImportGroupChanged)
+        {
+            SelectedTargetGroup = SelectedTargetGroup
+        };
         ImportGroups.Add(group);
         SelectedImportGroup = group;
         RaiseImportSummary();
@@ -1046,8 +1049,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 ShapeType = mapping.IsRectangular ? "Rectangular" : mapping.IsCircular ? "Circular" : "Irregular",
                 SourceSectionName = sourceColumn.EtabsSectionName,
                 UniqueSectionDisplayName = sourceColumn.UniqueSection,
-                TargetGroupName = SelectedTargetGroup?.GroupName ?? "",
-                TargetGroupId = SelectedTargetGroup?.GroupId,
+                TargetGroupName = group.SelectedTargetGroup?.GroupName ?? "",
+                TargetGroupId = group.SelectedTargetGroup?.GroupId,
                 TierName = group.GroupName,
                 StoryFrom = group.Items.Select(i => i.Story).OrderBy(s => s).FirstOrDefault() ?? "",
                 StoryTo = group.Items.Select(i => i.Story).OrderBy(s => s).LastOrDefault() ?? "",
@@ -1070,38 +1073,48 @@ public sealed class EtabsImportViewModel : ViewModelBase
         return snapshot;
     }
 
+    private bool _isBuildingCache;
+
     private async Task BuildForceCacheAsync()
     {
-        if (forceCacheService is null) return;
+        if (forceCacheService is null || _isBuildingCache) return;
 
-        ForceCacheStatus = "Building…";
-        buildForceCacheCommand.RaiseCanExecuteChanged();
-
-        var allCombos = LoadCombinations.Select(c => c.Name).ToList();
-        var result = await Task.Run(() =>
+        try
         {
-            var forces = new List<EtabsForceResultDto>();
+            _isBuildingCache = true;
+            ForceCacheStatus = "Building…";
+            buildForceCacheCommand.RaiseCanExecuteChanged();
 
-            var frameColumns = Columns.Where(c => !c.IsIrregular).ToList();
-            if (frameColumns.Count > 0)
+            var allCombos = LoadCombinations.Select(c => c.Name).ToList();
+            var result = await Task.Run(() =>
             {
-                var dtos = frameColumns.Select(c => new EtabsColumnImportDto(
-                    c.ObjectName, c.Pier, c.Story, c.Label,
-                    c.UniqueSection, c.EtabsSectionName, c.Material,
-                    c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
-                forces.AddRange(forceImportService.GetForces(dtos, allCombos, targetUnitSystem));
-            }
+                var forces = new List<EtabsForceResultDto>();
 
-            var piers = Columns.Where(c => c.IsIrregular)
-                .Select(c => (c.Pier, c.Story)).ToList();
-            if (piers.Count > 0)
-                forces.AddRange(forceImportService.GetPierForces(piers, allCombos, targetUnitSystem));
+                var frameColumns = Columns.Where(c => !c.IsIrregular).ToList();
+                if (frameColumns.Count > 0)
+                {
+                    var dtos = frameColumns.Select(c => new EtabsColumnImportDto(
+                        c.ObjectName, c.Pier, c.Story, c.Label,
+                        c.UniqueSection, c.EtabsSectionName, c.Material,
+                        c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                    forces.AddRange(forceImportService.GetForces(dtos, allCombos, targetUnitSystem));
+                }
 
-            return forceCacheService.Build(forces);
-        });
+                var piers = Columns.Where(c => c.IsIrregular)
+                    .Select(c => (c.Pier, c.Story)).ToList();
+                if (piers.Count > 0)
+                    forces.AddRange(forceImportService.GetPierForces(piers, allCombos, targetUnitSystem));
 
-        ForceCacheStatus = result.Message;
-        buildForceCacheCommand.RaiseCanExecuteChanged();
+                return forceCacheService.Build(forces);
+            });
+
+            ForceCacheStatus = result.Message;
+        }
+        finally
+        {
+            _isBuildingCache = false;
+            buildForceCacheCommand.RaiseCanExecuteChanged();
+        }
     }
 
     private void SetFlow(int flow)
@@ -1377,6 +1390,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         FilteredLoadCombinations.Refresh();
         RaiseCounts();
+
+        if (forceCacheService is not null)
+        {
+            _ = BuildForceCacheAsync();
+        }
     }
 
     private void GenerateForceRows()

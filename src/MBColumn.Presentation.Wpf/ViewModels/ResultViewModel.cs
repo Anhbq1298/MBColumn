@@ -122,6 +122,19 @@ public sealed class ResultViewModel : ViewModelBase
         set
         {
             Set(ref result, value);
+            
+            if (value != null && value.ControlPoints.PmmSurfacePoints.Count > 0)
+            {
+                var pRange = value.ControlPoints.PmmSurfacePoints.Max(p => p.DisplayP) - value.ControlPoints.PmmSurfacePoints.Min(p => p.DisplayP);
+                var mxMax = value.ControlPoints.PmmSurfacePoints.Max(p => Math.Abs(p.DisplayMx));
+                var myMax = value.ControlPoints.PmmSurfacePoints.Max(p => Math.Abs(p.DisplayMy));
+                
+                PStep = CalculateNiceStep(pRange);
+                MStep = CalculateNiceStep(Math.Max(mxMax * 2, myMax * 2));
+                MStepX = CalculateNiceStep(mxMax * 2);
+                MStepY = CalculateNiceStep(myMax * 2);
+            }
+            
             showPmaxPmin = false;
             Raise(nameof(ShowPmaxPmin));
             MM.Load(value);
@@ -532,6 +545,20 @@ public sealed class ResultViewModel : ViewModelBase
         PM3D.ShowWireframe = ShowSurface3D;
         MM3D.ShowSurface = ShowSurface3D;
         MM3D.ShowWireframe = ShowSurface3D;
+    }
+
+    private static double CalculateNiceStep(double range)
+    {
+        if (range <= 0 || double.IsNaN(range)) return 100.0;
+        double roughStep = range / 10.0;
+        double magnitude = Math.Pow(10.0, Math.Floor(Math.Log10(roughStep)));
+        double normalizedStep = roughStep / magnitude;
+        
+        double niceMultiplier = 1.0;
+        if (normalizedStep >= 5.0) niceMultiplier = 5.0;
+        else if (normalizedStep >= 2.0) niceMultiplier = 2.0;
+        
+        return niceMultiplier * magnitude;
     }
 
     private static double SanitizeGridStep(double value)

@@ -290,183 +290,191 @@
                         </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
-                <ScrollViewer Grid.Column="2"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel>
-                        <GroupBox Header="Demand Cases"
-                                  Background="White"
-                                  Foreground="{DynamicResource DarkNavyBrush}"
-                                  BorderBrush="{DynamicResource BorderGreyBrush}"
-                                  Padding="14"
-                                  Margin="0,0,0,14">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="260" />
-                                    <ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="2">
+                    <GroupBox Header="Demand Cases"
+                              Background="White"
+                              Foreground="{DynamicResource DarkNavyBrush}"
+                              BorderBrush="{DynamicResource BorderGreyBrush}"
+                              Padding="14"
+                              Margin="0,0,0,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="260" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                                <!-- Left: Moment sign convention diagram -->
-                                <Border Grid.Column="0"
-                                        Background="White"
-                                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="6"
-                                        Padding="6">
-                                    <StackPanel>
-                                        <TextBlock Text="Moment Sign Convention"
-                                                   Style="{StaticResource FieldLabelTextStyle}"
-                                                   Margin="0,0,0,4" />
-                                        <Viewbox Stretch="Uniform"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Top">
-                                            <Canvas Width="900" Height="940">
-                                                <Canvas.Resources>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
-                                                        <Setter Property="Foreground" Value="#0046d5"/>
-                                                    </Style>
-                                                </Canvas.Resources>
+                            <!-- Left: Moment sign convention diagram -->
+                            <Border Grid.Column="0"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="6"
+                                    VerticalAlignment="Top">
+                                <StackPanel>
+                                    <TextBlock Text="Moment Sign Convention"
+                                               Style="{StaticResource FieldLabelTextStyle}"
+                                               Margin="0,0,0,4" />
+                                    <Viewbox Stretch="Uniform"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Top">
+                                        <Canvas Width="900" Height="940">
+                                            <Canvas.Resources>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
+                                                    <Setter Property="Foreground" Value="#0046d5"/>
+                                                </Style>
+                                            </Canvas.Resources>
 
-                                                <Rectangle Width="900" Height="940" Fill="White"/>
+                                            <Rectangle Width="900" Height="940" Fill="White"/>
 
-                                                <!-- Column faces -->
-                                                <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
-                                                <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
-                                                <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
+                                            <!-- Column faces -->
+                                            <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
+                                            <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
+                                            <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
 
-                                                <!-- Main prism outline -->
-                                                <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                                <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                                <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                                <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                                <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                                <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                            <!-- Main prism outline -->
+                                            <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                            <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
-                                                <!-- Mid section -->
-                                                <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
-                                                <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
-                                                <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                            <!-- Mid section -->
+                                            <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
+                                            <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                            <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
-                                                <!-- Centroid marker -->
-                                                <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
-                                                <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
+                                            <!-- Centroid marker -->
+                                            <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
+                                            <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
 
-                                                <!-- Axial load P -->
-                                                <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
-                                                <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
-                                                <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="52" />
+                                            <!-- Axial load P -->
+                                            <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
+                                            <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
+                                            <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="52" />
 
-                                                <!-- MX -->
-                                                <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
-                                                <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                                <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                                <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                                <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="52" />
+                                            <!-- MX -->
+                                            <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                            <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="52" />
 
-                                                <!-- MY -->
-                                                <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
-                                                <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                                <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                                <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                                <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="52" />
+                                            <!-- MY -->
+                                            <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                            <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                            <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="52" />
 
-                                                <!-- Coordinate triad -->
-                                                <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
-                                                <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                                <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
-                                                <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                                <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
-                                                <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                                <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                                <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
-                                                <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                                <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
-                                                <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                                <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
+                                            <!-- Coordinate triad -->
+                                            <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
+                                            <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                            <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
+                                            <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                            <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
+                                            <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                            <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
+                                            <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
+                                            <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                            <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
 
-                                                <!-- Title -->
-                                                <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
-                                            </Canvas>
-                                        </Viewbox>
-                                    </StackPanel>
-                                </Border>
+                                            <!-- Title -->
+                                            <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </StackPanel>
+                            </Border>
 
-                                <!-- Right: DataGrid + buttons -->
-                                <DockPanel Grid.Column="2">
-                                    <WrapPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
-                                        <Button Content="+ Add case"
-                                                Command="{Binding AddLoadCaseCommand}"
-                                                Style="{StaticResource CompactButtonStyle}" />
-                                        <Button Content="Delete demand case"
-                                                Command="{Binding DeleteSelectedLoadCasesCommand}"
-                                                CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
-                                                Style="{StaticResource SecondaryButtonStyle}"
-                                                Padding="10,4"
-                                                FontSize="11.5"
-                                                Margin="8,0,0,0" />
-                                    </WrapPanel>
-                                    <DataGrid x:Name="LoadCasesGrid"
-                                              ItemsSource="{Binding LoadCases}"
-                                              AutoGenerateColumns="False"
-                                              CanUserAddRows="False"
-                                              CanUserDeleteRows="False"
-                                              CanUserResizeColumns="True"
-                                              CanUserResizeRows="True"
-                                              HeadersVisibility="Column"
-                                              SelectionMode="Extended"
-                                              SelectionUnit="FullRow"
-                                              MinHeight="200">
-                                        <DataGrid.ContextMenu>
-                                            <ContextMenu>
-                                                <MenuItem Header="Add Demand Case"
-                                                          Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                                <MenuItem Header="Remove Selected Demand Case(s)"
-                                                          Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                          CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                            </ContextMenu>
-                                        </DataGrid.ContextMenu>
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Case Name"
-                                                                Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                                                Width="110"
-                                                                MinWidth="80"
-                                                                ElementStyle="{StaticResource LeftAlignText}" />
-                                            <DataGridTextColumn Header="P"
-                                                                Binding="{Binding Pu, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                Width="*"
-                                                                MinWidth="64"
-                                                                ElementStyle="{StaticResource RightAlignText}"
-                                                                EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                            <DataGridTextColumn Header="Mx"
-                                                                Binding="{Binding Mux, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                Width="*"
-                                                                MinWidth="64"
-                                                                ElementStyle="{StaticResource RightAlignText}"
-                                                                EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                            <DataGridTextColumn Header="My"
-                                                                Binding="{Binding Muy, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                                                Width="*"
-                                                                MinWidth="64"
-                                                                ElementStyle="{StaticResource RightAlignText}"
-                                                                EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                            <DataGridTextColumn Header="Source"
-                                                                Binding="{Binding Source, UpdateSourceTrigger=PropertyChanged}"
-                                                                Width="75"
-                                                                MinWidth="60"
-                                                                ElementStyle="{StaticResource LeftAlignText}" />
-                                            <DataGridCheckBoxColumn Header="Include"
-                                                                    Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                    Width="62"
-                                                                    MinWidth="50" />
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </DockPanel>
+                            <!-- Right: DataGrid + buttons -->
+                            <Grid Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                
+                                <WrapPanel Grid.Row="0" Margin="0,0,0,10">
+                                    <Button Content="+ Add case"
+                                            Command="{Binding AddLoadCaseCommand}"
+                                            Style="{StaticResource CompactButtonStyle}" />
+                                    <Button Content="Delete demand case"
+                                            Command="{Binding DeleteSelectedLoadCasesCommand}"
+                                            CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Padding="10,4"
+                                            FontSize="11.5"
+                                            Margin="8,0,0,0" />
+                                </WrapPanel>
+                                <DataGrid x:Name="LoadCasesGrid"
+                                          Grid.Row="1"
+                                          ItemsSource="{Binding LoadCases}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserResizeColumns="True"
+                                          CanUserResizeRows="True"
+                                          HeadersVisibility="Column"
+                                          SelectionMode="Extended"
+                                          SelectionUnit="FullRow"
+                                          EnableRowVirtualization="True"
+                                          EnableColumnVirtualization="True"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling"
+                                          ScrollViewer.CanContentScroll="True"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Add Demand Case"
+                                                      Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Remove Selected Demand Case(s)"
+                                                      Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Case Name"
+                                                            Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                            Width="110"
+                                                            MinWidth="80"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Header="P"
+                                                            Binding="{Binding Pu, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                        <DataGridTextColumn Header="Mx"
+                                                            Binding="{Binding Mux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                        <DataGridTextColumn Header="My"
+                                                            Binding="{Binding Muy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            MinWidth="64"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                        <DataGridTextColumn Header="Source"
+                                                            Binding="{Binding Source, UpdateSourceTrigger=LostFocus}"
+                                                            Width="75"
+                                                            MinWidth="60"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridCheckBoxColumn Header="Include"
+                                                                Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                Width="62"
+                                                                MinWidth="50" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
                             </Grid>
-                        </GroupBox>
-                    </StackPanel>
-                </ScrollViewer>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
             </Grid>
         </TabItem>
         <TabItem Header="Section + Rebar">

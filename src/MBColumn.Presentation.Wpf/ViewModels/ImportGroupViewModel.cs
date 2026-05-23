@@ -9,6 +9,7 @@ public sealed class ImportGroupViewModel : ViewModelBase
     private string groupName;
     private bool isRenaming;
     private string editName;
+    private ProjectGroupOptionViewModel? selectedTargetGroup;
     private readonly Action onChanged;
 
     public ImportGroupViewModel(string groupName, Action onChanged)
@@ -55,6 +56,12 @@ public sealed class ImportGroupViewModel : ViewModelBase
     {
         get => isRenaming;
         set => Set(ref isRenaming, value);
+    }
+
+    public ProjectGroupOptionViewModel? SelectedTargetGroup
+    {
+        get => selectedTargetGroup;
+        set => Set(ref selectedTargetGroup, value);
     }
 
     public int ItemCount => Items.Count;
