@@ -8,7 +8,11 @@ public abstract class ExplorerNodeViewModel : ViewModelBase
     private bool isSelected;
     private bool isRenaming;
     private string editName = "";
-    private bool isExpanded = true;
+
+    // Keep project explorer nodes collapsed by default.
+    // Large .mbc files may contain many groups/sections; expanding every group during load
+    // forces WPF to create a large visual tree and can make unrelated toolbar interactions lag.
+    private bool isExpanded;
 
     public int Id { get; protected set; }
 
