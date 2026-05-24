@@ -39,10 +39,20 @@ public static class SpecialCapacityPointsService
             double theta = pts[0].ThetaDegrees;
             double dtMm = ComputeDt(section, theta);
 
+            double cZeroTension = dtMm;
+            double cHalfYield = dtMm > 1e-6 ? ecu * dtMm / (ecu + 0.5 * eyield) : 0;
             double cBalance = dtMm > 1e-6 ? ecu * dtMm / (ecu + eyield) : 0;
             double cTension = dtMm > 1e-6 ? ecu * dtMm / (ecu + eyield + 0.003) : 0;
 
             result.Add(new SpecialCapacityEntry("Max Compression", a, theta, pts[0]));
+
+            var zeroTension = InterpolateAtDepth(pts, cZeroTension);
+            if (zeroTension is not null)
+                result.Add(new SpecialCapacityEntry("Zero Tension", a, theta, zeroTension));
+
+            var halfYield = InterpolateAtDepth(pts, cHalfYield);
+            if (halfYield is not null)
+                result.Add(new SpecialCapacityEntry("50% Yield", a, theta, halfYield));
 
             var balanced = InterpolateAtDepth(pts, cBalance);
             if (balanced is not null)

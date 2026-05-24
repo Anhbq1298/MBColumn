@@ -547,6 +547,8 @@ public class DiagramCanvas2D : FrameworkElement
         var color = label switch
         {
             "Max Compression" => Color.FromRgb(74, 20, 140),  // Purple 900
+            "Zero Tension"    => Color.FromRgb(0, 150, 136),  // Teal 500
+            "50% Yield"       => Color.FromRgb(255, 112, 67), // Deep Orange 400
             "Max Tension"     => Color.FromRgb(93, 64, 55),   // Brown 700
             "Balanced"        => Color.FromRgb(27, 94, 32),   // Green 900
             "Tension Control" => Color.FromRgb(1, 87, 155),   // Light Blue 900

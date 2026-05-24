@@ -230,30 +230,34 @@
                                 </Grid>
                             </StackPanel>
 
-                            <!-- Capacity Points Legend -->
-                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Capacity Points" Style="{StaticResource FieldLabelTextStyle}" FontSize="11" Margin="0,4,0,6" />
-                            <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,4">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
-                                    <Ellipse Width="8" Height="8" Stroke="#4A148C" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBlock Text="Max Compression" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
-                                    <Ellipse Width="8" Height="8" Stroke="#1B5E20" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBlock Text="Balanced" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
-                                    <Ellipse Width="8" Height="8" Stroke="#01579B" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBlock Text="Tension Control" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
-                                    <Ellipse Width="8" Height="8" Stroke="#F57F17" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBlock Text="Pure Bending" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
-                                    <Ellipse Width="8" Height="8" Stroke="#5D4037" StrokeThickness="1.5" Fill="White" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <TextBlock Text="Max Tension" Style="{StaticResource HelperTextStyle}" FontSize="10.5" />
-                                </StackPanel>
-                            </WrapPanel>
+                            <!-- 7-Point Validation Table (Replacing 5-Point Legend) -->
+                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Strain-Controlled 7-Point Validation" Style="{StaticResource FieldLabelTextStyle}" FontSize="12" Margin="0,10,0,6" Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            <DataGrid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,0,0,16"
+                                      ItemsSource="{Binding SevenPointValidationRows}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      HeadersVisibility="Column"
+                                      Background="Transparent"
+                                      BorderBrush="{DynamicResource BorderGreyBrush}"
+                                      HorizontalGridLinesBrush="{DynamicResource BorderGreyBrush}"
+                                      VerticalGridLinesBrush="{DynamicResource BorderGreyBrush}"
+                                      RowBackground="White"
+                                      AlternatingRowBackground="#FAFAFA"
+                                      Foreground="{DynamicResource DarkNavyBrush}"
+                                      FontSize="11"
+                                      Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Point" Binding="{Binding PointName}" FontWeight="SemiBold" />
+                                    <DataGridTextColumn Header="Target Strain" Binding="{Binding TargetStrainState}" />
+                                    <DataGridTextColumn Header="c (mm)" Binding="{Binding CDisplay}" />
+                                    <DataGridTextColumn Header="Pn,7 (kN)" Binding="{Binding Pn7Display}" />
+                                    <DataGridTextColumn Header="Mn,7 (kNm)" Binding="{Binding Mn7Display}" />
+                                    <DataGridTextColumn Header="Pn,Sol (kN)" Binding="{Binding PnSolverDisplay}" />
+                                    <DataGridTextColumn Header="Mn,Sol (kNm)" Binding="{Binding MnSolverDisplay}" />
+                                    <DataGridTextColumn Header="ΔP (%)" Binding="{Binding DevPDisplay}" />
+                                    <DataGridTextColumn Header="ΔM (%)" Binding="{Binding DevMDisplay}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </Grid>
 
                         <TextBlock Text="PM Chart" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,6" />

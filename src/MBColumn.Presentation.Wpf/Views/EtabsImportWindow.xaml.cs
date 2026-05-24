@@ -29,17 +29,17 @@ public partial class EtabsImportWindow : Window
         if (DataContext is not EtabsImportViewModel vm) return;
         var cm = new ContextMenu();
 
-        if (vm.ImportGroups.Count == 0)
+        if (vm.MbColumnSections.Count == 0)
         {
-            cm.Items.Add(new MenuItem { Header = "No groups yet — use [+ New Group] first", IsEnabled = false });
+            cm.Items.Add(new MenuItem { Header = "No sections yet — use [+ New Section] first", IsEnabled = false });
         }
         else
         {
-            foreach (var group in vm.ImportGroups)
+            foreach (var section in vm.MbColumnSections)
             {
-                var g = group;
-                var item = new MenuItem { Header = $"Assign to: {g.GroupName}" };
-                item.Click += (_, _) => vm.AssignSelectedItemsToGroup(g);
+                var s = section;
+                var item = new MenuItem { Header = $"Assign to: {s.SectionName}" };
+                item.Click += (_, _) => vm.AssignSelectedItemsToSection(s);
                 cm.Items.Add(item);
             }
         }

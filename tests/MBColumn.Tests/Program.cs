@@ -165,6 +165,8 @@ var tests = new List<(string Name, Action Test)>
     // Regression guards — existing solvers must be unaffected
     ("Regression: ACI results unchanged after new EC2 solver added", TestRegressionAciUnchanged),
     ("Regression: EC2 fiber results unchanged after new solver added", TestRegressionEc2FiberUnchanged),
+    ("Strain Controlled 7-Point solver ACI 318", TestStrainControlledSevenPointAci),
+    ("Strain Controlled 7-Point solver EC2", TestStrainControlledSevenPointEc2),
     // Irregular section feature tests
     ("Irregular boundary accepts clockwise triangle",                TestIrregularBoundaryClockwiseTriangle),
     ("Irregular boundary accepts clockwise L-shape",                 TestIrregularBoundaryClockwiseLShape),
@@ -222,6 +224,13 @@ foreach (var (name, test) in tests)
 
 Console.WriteLine($"All {tests.Count} tests passed.");
 
+var svc = Service();
+var input = MetricInput() with { DesignCode = MBColumn.Domain.Enums.DesignCodeType.Aci318Style };
+var result = svc.Calculate(input);
+System.IO.File.WriteAllText("validation_report.md", result.SevenPointValidationReport);
+
+
+
 static UnitConversionService GetUnits() => new();
 
 static ColumnCalculationService Service()
@@ -235,7 +244,7 @@ static ColumnCalculationService Service()
     IRebarDatabase imperial = new ImperialRebarDatabase();
     IRatioCheckService ratio = new RatioCheckService();
     IControlPointBuilder control = new ControlPointBuilderService(units);
-    return new ColumnCalculationService(solverFactory, codeFactory, units, metric, imperial, ratio, control, new DiagramDataService(), new InputValidationService());
+    return new ColumnCalculationService(solverFactory, codeFactory, units, metric, imperial, ratio, control, new DiagramDataService(), new InputValidationService(), new MBColumn.Infrastructure.Solvers.StrainPoints.PmValidationReportService(codeFactory));
 }
 
 static ColumnInputDto MetricInput(double pu = 2500, double mux = 250, double muy = 180)
@@ -2840,9 +2849,12 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
 {
     var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel(
         [],
+        [],
+        null,
         new StubEtabsConnectionService(),
         new StubEtabsColumnImportService(),
         new StubEtabsForceImportService(),
+        null,
         new StubPierShellImportService(),
         new Stub32PointGeometryBuilder());
 
@@ -2850,8 +2862,8 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     var column = vm.Columns.First(c => c.EtabsSectionName == "CIRC800");
     column.IsSelected = true;
 
-    vm.NextCommand.Execute(null);
-    IsTrue(vm.CurrentStep == 2);
+    vm.GoToFlow2Command.Execute(null);
+    IsTrue(vm.CurrentFlow == 2);
     IsTrue(vm.SectionMappings.Count == 1);
 
     // Step 2 → 3 requires at least one selected load combination and one selected force row.
@@ -2859,14 +2871,18 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     // Force rows are selected by default.
     vm.LoadCombinations[0].IsSelected = true;
 
-    vm.NextCommand.Execute(null);
-    IsTrue(vm.CurrentStep == 3);
+    vm.GoToFlow3Command.Execute(null);
+    IsTrue(vm.CurrentFlow == 3);
     IsTrue(vm.SummaryRows.Count == 1);
     IsTrue(vm.SummaryRows[0].SectionType == MBColumn.Domain.Enums.SectionShapeType.Irregular);
     IsTrue(vm.SummaryRows[0].Rebar.Contains("custom coordinates", StringComparison.OrdinalIgnoreCase));
 
-    vm.NextCommand.Execute(null);
+    vm.CreateImportGroupCommand.Execute(null);
+    vm.AssignToGroupCommand.Execute(vm.ImportGroups[0]);
+
+    vm.ApplyImportCommand.Execute(null);
     var imported = vm.ImportResult!.Sections.Single();
+
     var snapshot = imported.Snapshot;
 
     IsTrue(snapshot.SectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular.ToString());
@@ -3237,6 +3253,68 @@ static void TestIrregularPierGeometryForwardCap()
     IsTrue(yExtent < 250);
 }
 
+// ── Tests for 7-Point Strain Controlled Solver ─────────
+
+static void TestStrainControlledSevenPointAci()
+{
+    var aci = new MBColumn.Infrastructure.DesignCodes.Aci318DesignCodeService();
+    var codeAdapter = new MBColumn.Infrastructure.Solvers.StrainPoints.Aci318StrainLimitAdapter(aci);
+    var integrator = MBColumn.Infrastructure.Solvers.Integration.SectionIntegratorFactory.Create(MBColumn.Domain.Enums.SectionIntegrationMethod.Fiber);
+    var strategy = new MBColumn.Infrastructure.Solvers.StrainPoints.StrainControlledSevenPointStrategy(integrator, codeAdapter, aci);
+    
+    var input = MetricInput();
+    var concrete = new MBColumn.Domain.Entities.ConcreteMaterial("C30", input.Fc);
+    var steel = new MBColumn.Domain.Entities.SteelMaterial("B500", input.Fy, input.Es);
+    var layout = new MBColumn.Domain.Entities.RebarLayout("Sides different", "T20", 40, []);
+    var section = new MBColumn.Domain.Entities.RectangularSection(400, 400, layout);
+    
+    var points = strategy.GeneratePoints(section, concrete, steel, 0.0, new MBColumn.Infrastructure.Solvers.SolverSettings());
+    
+    var factory = new MBColumn.Infrastructure.DesignCodes.DesignCodeServiceFactory(aci, new MBColumn.Infrastructure.DesignCodes.Ec2DesignCodeService());
+    var reportSvc = new MBColumn.Infrastructure.Solvers.StrainPoints.PmValidationReportService(factory);
+    var inputDto = MetricInput() with { DesignCode = MBColumn.Domain.Enums.DesignCodeType.Aci318Style };
+    string reportStr = reportSvc.BuildReport(inputDto, section, concrete, steel);
+    System.IO.File.AppendAllText("ACI_EC2_Reports.md", reportStr + "\n\n");
+    
+    IsTrue(points.Count == 7);
+    IsTrue(points[0].PointName == "Pure Compression");
+    IsTrue(points[1].TargetTensileSteelStrain == 0.0);
+    IsTrue(points[3].TargetTensileSteelStrain == steel.FyMpa / steel.EsMpa); // balanced
+    IsTrue(points[6].PointName == "Pure Tension");
+    
+    IsFalse(points.Any(p => double.IsNaN(p.NominalAxialForceN)));
+}
+
+static void TestStrainControlledSevenPointEc2()
+{
+    var ec2 = new MBColumn.Infrastructure.DesignCodes.Ec2DesignCodeService();
+    var codeAdapter = new MBColumn.Infrastructure.Solvers.StrainPoints.Ec2StrainLimitAdapter(ec2);
+    var integrator = MBColumn.Infrastructure.Solvers.Integration.SectionIntegratorFactory.Create(MBColumn.Domain.Enums.SectionIntegrationMethod.Fiber);
+    var strategy = new MBColumn.Infrastructure.Solvers.StrainPoints.StrainControlledSevenPointStrategy(integrator, codeAdapter, ec2);
+    
+    var input = MetricInput();
+    var concrete = new MBColumn.Domain.Entities.ConcreteMaterial("C30", input.Fc);
+    var steel = new MBColumn.Domain.Entities.SteelMaterial("B500", input.Fy, input.Es);
+    var layout = new MBColumn.Domain.Entities.RebarLayout("Sides different", "T20", 40, []);
+    var section = new MBColumn.Domain.Entities.RectangularSection(400, 400, layout);
+    
+    var points = strategy.GeneratePoints(section, concrete, steel, 0.0, new MBColumn.Infrastructure.Solvers.SolverSettings());
+    
+    var factory = new MBColumn.Infrastructure.DesignCodes.DesignCodeServiceFactory(new MBColumn.Infrastructure.DesignCodes.Aci318DesignCodeService(), ec2);
+    var reportSvc = new MBColumn.Infrastructure.Solvers.StrainPoints.PmValidationReportService(factory);
+    var inputDto = MetricInput() with { DesignCode = MBColumn.Domain.Enums.DesignCodeType.Ec2 };
+    string reportStr = reportSvc.BuildReport(inputDto, section, concrete, steel);
+    System.IO.File.AppendAllText("ACI_EC2_Reports.md", reportStr + "\n\n");
+    
+    IsTrue(points.Count == 7);
+    IsTrue(points[0].PointName == "Pure Compression");
+    IsTrue(points[1].TargetTensileSteelStrain == 0.0);
+    IsTrue(points[3].TargetTensileSteelStrain == steel.FyMpa / steel.EsMpa); // balanced
+    IsTrue(points[6].PointName == "Pure Tension");
+    
+    IsFalse(points.Any(p => double.IsNaN(p.NominalAxialForceN)));
+}
+
 // ── Stub services for TestEtabsImportCreatesIrregularCustomCoordinates ─────────
 
 sealed class StubEtabsConnectionService : MBColumn.Application.Services.Etabs.IEtabsConnectionService
@@ -3265,7 +3343,7 @@ sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.I
         IReadOnlyList<(string PierLabel, string StoryName)> _,
         IReadOnlyList<string> _2,
         MBColumn.Domain.Enums.UnitSystem _3)
-        => [new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 0, 0, "OK")];
+        => [new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 0, 0, "Top", "OK")];
 }
 
 sealed class StubPierShellImportService : MBColumn.Application.Services.Etabs.IEtabsPierShellImportService
@@ -3301,3 +3379,5 @@ sealed class Stub32PointGeometryBuilder : MBColumn.Application.Services.Etabs.II
         };
     }
 }
+
+

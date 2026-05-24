@@ -1,13 +1,19 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Input;
+using Microsoft.Win32;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
 public sealed class ReportTabViewModel : ViewModelBase
 {
+    private readonly DiagramDataService _diagramSvc = new();
+    private CalculationResultDto? _cachedResult;
+
     private bool includeInputData = true;
     private bool includeBoundaryCoordinates = true;
     private bool includeRebarCoordinates = true;
@@ -31,9 +37,11 @@ public sealed class ReportTabViewModel : ViewModelBase
     public ReportTabViewModel()
     {
         GeneratePreviewCommand = new RelayCommand(GeneratePreview);
+        ExportSevenPointReportCommand = new RelayCommand(ExportSevenPointReport, () => _cachedResult?.SevenPointValidationReport != null);
     }
 
     public ICommand GeneratePreviewCommand { get; }
+    public ICommand ExportSevenPointReportCommand { get; }
     public ObservableCollection<ReportDemandCaseRowViewModel> DemandCases { get; } = [];
     public ObservableCollection<ReportChartPreviewViewModel> ChartPreviews { get; } = [];
 
@@ -55,9 +63,10 @@ public sealed class ReportTabViewModel : ViewModelBase
         }
     }
 
-    public bool HasValidationData     => handCalcValidation is not null;
+    public bool HasValidationData      => handCalcValidation is not null;
     public bool HasSupportedValidation  => handCalcValidation is { IsSupported: true };
     public bool HasUnsupportedValidation => handCalcValidation is { IsSupported: false };
+
     public int ChartAngleStepDegrees
     {
         get => chartAngleStepDegrees;
@@ -90,6 +99,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         ResultStatusText = "No result";
         IsOutdated = false;
         HandCalcValidation = null;
+        _cachedResult = null;
         DemandCases.Clear();
         ChartPreviews.Clear();
     }
@@ -123,6 +133,8 @@ public sealed class ReportTabViewModel : ViewModelBase
         IsOutdated = isOutdated && result.HasResult;
         ResultStatusText = result.HasResult ? (IsOutdated ? "Outdated" : "Current") : "No result";
 
+        _cachedResult = result.Result;
+
         DemandCases.Clear();
         foreach (var loadCase in input.LoadCases)
         {
@@ -155,7 +167,38 @@ public sealed class ReportTabViewModel : ViewModelBase
         var step = Math.Clamp(ChartAngleStepDegrees, 5, 90);
         for (var angle = 0; angle < 360; angle += step)
         {
-            ChartPreviews.Add(new ReportChartPreviewViewModel(angle, $"PM Interaction Diagram - theta = {angle} deg"));
+            var item = new ReportChartPreviewViewModel(angle, $"PM Interaction – θ = {angle}°");
+            if (_cachedResult is not null)
+            {
+                var diag = _diagramSvc.BuildPmAngleDiagramData(
+                    _cachedResult.ControlPoints, _cachedResult.UnitSystem, angle);
+                item = item with
+                {
+                    ChartPoints = diag.Points.Concat(diag.SpecialCapacityPoints).ToList(),
+                    ReferenceLines = diag.ReferenceLines,
+                    PUnit = diag.PUnit,
+                    MUnit = diag.MUnit,
+                };
+            }
+            ChartPreviews.Add(item);
+        }
+    }
+
+    private void ExportSevenPointReport()
+    {
+        if (_cachedResult == null || string.IsNullOrWhiteSpace(_cachedResult.SevenPointValidationReport))
+            return;
+
+        var sfd = new SaveFileDialog
+        {
+            Filter = "Markdown files (*.md)|*.md|Text files (*.txt)|*.txt|All files (*.*)|*.*",
+            DefaultExt = ".md",
+            FileName = "Code-Strict 7-Point P-M Validation Report"
+        };
+
+        if (sfd.ShowDialog() == true)
+        {
+            File.WriteAllText(sfd.FileName, _cachedResult.SevenPointValidationReport);
         }
     }
 
@@ -188,4 +231,12 @@ public sealed record ReportDemandCaseRowViewModel(
     double CapacityMx,
     double CapacityMy);
 
-public sealed record ReportChartPreviewViewModel(int AngleDegrees, string Title);
+public sealed record ReportChartPreviewViewModel(int AngleDegrees, string Title)
+{
+    public IReadOnlyList<ControlPointDto> ChartPoints { get; init; } = [];
+    public IReadOnlyList<ChartReferenceLineDto> ReferenceLines { get; init; } = [];
+    public string PUnit { get; init; } = "";
+    public string MUnit { get; init; } = "";
+    public string XAxisLabel => string.IsNullOrEmpty(MUnit) ? "Mθ" : $"Mθ ({MUnit})";
+    public string YAxisLabel => string.IsNullOrEmpty(PUnit) ? "P" : $"P ({PUnit})";
+}

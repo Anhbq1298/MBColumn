@@ -1,4 +1,4 @@
-﻿using MBColumn.Domain.Entities;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 
 namespace MBColumn.Application.DTOs;
@@ -44,5 +44,7 @@ public sealed record CalculationResultDto(
     public IReadOnlyList<CapacityDebugPointDto> CapacityDebugPoints { get; init; } = [];
     public IReadOnlyList<InsetPointDto> IrregularSectionBoundaryPoints { get; init; } = [];
     public HandCalcValidationReport? HandCalcValidation { get; init; }
+    public string SevenPointValidationReport { get; init; } = "";
+    public IReadOnlyList<SevenPointValidationRowDto> SevenPointValidationRows { get; init; } = [];
 }
 

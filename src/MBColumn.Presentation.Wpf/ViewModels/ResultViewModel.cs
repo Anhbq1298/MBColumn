@@ -9,6 +9,26 @@ using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
+public sealed record SevenPointValidationRowViewModel(
+    string PointName,
+    string TargetStrainState,
+    double C,
+    double Pn7,
+    double Mn7,
+    double PnSolver,
+    double MnSolver,
+    double DeviationP,
+    double DeviationM)
+{
+    public string CDisplay => C > 10000 ? "∞" : $"{C:F1}";
+    public string Pn7Display => $"{Pn7 / 1000.0:F1}";
+    public string Mn7Display => $"{Mn7 / 1000000.0:F1}";
+    public string PnSolverDisplay => $"{PnSolver / 1000.0:F1}";
+    public string MnSolverDisplay => $"{MnSolver / 1000000.0:F1}";
+    public string DevPDisplay => $"{DeviationP:F2}%";
+    public string DevMDisplay => $"{DeviationM:F2}%";
+}
+
 public sealed record LoadCaseResultRowViewModel(
     string Id,
     string Name,
@@ -54,6 +74,7 @@ public sealed class ResultViewModel : ViewModelBase
     private IReadOnlyList<ChartReferenceLineDto> pmReferenceLines = [];
     private PmChartInsetFigureDto? pmChartInset;
     private IReadOnlyList<LoadCaseResultRowViewModel> loadCaseRows = [];
+    private IReadOnlyList<SevenPointValidationRowViewModel> sevenPointValidationRows = [];
     private LoadCaseResultRowViewModel? selectedLoadCaseRow;
     private double selectedSliceAngleDegrees;
     private double selectedAxialLoad;
@@ -157,6 +178,14 @@ public sealed class ResultViewModel : ViewModelBase
                     r.PmmRatio, r.Status == CapacityStatus.Pass,
                     r.LoadCaseId == govId, fUnit, mUnit)).ToList()
                 : [];
+            
+            SevenPointValidationRows = value?.SevenPointValidationRows?.Select(r => new SevenPointValidationRowViewModel(
+                r.PointName, r.HandCalcState, r.HandCalcC, r.HandCalcPn, r.HandCalcMn,
+                r.SolverPn, r.SolverMn, r.PnDeviationPercent, r.MnDeviationPercent
+            )).ToList() ?? [];
+            Raise(nameof(SevenPointValidationRows));
+            Raise(nameof(HasSevenPointValidation));
+
             Raise(nameof(LoadCaseRows));
             Raise(nameof(HasLoadCaseRows));
             Raise(nameof(GoverningLoadCaseName));
@@ -190,6 +219,7 @@ public sealed class ResultViewModel : ViewModelBase
     public IReadOnlyList<ChartReferenceLineDto> PmReferenceLines { get => pmReferenceLines; private set => Set(ref pmReferenceLines, value); }
     public PmChartInsetFigureDto? PmChartInset { get => pmChartInset; private set => Set(ref pmChartInset, value); }
     public IReadOnlyList<LoadCaseResultRowViewModel> LoadCaseRows { get => loadCaseRows; private set => Set(ref loadCaseRows, value); }
+    public IReadOnlyList<SevenPointValidationRowViewModel> SevenPointValidationRows { get => sevenPointValidationRows; private set => Set(ref sevenPointValidationRows, value); }
     public string? HighlightedDemandLabel => selectedLoadCaseRow?.Name;
     public LoadCaseResultRowViewModel? SelectedLoadCaseRow
     {
@@ -219,6 +249,7 @@ public sealed class ResultViewModel : ViewModelBase
     public Rect? SharedPmBounds { get => sharedPmBounds; private set => Set(ref sharedPmBounds, value); }
     public bool HasResult => Result is not null;
     public bool HasLoadCaseRows => loadCaseRows.Count > 0;
+    public bool HasSevenPointValidation => sevenPointValidationRows.Count > 0;
     public string StatusText => Result is null ? "Not calculated" : Result.Status == CapacityStatus.Pass ? "PASS" : "FAIL";
     public bool IsAciCode => Result?.DesignCode == DesignCodeType.Aci318Style;
     public double PmmRatio => Result?.Ratio ?? 0;

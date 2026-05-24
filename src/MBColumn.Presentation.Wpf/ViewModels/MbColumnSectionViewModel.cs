@@ -4,30 +4,33 @@ using MBColumn.Presentation.Wpf.Commands;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
-public sealed class ImportGroupViewModel : ViewModelBase
+public sealed class MbColumnSectionViewModel : ViewModelBase
 {
-    private string groupName;
+    private string sectionName;
     private bool isRenaming;
     private string editName;
+    private string? renameError;
     private ProjectGroupOptionViewModel? selectedTargetGroup;
     private readonly Action onChanged;
+    private readonly Func<string, bool>? isDuplicateName;
 
-    public ImportGroupViewModel(string groupName, Action onChanged)
+    public MbColumnSectionViewModel(string sectionName, Action onChanged, Func<string, bool>? isDuplicateName = null)
     {
-        this.groupName = groupName;
-        this.editName = groupName;
+        this.sectionName = sectionName;
+        this.editName = sectionName;
         this.onChanged = onChanged;
+        this.isDuplicateName = isDuplicateName;
 
         Items = [];
 
         BeginRenameCommand = new RelayCommand(() =>
         {
-            EditName = GroupName;
+            EditName = SectionName;
             IsRenaming = true;
         });
         CommitRenameCommand = new RelayCommand(CommitRename);
         CancelRenameCommand = new RelayCommand(() => IsRenaming = false);
-        ClearGroupCommand = new RelayCommand(() =>
+        ClearSectionCommand = new RelayCommand(() =>
         {
             Items.Clear();
             onChanged();
@@ -40,10 +43,10 @@ public sealed class ImportGroupViewModel : ViewModelBase
 
     public ObservableCollection<EtabsColumnImportRowViewModel> Items { get; }
 
-    public string GroupName
+    public string SectionName
     {
-        get => groupName;
-        private set => Set(ref groupName, value);
+        get => sectionName;
+        private set => Set(ref sectionName, value);
     }
 
     public string EditName
@@ -55,7 +58,17 @@ public sealed class ImportGroupViewModel : ViewModelBase
     public bool IsRenaming
     {
         get => isRenaming;
-        set => Set(ref isRenaming, value);
+        set
+        {
+            Set(ref isRenaming, value);
+            if (!value) RenameError = null;
+        }
+    }
+
+    public string? RenameError
+    {
+        get => renameError;
+        private set => Set(ref renameError, value);
     }
 
     public ProjectGroupOptionViewModel? SelectedTargetGroup
@@ -66,12 +79,12 @@ public sealed class ImportGroupViewModel : ViewModelBase
 
     public int ItemCount => Items.Count;
 
-    public string Summary => $"{GroupName} ({Items.Count})";
+    public string Summary => $"{SectionName} ({Items.Count})";
 
     public ICommand BeginRenameCommand { get; }
     public ICommand CommitRenameCommand { get; }
     public ICommand CancelRenameCommand { get; }
-    public ICommand ClearGroupCommand { get; }
+    public ICommand ClearSectionCommand { get; }
     public ICommand RemoveItemCommand { get; }
 
     public void AddItem(EtabsColumnImportRowViewModel item)
@@ -79,7 +92,7 @@ public sealed class ImportGroupViewModel : ViewModelBase
         if (!Items.Contains(item))
         {
             Items.Add(item);
-            item.ImportGroupName = GroupName;
+            item.ImportGroupName = SectionName;
         }
         RaiseSummary();
         onChanged();
@@ -89,7 +102,7 @@ public sealed class ImportGroupViewModel : ViewModelBase
     {
         if (Items.Remove(item))
         {
-            if (string.Equals(item.ImportGroupName, GroupName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(item.ImportGroupName, SectionName, StringComparison.OrdinalIgnoreCase))
                 item.ImportGroupName = "";
         }
         RaiseSummary();
@@ -99,10 +112,22 @@ public sealed class ImportGroupViewModel : ViewModelBase
     private void CommitRename()
     {
         var name = EditName?.Trim() ?? "";
-        if (string.IsNullOrWhiteSpace(name)) return;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            RenameError = "Name cannot be empty.";
+            return;
+        }
 
-        var old = GroupName;
-        GroupName = name;
+        if (!string.Equals(name, SectionName, StringComparison.OrdinalIgnoreCase)
+            && isDuplicateName?.Invoke(name) == true)
+        {
+            RenameError = $"'{name}' is already used by another section.";
+            return;
+        }
+
+        RenameError = null;
+        var old = SectionName;
+        SectionName = name;
         IsRenaming = false;
 
         foreach (var item in Items)

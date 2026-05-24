@@ -1,5 +1,6 @@
 using MBColumn.Application.Services.Etabs;
 using MBColumn.Application.Services;
+using MBColumn.Infrastructure.Etabs;
 using MBColumn.Presentation.Wpf.ViewModels;
 using MBColumn.Presentation.Wpf.Views;
 
@@ -13,6 +14,8 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
     private readonly IEtabsForceCacheService? forceCacheService;
     private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
+    private readonly IEtabsDesignForceImportService? designForceImportService;
+    private readonly IImportedEtabsForceCache? importedForceCache;
 
     public EtabsImportDialogService(
         IEtabsConnectionService connectionService,
@@ -20,7 +23,9 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         IEtabsForceImportService forceImportService,
         IEtabsForceCacheService? forceCacheService = null,
         IEtabsPierShellImportService? pierShellImportService = null,
-        IIrregularPierGeometryBuilder? irregularGeometryBuilder = null)
+        IIrregularPierGeometryBuilder? irregularGeometryBuilder = null,
+        IEtabsDesignForceImportService? designForceImportService = null,
+        IImportedEtabsForceCache? importedForceCache = null)
     {
         this.connectionService = connectionService;
         this.columnImportService = columnImportService;
@@ -28,6 +33,8 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         this.forceCacheService = forceCacheService;
         this.pierShellImportService = pierShellImportService;
         this.irregularGeometryBuilder = irregularGeometryBuilder;
+        this.designForceImportService = designForceImportService;
+        this.importedForceCache = importedForceCache;
     }
 
     public EtabsImportDialogResult? ShowDialog(
@@ -37,6 +44,12 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         int? defaultTargetGroupId,
         MBColumn.Domain.Enums.UnitSystem targetSystem)
     {
+        IEtabsForceCacheResolver? forceCacheResolver = null;
+        if (importedForceCache is not null && designForceImportService is not null)
+            forceCacheResolver = new EtabsForceCacheResolver(importedForceCache, designForceImportService, targetSystem);
+
+        var sectionForceFilter = new EtabsSectionForceFilterService();
+
         var vm = new EtabsImportViewModel(
             existingSectionNames,
             targetGroups,
@@ -47,7 +60,11 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
             forceCacheService,
             pierShellImportService,
             irregularGeometryBuilder,
-            targetSystem);
+            designForceImportService,
+            importedForceCache,
+            targetSystem,
+            forceCacheResolver,
+            sectionForceFilter);
 
         var window = new EtabsImportWindow(vm)
         {

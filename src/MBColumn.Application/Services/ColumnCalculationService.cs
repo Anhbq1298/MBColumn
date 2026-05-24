@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Interfaces;
 using MBColumn.Application.Mappers;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
@@ -14,7 +15,8 @@ public sealed class ColumnCalculationService(
     IControlPointBuilder controlPoints,
     DiagramDataService diagramData,
     InputValidationService validation,
-    IRebarCoordinateBuilderService rebarCoordinates)
+    IRebarCoordinateBuilderService rebarCoordinates,
+    IPmValidationReportService validationReportService)
 {
     public ColumnCalculationService(
         IInteractionSolverFactory solverFactory,
@@ -25,7 +27,8 @@ public sealed class ColumnCalculationService(
         IRatioCheckService ratioCheck,
         IControlPointBuilder controlPoints,
         DiagramDataService diagramData,
-        InputValidationService validation)
+        InputValidationService validation,
+        IPmValidationReportService validationReportService)
         : this(
             solverFactory,
             codeFactory,
@@ -34,7 +37,8 @@ public sealed class ColumnCalculationService(
             controlPoints,
             diagramData,
             validation,
-            new RebarCoordinateBuilderService(units, metricBars, imperialBars))
+            new RebarCoordinateBuilderService(units, metricBars, imperialBars),
+            validationReportService)
     {
     }
 
@@ -96,7 +100,7 @@ public sealed class ColumnCalculationService(
                 .ToList();
             double widthMm = irregular.BoundingBoxMm.Width;
             double heightMm = irregular.BoundingBoxMm.Height;
-            return BuildResult(input, section, surface, rebarDtoList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService)
+            return BuildResult(input, section, surface, rebarDtoList, widthMm, heightMm, concrete, steel, codeService)
                 with { IrregularSectionBoundaryPoints = irregularBoundary };
         }
         else if (input.SectionShape == SectionShapeType.Circular)
@@ -110,7 +114,7 @@ public sealed class ColumnCalculationService(
             var circularSolver = solverFactory.GetCircular(input.DesignCode, input.IntegrationMethod);
             surface = circularSolver.Solve((CircularSection)section, concrete, steel);
 
-            return BuildResult(input, section, surface, coordinateList, diameterMm, diameterMm, fcMpa, fyMpa, esMpa, codeService);
+            return BuildResult(input, section, surface, coordinateList, diameterMm, diameterMm, concrete, steel, codeService);
         }
         else
         {
@@ -124,7 +128,7 @@ public sealed class ColumnCalculationService(
             var solver = solverFactory.Get(input.DesignCode, input.Ec2Solver, input.IntegrationMethod);
             surface = solver.Solve((RectangularSection)section, concrete, steel);
 
-            return BuildResult(input, section, surface, coordinateList, widthMm, heightMm, fcMpa, fyMpa, esMpa, codeService);
+            return BuildResult(input, section, surface, coordinateList, widthMm, heightMm, concrete, steel, codeService);
         }
     }
 
@@ -135,11 +139,14 @@ public sealed class ColumnCalculationService(
         IReadOnlyList<RebarCoordinateDto> coordinateList,
         double sectionWidthMm,
         double sectionHeightMm,
-        double fcMpa,
-        double fyMpa,
-        double esMpa,
+        ConcreteMaterial concrete,
+        SteelMaterial steel,
         IDesignCodeService codeService)
     {
+        double fcMpa = concrete.FcMpa;
+        double fyMpa = steel.FyMpa;
+        double esMpa = steel.EsMpa;
+
         // Determine active load cases: use LoadCases list when provided; fall back to single (Pu, Mux, Muy)
         var activeCases = (input.LoadCases?.Where(lc => lc.IsActive).ToList()) ?? [];
         if (activeCases.Count == 0)
@@ -211,6 +218,9 @@ public sealed class ColumnCalculationService(
         var cpTable = ControlPointTableBuilderService.Build(surface, section, fyMpa, esMpa, fcMpa, input.UnitSystem, units, codeService);
         var debugPoints = BuildCapacityDebugPoints(surface, govPoint, input);
 
+        var validationReportDto = validationReportService?.BuildReport(input, section, concrete, steel);
+        string report = validationReportDto?.MarkdownReport ?? "";
+
         return new CalculationResultDto(
             input.UnitSystem,
             input.DesignCode,
@@ -257,7 +267,9 @@ public sealed class ColumnCalculationService(
                 codeService,
                 units,
                 input.UnitSystem,
-                input.DesignCode)
+                input.DesignCode),
+            SevenPointValidationReport = report,
+            SevenPointValidationRows = validationReportDto?.ValidationRows ?? []
         };
     }
 

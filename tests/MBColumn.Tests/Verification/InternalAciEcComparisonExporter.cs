@@ -137,7 +137,8 @@ public sealed class InternalAciEcComparisonExporter
             ratio,
             control,
             new DiagramDataService(),
-            new InputValidationService());
+            new InputValidationService(),
+            new MBColumn.Infrastructure.Solvers.StrainPoints.PmValidationReportService(codeFactory));
     }
 
     private static IReadOnlyList<CurvePoint> ExtractDesignCurve(IReadOnlyList<ControlPointDto> points)

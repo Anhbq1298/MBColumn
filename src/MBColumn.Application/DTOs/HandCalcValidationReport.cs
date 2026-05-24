@@ -8,6 +8,8 @@ public sealed record HandCalcValidationReport(
     string DesignCodeNote,
     IReadOnlyList<ControlPointValidationRow> Rows)
 {
+    public string ComparisonNote { get; init; } = "";
+
     public static HandCalcValidationReport NotSupported(string reason) =>
         new(false, reason, "", "", "", []);
 }

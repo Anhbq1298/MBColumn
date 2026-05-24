@@ -6,6 +6,7 @@ using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Persistence;
 using MBColumn.Infrastructure.Rebar;
 using MBColumn.Infrastructure.Solvers;
+using MBColumn.Infrastructure.Solvers.StrainPoints;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.ViewModels;
 
@@ -39,8 +40,11 @@ public sealed class AppComposition : IDisposable
         var etabsForceCache = new EtabsForceCacheService();
         var etabsPierShells = new EtabsPierShellImportService(etabsConnection);
         var irregularGeometry = new IrregularPierGeometryBuilder();
+        var etabsDesignForceImport = new EtabsDesignForceImportService(etabsConnection);
+        var importedForceCache = new ImportedEtabsForceCache();
         EtabsImportDialogService = new EtabsImportDialogService(
-            etabsConnection, etabsColumns, etabsForces, etabsForceCache, etabsPierShells, irregularGeometry);
+            etabsConnection, etabsColumns, etabsForces, etabsForceCache, etabsPierShells, irregularGeometry,
+            etabsDesignForceImport, importedForceCache);
 
         IDesignCodeService aciCode = new Aci318DesignCodeService();
         IDesignCodeService ec2Code = new Ec2DesignCodeService();
@@ -63,7 +67,8 @@ public sealed class AppComposition : IDisposable
             control,
             diagrams,
             validation,
-            rebarCoordinates);
+            rebarCoordinates,
+            new PmValidationReportService(codeFactory));
     }
 
     public static AppComposition Create()
