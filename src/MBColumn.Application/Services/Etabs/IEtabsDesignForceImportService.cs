@@ -6,8 +6,10 @@ namespace MBColumn.Application.Services.Etabs;
 public interface IEtabsDesignForceImportService
 {
     ImportedEtabsForceDatabase ImportDesignForces(
-        string modelFilePath,
-        string modelName,
+        string modelFilePath, 
+        string modelName, 
+        bool loadColumnForces = true,
+        bool loadPierForces = true,
         Action<int, string, int>? progressCallback = null);
 
     /// <summary>

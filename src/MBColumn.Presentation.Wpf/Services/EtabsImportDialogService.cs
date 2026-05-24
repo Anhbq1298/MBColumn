@@ -48,6 +48,7 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         var preloadVm = new EtabsPreloadViewModel(
             connectionService,
             columnImportService,
+            pierShellImportService,
             designForceImportService,
             importedForceCache,
             targetSystem);

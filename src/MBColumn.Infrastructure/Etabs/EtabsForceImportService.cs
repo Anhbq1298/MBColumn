@@ -85,6 +85,31 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         return QueryElementForcesTable(model, columns, selectedComboSet, dbForceToKn, dbMomentFactor);
     }
 
+    public IReadOnlyList<EtabsForceResultDto> GetPierElementForces(
+        IReadOnlyList<(string PierLabel, string StoryName)> piers,
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem)
+    {
+        var model = connection.Model
+            ?? throw new InvalidOperationException("Not connected to ETABS.");
+
+        if (piers.Count == 0 || loadCombinations.Count == 0)
+            return [];
+
+        var dbUnits = model.GetDatabaseUnits();
+        var (dbForceToKn, dbLengthToMm) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        var dbMomentFactor = dbForceToKn * dbLengthToMm / 1000.0;
+
+        ConfigureOutput(model, loadCombinations);
+
+        var requestedPiers = new HashSet<string>(
+            piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
+            StringComparer.OrdinalIgnoreCase);
+        var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+
+        return QueryPierElementForcesTable(model, requestedPiers, selectedCombos, dbForceToKn, dbMomentFactor);
+    }
+
     private static string GetAvailableTablesErrorMsg(cSapModel model, string label)
     {
         int tableCount = 0;
@@ -417,6 +442,113 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
                 0.0,
+                station,
+                "Element Force"));
+        }
+
+        return results;
+    }
+
+    private static List<EtabsForceResultDto> QueryPierElementForcesTable(
+        cSapModel model,
+        HashSet<string> requestedPiers,
+        HashSet<string> selectedCombos,
+        double forceToKn,
+        double momentFactor)
+    {
+        string[] fieldsKeysIncluded = [];
+        string[] fields = [];
+        int tableVersion = 0;
+        string[] tableData = [];
+        int numRecords = 0;
+        int ret = -1;
+
+        foreach (var key in new[] { "Pier Forces" })
+        {
+            ret = model.DatabaseTables.GetTableForDisplayArray(
+                key, ref fieldsKeysIncluded, "", ref tableVersion, ref fields, ref numRecords, ref tableData);
+            if (ret == 0 && numRecords > 0 && fields.Length > 0)
+                break;
+        }
+
+        if (ret != 0 || numRecords == 0 || fields.Length == 0)
+            return [];
+
+        var storyIdx = IndexOf(fields, "Story");
+        var pierIdx  = IndexOf(fields, "Pier", "Label", "Pier Name");
+        var comboIdx = IndexOf(fields, "OutputCase", "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo");
+        var stepIdx  = IndexOf(fields, "StepType");
+        var pIdx     = IndexOf(fields, "P", "Pu");
+        var m2Idx    = IndexOf(fields, "M2", "M2 Top", "M2-Top", "Mu2");
+        var m3Idx    = IndexOf(fields, "M3", "M3 Top", "M3-Top", "Mu3");
+        var v2Idx    = IndexOf(fields, "V2", "Vu2");
+        var v3Idx    = IndexOf(fields, "V3", "Vu3");
+        var locIdx   = IndexOf(fields, "Station", "Location", "Loc");
+
+        if (storyIdx < 0 || pierIdx < 0 || comboIdx < 0 || pIdx < 0)
+            return [];
+
+        var fieldCount = fields.Length;
+
+        var candidates = new List<(string Pier, string Story, string Combo, string StepType,
+                                   string RawLoc, double P, double M2, double M3, double V2, double V3)>();
+
+        for (var r = 0; r < numRecords; r++)
+        {
+            var b     = r * fieldCount;
+            var story = (tableData[b + storyIdx] ?? "").Trim();
+            var pier  = (tableData[b + pierIdx] ?? "").Trim();
+            var combo = (tableData[b + comboIdx] ?? "").Trim();
+
+            if (!selectedCombos.Contains(combo)) continue;
+            if (!requestedPiers.Contains($"{pier}|{story}")) continue;
+
+            var stepType = stepIdx >= 0 ? (tableData[b + stepIdx] ?? "") : "";
+            var rawLoc   = locIdx >= 0 ? tableData[b + locIdx] : "Top";
+            if (string.IsNullOrEmpty(rawLoc)) rawLoc = "Top";
+
+            candidates.Add((pier, story, combo, stepType, rawLoc,
+                ParseDouble(tableData[b + pIdx]),
+                m2Idx >= 0 ? ParseDouble(tableData[b + m2Idx]) : 0.0,
+                m3Idx >= 0 ? ParseDouble(tableData[b + m3Idx]) : 0.0,
+                v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0,
+                v3Idx >= 0 ? ParseDouble(tableData[b + v3Idx]) : 0.0));
+        }
+
+        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var grp in candidates.GroupBy(r => $"{r.Pier}|{r.Story}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
+        {
+            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+            if (nums.Count > 0)
+                stationRanges[grp.Key] = (nums.Min(), nums.Max());
+        }
+
+        var results = new List<EtabsForceResultDto>(candidates.Count);
+        var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (pier, story, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
+        {
+            var rangeKey = $"{pier}|{story}|{combo}|{stepType}";
+            var station  = stationRanges.TryGetValue(rangeKey, out var range)
+                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+                : NormalizeStation(rawLoc);
+
+            var isSingleStep = string.IsNullOrEmpty(stepType)
+                || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
+                || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
+            var effectiveCombo = isSingleStep ? combo : $"{combo} ({stepType})";
+
+            var key = $"{pier}|{story}|{effectiveCombo}|{station}";
+            if (!seen.Add(key)) continue;
+
+            results.Add(new EtabsForceResultDto(
+                $"pier:{pier}:{story}", pier, story, pier, pier,
+                effectiveCombo,
+                SMath.Round(-p * forceToKn, 3), // convention for pier
+                SMath.Round(m2 * momentFactor, 3),
+                SMath.Round(m3 * momentFactor, 3),
+                SMath.Round(v2 * forceToKn, 3),
+                SMath.Round(v3 * forceToKn, 3),
                 station,
                 "Element Force"));
         }

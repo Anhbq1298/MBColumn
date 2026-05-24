@@ -12,6 +12,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
 {
     private readonly IEtabsConnectionService connectionService;
     private readonly IEtabsColumnImportService columnImportService;
+    private readonly IEtabsPierShellImportService? pierShellImportService;
     private readonly IEtabsDesignForceImportService? designForceImportService;
     private readonly IImportedEtabsForceCache? forceCache;
     private readonly UnitSystem targetUnitSystem;
@@ -26,12 +27,14 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
     public EtabsPreloadViewModel(
         IEtabsConnectionService connectionService,
         IEtabsColumnImportService columnImportService,
+        IEtabsPierShellImportService? pierShellImportService,
         IEtabsDesignForceImportService? designForceImportService,
         IImportedEtabsForceCache? forceCache,
         UnitSystem targetUnitSystem)
     {
         this.connectionService = connectionService;
         this.columnImportService = columnImportService;
+        this.pierShellImportService = pierShellImportService;
         this.designForceImportService = designForceImportService;
         this.forceCache = forceCache;
         this.targetUnitSystem = targetUnitSystem;
@@ -223,9 +226,19 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
 
                     var db = await Task.Run(() =>
                     {
+                        bool hasCols = columns.Any(c => c.SectionType != MBColumn.Domain.Enums.SectionShapeType.Irregular);
+                        bool hasPiers = false;
+                        if (pierShellImportService is not null)
+                        {
+                            var pierGroups = pierShellImportService.GetPierGroups(targetUnitSystem);
+                            hasPiers = pierGroups.Count > 0;
+                        }
+
                         return designForceImportService.ImportDesignForces(
                             info.ModelPath,
                             info.ModelName,
+                            hasCols,
+                            hasPiers,
                             (phase, tableName, rowCount) =>
                             {
                                 System.Windows.Application.Current?.Dispatcher.Invoke(() =>

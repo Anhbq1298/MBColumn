@@ -515,7 +515,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             selectedUniqueSection = value;
             Raise();
             RebuildStoryOptions();
-            ApplyTierObjectFilter(selectMatches: true);
+            ApplyTierObjectFilter();
             UpdateDefaultTierName();
             UpdateBoundaryPreviewFromUniqueSection();
             RaiseTierProperties();
@@ -543,7 +543,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (storyFrom == value) return;
             storyFrom = value;
             Raise();
-            ApplyTierObjectFilter(selectMatches: true);
+            ApplyTierObjectFilter();
             UpdateDefaultTierName();
             RaiseTierProperties();
             RaiseCommandStates();
@@ -558,7 +558,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (storyTo == value) return;
             storyTo = value;
             Raise();
-            ApplyTierObjectFilter(selectMatches: true);
+            ApplyTierObjectFilter();
             UpdateDefaultTierName();
             RaiseTierProperties();
             RaiseCommandStates();
@@ -573,7 +573,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (labelTextFilter == value) return;
             labelTextFilter = value;
             Raise();
-            ApplyTierObjectFilter(selectMatches: true);
+            ApplyTierObjectFilter();
             UpdateDefaultTierName();
             RaiseTierProperties();
             RaiseCommandStates();
@@ -1623,7 +1623,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private void PrepareTierBuilder()
     {
         RebuildStoryOptions();
-        ApplyTierObjectFilter(selectMatches: true);
+        ApplyTierObjectFilter();
         UpdateDefaultTierName();
         RaiseTierProperties();
     }
@@ -1706,18 +1706,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(StoryTo));
     }
 
-    private void ApplyTierObjectFilter(bool selectMatches)
+    private void ApplyTierObjectFilter()
     {
         TierObjectCandidatesView.Refresh();
-
-        if (selectMatches)
-        {
-            foreach (var column in Columns)
-            {
-                column.IsSelected = FilterTierObjectCandidate(column);
-            }
-        }
-
         Raise(nameof(SelectedColumnCount));
         Raise(nameof(MatchedTierObjectCount));
     }

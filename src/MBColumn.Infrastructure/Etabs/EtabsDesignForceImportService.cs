@@ -30,7 +30,12 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         this.connection = connection;
     }
 
-    public ImportedEtabsForceDatabase ImportDesignForces(string modelFilePath, string modelName)
+    public ImportedEtabsForceDatabase ImportDesignForces(
+        string modelFilePath, 
+        string modelName, 
+        bool loadColumnForces = true,
+        bool loadPierForces = true,
+        Action<int, string, int>? progressCallback = null)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
@@ -38,18 +43,39 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         var dbUnits = (int)model.GetDatabaseUnits();
         var warnings = new List<string>();
 
-        var columnTable = LoadRawTable(model, ColumnTableKeys, "Design Forces - Columns", warnings);
-        var pierTable   = LoadRawTable(model, PierTableKeys,   "Design Forces - Piers",   warnings);
+        progressCallback?.Invoke(10, "Loading Column Design Forces...", 4);
+        var columnTable = loadColumnForces 
+            ? LoadRawTable(model, ColumnTableKeys, "Design Forces - Columns", warnings)
+            : new EtabsDesignForceTable { TableKey = "Design Forces - Columns", FieldKeys = [], Records = [] };
+        
+        progressCallback?.Invoke(30, "Loading Pier Design Forces...", 4);
+        var pierTable   = loadPierForces
+            ? LoadRawTable(model, PierTableKeys,   "Design Forces - Piers",   warnings)
+            : new EtabsDesignForceTable { TableKey = "Design Forces - Piers", FieldKeys = [], Records = [] };
+
+        progressCallback?.Invoke(50, "Loading Column Element Forces...", 4);
+        var colElementTable = loadColumnForces
+            ? LoadRawTable(model, ["Element Forces - Columns"], "Element Forces - Columns", warnings)
+            : new EtabsDesignForceTable { TableKey = "Element Forces - Columns", FieldKeys = [], Records = [] };
+
+        progressCallback?.Invoke(70, "Loading Pier Element Forces...", 4);
+        var pierElementTable = loadPierForces
+            ? LoadRawTable(model, ["Pier Forces"], "Pier Forces", warnings)
+            : new EtabsDesignForceTable { TableKey = "Pier Forces", FieldKeys = [], Records = [] };
+
+        progressCallback?.Invoke(90, "Finalizing Database...", 4);
 
         return new ImportedEtabsForceDatabase
         {
-            ModelFilePath = modelFilePath,
-            ModelName     = modelName,
-            ImportedAt    = DateTime.UtcNow,
-            DatabaseUnits = dbUnits,
-            ColumnForces  = columnTable,
-            PierForces    = pierTable,
-            Warnings      = warnings
+            ModelFilePath       = modelFilePath,
+            ModelName           = modelName,
+            ImportedAt          = DateTime.UtcNow,
+            DatabaseUnits       = dbUnits,
+            ColumnForces        = columnTable,
+            PierForces          = pierTable,
+            ColumnElementForces = colElementTable,
+            PierElementForces   = pierElementTable,
+            Warnings            = warnings
         };
     }
 
@@ -374,8 +400,183 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
 
     // -----------------------------------------------------------------------
     // Private helpers
-    // -----------------------------------------------------------------------
+    public IReadOnlyList<EtabsForceResultDto> ParseColumnElementForces(
+        ImportedEtabsForceDatabase database,
+        IReadOnlyList<EtabsColumnImportDto> columns,
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem)
+    {
+        if (!database.ColumnElementForces.HasRecords || columns.Count == 0 || loadCombinations.Count == 0)
+            return [];
 
+        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
+            (eUnits)database.DatabaseUnits, targetSystem);
+        var momentFactor = forceToKn * lengthToMm / 1000.0;
+
+        var requestedCols = new HashSet<string>(
+            columns.Select(x => $"{x.StoryName.Trim()}|{x.Label.Trim()}"),
+            StringComparer.OrdinalIgnoreCase);
+        var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+
+        var candidates = new List<(string Story, string Label, string Combo, string StepType,
+                                   string RawLoc, double P, double M2, double M3, double V2, double V3)>();
+
+        foreach (var record in database.ColumnElementForces.Records)
+        {
+            var f     = record.Fields;
+            var story = GetField(f, "Story").Trim();
+            var label = GetFieldAny(f, "Column", "Label", "UniqueName").Trim();
+            var combo = GetFieldAny(f, "OutputCase", "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo").Trim();
+
+            if (string.IsNullOrEmpty(story) || string.IsNullOrEmpty(label)) continue;
+            if (!ComboMatches(combo, selectedCombos)) continue;
+            if (!requestedCols.Contains($"{story}|{label}")) continue;
+
+            var stepType = GetField(f, "StepType");
+            var rawLoc = GetFieldAny(f, "Location", "Station", "Loc");
+            if (string.IsNullOrEmpty(rawLoc)) rawLoc = "Top";
+
+            candidates.Add((story, label, combo, stepType, rawLoc,
+                ParseDouble(GetFieldAny(f, "P", "Pu")),
+                ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
+                ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
+                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
+        }
+
+        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var grp in candidates.GroupBy(r => $"{r.Story}|{r.Label}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
+        {
+            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+            if (nums.Count > 0) stationRanges[grp.Key] = (nums.Min(), nums.Max());
+        }
+
+        var results = new List<EtabsForceResultDto>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (story, label, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
+        {
+            var rangeKey = $"{story}|{label}|{combo}|{stepType}";
+            var station = stationRanges.TryGetValue(rangeKey, out var range)
+                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+                : NormalizeStation(rawLoc);
+
+            var isSingleStep = string.IsNullOrEmpty(stepType)
+                || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
+                || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
+            var effectiveCombo = isSingleStep ? combo : $"{combo} ({stepType})";
+
+            var key = $"{story}|{label}|{effectiveCombo}|{station}";
+            if (!seen.Add(key)) continue;
+
+            var status = string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
+                ? "Design Bottom"
+                : "Design Force";
+
+            results.Add(new EtabsForceResultDto(
+                $"{story}:{label}", label, story, label, label,
+                effectiveCombo,
+                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(m2 * momentFactor, 3),
+                SMath.Round(m3 * momentFactor, 3),
+                SMath.Round(v2 * forceToKn, 3),
+                SMath.Round(v3 * forceToKn, 3),
+                station,
+                status));
+        }
+
+        return results;
+    }
+
+    public IReadOnlyList<EtabsForceResultDto> ParsePierElementForces(
+        ImportedEtabsForceDatabase database,
+        IReadOnlyList<(string PierLabel, string StoryName)> piers,
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem)
+    {
+        if (!database.PierElementForces.HasRecords || piers.Count == 0 || loadCombinations.Count == 0)
+            return [];
+
+        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
+            (eUnits)database.DatabaseUnits, targetSystem);
+        var momentFactor = forceToKn * lengthToMm / 1000.0;
+
+        var requestedPiers = new HashSet<string>(
+            piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
+            StringComparer.OrdinalIgnoreCase);
+        var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+
+        var candidates = new List<(string Pier, string Story, string Combo, string StepType,
+                                   string RawLoc, double P, double M2, double M3, double V2, double V3)>();
+
+        foreach (var record in database.PierElementForces.Records)
+        {
+            var f     = record.Fields;
+            var story = GetField(f, "Story").Trim();
+            var pier  = GetFieldAny(f, "Pier", "Label", "Pier Name").Trim();
+            var combo = GetFieldAny(f, "OutputCase", "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo").Trim();
+
+            if (string.IsNullOrEmpty(story) || string.IsNullOrEmpty(pier)) continue;
+            if (!ComboMatches(combo, selectedCombos)) continue;
+            if (!requestedPiers.Contains($"{pier}|{story}")) continue;
+
+            var stepType = GetField(f, "StepType");
+            var rawLoc = GetFieldAny(f, "Location", "Station", "Loc");
+            if (string.IsNullOrEmpty(rawLoc)) rawLoc = "Top";
+
+            candidates.Add((pier, story, combo, stepType, rawLoc,
+                ParseDouble(GetFieldAny(f, "P", "Pu")),
+                ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
+                ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
+                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
+        }
+
+        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var grp in candidates.GroupBy(r => $"{r.Pier}|{r.Story}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
+        {
+            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+            if (nums.Count > 0) stationRanges[grp.Key] = (nums.Min(), nums.Max());
+        }
+
+        var results = new List<EtabsForceResultDto>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (pier, story, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
+        {
+            var rangeKey = $"{pier}|{story}|{combo}|{stepType}";
+            var station = stationRanges.TryGetValue(rangeKey, out var range)
+                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+                : NormalizeStation(rawLoc);
+
+            var isSingleStep = string.IsNullOrEmpty(stepType)
+                || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
+                || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
+            var effectiveCombo = isSingleStep ? combo : $"{combo} ({stepType})";
+
+            var key = $"{pier}|{story}|{effectiveCombo}|{station}";
+            if (!seen.Add(key)) continue;
+
+            var status = string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
+                ? "Design Bottom"
+                : "Design Force";
+
+            results.Add(new EtabsForceResultDto(
+                $"pier:{pier}:{story}", pier, story, pier, pier,
+                effectiveCombo,
+                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(m2 * momentFactor, 3),
+                SMath.Round(m3 * momentFactor, 3),
+                SMath.Round(v2 * forceToKn, 3),
+                SMath.Round(v3 * forceToKn, 3),
+                station,
+                status));
+        }
+
+        return results;
+    }
+
+    // -----------------------------------------------------------------------
     private static EtabsDesignForceTable LoadRawTable(
         cSapModel model, string[] tableKeys, string defaultKey, List<string> warnings)
     {
