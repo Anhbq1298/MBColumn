@@ -240,7 +240,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             results.Add(new EtabsForceResultDto(
                 column.ObjectName, column.PierName, column.StoryName, column.Label, column.EtabsSectionName,
                 combo,
-                SMath.Round(p  * forceToKn,   3),
+                SMath.Round(-p * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -324,7 +324,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 $"pier:{pier}:{story}",
                 pier, story, pier, pier,
                 combo,
-                SMath.Round(p * forceToKn, 3),
+                SMath.Round(-p * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
@@ -437,7 +437,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             results.Add(new EtabsForceResultDto(
                 col.ObjectName, col.PierName, col.StoryName, col.Label, col.EtabsSectionName,
                 effectiveCombo,
-                SMath.Round(p  * forceToKn,   3),
+                SMath.Round(-p * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -581,7 +581,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
     {
         foreach (var candidate in candidates)
         {
-            var idx = Array.FindIndex(fields, f => string.Equals(f, candidate, StringComparison.OrdinalIgnoreCase));
+            var idx = Array.FindIndex(fields, f => string.Equals(f.Trim(), candidate, StringComparison.OrdinalIgnoreCase));
             if (idx >= 0) return idx;
         }
         return -1;

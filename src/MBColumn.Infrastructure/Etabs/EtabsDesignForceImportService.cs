@@ -150,7 +150,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 col.ObjectName, col.PierName, col.StoryName, col.Label, col.EtabsSectionName,
                 combo,
-                SMath.Round(p  * forceToKn,   3),
+                SMath.Round(-p * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -307,7 +307,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 $"{story}/{label}", "", story, label, "",
                 combo,
-                SMath.Round(p  * forceToKn,   3),
+                SMath.Round(-p * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -630,7 +630,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             var dict     = new Dictionary<string, string>(fieldCount, StringComparer.OrdinalIgnoreCase);
             var baseIdx  = row * fieldCount;
             for (var col = 0; col < fieldCount; col++)
-                dict[fields[col]] = tableData[baseIdx + col] ?? "";
+                dict[fields[col].Trim()] = tableData[baseIdx + col] ?? "";
 
             records.Add(new EtabsDesignForceRecord
             {
@@ -653,7 +653,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     private static string GetFieldAny(IReadOnlyDictionary<string, string> f, params string[] keys)
     {
         foreach (var k in keys)
-            if (f.TryGetValue(k, out var v)) return v ?? "";
+            if (f.TryGetValue(k.Trim(), out var v)) return v ?? "";
         return "";
     }
 

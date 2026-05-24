@@ -54,7 +54,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly RelayCommand cancelCommand;
     private readonly RelayCommand selectAllCombosCommand;
     private readonly RelayCommand clearAllCombosCommand;
-    private readonly RelayCommand refreshCombosCommand;
     private readonly RelayCommand addTargetGroupCommand;
     private readonly RelayCommand applyImportCommand;
     private readonly RelayCommand createMbColumnSectionCommand;
@@ -160,6 +159,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
         FilteredLoadCombinations = new ListCollectionView(LoadCombinations);
         FilteredLoadCombinations.Filter = FilterLoadCombination;
         ForceRows = new BulkObservableCollection<EtabsForceImportRowViewModel>();
+        
+        FilteredColumnMappedForceRows = new ListCollectionView(MbColumnMappedForceRows) { Filter = item => ((MbColumnMappedForceRowViewModel)item).ObjectType == "Column" };
+        FilteredPierMappedForceRows = new ListCollectionView(MbColumnMappedForceRows) { Filter = item => ((MbColumnMappedForceRowViewModel)item).ObjectType == "Pier" };
+
         SummaryRows = [];
         MbColumnSections = [];
 
@@ -182,7 +185,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         cancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         selectAllCombosCommand = new RelayCommand(() => SetAllLoadCombinations(true), () => LoadCombinations.Count > 0);
         clearAllCombosCommand = new RelayCommand(() => SetAllLoadCombinations(false), () => LoadCombinations.Count > 0);
-        refreshCombosCommand = new RelayCommand(RefreshLoadCombinations, () => IsConnected);
         addTargetGroupCommand = new RelayCommand(AddTargetGroup);
         applyImportCommand = new RelayCommand(ApplyImport, () => MbColumnSections.Any(g => g.Items.Count > 0));
         createMbColumnSectionCommand = new RelayCommand(CreateNewMbColumnSection);
@@ -213,6 +215,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public BulkObservableCollection<EtabsForceImportRowViewModel> ForceRows { get; }
     public BulkObservableCollection<MbColumnMappedForceRowViewModel> MbColumnMappedForceRows { get; }
         = new BulkObservableCollection<MbColumnMappedForceRowViewModel>();
+    public ICollectionView FilteredColumnMappedForceRows { get; }
+    public ICollectionView FilteredPierMappedForceRows { get; }
     public ObservableCollection<MbColumnSectionSummaryViewModel> MbColumnSectionSummaryRows { get; }
         = [];
     public ObservableCollection<EtabsImportSummaryRowViewModel> SummaryRows { get; }
@@ -229,7 +233,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICommand CancelCommand => cancelCommand;
     public ICommand SelectAllCombosCommand => selectAllCombosCommand;
     public ICommand ClearAllCombosCommand => clearAllCombosCommand;
-    public ICommand RefreshCombosCommand => refreshCombosCommand;
     public ICommand AddTargetGroupCommand => addTargetGroupCommand;
     public ICommand ApplyImportCommand => applyImportCommand;
     public ICommand CreateMbColumnSectionCommand => createMbColumnSectionCommand;
@@ -3055,7 +3058,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         applyImportCommand.RaiseCanExecuteChanged();
         selectAllCombosCommand.RaiseCanExecuteChanged();
         clearAllCombosCommand.RaiseCanExecuteChanged();
-        refreshCombosCommand.RaiseCanExecuteChanged();
         loadForcesCommand.RaiseCanExecuteChanged();
         goToFlow2Command.RaiseCanExecuteChanged();
     }

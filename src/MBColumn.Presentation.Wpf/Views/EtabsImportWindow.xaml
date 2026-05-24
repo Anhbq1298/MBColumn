@@ -766,14 +766,6 @@
                                     MinHeight="24"
                                     FontSize="11"
                                     Margin="4,0,0,0" />
-                            <Button Content="⟳"
-                                    Command="{Binding RefreshCombosCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="8,3"
-                                    MinHeight="24"
-                                    FontSize="11"
-                                    Margin="4,0,0,0"
-                                    ToolTip="Refresh load combinations from ETABS" />
                         </StackPanel>
                     </DockPanel>
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
@@ -1004,8 +996,9 @@
                             </DataGrid>
                         </TabItem>
                         <!-- Tab 2: By Section (filtered by MB Column Section Story+Label) -->
-                        <TabItem Header="By Section">
-                            <DataGrid ItemsSource="{Binding MbColumnMappedForceRows}"
+                        <!-- Tab 2: Column Forces (filtered by ObjectType == Column) -->
+                        <TabItem Header="Column Forces">
+                            <DataGrid ItemsSource="{Binding FilteredColumnMappedForceRows}"
                                       AutoGenerateColumns="False"
                                       IsReadOnly="True"
                                       CanUserAddRows="False"
@@ -1017,30 +1010,40 @@
                                       RowHeight="22"
                                       BorderBrush="{DynamicResource BorderGreyBrush}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Section"
-                                                        Binding="{Binding MbColumnSectionName}"
-                                                        Width="120" />
-                                    <DataGridTextColumn Header="LoadCaseName"
-                                                        Binding="{Binding LoadCaseName}"
-                                                        Width="200" />
-                                    <DataGridTextColumn Header="Story"
-                                                        Binding="{Binding Story}"
-                                                        Width="80" />
-                                    <DataGridTextColumn Header="Label"
-                                                        Binding="{Binding Label}"
-                                                        Width="80" />
-                                    <DataGridTextColumn Header="Location"
-                                                        Binding="{Binding Location}"
-                                                        Width="70" />
-                                    <DataGridTextColumn Header="P"
-                                                        Binding="{Binding P, StringFormat=N2}"
-                                                        Width="70" />
-                                    <DataGridTextColumn Header="Mx"
-                                                        Binding="{Binding Mx, StringFormat=N2}"
-                                                        Width="70" />
-                                    <DataGridTextColumn Header="My"
-                                                        Binding="{Binding My, StringFormat=N2}"
-                                                        Width="70" />
+                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding MbColumnSectionName}" Width="120" />
+                                    <DataGridTextColumn Header="LoadCombo" Binding="{Binding LoadCombo}" Width="200" />
+                                    <DataGridTextColumn Header="Col Label" Binding="{Binding Label}" Width="80" />
+                                    <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
+                                    <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="70" />
+                                    <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Mx" Binding="{Binding Mx, StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="My" Binding="{Binding My, StringFormat=N2}" Width="70" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                        
+                        <!-- Tab 3: Pier Forces (filtered by ObjectType == Pier) -->
+                        <TabItem Header="Pier Forces">
+                            <DataGrid ItemsSource="{Binding FilteredPierMappedForceRows}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      CanUserReorderColumns="False"
+                                      HeadersVisibility="Column"
+                                      SelectionMode="Single"
+                                      FontSize="11"
+                                      RowHeight="22"
+                                      BorderBrush="{DynamicResource BorderGreyBrush}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding MbColumnSectionName}" Width="120" />
+                                    <DataGridTextColumn Header="LoadCombo" Binding="{Binding LoadCombo}" Width="200" />
+                                    <DataGridTextColumn Header="Pier Label" Binding="{Binding Label}" Width="80" />
+                                    <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
+                                    <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="70" />
+                                    <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Mx" Binding="{Binding Mx, StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="My" Binding="{Binding My, StringFormat=N2}" Width="70" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
