@@ -2877,8 +2877,8 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     IsTrue(vm.SummaryRows[0].SectionType == MBColumn.Domain.Enums.SectionShapeType.Irregular);
     IsTrue(vm.SummaryRows[0].Rebar.Contains("custom coordinates", StringComparison.OrdinalIgnoreCase));
 
-    vm.CreateImportGroupCommand.Execute(null);
-    vm.AssignToGroupCommand.Execute(vm.ImportGroups[0]);
+    vm.CreateMbColumnSectionCommand.Execute(null);
+    vm.AssignToSectionCommand.Execute(vm.MbColumnSections[0]);
 
     vm.ApplyImportCommand.Execute(null);
     var imported = vm.ImportResult!.Sections.Single();
@@ -3273,7 +3273,7 @@ static void TestStrainControlledSevenPointAci()
     var factory = new MBColumn.Infrastructure.DesignCodes.DesignCodeServiceFactory(aci, new MBColumn.Infrastructure.DesignCodes.Ec2DesignCodeService());
     var reportSvc = new MBColumn.Infrastructure.Solvers.StrainPoints.PmValidationReportService(factory);
     var inputDto = MetricInput() with { DesignCode = MBColumn.Domain.Enums.DesignCodeType.Aci318Style };
-    string reportStr = reportSvc.BuildReport(inputDto, section, concrete, steel);
+    string reportStr = reportSvc.BuildReport(inputDto, section, concrete, steel).MarkdownReport;
     System.IO.File.AppendAllText("ACI_EC2_Reports.md", reportStr + "\n\n");
     
     IsTrue(points.Count == 7);
@@ -3303,7 +3303,7 @@ static void TestStrainControlledSevenPointEc2()
     var factory = new MBColumn.Infrastructure.DesignCodes.DesignCodeServiceFactory(new MBColumn.Infrastructure.DesignCodes.Aci318DesignCodeService(), ec2);
     var reportSvc = new MBColumn.Infrastructure.Solvers.StrainPoints.PmValidationReportService(factory);
     var inputDto = MetricInput() with { DesignCode = MBColumn.Domain.Enums.DesignCodeType.Ec2 };
-    string reportStr = reportSvc.BuildReport(inputDto, section, concrete, steel);
+    string reportStr = reportSvc.BuildReport(inputDto, section, concrete, steel).MarkdownReport;
     System.IO.File.AppendAllText("ACI_EC2_Reports.md", reportStr + "\n\n");
     
     IsTrue(points.Count == 7);
@@ -3344,6 +3344,14 @@ sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.I
         IReadOnlyList<string> _2,
         MBColumn.Domain.Enums.UnitSystem _3)
         => [new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 0, 0, "Top", "OK")];
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetElementForces(
+        IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> _,
+        IReadOnlyList<string> _2,
+        MBColumn.Domain.Enums.UnitSystem _3) => [];
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetPierElementForces(
+        IReadOnlyList<(string PierLabel, string StoryName)> _,
+        IReadOnlyList<string> _2,
+        MBColumn.Domain.Enums.UnitSystem _3) => [];
 }
 
 sealed class StubPierShellImportService : MBColumn.Application.Services.Etabs.IEtabsPierShellImportService
@@ -3353,6 +3361,7 @@ sealed class StubPierShellImportService : MBColumn.Application.Services.Etabs.IE
     public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto> GetSegments(
         string pierLabel, string storyName, MBColumn.Domain.Enums.UnitSystem _)
         => [new("A1", pierLabel, storyName, "L1", "CW200", 200, (0, 0), (400, 0))];
+    public IReadOnlyList<string> GetStoryNames() => ["Story1"];
 }
 
 sealed class Stub32PointGeometryBuilder : MBColumn.Application.Services.Etabs.IIrregularPierGeometryBuilder

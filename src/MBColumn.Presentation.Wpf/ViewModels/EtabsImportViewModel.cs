@@ -853,6 +853,122 @@ public sealed class EtabsImportViewModel : ViewModelBase
             try
             {
                 var groups = pierShellImportService!.GetPierGroups(targetUnitSystem);
+                var storyNames = pierShellImportService.GetStoryNames();
+                var storyIndexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < storyNames.Count; i++)
+                {
+                    storyIndexMap[storyNames[i]] = i;
+                }
+
+                // Group the pier groups by PierLabel
+                var pierToGroups = groups
+                    .GroupBy(g => g.PierLabel, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+
+                var newRows = new List<EtabsColumnImportRowViewModel>();
+
+                foreach (var kvp in pierToGroups)
+                {
+                    var pier = kvp.Key;
+                    var pierStories = kvp.Value
+                        .Select(g => g.StoryName)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(s => storyIndexMap.TryGetValue(s, out var idx) ? idx : 9999)
+                        .ToList();
+
+                    // Precompute boundaries for each story of this pier
+                    var storyBoundaries = new Dictionary<string, (IReadOnlyList<Point2D> Outer, IReadOnlyList<IReadOnlyList<Point2D>> Openings)>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var story in pierStories)
+                    {
+                        var segments = pierShellImportService.GetSegments(pier, story, targetUnitSystem);
+                        if (segments.Count > 0 && irregularGeometryBuilder is not null)
+                        {
+                            try
+                            {
+                                var boundaryDto = irregularGeometryBuilder.BuildBoundary(segments);
+                                if (!boundaryDto.IsEmpty)
+                                {
+                                    storyBoundaries[story] = (boundaryDto.ClockwisePolylines[0], boundaryDto.OpeningPolylines);
+                                }
+                            }
+                            catch { }
+                        }
+                        if (!storyBoundaries.ContainsKey(story))
+                        {
+                            storyBoundaries[story] = ([], []);
+                        }
+                    }
+
+                    // Run contiguous grouping
+                    var contiguousGroups = new List<List<string>>();
+                    List<string>? currentGroup = null;
+
+                    foreach (var story in pierStories)
+                    {
+                        if (currentGroup == null)
+                        {
+                            currentGroup = [story];
+                            contiguousGroups.Add(currentGroup);
+                        }
+                        else
+                        {
+                            var firstStoryInGroup = currentGroup[0];
+                            var boundaryFirst = storyBoundaries[firstStoryInGroup];
+                            var boundaryCurrent = storyBoundaries[story];
+
+                            if (AreBoundariesEqual(boundaryFirst.Outer, boundaryFirst.Openings, boundaryCurrent.Outer, boundaryCurrent.Openings))
+                            {
+                                currentGroup.Add(story);
+                            }
+                            else
+                            {
+                                currentGroup = [story];
+                                contiguousGroups.Add(currentGroup);
+                            }
+                        }
+                    }
+
+                    // For each group, generate the UniqueSection name and create the rows
+                    foreach (var groupList in contiguousGroups)
+                    {
+                        string uniqueSectionName;
+                        if (groupList.Count == 1)
+                        {
+                            uniqueSectionName = $"{pier}|{groupList[0]}";
+                        }
+                        else
+                        {
+                            uniqueSectionName = $"{pier}|{groupList[0]}-{groupList[groupList.Count - 1]}";
+                        }
+
+                        // Also update pierBoundaryCache for this UniqueSection so preview/snapshot is instant
+                        var firstStory = groupList[0];
+                        var boundary = storyBoundaries[firstStory];
+                        if (boundary.Outer.Count >= 3)
+                        {
+                            pierBoundaryCache[uniqueSectionName] = (boundary.Outer, boundary.Openings);
+                        }
+
+                        foreach (var story in groupList)
+                        {
+                            var prop = kvp.Value.FirstOrDefault(g => string.Equals(g.StoryName, story, StringComparison.OrdinalIgnoreCase)).SectionProperty ?? pier;
+
+                            newRows.Add(new EtabsColumnImportRowViewModel(
+                                OnColumnSelectionChanged,
+                                $"pier:{pier}:{story}",
+                                pier,
+                                story,
+                                pier,
+                                uniqueSectionName,
+                                pier,
+                                prop,
+                                SectionShapeType.Irregular,
+                                0, 0, 0,
+                                "",
+                                "Ready"));
+                        }
+                    }
+                }
 
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
@@ -864,23 +980,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         foreach (var row in staleRows)
                             Columns.Remove(row);
 
-                        Columns.AddRange(groups.Select(g =>
-                        {
-                            var (pier, story, sectionProp) = g;
-                            return new EtabsColumnImportRowViewModel(
-                                OnColumnSelectionChanged,
-                                $"pier:{pier}:{story}",
-                                pier,
-                                story,
-                                pier,
-                                $"{pier}|{story}",
-                                pier,
-                                sectionProp,
-                                SectionShapeType.Irregular,
-                                0, 0, 0,
-                                "",
-                                "Ready");
-                        }));
+                        Columns.AddRange(newRows);
                     }
 
                     ConnectionStatus = groups.Count == 0
@@ -1780,27 +1880,60 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         if (selectedForceType == "Element Forces")
         {
-            // Element forces: live COM, frame columns only (no pier-level resultant available)
             var selectedFrameColumns = AllAssignedItems.Where(c => !c.IsIrregular).ToList();
-            if (selectedFrameColumns.Count > 0)
+            var selectedPiers = AllAssignedItems.Where(c => c.IsIrregular)
+                .Select(c => (c.Pier, c.Story)).ToList();
+
+            if (importedForceCache?.HasValidCache(ModelPath) == true && designForceImportService is not null)
             {
-                try
+                var rawDb = importedForceCache.Current!;
+                ForceCacheStatus = $"[DBG] PATH=RawDB(Element) cols={selectedFrameColumns.Count} piers={selectedPiers.Count} combos={selectedCombos.Count}";
+                if (selectedFrameColumns.Count > 0)
                 {
                     var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
                         c.ObjectName, c.Pier, c.Story, c.Label,
                         c.UniqueSection, c.EtabsSectionName, c.Material,
                         c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
-
-                    rows.AddRange(forceImportService.GetElementForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    rows.AddRange(designForceImportService.ParseColumnElementForces(rawDb, columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
-                catch (Exception ex)
+                if (selectedPiers.Count > 0)
                 {
-                    ConnectionStatus = $"Warning: could not load element forces — {ex.Message}";
+                    rows.AddRange(designForceImportService.ParsePierElementForces(rawDb, selectedPiers, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
             }
+            else
+            {
+                ForceCacheStatus = $"[DBG] PATH=LiveCOM(Element) cols={selectedFrameColumns.Count} piers={selectedPiers.Count} combos={selectedCombos.Count}";
+                // Element forces: live COM fallback, both frame columns and piers
+                if (selectedFrameColumns.Count > 0)
+                {
+                    try
+                    {
+                        var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
+                            c.ObjectName, c.Pier, c.Story, c.Label,
+                            c.UniqueSection, c.EtabsSectionName, c.Material,
+                            c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
 
-            if (AllAssignedItems.Any(c => c.IsIrregular))
-                ForceCacheStatus = "Note: Element forces not available for pier/shell elements — skipped.";
+                        rows.AddRange(forceImportService.GetElementForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    }
+                    catch (Exception ex)
+                    {
+                        ConnectionStatus = $"Warning: could not load column element forces — {ex.Message}";
+                    }
+                }
+
+                if (selectedPiers.Count > 0)
+                {
+                    try
+                    {
+                        rows.AddRange(forceImportService.GetPierElementForces(selectedPiers, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    }
+                    catch (Exception ex)
+                    {
+                        ConnectionStatus = $"Warning: could not load pier element forces — {ex.Message}";
+                    }
+                }
+            }
         }
         else
         {
@@ -2429,6 +2562,73 @@ public sealed class EtabsImportViewModel : ViewModelBase
         {
             return null;
         }
+    }
+
+    private static IReadOnlyList<Point2D> NormalizePolygon(IReadOnlyList<Point2D> pts)
+    {
+        if (pts == null || pts.Count == 0) return [];
+        int minIndex = 0;
+        for (int i = 1; i < pts.Count; i++)
+        {
+            if (pts[i].X < pts[minIndex].X || (Math.Abs(pts[i].X - pts[minIndex].X) < 1e-6 && pts[i].Y < pts[minIndex].Y))
+            {
+                minIndex = i;
+            }
+        }
+        if (minIndex == 0) return pts;
+        var shifted = new List<Point2D>(pts.Count);
+        for (int i = 0; i < pts.Count; i++)
+        {
+            shifted.Add(pts[(minIndex + i) % pts.Count]);
+        }
+        return shifted;
+    }
+
+    private static bool ArePolygonsEqual(IReadOnlyList<Point2D> poly1, IReadOnlyList<Point2D> poly2, double tolerance = 0.1)
+    {
+        if (poly1.Count != poly2.Count) return false;
+        var norm1 = NormalizePolygon(poly1);
+        var norm2 = NormalizePolygon(poly2);
+        for (int i = 0; i < norm1.Count; i++)
+        {
+            if (Math.Abs(norm1[i].X - norm2[i].X) > tolerance || Math.Abs(norm1[i].Y - norm2[i].Y) > tolerance)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static bool AreOpeningsEqual(IReadOnlyList<IReadOnlyList<Point2D>> open1, IReadOnlyList<IReadOnlyList<Point2D>> open2)
+    {
+        if (open1.Count != open2.Count) return false;
+        var matched = new bool[open2.Count];
+        foreach (var o1 in open1)
+        {
+            bool found = false;
+            for (int j = 0; j < open2.Count; j++)
+            {
+                if (!matched[j] && ArePolygonsEqual(o1, open2[j]))
+                {
+                    matched[j] = true;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+        return true;
+    }
+
+    private static bool AreBoundariesEqual(
+        IReadOnlyList<Point2D> outer1, IReadOnlyList<IReadOnlyList<Point2D>> openings1,
+        IReadOnlyList<Point2D> outer2, IReadOnlyList<IReadOnlyList<Point2D>> openings2)
+    {
+        bool empty1 = outer1 == null || outer1.Count < 3;
+        bool empty2 = outer2 == null || outer2.Count < 3;
+        if (empty1 && empty2) return true;
+        if (empty1 || empty2) return false;
+        return ArePolygonsEqual(outer1!, outer2!) && AreOpeningsEqual(openings1!, openings2!);
     }
 
     // -------------------------------------------------------------------

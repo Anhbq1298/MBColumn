@@ -19,4 +19,9 @@ public interface IEtabsForceImportService
         IReadOnlyList<EtabsColumnImportDto> columns,
         IReadOnlyList<string> loadCombinations,
         UnitSystem targetSystem);
+
+    IReadOnlyList<EtabsForceResultDto> GetPierElementForces(
+        IReadOnlyList<(string PierLabel, string StoryName)> piers,
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem);
 }

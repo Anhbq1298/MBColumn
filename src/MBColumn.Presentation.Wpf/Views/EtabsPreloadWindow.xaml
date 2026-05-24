@@ -5,7 +5,8 @@
         xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels"
         Title="Import from ETABS"
         Width="420"
-        Height="310"
+        SizeToContent="Height"
+        MinHeight="320"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Loaded="OnWindowLoaded"
@@ -130,34 +131,42 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-
-            <!-- Progress bar -->
-            <ProgressBar Value="{Binding Progress}"
-                         Maximum="100"
-                         Height="5"
-                         Margin="0,14,0,0"
-                         Background="{DynamicResource BorderGreyBrush}"
-                         Foreground="{DynamicResource PrimaryNavyBrush}" />
         </StackPanel>
 
         <!-- Bottom bar -->
-        <Border Grid.Row="2"
-                BorderBrush="{DynamicResource BorderGreyBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="16,8">
-            <DockPanel>
-                <Button DockPanel.Dock="Right"
-                        Content="Cancel"
-                        Command="{Binding CancelCommand}"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Padding="14,5"
-                        MinHeight="30" />
-                <TextBlock Text="{Binding StatusMessage}"
-                           VerticalAlignment="Center"
-                           FontSize="11"
-                           Foreground="{DynamicResource TextMutedBrush}"
-                           TextTrimming="CharacterEllipsis" />
-            </DockPanel>
-        </Border>
+        <Grid Grid.Row="2">
+            <Border BorderBrush="{DynamicResource BorderGreyBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="16,8">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right"
+                            Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="14,5"
+                            MinHeight="30" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding CompletedStepsText}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="6,0,0,0" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            
+            <!-- Sleek top-border Progress Bar -->
+            <ProgressBar Value="{Binding Progress, Mode=OneWay}"
+                         Maximum="100"
+                         Height="3"
+                         VerticalAlignment="Top"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="{DynamicResource PrimaryNavyBrush}" />
+        </Grid>
     </Grid>
 </Window>

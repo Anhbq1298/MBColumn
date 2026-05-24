@@ -3,6 +3,7 @@ using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -39,13 +40,28 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
             new() { Label = "Connecting to ETABS" },
             new() { Label = "Loading columns & sections" },
             new() { Label = "Loading load combinations" },
+            new() { Label = "Importing element forces" },
             new() { Label = "Importing design forces" },
         ];
+
+        foreach (var step in Steps)
+        {
+            step.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(EtabsPreloadStep.Status))
+                {
+                    Raise(nameof(CompletedCount));
+                    Raise(nameof(CompletedStepsText));
+                }
+            };
+        }
 
         CancelCommand = new RelayCommand(Cancel);
     }
 
     public ObservableCollection<EtabsPreloadStep> Steps { get; }
+    public int CompletedCount => Steps.Count(s => s.IsDone || s.IsError);
+    public string CompletedStepsText => $"[{CompletedCount}/{Steps.Count}]";
     public EtabsPreloadData? Result { get; private set; }
     public ICommand CancelCommand { get; }
     public event EventHandler<bool>? RequestClose;
@@ -66,7 +82,47 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         if (cancelled) return;
         cancelled = true;
         cts?.Cancel();
+        progressDriftCts?.Cancel();
         RequestClose?.Invoke(this, false);
+    }
+
+    private CancellationTokenSource? progressDriftCts;
+
+    private void StartProgressDrift(double start, double target, double expectedDurationSeconds)
+    {
+        progressDriftCts?.Cancel();
+        progressDriftCts = new CancellationTokenSource();
+        var token = progressDriftCts.Token;
+
+        Progress = start;
+        var steps = expectedDurationSeconds * 20; // 20 steps per second (50ms interval)
+        var stepVal = (target - start) / steps;
+        var maxLimit = start + (target - start) * 0.95; // Only drift up to 95%
+
+        Task.Run(async () =>
+        {
+            for (int i = 0; i < steps; i++)
+            {
+                if (token.IsCancellationRequested) return;
+
+                // Update on UI thread
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    if (Progress < maxLimit)
+                    {
+                        Progress += stepVal;
+                    }
+                });
+
+                await Task.Delay(50, CancellationToken.None);
+            }
+        }, token);
+    }
+
+    private void StopProgressDrift(double finalVal)
+    {
+        progressDriftCts?.Cancel();
+        Progress = finalVal;
     }
 
     private async Task RunPreloadAsync(CancellationToken ct)
@@ -113,7 +169,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         {
             columns = columnImportService.GetCandidateColumns(targetUnitSystem);
             Steps[1].SetDone($"{columns.Count} objects");
-            Progress = 40;
+            Progress = 30;
         }
         catch (Exception ex)
         {
@@ -135,7 +191,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         {
             combos = columnImportService.GetLoadCombinations();
             Steps[2].SetDone($"{combos.Count} combinations");
-            Progress = 60;
+            Progress = 45;
         }
         catch (Exception ex)
         {
@@ -147,10 +203,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
 
         if (ct.IsCancellationRequested) return;
 
-        // ─── Step 4: Design forces (background — reads SQLite, not COM) ────
-        Steps[3].SetRunning();
-        StatusMessage = "Importing design forces…";
-
+        // ─── Step 4 & 5: Load Forces (Element + Design) ─────────────────────
         if (designForceImportService is not null && forceCache is not null)
         {
             try
@@ -158,16 +211,86 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
                 if (forceCache.HasValidCache(info.ModelPath))
                 {
                     Steps[3].SetDone("cached");
+                    Steps[4].SetDone("cached");
+                    Progress = 100;
                 }
                 else
                 {
-                    var db = await Task.Run(
-                        () => designForceImportService.ImportDesignForces(info.ModelPath, info.ModelName),
-                        ct);
+                    int colElementRows = 0;
+                    int pierElementRows = 0;
+                    int colDesignRows = 0;
+                    int pierDesignRows = 0;
+
+                    var db = await Task.Run(() =>
+                    {
+                        return designForceImportService.ImportDesignForces(
+                            info.ModelPath,
+                            info.ModelName,
+                            (phase, tableName, rowCount) =>
+                            {
+                                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                                {
+                                    if (rowCount == 0)
+                                    {
+                                        // Start of sub-phase
+                                        if (phase == 1) // Column Element
+                                        {
+                                            Steps[3].SetRunning("Loading columns element forces…");
+                                            StatusMessage = "Loading columns element forces…";
+                                            StartProgressDrift(45, 57.5, 3.0);
+                                        }
+                                        else if (phase == 2) // Pier Element
+                                        {
+                                            Steps[3].UpdateDetail("Loading piers element forces…");
+                                            StatusMessage = "Loading piers element forces…";
+                                            StartProgressDrift(57.5, 70.0, 3.0);
+                                        }
+                                        else if (phase == 3) // Column Design
+                                        {
+                                            Steps[3].SetDone($"{(colElementRows + pierElementRows):N0} rows");
+                                            
+                                            Steps[4].SetRunning("Loading columns design forces…");
+                                            StatusMessage = "Loading columns design forces…";
+                                            StartProgressDrift(70, 85.0, 3.0);
+                                        }
+                                        else if (phase == 4) // Pier Design
+                                        {
+                                            Steps[4].UpdateDetail("Loading piers design forces…");
+                                            StatusMessage = "Loading piers design forces…";
+                                            StartProgressDrift(85.0, 100.0, 3.0);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // End of sub-phase
+                                        if (phase == 1)
+                                        {
+                                            colElementRows = rowCount;
+                                            StopProgressDrift(57.5);
+                                        }
+                                        else if (phase == 2)
+                                        {
+                                            pierElementRows = rowCount;
+                                            StopProgressDrift(70.0);
+                                        }
+                                        else if (phase == 3)
+                                        {
+                                            colDesignRows = rowCount;
+                                            StopProgressDrift(85.0);
+                                        }
+                                        else if (phase == 4)
+                                        {
+                                            pierDesignRows = rowCount;
+                                            StopProgressDrift(100.0);
+                                        }
+                                    }
+                                });
+                            });
+                    }, ct);
+
                     forceCache.Set(db);
-                    var rowCount = (db.ColumnForces.HasRecords ? db.ColumnForces.Records.Count : 0)
-                                + (db.PierForces.HasRecords   ? db.PierForces.Records.Count   : 0);
-                    Steps[3].SetDone($"{rowCount:N0} rows");
+                    Steps[3].SetDone($"{(colElementRows + pierElementRows):N0} rows");
+                    Steps[4].SetDone($"{(colDesignRows + pierDesignRows):N0} rows");
                 }
             }
             catch (OperationCanceledException)
@@ -176,16 +299,16 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                // Non-fatal — forces can still be loaded on demand in the main dialog
                 Steps[3].SetError($"skipped ({ex.Message})");
+                Steps[4].SetError($"skipped ({ex.Message})");
             }
         }
         else
         {
             Steps[3].SetDone("N/A");
+            Steps[4].SetDone("N/A");
+            Progress = 100;
         }
-
-        Progress = 100;
 
         Result = new EtabsPreloadData
         {

@@ -38,7 +38,8 @@ public sealed class EtabsPreloadStep : ViewModelBase
     public bool IsError   => status == PreloadStepStatus.Error;
     public bool HasDetail => !string.IsNullOrEmpty(detail);
 
-    public void SetRunning()                 => Status = PreloadStepStatus.Running;
+    public void SetRunning(string detail = "") { Detail = detail; Status = PreloadStepStatus.Running; }
     public void SetDone(string detail = "")  { Detail = detail; Status = PreloadStepStatus.Done; }
     public void SetError(string msg)         { Detail = msg;    Status = PreloadStepStatus.Error; }
+    public void UpdateDetail(string value)   => Detail = value;
 }

@@ -154,43 +154,72 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             StringComparer.OrdinalIgnoreCase);
         var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
 
-        var results = new List<EtabsForceResultDto>();
-        var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var candidates = new List<(string Pier, string Story, string Combo, string StepType,
+                                   string RawLoc, double P, double M2, double M3, double V2, double V3)>();
 
         foreach (var record in database.PierForces.Records)
         {
             var f     = record.Fields;
-            var story = GetField(f, "Story");
-            var pier  = GetFieldAny(f, "Pier", "Label", "Pier Name");
-            var combo = GetFieldAny(f, "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo").Trim();
-            var loc   = GetFieldAny(f, "Location", "Station", "Loc");
-            if (string.IsNullOrEmpty(loc)) loc = "Top";
+            var story = GetField(f, "Story").Trim();
+            var pier  = GetFieldAny(f, "Pier", "Label", "Pier Name").Trim();
+            var combo = GetFieldAny(f, "OutputCase", "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo").Trim();
 
+            if (string.IsNullOrEmpty(story) || string.IsNullOrEmpty(pier)) continue;
             if (!ComboMatches(combo, selectedCombos)) continue;
-            if (!requestedPiers.Contains($"{pier.Trim()}|{story.Trim()}")) continue;
+            if (!requestedPiers.Contains($"{pier}|{story}")) continue;
 
-            var key = $"{pier}|{story}|{combo}|{loc}";
+            var stepType = GetField(f, "StepType");
+            var rawLoc = GetFieldAny(f, "Location", "Station", "Loc");
+            if (string.IsNullOrEmpty(rawLoc)) rawLoc = "Top";
+
+            candidates.Add((pier, story, combo, stepType, rawLoc,
+                ParseDouble(GetFieldAny(f, "P", "Pu")),
+                ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
+                ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
+                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
+        }
+
+        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var grp in candidates.GroupBy(
+            r => $"{r.Pier}|{r.Story}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
+        {
+            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+            if (nums.Count > 0)
+                stationRanges[grp.Key] = (nums.Min(), nums.Max());
+        }
+
+        var results = new List<EtabsForceResultDto>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (pier, story, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
+        {
+            var rangeKey = $"{pier}|{story}|{combo}|{stepType}";
+            var station = stationRanges.TryGetValue(rangeKey, out var range)
+                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+                : NormalizeStation(rawLoc);
+
+            var isSingleStep = string.IsNullOrEmpty(stepType)
+                || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
+                || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
+            var effectiveCombo = isSingleStep ? combo : $"{combo} ({stepType})";
+
+            var key = $"{pier}|{story}|{effectiveCombo}|{station}";
             if (!seen.Add(key)) continue;
 
-            var p  = ParseDouble(GetFieldAny(f, "P",  "Pu"));
-            var m2 = ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2"));
-            var m3 = ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3"));
-            var v2 = ParseDouble(GetFieldAny(f, "V2", "Vu2"));
-            var v3 = ParseDouble(GetFieldAny(f, "V3", "Vu3"));
-
-            var status = string.Equals(loc, "Bottom", StringComparison.OrdinalIgnoreCase)
+            var status = string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
                 ? "Design Bottom"
-                : string.IsNullOrEmpty(loc) ? "Design Force" : $"Design {loc}";
+                : "Design Force";
 
             results.Add(new EtabsForceResultDto(
                 $"pier:{pier}:{story}", pier, story, pier, pier,
-                combo,
-                SMath.Round(p  * forceToKn,   3),
+                effectiveCombo,
+                SMath.Round(-p * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
-                SMath.Round(v2 * forceToKn,   3),
-                SMath.Round(v3 * forceToKn,   3),
-                NormalizeStation(loc),
+                SMath.Round(v2 * forceToKn, 3),
+                SMath.Round(v3 * forceToKn, 3),
+                station,
                 status));
         }
 
@@ -274,33 +303,70 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             (eUnits)database.DatabaseUnits, targetSystem);
         var momentFactor = forceToKn * lengthToMm / 1000.0;
 
-        var results = new List<EtabsForceResultDto>();
-        var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var candidates = new List<(string Pier, string Story, string Combo, string StepType,
+                                   string RawLoc, double P, double M2, double M3, double V2, double V3)>();
 
         foreach (var record in database.PierForces.Records)
         {
             var f     = record.Fields;
-            var story = GetField(f, "Story");
-            var pier  = GetFieldAny(f, "Pier", "Label", "Pier Name");
-            var combo = GetFieldAny(f, "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo").Trim();
-            var loc   = GetFieldAny(f, "Location", "Station", "Loc");
-            if (string.IsNullOrEmpty(loc)) loc = "Top";
+            var story = GetField(f, "Story").Trim();
+            var pier  = GetFieldAny(f, "Pier", "Label", "Pier Name").Trim();
+            var combo = GetFieldAny(f, "OutputCase", "Combo", "DesignCombo", "Design Combo", "Load Combo", "LoadCombo").Trim();
+            var stepType = GetField(f, "StepType");
+            var rawLoc = GetFieldAny(f, "Location", "Station", "Loc");
+            if (string.IsNullOrEmpty(rawLoc)) rawLoc = "Top";
 
             if (string.IsNullOrEmpty(story) || string.IsNullOrEmpty(pier)) continue;
 
-            var key = $"{pier}|{story}|{combo}|{loc}";
+            candidates.Add((pier, story, combo, stepType, rawLoc,
+                ParseDouble(GetFieldAny(f, "P", "Pu")),
+                ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
+                ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
+                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
+        }
+
+        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var grp in candidates.GroupBy(
+            r => $"{r.Pier}|{r.Story}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
+        {
+            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
+            if (nums.Count > 0)
+                stationRanges[grp.Key] = (nums.Min(), nums.Max());
+        }
+
+        var results = new List<EtabsForceResultDto>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (pier, story, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
+        {
+            var rangeKey = $"{pier}|{story}|{combo}|{stepType}";
+            var station = stationRanges.TryGetValue(rangeKey, out var range)
+                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+                : NormalizeStation(rawLoc);
+
+            var isSingleStep = string.IsNullOrEmpty(stepType)
+                || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
+                || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
+            var effectiveCombo = isSingleStep ? combo : $"{combo} ({stepType})";
+
+            var key = $"{pier}|{story}|{effectiveCombo}|{station}";
             if (!seen.Add(key)) continue;
+
+            var status = string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
+                ? "Design Bottom"
+                : "Design Force";
 
             results.Add(new EtabsForceResultDto(
                 $"pier:{pier}:{story}", pier, story, pier, pier,
-                combo,
-                SMath.Round(ParseDouble(GetFieldAny(f, "P",  "Pu"))  * forceToKn,   3),
-                SMath.Round(ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")) * momentFactor, 3),
-                SMath.Round(ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")) * momentFactor, 3),
-                SMath.Round(ParseDouble(GetFieldAny(f, "V2", "Vu2"))  * forceToKn,   3),
-                SMath.Round(ParseDouble(GetFieldAny(f, "V3", "Vu3"))  * forceToKn,   3),
-                NormalizeStation(loc),
-                "Design Force"));
+                effectiveCombo,
+                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(m2 * momentFactor, 3),
+                SMath.Round(m3 * momentFactor, 3),
+                SMath.Round(v2 * forceToKn, 3),
+                SMath.Round(v3 * forceToKn, 3),
+                station,
+                status));
         }
 
         return results;

@@ -48,6 +48,17 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
             .ThenBy(g => g.Story, StringComparer.OrdinalIgnoreCase)];
     }
 
+    public IReadOnlyList<string> GetStoryNames()
+    {
+        var model = connection.Model
+            ?? throw new InvalidOperationException("Not connected to ETABS.");
+
+        int storyCount = 0;
+        string[] storyNames = [];
+        model.Story.GetNameList(ref storyCount, ref storyNames);
+        return storyNames ?? [];
+    }
+
     public IReadOnlyList<EtabsPierShellSegmentDto> GetSegments(string pierLabel, string storyName, UnitSystem targetSystem)
     {
         var model = connection.Model
@@ -129,7 +140,7 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         {
             string pier = "";
             try { model.AreaObj.GetPier(areaName, ref pier); } catch { }
-            if (string.IsNullOrEmpty(pier)) continue;
+            if (string.IsNullOrEmpty(pier) || string.Equals(pier, "None", StringComparison.OrdinalIgnoreCase)) continue;
 
             if (!labelStory.TryGetValue(areaName, out var ls) || string.IsNullOrEmpty(ls.Story))
                 continue;

@@ -11,5 +11,7 @@ public sealed class ImportedEtabsForceDatabase
 
     public required EtabsDesignForceTable ColumnForces { get; init; }
     public required EtabsDesignForceTable PierForces { get; init; }
+    public required EtabsDesignForceTable ColumnElementForces { get; init; }
+    public required EtabsDesignForceTable PierElementForces { get; init; }
     public required IReadOnlyList<string> Warnings { get; init; }
 }

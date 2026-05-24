@@ -5,11 +5,10 @@ namespace MBColumn.Application.Services.Etabs;
 
 public interface IEtabsDesignForceImportService
 {
-    /// <summary>
-    /// Reads raw Design Forces - Columns and Design Forces - Piers tables from the currently
-    /// connected ETABS model and returns them as unfiltered, unconverted records.
-    /// </summary>
-    ImportedEtabsForceDatabase ImportDesignForces(string modelFilePath, string modelName);
+    ImportedEtabsForceDatabase ImportDesignForces(
+        string modelFilePath,
+        string modelName,
+        Action<int, string, int>? progressCallback = null);
 
     /// <summary>
     /// Parses column forces from a previously imported raw database, applying column filter,
@@ -45,5 +44,25 @@ public interface IEtabsDesignForceImportService
     /// </summary>
     IReadOnlyList<EtabsForceResultDto> ParseAllPierForces(
         ImportedEtabsForceDatabase database,
+        UnitSystem targetSystem);
+
+    /// <summary>
+    /// Parses column element forces from a previously imported raw database, applying column filter,
+    /// combo filter, and unit conversion to the target system.
+    /// </summary>
+    IReadOnlyList<EtabsForceResultDto> ParseColumnElementForces(
+        ImportedEtabsForceDatabase database,
+        IReadOnlyList<EtabsColumnImportDto> columns,
+        IReadOnlyList<string> loadCombinations,
+        UnitSystem targetSystem);
+
+    /// <summary>
+    /// Parses pier element forces from a previously imported raw database, applying pier filter,
+    /// combo filter, and unit conversion to the target system.
+    /// </summary>
+    IReadOnlyList<EtabsForceResultDto> ParsePierElementForces(
+        ImportedEtabsForceDatabase database,
+        IReadOnlyList<(string PierLabel, string StoryName)> piers,
+        IReadOnlyList<string> loadCombinations,
         UnitSystem targetSystem);
 }
