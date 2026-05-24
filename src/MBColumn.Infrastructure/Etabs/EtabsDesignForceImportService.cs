@@ -67,10 +67,10 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         var momentFactor = forceToKn * lengthToMm / 1000.0;
 
         var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
-        var columnByStoryLabel = new Dictionary<(string Story, string Label), EtabsColumnImportDto>(
-            columns.Count);
+        var columnByStoryLabel = new Dictionary<string, EtabsColumnImportDto>(
+            StringComparer.OrdinalIgnoreCase);
         foreach (var col in columns)
-            columnByStoryLabel.TryAdd((col.StoryName, col.Label), col);
+            columnByStoryLabel.TryAdd($"{col.StoryName.Trim()}|{col.Label.Trim()}", col);
 
         // Phase 1: collect matching candidates with raw station string
         var candidates = new List<(EtabsColumnImportDto Col, string Combo, string RawStation,
@@ -79,13 +79,13 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         foreach (var record in database.ColumnForces.Records)
         {
             var f     = record.Fields;
-            var story = GetField(f, "Story");
-            var label = GetFieldAny(f, "Label", "Column", "UniqueName");
+            var story = GetField(f, "Story").Trim();
+            var label = GetFieldAny(f, "Label", "Column", "UniqueName").Trim();
             var combo = GetFieldAny(f, "Combo", "DesignCombo", "Design Combo").Trim();
 
             if (string.IsNullOrEmpty(story) || string.IsNullOrEmpty(label)) continue;
-            if (!selectedCombos.Contains(combo)) continue;
-            if (!columnByStoryLabel.TryGetValue((story, label), out var col)) continue;
+            if (!ComboMatches(combo, selectedCombos)) continue;
+            if (!columnByStoryLabel.TryGetValue($"{story}|{label}", out var col)) continue;
 
             var rawStation = GetFieldAny(f, "Location", "Station");
             if (string.IsNullOrEmpty(rawStation)) rawStation = "Top";
@@ -166,7 +166,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             var loc   = GetFieldAny(f, "Location", "Station", "Loc");
             if (string.IsNullOrEmpty(loc)) loc = "Top";
 
-            if (!selectedCombos.Contains(combo)) continue;
+            if (!ComboMatches(combo, selectedCombos)) continue;
             if (!requestedPiers.Contains($"{pier.Trim()}|{story.Trim()}")) continue;
 
             var key = $"{pier}|{story}|{combo}|{loc}";
@@ -374,6 +374,11 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
 
         return records;
     }
+
+    // ETABS appends a numeric suffix (e.g. "-1", "-2") to combination names in the Design Forces table.
+    private static bool ComboMatches(string tableCombo, HashSet<string> selected)
+        => selected.Contains(tableCombo)
+        || selected.Any(s => tableCombo.StartsWith(s, StringComparison.OrdinalIgnoreCase));
 
     private static string GetField(IReadOnlyDictionary<string, string> f, string key)
         => f.TryGetValue(key, out var v) ? v ?? "" : "";

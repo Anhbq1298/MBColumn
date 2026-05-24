@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Window x:Class="MBColumn.Presentation.Wpf.Views.EtabsPreloadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels"
+        Title="Import from ETABS"
+        Width="420"
+        Height="310"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Loaded="OnWindowLoaded"
+        Closing="OnWindowClosing">
+
+    <Grid Background="{DynamicResource LightBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource PrimaryNavyBrush}"
+                Padding="20,14">
+            <StackPanel>
+                <TextBlock Text="Import from ETABS"
+                           Foreground="White"
+                           FontSize="17"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="Loading ETABS data — please wait…"
+                           Foreground="#DCEBFF"
+                           FontSize="11"
+                           Margin="0,3,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Steps + Progress -->
+        <StackPanel Grid.Row="1" Margin="22,18,22,10">
+
+            <ItemsControl ItemsSource="{Binding Steps}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:EtabsPreloadStep}">
+                        <DockPanel Margin="0,5">
+
+                            <!-- Status circle -->
+                            <Border DockPanel.Dock="Left"
+                                    Width="22" Height="22"
+                                    CornerRadius="11"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource BorderGreyBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                <Setter Property="Background" Value="#2196F3" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                <Setter Property="Background" Value="#4CAF50" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                <Setter Property="Background" Value="#FF9800" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="11"
+                                           FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="·" />
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                    <Setter Property="Text"       Value="…" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                    <Setter Property="Text"       Value="✓" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                    <Setter Property="Text"       Value="!" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Label + detail -->
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="{Binding Label}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{Binding Detail}"
+                                           FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="0,1,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasDetail}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Progress bar -->
+            <ProgressBar Value="{Binding Progress}"
+                         Maximum="100"
+                         Height="5"
+                         Margin="0,14,0,0"
+                         Background="{DynamicResource BorderGreyBrush}"
+                         Foreground="{DynamicResource PrimaryNavyBrush}" />
+        </StackPanel>
+
+        <!-- Bottom bar -->
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource BorderGreyBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,8">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="Cancel"
+                        Command="{Binding CancelCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="14,5"
+                        MinHeight="30" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

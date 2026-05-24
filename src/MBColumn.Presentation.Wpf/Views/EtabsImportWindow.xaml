@@ -732,6 +732,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250" />
                 <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="200" />
@@ -808,8 +810,46 @@
                 </DockPanel>
             </GroupBox>
 
-            <!-- Force Preview (middle) -->
+            <!-- Selected Story/Label Items -->
             <GroupBox Grid.Column="2"
+                      Header="Selected Items"
+                      BorderBrush="{DynamicResource BorderGreyBrush}"
+                      Foreground="{DynamicResource DarkNavyBrush}"
+                      Padding="6">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="{Binding AllAssignedItems.Count, StringFormat='{}{0} item(s)'}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,0,0,6" />
+                    <DataGrid ItemsSource="{Binding AllAssignedItems}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              HeadersVisibility="Column"
+                              SelectionMode="Single"
+                              FontSize="11"
+                              RowHeight="22"
+                              BorderBrush="{DynamicResource BorderGreyBrush}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Section"
+                                                Binding="{Binding ImportGroupName}"
+                                                Width="*" />
+                            <DataGridTextColumn Header="Story"
+                                                Binding="{Binding Story}"
+                                                Width="65" />
+                            <DataGridTextColumn Header="Label"
+                                                Binding="{Binding Label}"
+                                                Width="55" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </GroupBox>
+
+            <!-- Force Preview (middle) -->
+            <GroupBox Grid.Column="4"
                       Header="Force Preview"
                       BorderBrush="{DynamicResource BorderGreyBrush}"
                       Foreground="{DynamicResource DarkNavyBrush}"
@@ -891,18 +931,18 @@
                     </Border>
                     <!-- Trigger bar -->
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <TextBlock DockPanel.Dock="Right"
-                                   Text="{Binding ForceCacheStatus}"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="8,0,0,0" />
-                        <Button Content="Load Forces"
+                        <Button DockPanel.Dock="Left"
+                                Content="Load Forces"
                                 Command="{Binding LoadForcesCommand}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Padding="14,5"
-                                MinHeight="28"
-                                HorizontalAlignment="Left" />
+                                MinHeight="28" />
+                        <TextBlock Text="{Binding ForceCacheStatus}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="8,0,0,0" />
                     </DockPanel>
 
                     <!-- Flow 2 validation warning -->
@@ -1009,7 +1049,7 @@
             </GroupBox>
 
             <!-- Stations (right) -->
-            <GroupBox Grid.Column="4"
+            <GroupBox Grid.Column="6"
                       Header="Stations"
                       BorderBrush="{DynamicResource BorderGreyBrush}"
                       Foreground="{DynamicResource DarkNavyBrush}"

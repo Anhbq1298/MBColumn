@@ -44,6 +44,20 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         int? defaultTargetGroupId,
         MBColumn.Domain.Enums.UnitSystem targetSystem)
     {
+        // ── Phase 1: Preload dialog ─────────────────────────────────────────
+        var preloadVm = new EtabsPreloadViewModel(
+            connectionService,
+            columnImportService,
+            designForceImportService,
+            importedForceCache,
+            targetSystem);
+
+        var preloadWindow = new EtabsPreloadWindow(preloadVm) { Owner = owner };
+
+        if (preloadWindow.ShowDialog() != true || preloadVm.Result is null)
+            return null;
+
+        // ── Phase 2: Main import dialog (data already loaded) ───────────────
         IEtabsForceCacheResolver? forceCacheResolver = null;
         if (importedForceCache is not null && designForceImportService is not null)
             forceCacheResolver = new EtabsForceCacheResolver(importedForceCache, designForceImportService, targetSystem);
@@ -66,11 +80,9 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
             forceCacheResolver,
             sectionForceFilter);
 
-        var window = new EtabsImportWindow(vm)
-        {
-            Owner = owner
-        };
+        vm.ApplyPreloadData(preloadVm.Result);
 
+        var window = new EtabsImportWindow(vm) { Owner = owner };
         return window.ShowDialog() == true ? vm.ImportResult : null;
     }
 }
