@@ -31,37 +31,41 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     }
 
     public ImportedEtabsForceDatabase ImportDesignForces(
-        string modelFilePath, 
-        string modelName, 
+        string modelFilePath,
+        string modelName,
         bool loadColumnForces = true,
         bool loadPierForces = true,
-        Action<int, string, int>? progressCallback = null)
+        Action<int, string, int>? progressCallback = null,
+        IReadOnlyList<string>? combosFilter = null)
     {
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
         var dbUnits = (int)model.GetDatabaseUnits();
         var warnings = new List<string>();
+        var comboSet = BuildComboSet(combosFilter);
+
+        SetCombosForOutput(model, comboSet);
 
         progressCallback?.Invoke(10, "Loading Column Design Forces...", 4);
-        var columnTable = loadColumnForces 
-            ? LoadRawTable(model, ColumnTableKeys, "Design Forces - Columns", warnings)
-            : new EtabsDesignForceTable { TableKey = "Design Forces - Columns", FieldKeys = [], Records = [] };
-        
+        var columnTable = loadColumnForces
+            ? LoadAndFilter(model, ColumnTableKeys, "Design Forces - Columns", warnings, comboSet)
+            : EmptyTable("Design Forces - Columns");
+
         progressCallback?.Invoke(30, "Loading Pier Design Forces...", 4);
-        var pierTable   = loadPierForces
-            ? LoadRawTable(model, PierTableKeys,   "Design Forces - Piers",   warnings)
-            : new EtabsDesignForceTable { TableKey = "Design Forces - Piers", FieldKeys = [], Records = [] };
+        var pierTable = loadPierForces
+            ? LoadAndFilter(model, PierTableKeys, "Design Forces - Piers", warnings, comboSet)
+            : EmptyTable("Design Forces - Piers");
 
         progressCallback?.Invoke(50, "Loading Column Element Forces...", 4);
         var colElementTable = loadColumnForces
-            ? LoadRawTable(model, ["Element Forces - Columns"], "Element Forces - Columns", warnings)
-            : new EtabsDesignForceTable { TableKey = "Element Forces - Columns", FieldKeys = [], Records = [] };
+            ? LoadAndFilter(model, ["Element Forces - Columns"], "Element Forces - Columns", warnings, comboSet)
+            : EmptyTable("Element Forces - Columns");
 
         progressCallback?.Invoke(70, "Loading Pier Element Forces...", 4);
         var pierElementTable = loadPierForces
-            ? LoadRawTable(model, ["Pier Forces"], "Pier Forces", warnings)
-            : new EtabsDesignForceTable { TableKey = "Pier Forces", FieldKeys = [], Records = [] };
+            ? LoadAndFilter(model, ["Pier Forces"], "Pier Forces", warnings, comboSet)
+            : EmptyTable("Pier Forces");
 
         progressCallback?.Invoke(90, "Finalizing Database...", 4);
 
@@ -76,6 +80,64 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             ColumnElementForces = colElementTable,
             PierElementForces   = pierElementTable,
             Warnings            = warnings
+        };
+    }
+
+    public bool HasDesignResults(ImportedEtabsForceDatabase database)
+        => database.ColumnForces.HasRecords || database.PierForces.HasRecords;
+
+    public EtabsDesignForceTable LoadColumnElementForcesTable(IReadOnlyList<string>? combosFilter = null)
+    {
+        var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
+        var comboSet = BuildComboSet(combosFilter);
+        SetCombosForOutput(model, comboSet);
+        return LoadAndFilter(model, ["Element Forces - Columns"], "Element Forces - Columns", [], comboSet);
+    }
+
+    public EtabsDesignForceTable LoadPierElementForcesTable(IReadOnlyList<string>? combosFilter = null)
+    {
+        var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
+        var comboSet = BuildComboSet(combosFilter);
+        SetCombosForOutput(model, comboSet);
+        return LoadAndFilter(model, ["Pier Forces"], "Pier Forces", [], comboSet);
+    }
+
+    public EtabsDesignForceTable LoadColumnDesignForcesTable(IReadOnlyList<string>? combosFilter = null)
+    {
+        var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
+        var comboSet = BuildComboSet(combosFilter);
+        SetCombosForOutput(model, comboSet);
+        return LoadAndFilter(model, ColumnTableKeys, "Design Forces - Columns", [], comboSet);
+    }
+
+    public EtabsDesignForceTable LoadPierDesignForcesTable(IReadOnlyList<string>? combosFilter = null)
+    {
+        var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
+        var comboSet = BuildComboSet(combosFilter);
+        SetCombosForOutput(model, comboSet);
+        return LoadAndFilter(model, PierTableKeys, "Design Forces - Piers", [], comboSet);
+    }
+
+    public ImportedEtabsForceDatabase BuildDatabase(
+        string modelFilePath,
+        string modelName,
+        EtabsDesignForceTable colElementForces,
+        EtabsDesignForceTable pierElementForces,
+        EtabsDesignForceTable colDesignForces,
+        EtabsDesignForceTable pierDesignForces)
+    {
+        var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
+        return new ImportedEtabsForceDatabase
+        {
+            ModelFilePath       = modelFilePath,
+            ModelName           = modelName,
+            ImportedAt          = DateTime.UtcNow,
+            DatabaseUnits       = (int)model.GetDatabaseUnits(),
+            ColumnForces        = colDesignForces,
+            PierForces          = pierDesignForces,
+            ColumnElementForces = colElementForces,
+            PierElementForces   = pierElementForces,
+            Warnings            = []
         };
     }
 
@@ -575,6 +637,62 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
 
         return results;
     }
+
+    // -----------------------------------------------------------------------
+    // Combo-filtered loading helpers
+
+    private static HashSet<string>? BuildComboSet(IReadOnlyList<string>? combosFilter)
+        => combosFilter is { Count: > 0 }
+            ? new HashSet<string>(combosFilter, StringComparer.OrdinalIgnoreCase)
+            : null;
+
+    // Tell ETABS which combos to include in display tables before querying.
+    // This is the primary filter — ETABS will only write rows for selected combos,
+    // which avoids fetching thousands of unneeded rows from a large model.
+    private static void SetCombosForOutput(cSapModel model, HashSet<string>? comboSet)
+    {
+        if (comboSet is null) return;
+
+        model.Results.Setup.DeselectAllCasesAndCombosForOutput();
+
+        foreach (var name in comboSet)
+            model.Results.Setup.SetComboSelectedForOutput(name, true);
+    }
+
+    private static EtabsDesignForceTable LoadAndFilter(
+        cSapModel model, string[] tableKeys, string defaultKey,
+        List<string> warnings, HashSet<string>? comboSet)
+    {
+        var table = LoadRawTable(model, tableKeys, defaultKey, warnings);
+        return comboSet is not null ? FilterTableByCombos(table, comboSet) : table;
+    }
+
+    private static EtabsDesignForceTable FilterTableByCombos(
+        EtabsDesignForceTable table, HashSet<string> comboSet)
+    {
+        if (!table.HasRecords) return table;
+
+        var filtered = table.Records
+            .Where(r =>
+            {
+                var combo = GetFieldAny(r.Fields,
+                    "Combo", "DesignCombo", "Design Combo",
+                    "OutputCase", "Load Combo", "LoadCombo").Trim();
+                return ComboMatches(combo, comboSet);
+            })
+            .ToList();
+
+        return new EtabsDesignForceTable
+        {
+            TableKey     = table.TableKey,
+            TableVersion = table.TableVersion,
+            FieldKeys    = table.FieldKeys,
+            Records      = filtered
+        };
+    }
+
+    private static EtabsDesignForceTable EmptyTable(string key)
+        => new() { TableKey = key, FieldKeys = [], Records = [] };
 
     // -----------------------------------------------------------------------
     private static EtabsDesignForceTable LoadRawTable(

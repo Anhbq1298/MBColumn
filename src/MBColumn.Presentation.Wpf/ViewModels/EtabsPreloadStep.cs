@@ -7,7 +7,8 @@ public sealed class EtabsPreloadStep : ViewModelBase
     private PreloadStepStatus status = PreloadStepStatus.Pending;
     private string detail = "";
 
-    public string Label { get; init; } = "";
+    public string Label      { get; init; } = "";
+    public bool   IsSubStep  { get; init; }
 
     public PreloadStepStatus Status
     {

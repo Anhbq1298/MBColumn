@@ -270,7 +270,11 @@ public sealed class ProjectService : IProjectService, IDisposable
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
 
-        conn.Execute("DELETE FROM Column WHERE Id = @id", new { id = columnId });
+        using var tx = conn.BeginTransaction();
+        conn.Execute("DELETE FROM DemandCase WHERE ColumnId = @id", new { id = columnId }, tx);
+        conn.Execute("DELETE FROM Column WHERE Id = @id", new { id = columnId }, tx);
+        tx.Commit();
+
         MarkModified();
         ColumnsChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -339,24 +343,27 @@ public sealed class ProjectService : IProjectService, IDisposable
         var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
         snapshot.LoadCases = loadCases;
 
+        using var tx = conn.BeginTransaction();
+
         conn.Execute(
             "UPDATE Column SET InputJson = @json, ModifiedAt = @now WHERE Id = @id",
-            new { json, now = DateTime.UtcNow.ToString("O"), id = columnId });
+            new { json, now = DateTime.UtcNow.ToString("O"), id = columnId }, tx);
 
-        conn.Execute("DELETE FROM DemandCase WHERE ColumnId = @id", new { id = columnId });
-        
+        conn.Execute("DELETE FROM DemandCase WHERE ColumnId = @id", new { id = columnId }, tx);
+
         foreach (var lc in loadCases)
         {
             conn.Execute(@"
                 INSERT INTO DemandCase (ColumnId, IdString, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive)
                 VALUES (@cid, @idstr, @label, @orig, @son, @sol, @story, @station, @source, @pu, @mux, @muy, @active)",
-                new { 
+                new {
                     cid = columnId, idstr = lc.Id, label = lc.Label, orig = lc.OriginalLoadCaseName,
                     son = lc.SourceObjectName, sol = lc.SourceObjectLabel, story = lc.Story,
                     station = lc.Station, source = lc.Source, pu = lc.Pu, mux = lc.Mux, muy = lc.Muy, active = lc.IsActive ? 1 : 0
-                });
+                }, tx);
         }
 
+        tx.Commit();
         MarkModified();
     }
 
@@ -419,15 +426,15 @@ public sealed class ProjectService : IProjectService, IDisposable
         using var rConn = new SqliteConnection(resultConnectionString);
         DatabaseSchema.OpenResultDb(rConn);
         
-        var row = rConn.QuerySingleOrDefault(
+        var row = rConn.QuerySingleOrDefault<ResultCacheRow>(
             "SELECT InputHash, ResultJson FROM ColumnResult WHERE ColumnId = @id", new { id = columnId });
-        
+
         string? json = null;
-        if (row != null && (string?)row.InputHash == hash)
+        if (row is not null && row.InputHash == hash)
         {
-            json = (string?)row.ResultJson;
+            json = row.ResultJson;
         }
-        else if (row == null)
+        else if (row is null)
         {
             // Fallback for older projects: check ResultJson in Column table
             using var conn = new SqliteConnection(connectionString);
@@ -593,4 +600,5 @@ public sealed class ProjectService : IProjectService, IDisposable
     private sealed class ColumnRow { public int Id { get; set; } public int? GroupId { get; set; } public string Name { get; set; } = ""; public int SortOrder { get; set; } }
     private sealed class ProjectRow { public string Name { get; set; } = ""; }
     private sealed class ColumnInputRow { public string InputJson { get; set; } = ""; }
+    private sealed class ResultCacheRow { public string? InputHash { get; set; } public string? ResultJson { get; set; } }
 }

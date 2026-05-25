@@ -1,3 +1,4 @@
+using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
@@ -18,6 +19,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     private readonly IProjectFileDialogService projectFileDialogService;
     private readonly IProjectNameDialogService projectNameDialogService;
     private readonly IEtabsImportDialogService etabsImportDialogService;
+    private readonly IEtabsForceRefreshDialogService? etabsForceRefreshDialogService;
     private readonly ProjectSession projectSession;
     private string validationMessage = "";
     private bool isCalculationOutdated;
@@ -47,7 +49,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         IProjectFileDialogService projectFileDialogService,
         IProjectNameDialogService projectNameDialogService,
         IEtabsImportDialogService etabsImportDialogService,
-        ProjectSession projectSession)
+        ProjectSession projectSession,
+        IEtabsForceRefreshDialogService? etabsForceRefreshDialogService = null)
     {
         this.calculationService = calculationService;
         this.projectService = projectService;
@@ -56,6 +59,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         this.projectFileDialogService = projectFileDialogService;
         this.projectNameDialogService = projectNameDialogService;
         this.etabsImportDialogService = etabsImportDialogService;
+        this.etabsForceRefreshDialogService = etabsForceRefreshDialogService;
         this.projectSession = projectSession;
         Input = input;
         Result = new ResultViewModel();
@@ -77,6 +81,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
         ImportFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
+        RefreshEtabsForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
 
         SubscribeToInputChanges();
         UpdateWindowTitle();
@@ -108,6 +114,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
     public ICommand ImportFromEtabsCommand { get; }
+    public ICommand RefreshEtabsForcesCommand { get; }
 
     public string ValidationMessage { get => validationMessage; set => Set(ref validationMessage, value); }
     public string WindowTitle { get => windowTitle; private set => Set(ref windowTitle, value); }
@@ -536,6 +543,67 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             IsImporting = false;
         }
+    }
+
+    private async Task RefreshEtabsForcesAsync()
+    {
+        if (etabsForceRefreshDialogService is null) return;
+        SaveCurrentColumnInput();
+
+        var allColumns = projectService.GetColumns();
+        var bindings = new List<Application.DTOs.Etabs.EtabsSectionBinding>();
+        var existingLoadCases = new Dictionary<string, IReadOnlyList<SnapshotLoadCase>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var col in allColumns)
+        {
+            var snapshot = projectService.LoadColumnInput(col.Id);
+            if (snapshot?.EtabsBinding is null) continue;
+
+            bindings.Add(snapshot.EtabsBinding);
+            existingLoadCases[col.Name] = snapshot.LoadCases;
+        }
+
+        if (bindings.Count == 0)
+        {
+            messageService.ShowInformation(
+                "No ETABS-linked sections found.\nImport from ETABS first to create a section binding.",
+                "Refresh Forces from ETABS");
+            return;
+        }
+
+        var result = etabsForceRefreshDialogService.ShowDialog(
+            System.Windows.Application.Current?.MainWindow,
+            bindings,
+            existingLoadCases,
+            Input.UnitSystem);
+
+        if (result is null || !result.Success || result.UpdatedLoadCasesBySection.Count == 0)
+            return;
+
+        var columnByName = allColumns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+
+        int updated = 0;
+        foreach (var kvp in result.UpdatedLoadCasesBySection)
+        {
+            if (!columnByName.TryGetValue(kvp.Key, out var colRecord)) continue;
+
+            var snapshot = projectService.LoadColumnInput(colRecord.Id);
+            if (snapshot is null) continue;
+
+            snapshot.LoadCases = kvp.Value.ToList();
+            snapshot.LastEtabsRefreshAt = DateTime.UtcNow;
+            snapshot.LastEtabsRefreshSummary = result.Message;
+
+            projectService.SaveColumnInput(colRecord.Id, snapshot);
+            projectSession.ClearColumnResult(colRecord.Id);
+            Explorer.SetSectionStatus(colRecord.Id, SectionStatus.NotCalculated);
+            updated++;
+        }
+
+        RaiseStatusProperties();
+
+        if (updated > 0)
+            messageService.ShowInformation(result.Message, "Forces Refreshed");
     }
 
     private async Task SaveProjectAsync()

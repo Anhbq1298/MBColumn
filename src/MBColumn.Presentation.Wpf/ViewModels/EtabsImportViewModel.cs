@@ -92,9 +92,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private string storyFrom = "";
     private string storyTo = "";
     private string labelTextFilter = "";
-    private bool importTop = true;
-    private bool importBottom = true;
-    private bool importMid;
     private EtabsColumnImportRowViewModel? selectedColumn;
     private EtabsSectionMappingViewModel? selectedMapping;
     private EtabsDuplicateHandlingOption selectedDuplicateHandling;
@@ -583,48 +580,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
     }
 
-    public bool ImportTop
-    {
-        get => importTop;
-        set
-        {
-            if (importTop == value) return;
-            importTop = value;
-            Raise();
-            ApplyStationSelection();
-            RaiseTierProperties();
-            RaiseCommandStates();
-        }
-    }
-
-    public bool ImportBottom
-    {
-        get => importBottom;
-        set
-        {
-            if (importBottom == value) return;
-            importBottom = value;
-            Raise();
-            ApplyStationSelection();
-            RaiseTierProperties();
-            RaiseCommandStates();
-        }
-    }
-
-    public bool ImportMid
-    {
-        get => importMid;
-        set
-        {
-            if (importMid == value) return;
-            importMid = value;
-            Raise();
-            ApplyStationSelection();
-            RaiseTierProperties();
-            RaiseCommandStates();
-        }
-    }
-
     public EtabsColumnImportRowViewModel? SelectedColumn
     {
         get => selectedColumn;
@@ -714,17 +669,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
     }
     public string PreviewTargetGroupName => SelectedTargetGroup?.GroupName ?? "";
     public string PreviewUniqueSectionName => SelectedUniqueSection?.SectionName ?? "";
-    public string PreviewStationsText
-    {
-        get
-        {
-            var stations = new List<string>();
-            if (ImportTop) stations.Add("Top");
-            if (ImportBottom) stations.Add("Bottom");
-            if (ImportMid) stations.Add("Mid");
-            return stations.Count == 0 ? "None" : string.Join(", ", stations);
-        }
-    }
     public string ColumnPreviewTitle => SelectedColumn is null
         ? "No column highlighted"
         : $"{SelectedColumn.Pier} / {SelectedColumn.Story} / {SelectedColumn.Label}";
@@ -1040,11 +984,19 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 dto.Status)));
         }
 
+        var combosToShow = data.SelectedLoadCombinations.Count > 0
+            ? data.SelectedLoadCombinations
+            : data.LoadCombinations;
+
         using (FilteredLoadCombinations.DeferRefresh())
         {
             LoadCombinations.AddRange(
-                data.LoadCombinations.Select(name =>
-                    new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged)));
+                combosToShow.Select(name =>
+                {
+                    var vm = new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged);
+                    vm.IsSelected = true;
+                    return vm;
+                }));
         }
         FilteredLoadCombinations.Refresh();
 
@@ -1362,14 +1314,71 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     SectionName = i.EtabsSectionName
                 }).ToList(),
                 SelectedLoadCombinations = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList(),
-                ImportTop = ImportTop,
-                ImportBottom = ImportBottom,
-                ImportMid = ImportMid,
+                ImportTop = true,
+                ImportBottom = true,
+                ImportMid = true,
+                ImportedAt = DateTime.UtcNow
+            },
+            EtabsBinding = BuildEtabsSectionBinding(group, sourceColumn, mapping),
+            LastEtabsRefreshAt = DateTime.UtcNow,
+            LastEtabsRefreshSummary = $"Initial import · {LoadCombinations.Count(c => c.IsSelected)} combos"
+        };
+
+        return snapshot;
+    }
+
+    private Application.DTOs.Etabs.EtabsSectionBinding BuildEtabsSectionBinding(
+        MbColumnSectionViewModel group,
+        EtabsColumnImportRowViewModel sourceColumn,
+        EtabsSectionMappingViewModel mapping)
+    {
+        var objectType = sourceColumn.IsIrregular
+            ? Application.DTOs.Etabs.EtabsImportedObjectType.Pier
+            : Application.DTOs.Etabs.EtabsImportedObjectType.Column;
+
+        var forceSource = selectedForceType == "Element Forces"
+            ? Application.DTOs.Etabs.MbColumnForceSourceMode.ElementForces
+            : Application.DTOs.Etabs.MbColumnForceSourceMode.DesignForces;
+
+        var locations = new List<string> { "Top", "Bottom", "Mid" };
+
+        var binding = new Application.DTOs.Etabs.EtabsSectionBinding
+        {
+            MbColumnSectionId = group.SectionName,
+            MbColumnSectionName = group.SectionName,
+            ObjectType = objectType,
+            ForceSource = forceSource,
+            LoadCombinations = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList(),
+            Locations = locations,
+            SourceModel = new Application.DTOs.Etabs.EtabsModelFingerprint
+            {
+                ModelFilePath = ModelPath,
+                ModelFileName = ModelName,
                 ImportedAt = DateTime.UtcNow
             }
         };
 
-        return snapshot;
+        if (objectType == Application.DTOs.Etabs.EtabsImportedObjectType.Column)
+        {
+            binding.ColumnObjects = group.Items.Select(i => new Application.DTOs.Etabs.EtabsColumnObjectKey
+            {
+                Story = i.Story,
+                Label = i.Label,
+                UniqueName = i.ObjectName
+            }).ToList();
+        }
+        else
+        {
+            binding.PierObjects = group.Items
+                .GroupBy(i => i.Story)
+                .Select(g2 => new Application.DTOs.Etabs.EtabsPierObjectKey
+                {
+                    Story = g2.Key,
+                    PierName = g2.First().Pier
+                }).ToList();
+        }
+
+        return binding;
     }
 
     private bool _isBuildingCache;
@@ -2339,9 +2348,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 .Where(c => c.IsSelected)
                 .Select(c => c.Name)
                 .ToList(),
-            ImportTop = ImportTop,
-            ImportBottom = ImportBottom,
-            ImportMid = ImportMid,
+            ImportTop = true,
+            ImportBottom = true,
+            ImportMid = true,
             ImportedAt = DateTime.UtcNow
         };
 
@@ -2959,23 +2968,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private void ApplyStationSelection()
     {
         foreach (var force in ForceRows)
-        {
-            force.IsSelected = ShouldIncludeStation(force);
-        }
+            force.IsSelected = true;
 
         Raise(nameof(SelectedForceRowCount));
-    }
-
-    private bool ShouldIncludeStation(EtabsForceImportRowViewModel force)
-    {
-        var station = NormalizeDemandStation(force.Station, force.Status);
-        return station switch
-        {
-            "Bottom" => ImportBottom,
-            "Mid" => ImportMid,
-            "Top" => ImportTop,
-            _ => ImportTop || ImportBottom || ImportMid
-        };
     }
 
     private static string NormalizeDemandStation(string station, string status)
@@ -3027,7 +3022,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         Raise(nameof(TierDemandCaseCount));
         Raise(nameof(PreviewTargetGroupName));
         Raise(nameof(PreviewUniqueSectionName));
-        Raise(nameof(PreviewStationsText));
     }
 
     private void RaiseColumnPreviewProperties()

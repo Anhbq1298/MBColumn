@@ -49,6 +49,11 @@ public sealed class ColumnInputSnapshot
     public string DesignTierSource { get; set; } = "";
     public EtabsTierImportMetadataDto? EtabsTierMetadata { get; set; }
     public EtabsImportMetadataDto? EtabsMetadata { get; set; }
+
+    // ETABS binding map — stored so forces can be refreshed without re-importing geometry
+    public EtabsSectionBinding? EtabsBinding { get; set; }
+    public DateTime? LastEtabsRefreshAt { get; set; }
+    public string? LastEtabsRefreshSummary { get; set; }
 }
 
 public sealed class SnapshotBoundaryPoint

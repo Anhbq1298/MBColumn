@@ -2,261 +2,112 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
-             xmlns:wpfmath="clr-namespace:WpfMath.Controls;assembly=WpfMath"
              MinHeight="560">
+
     <UserControl.Resources>
 
-        <!-- ── FormulaBlock item template ──────────────────────────────── -->
-        <DataTemplate x:Key="FormulaBlockTemplate">
-            <Border Background="#F8F9FA"
-                    BorderBrush="#E0E0E0"
-                    BorderThickness="1"
-                    CornerRadius="3"
-                    Padding="12,8"
-                    Margin="0,0,0,6">
-                <StackPanel>
-                    <TextBlock Text="{Binding Title}"
-                               FontWeight="SemiBold"
-                               FontSize="11"
-                               Foreground="#555"
-                               Margin="0,0,0,6" />
+        <!-- A4 page border style ─────────────────────────────────────────── -->
+        <Style x:Key="A4PageStyle" TargetType="Border">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Width" Value="794" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <!-- 0.1 inch = 9.6 dip margin on all sides -->
+            <Setter Property="Padding" Value="9.6" />
+            <Setter Property="Margin" Value="0,0,0,20" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="3" Opacity="0.18" Color="#000000" />
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                    <!-- Symbolic formula -->
-                    <wpfmath:FormulaControl Formula="{Binding LatexFormula}"
-                                           Foreground="#1A1A2E"
-                                           Background="Transparent"
-                                           HorizontalAlignment="Left"
-                                           Margin="4,0,0,6" />
+        <!-- Chapter heading ──────────────────────────────────────────────── -->
+        <Style x:Key="ChapterHeadingStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+            <Setter Property="Margin" Value="0,4,0,12" />
+        </Style>
 
-                    <!-- Substitution -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-                        <TextBlock Text="Sub: "
-                                   FontSize="10"
-                                   Foreground="#888"
-                                   VerticalAlignment="Center" />
-                        <wpfmath:FormulaControl Formula="{Binding SubstitutionLatex}"
-                                               Foreground="#444"
-                                               Background="Transparent"
-                                               HorizontalAlignment="Left" />
-                    </StackPanel>
+        <!-- Page number ──────────────────────────────────────────────────── -->
+        <Style x:Key="PageNumberStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="#AAAAAA" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
 
-                    <!-- Result (hidden when empty) -->
-                    <StackPanel Orientation="Horizontal"
-                                Visibility="{Binding ResultLatex, Converter={StaticResource NullOrEmptyToCollapsedConverter}}">
-                        <TextBlock Text="= "
-                                   FontSize="10"
-                                   Foreground="#888"
-                                   VerticalAlignment="Center" />
-                        <wpfmath:FormulaControl Formula="{Binding ResultLatex}"
-                                               Foreground="#1A5276"
-                                               Background="Transparent"
-                                               HorizontalAlignment="Left" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
+        <!-- Field label in 2-col grid ────────────────────────────────────── -->
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#666666" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
 
-        <!-- ── Validation row item template ────────────────────────────── -->
-        <DataTemplate x:Key="ValidationRowTemplate">
-            <Border BorderBrush="#E8E8E8"
-                    BorderThickness="0,0,0,1"
-                    Padding="0,0,0,20"
-                    Margin="0,0,0,20">
-                <StackPanel>
+        <!-- Caption / note text ──────────────────────────────────────────── -->
+        <Style x:Key="CaptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="#888888" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="FontStyle" Value="Italic" />
+        </Style>
 
-                    <!-- Row header -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <Border Background="#1A5276" CornerRadius="3" Padding="8,3" Margin="0,0,10,0">
-                            <TextBlock Text="{Binding ControlPointId}"
-                                       Foreground="White" FontWeight="Bold" FontSize="12" />
-                        </Border>
-                        <TextBlock Text="{Binding ControlPointName}"
-                                   FontSize="13" FontWeight="SemiBold"
-                                   VerticalAlignment="Center" />
-                        <!-- Status badge -->
-                        <Border Margin="10,0,0,0" CornerRadius="3" Padding="8,3" VerticalAlignment="Center">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="#E0E0E0" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Status}" Value="Pass">
-                                            <Setter Property="Background" Value="#D5F5E3" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="Warning">
-                                            <Setter Property="Background" Value="#FEF9E7" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Status}" Value="Fail">
-                                            <Setter Property="Background" Value="#FADBD8" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#666" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status}" Value="Pass">
-                                                <Setter Property="Foreground" Value="#1E8449" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Warning">
-                                                <Setter Property="Foreground" Value="#B7770D" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Fail">
-                                                <Setter Property="Foreground" Value="#C0392B" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- Assumption -->
-                    <TextBlock Text="{Binding Assumption}"
-                               TextWrapping="Wrap"
-                               Foreground="#666" FontStyle="Italic" FontSize="11"
-                               Margin="0,0,0,10" />
-
-                    <!-- Formula blocks (only when supported) -->
-                    <ItemsControl ItemsSource="{Binding FormulaBlocks}"
-                                  ItemTemplate="{StaticResource FormulaBlockTemplate}"
-                                  Visibility="{Binding IsSupported,
-                                      Converter={StaticResource BoolToVisibilityConverter}}" />
-
-                    <!-- N/A placeholder -->
-                    <TextBlock Text="Not applicable for this section shape or design code."
-                               Foreground="#999" FontStyle="Italic" FontSize="11"
-                               Visibility="{Binding IsSupported,
-                                   Converter={StaticResource InverseBoolToVisibilityConverter}}" />
-
-                    <!-- Comparison table (only when supported) -->
-                    <Border Background="#EBF5FB"
-                            BorderBrush="#AED6F1"
-                            BorderThickness="1"
-                            CornerRadius="4"
-                            Padding="12,10"
-                            Margin="0,10,0,0"
-                            Visibility="{Binding IsSupported,
-                                Converter={StaticResource BoolToVisibilityConverter}}">
-                        <StackPanel>
-                            <TextBlock Text="Comparison with solver surface"
-                                       FontWeight="SemiBold" FontSize="11"
-                                       Foreground="#1A5276"
-                                       Margin="0,0,0,8" />
-
-                            <!-- Column headers -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="160" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="80" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Quantity" FontWeight="SemiBold" FontSize="11" />
-                                <TextBlock Grid.Column="1" Text="Hand calc" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Right" />
-                                <TextBlock Grid.Column="2" Text="Solver" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Right" />
-                                <TextBlock Grid.Column="3" Text="Diff %" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Right" />
-                            </Grid>
-                            <Separator Margin="0,4,0,4" />
-
-                            <!-- φPn row -->
-                            <Grid Margin="0,2,0,2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="160" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="80" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" FontSize="11">
-                                    <Run Text="φPn  (" /><Run Text="{Binding ForceUnitLabel}" /><Run Text=")" />
-                                </TextBlock>
-                                <TextBlock Grid.Column="1" FontSize="11" HorizontalAlignment="Right"
-                                           Text="{Binding HandPnDisplay, StringFormat={}{0:0.0}}" />
-                                <TextBlock Grid.Column="2" FontSize="11" HorizontalAlignment="Right"
-                                           Text="{Binding SolverPnDisplay, StringFormat={}{0:0.0}}" />
-                                <TextBlock Grid.Column="3" FontSize="11" HorizontalAlignment="Right"
-                                           Text="{Binding DifferencePPercent, StringFormat={}{0:0.00}%}" />
-                            </Grid>
-
-                            <!-- φMnx row (hidden when Mx = 0) -->
-                            <Grid Margin="0,2,0,2"
-                                  Visibility="{Binding HandMxDisplay,
-                                      Converter={StaticResource NonZeroToVisibilityConverter}}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="160" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="80" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" FontSize="11">
-                                    <Run Text="φMnx  (" /><Run Text="{Binding MomentUnitLabel}" /><Run Text=")" />
-                                </TextBlock>
-                                <TextBlock Grid.Column="1" FontSize="11" HorizontalAlignment="Right"
-                                           Text="{Binding HandMxDisplay, StringFormat={}{0:0.0}}" />
-                                <TextBlock Grid.Column="2" FontSize="11" HorizontalAlignment="Right"
-                                           Text="{Binding SolverMxDisplay, StringFormat={}{0:0.0}}" />
-                                <TextBlock Grid.Column="3" FontSize="11" HorizontalAlignment="Right"
-                                           Text="{Binding DifferenceMPercent, StringFormat={}{0:0.00}%}" />
-                            </Grid>
-
-                        </StackPanel>
-                    </Border>
-
-                </StackPanel>
-            </Border>
-        </DataTemplate>
+        <!-- Inline placeholder (no data) ─────────────────────────────────── -->
+        <Style x:Key="PlaceholderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#F8F8F8" />
+            <Setter Property="BorderBrush" Value="#DDDDDD" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
 
     </UserControl.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="270" />
+            <ColumnDefinition Width="260" />
             <ColumnDefinition Width="14" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- ── Settings panel ──────────────────────────────────────────── -->
+        <!-- ═══════════════════════════════════════════════════════════
+             Settings panel
+             ═══════════════════════════════════════════════════════ -->
         <Border Grid.Column="0"
                 Style="{StaticResource CardBorderStyle}"
                 Padding="16">
             <StackPanel>
                 <TextBlock Text="Report Settings"
                            Style="{StaticResource SectionTitleTextStyle}"
-                           FontSize="16" />
-                <CheckBox Content="Include Input Data"
-                          IsChecked="{Binding IncludeInputData}"
-                          Margin="0,14,0,0" />
-                <CheckBox Content="Include Boundary Coordinates"
-                          IsChecked="{Binding IncludeBoundaryCoordinates}"
-                          Margin="0,8,0,0" />
-                <CheckBox Content="Include Rebar Coordinates"
-                          IsChecked="{Binding IncludeRebarCoordinates}"
-                          Margin="0,8,0,0" />
-                <CheckBox Content="Include Hand Calc Validation"
-                          IsChecked="{Binding IncludeValidation}"
-                          Margin="0,8,0,0" />
-                <CheckBox Content="Include Demand Cases"
-                          IsChecked="{Binding IncludeDemandCases}"
-                          Margin="0,8,0,0" />
-                <CheckBox Content="Include PM Charts"
-                          IsChecked="{Binding IncludePmCharts}"
-                          Margin="0,8,0,0" />
+                           FontSize="15" />
 
-                <TextBlock Text="Chart Angle Step"
+                <TextBlock Text="Sections"
                            Style="{StaticResource FieldLabelTextStyle}"
-                           Margin="0,18,0,4" />
-                <TextBox Text="{Binding ChartAngleStepDegrees, UpdateSourceTrigger=PropertyChanged}"
-                         Width="80"
-                         HorizontalAlignment="Left" />
+                           Margin="0,16,0,6" />
+                <CheckBox Content="Input Data"
+                          IsChecked="{Binding IncludeInputData}"
+                          Margin="0,0,0,6" />
+                <CheckBox Content="PM 7 Verification Points"
+                          IsChecked="{Binding IncludePm7Table}"
+                          Margin="0,0,0,6" />
+                <CheckBox Content="Critical Chart"
+                          IsChecked="{Binding IncludeGoverningChart}"
+                          Margin="0,0,0,6" />
+                <CheckBox Content="Demand Cases"
+                          IsChecked="{Binding IncludeDemandCases}"
+                          Margin="0,0,0,6" />
 
-                <Button Content="Generate Preview"
+                <Button Content="Refresh"
                         Command="{Binding GeneratePreviewCommand}"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Margin="0,18,0,0" />
                 <Button Content="Print"
                         x:Name="PrintButton"
                         Click="PrintButton_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,8,0,0" />
+                <Button Content="Export 7-Point Report (md)"
+                        Command="{Binding ExportSevenPointReportCommand}"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Margin="0,8,0,0" />
                 <Button Content="Export PDF"
@@ -266,210 +117,336 @@
             </StackPanel>
         </Border>
 
-        <!-- ── Report preview ──────────────────────────────────────────── -->
+        <!-- ═══════════════════════════════════════════════════════════
+             Report preview – A4 pages
+             ═══════════════════════════════════════════════════════ -->
         <ScrollViewer Grid.Column="2"
                       VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <Border x:Name="ReportContent"
-                    Background="White"
-                    BorderBrush="{DynamicResource BorderGreyBrush}"
-                    BorderThickness="1"
-                    Padding="28"
-                    MaxWidth="960"
-                    HorizontalAlignment="Left">
-                <StackPanel>
+                      HorizontalScrollBarVisibility="Auto"
+                      Background="#CCCCCC">
+            <StackPanel x:Name="ReportContent"
+                        Margin="24,24,24,40"
+                        HorizontalAlignment="Left">
 
-                    <!-- Title -->
-                    <TextBlock Text="MBColumn Design Report"
-                               FontSize="22" FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryNavyBrush}" />
-                    <TextBlock Text="{Binding ResultStatusText, StringFormat=Result status: {0}}"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               Margin="0,4,0,0" />
-                    <Border Background="#FFF7E6" BorderBrush="#C98600"
-                            BorderThickness="1" Padding="10" Margin="0,12,0,0"
-                            Visibility="{Binding IsOutdated, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock TextWrapping="Wrap"
-                                   Text="Input or demand cases changed after the last calculation. Recalculate before generating the final report." />
-                    </Border>
+                <!-- ┌────────────────────────────────────────────────┐
+                     │  PAGE 1 – Report header + Input Data           │
+                     └────────────────────────────────────────────────┘ -->
+                <Border Style="{StaticResource A4PageStyle}">
+                    <StackPanel>
 
-                    <!-- ════════════════════════════════════════════════════
-                         I.  Input Data
-                         ════════════════════════════════════════════════ -->
-                    <TextBlock Text="I.  Input Data"
-                               Style="{StaticResource SectionTitleTextStyle}"
-                               FontSize="16" Margin="0,22,0,8"
-                               Visibility="{Binding IncludeInputData, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <Grid Visibility="{Binding IncludeInputData, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBlock Text="Project" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Column="1" Text="{Binding ProjectName}" />
-                        <TextBlock Grid.Row="1" Text="Group" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GroupName}" />
-                        <TextBlock Grid.Row="2" Text="Design Tier" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DesignTierName}" />
-                        <TextBlock Grid.Row="3" Text="Section Shape" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SectionShape}" />
-                        <TextBlock Grid.Row="4" Text="Design Code" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DesignCode}" />
-                        <TextBlock Grid.Row="5" Text="Unit System" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding UnitSystem}" />
-                        <TextBlock Grid.Row="6" Text="Material" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding MaterialSummary}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="7" Text="Geometry" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding GeometrySummary}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="8" Text="Rebar" Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarSummary}" TextWrapping="Wrap" />
-                    </Grid>
-
-                    <!-- ════════════════════════════════════════════════════
-                         II. Hand Calculation Validation
-                         ════════════════════════════════════════════════ -->
-                    <TextBlock Text="II.  Hand Calculation Validation"
-                               Style="{StaticResource SectionTitleTextStyle}"
-                               FontSize="16" Margin="0,28,0,8"
-                               Visibility="{Binding IncludeValidation, Converter={StaticResource BoolToVisibilityConverter}}" />
-
-                    <StackPanel Visibility="{Binding IncludeValidation, Converter={StaticResource BoolToVisibilityConverter}}">
-
-                        <!-- No result yet -->
-                        <Border Background="#F8F8F8" BorderBrush="#DDD"
-                                BorderThickness="1" Padding="16" Margin="0,0,0,12"
-                                Visibility="{Binding HasValidationData,
-                                    Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                            <TextBlock Text="Calculate the section first to generate hand calculation validation."
-                                       Foreground="#888" FontStyle="Italic" />
+                        <!-- Outdated banner -->
+                        <Border Background="#FFF7E6" BorderBrush="#C98600"
+                                BorderThickness="1" Padding="10" Margin="0,0,0,12"
+                                Visibility="{Binding IsOutdated,
+                                    Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock TextWrapping="Wrap"
+                                       Text="Input or demand cases changed after the last calculation. Recalculate before generating the final report."
+                                       FontSize="11" />
                         </Border>
 
-                        <!-- Supported validation -->
-                        <StackPanel Visibility="{Binding HasSupportedValidation,
+                        <!-- Report title -->
+                        <TextBlock Text="MB Column – Engineering Calculation Report"
+                                   FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}" />
+                        <TextBlock Text="{Binding ResultStatusText, StringFormat='Result status: {0}'}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   FontSize="11" Margin="0,4,0,0" />
+                        <Separator Margin="0,12,0,12" />
+
+                        <!-- ── I. Input Data ────────────────────────────── -->
+                        <StackPanel Visibility="{Binding IncludeInputData,
+                                        Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="I.  Input Data"
+                                       Style="{StaticResource ChapterHeadingStyle}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Project" />
+                                <TextBlock Grid.Column="1" Text="{Binding ProjectName}" FontSize="11" />
+
+                                <TextBlock Grid.Row="1" Style="{StaticResource FieldLabelStyle}" Text="Group" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GroupName}" FontSize="11" />
+
+                                <TextBlock Grid.Row="2" Style="{StaticResource FieldLabelStyle}" Text="Design Tier" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DesignTierName}" FontSize="11" />
+
+                                <TextBlock Grid.Row="3" Style="{StaticResource FieldLabelStyle}" Text="Section Shape" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SectionShape}" FontSize="11" />
+
+                                <TextBlock Grid.Row="4" Style="{StaticResource FieldLabelStyle}" Text="Design Code" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DesignCode}" FontSize="11" />
+
+                                <TextBlock Grid.Row="5" Style="{StaticResource FieldLabelStyle}" Text="Unit System" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding UnitSystem}" FontSize="11" />
+
+                                <TextBlock Grid.Row="6" Style="{StaticResource FieldLabelStyle}" Text="Material" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding MaterialSummary}"
+                                           TextWrapping="Wrap" FontSize="11" />
+
+                                <TextBlock Grid.Row="7" Style="{StaticResource FieldLabelStyle}" Text="Geometry" />
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding GeometrySummary}"
+                                           TextWrapping="Wrap" FontSize="11" />
+
+                                <TextBlock Grid.Row="8" Style="{StaticResource FieldLabelStyle}" Text="Reinforcement" />
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarSummary}"
+                                           TextWrapping="Wrap" FontSize="11" />
+                            </Grid>
+                        </StackPanel>
+
+                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 1 —" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ┌────────────────────────────────────────────────┐
+                     │  PAGE 2 – PM 7 Verification Points            │
+                     └────────────────────────────────────────────────┘ -->
+                <Border Style="{StaticResource A4PageStyle}"
+                        Visibility="{Binding IncludePm7Table,
+                            Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="II.  PM 7 Verification Points"
+                                   Style="{StaticResource ChapterHeadingStyle}" />
+                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                   Margin="0,0,0,10"
+                                   Text="Seven PM control points derived from strain-compatibility analysis. Values are design (reduced) axial force φPn and uniaxial moment φMn at the governing bending direction. Comparison shown against independent hand-calculation where available." />
+
+                        <!-- No data placeholder -->
+                        <Border Style="{StaticResource PlaceholderStyle}"
+                                Visibility="{Binding HasPm7Data,
+                                    Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            <TextBlock Text="PM 7 verification data not available. Calculate the section first."
+                                       Foreground="#888888" FontStyle="Italic" FontSize="11" />
+                        </Border>
+
+                        <!-- PM 7 Table -->
+                        <DataGrid ItemsSource="{Binding Pm7Rows}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0"
+                                  FontSize="11"
+                                  Visibility="{Binding HasPm7Data,
+                                      Converter={StaticResource BoolToVisibilityConverter}}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="No."
+                                                    Binding="{Binding Index}"
+                                                    Width="36" />
+                                <DataGridTextColumn Header="Code"
+                                                    Binding="{Binding PointCode}"
+                                                    Width="56" />
+                                <DataGridTextColumn Header="Verification Point"
+                                                    Binding="{Binding PointName}"
+                                                    Width="160" />
+                                <DataGridTextColumn Header="Strain State"
+                                                    Binding="{Binding StrainDescription}"
+                                                    Width="*" />
+                                <DataGridTextColumn Header="Hand φPn"
+                                                    Binding="{Binding HandCalcPDisplay}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Hand φMn"
+                                                    Binding="{Binding HandCalcMDisplay}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Solver φPn"
+                                                    Binding="{Binding SolverPDisplay}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Solver φMn"
+                                                    Binding="{Binding SolverMDisplay}"
+                                                    Width="80"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="ΔP%"
+                                                    Binding="{Binding DeviationPDisplay}"
+                                                    Width="58"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="ΔM%"
+                                                    Binding="{Binding DeviationMDisplay}"
+                                                    Width="58"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Units note -->
+                        <TextBlock Margin="0,8,0,0"
+                                   Style="{StaticResource CaptionStyle}"
+                                   Visibility="{Binding HasPm7Data,
+                                       Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Run Text="Force units: " />
+                            <Run Text="{Binding ForceUnit, Mode=OneWay}" />
+                            <Run Text="  |  Moment units: " />
+                            <Run Text="{Binding MomentUnit, Mode=OneWay}" />
+                            <Run Text="  |  N/A = value not available from solver result." />
+                        </TextBlock>
+
+                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 2 —" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ┌────────────────────────────────────────────────┐
+                     │  PAGE 3 – Critical Chart Visualization        │
+                     └────────────────────────────────────────────────┘ -->
+                <Border Style="{StaticResource A4PageStyle}"
+                        Visibility="{Binding IncludeGoverningChart,
+                            Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="III.  Critical Utilization Slice"
+                                   Style="{StaticResource ChapterHeadingStyle}" />
+
+                        <!-- No governing data -->
+                        <Border Style="{StaticResource PlaceholderStyle}"
+                                Visibility="{Binding HasNoPmChartData,
+                                    Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Critical chart visualization is not available from the current solver result. Calculate the section first."
+                                       Foreground="#888888" FontStyle="Italic" FontSize="11" />
+                        </Border>
+
+                        <!-- Governing chart content -->
+                        <StackPanel Visibility="{Binding HasGoverningChart,
                                         Converter={StaticResource BoolToVisibilityConverter}}">
 
-                            <!-- Conventions note -->
+                            <!-- Caption -->
                             <Border Background="#EBF5FB" BorderBrush="#AED6F1"
-                                    BorderThickness="1" CornerRadius="4"
-                                    Padding="12" Margin="0,0,0,16">
+                                    BorderThickness="1" CornerRadius="3"
+                                    Padding="10" Margin="0,0,0,12">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding HandCalcValidation.DesignCodeNote}"
-                                               FontWeight="SemiBold" FontSize="11"
-                                               Margin="0,0,0,4" />
-                                    <TextBlock Text="{Binding HandCalcValidation.AxisConvention}"
+                                    <TextBlock Text="{Binding GoverningChart.Caption}"
                                                TextWrapping="Wrap" FontSize="11"
-                                               Margin="0,0,0,2" />
-                                    <TextBlock Text="{Binding HandCalcValidation.SignConvention}"
-                                               TextWrapping="Wrap" FontSize="11" Foreground="#666"
-                                               Margin="0,0,0,4" />
-                                    <TextBlock Text="{Binding HandCalcValidation.ComparisonNote}"
-                                               TextWrapping="Wrap" FontSize="10" Foreground="#999" />
+                                               Foreground="#1A5276" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
+                                                Visibility="{Binding GoverningChart.LoadCaseName,
+                                                    Converter={StaticResource NullOrEmptyToCollapsedConverter}}">
+                                        <TextBlock Text="Governing case: " FontSize="10" Foreground="#555" />
+                                        <TextBlock Text="{Binding GoverningChart.LoadCaseName}"
+                                                   FontSize="10" Foreground="#555" FontWeight="SemiBold" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Control point rows -->
-                            <ItemsControl ItemsSource="{Binding HandCalcValidation.Rows}"
-                                          ItemTemplate="{StaticResource ValidationRowTemplate}" />
+                            <!-- Two charts side by side -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 2D PM chart (governing θ slice) -->
+                                <StackPanel Grid.Column="0"
+                                            Visibility="{Binding GoverningChart.HasPmChart,
+                                                Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="2D P-M Interaction (governing θ)"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Margin="0,0,0,4" />
+                                    <controls:DiagramCanvas2D
+                                        Height="300"
+                                        Points="{Binding GoverningChart.PmChartPoints}"
+                                        ReferenceLines="{Binding GoverningChart.PmReferenceLines}"
+                                        XAxisLabel="{Binding GoverningChart.PmXAxisLabel}"
+                                        YAxisLabel="{Binding GoverningChart.PmYAxisLabel}"
+                                        ShowGrid="True"
+                                        ShowLabels="True"
+                                        ShowDemandPoint="False"
+                                        ShowGoverningPoint="True"
+                                        ShowReferenceLines="True"
+                                        ShowNominalCurve="True" />
+                                    <!-- PM chart not available placeholder -->
+                                    <Border Style="{StaticResource PlaceholderStyle}"
+                                            Visibility="{Binding GoverningChart.HasPmChart,
+                                                Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                        <TextBlock Text="P-M slice not available from current solver result."
+                                                   Foreground="#888888" FontStyle="Italic" FontSize="10" />
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- 2D MM chart -->
+                                <StackPanel Grid.Column="2"
+                                            Visibility="{Binding GoverningChart.HasMmChart,
+                                                Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="2D M-M Contour (at governing P level)"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Margin="0,0,0,4" />
+                                    <controls:DiagramCanvas2D
+                                        Height="300"
+                                        Points="{Binding GoverningChart.MmChartPoints}"
+                                        XAxisLabel="{Binding GoverningChart.MmXAxisLabel}"
+                                        YAxisLabel="{Binding GoverningChart.MmYAxisLabel}"
+                                        ShowGrid="True"
+                                        ShowLabels="True"
+                                        ShowDemandPoint="False"
+                                        ShowGoverningPoint="False"
+                                        ShowReferenceLines="False"
+                                        ShowNominalCurve="True" />
+                                    <!-- MM chart not available placeholder -->
+                                    <Border Style="{StaticResource PlaceholderStyle}"
+                                            Visibility="{Binding GoverningChart.HasMmChart,
+                                                Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                        <TextBlock Text="M-M contour not available from current solver result."
+                                                   Foreground="#888888" FontStyle="Italic" FontSize="10" />
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
                         </StackPanel>
 
-                        <!-- Not supported -->
-                        <Border Background="#FFF8E1" BorderBrush="#FFD54F"
-                                BorderThickness="1" Padding="16" Margin="0,0,0,12"
-                                Visibility="{Binding HasUnsupportedValidation,
-                                    Converter={StaticResource BoolToVisibilityConverter}}">
-                            <StackPanel>
-                                <TextBlock Text="Hand calculation validation is not available for this configuration."
-                                           FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding HandCalcValidation.NotSupportedReason}"
-                                           TextWrapping="Wrap" Margin="0,4,0,0" Foreground="#666" />
-                            </StackPanel>
-                        </Border>
-
+                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 3 —" />
                     </StackPanel>
+                </Border>
 
-                    <!-- ════════════════════════════════════════════════════
-                         III. Applied Demand Cases
-                         ════════════════════════════════════════════════ -->
-                    <TextBlock Text="III.  Applied Demand Cases"
-                               Style="{StaticResource SectionTitleTextStyle}"
-                               FontSize="16" Margin="0,24,0,8"
-                               Visibility="{Binding IncludeDemandCases, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <DataGrid ItemsSource="{Binding DemandCases}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              HeadersVisibility="Column"
-                              MaxHeight="300"
-                              Visibility="{Binding IncludeDemandCases, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Case Name" Binding="{Binding CaseName}" Width="150" />
-                            <DataGridTextColumn Header="Original LC" Binding="{Binding OriginalLoadCase}" Width="110" />
-                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="80" />
-                            <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
-                            <DataGridTextColumn Header="Station" Binding="{Binding Station}" Width="80" />
-                            <DataGridTextColumn Header="P" Binding="{Binding Pu, StringFormat={}{0:0.#}}" Width="80" />
-                            <DataGridTextColumn Header="Mx" Binding="{Binding Mux, StringFormat={}{0:0.#}}" Width="80" />
-                            <DataGridTextColumn Header="My" Binding="{Binding Muy, StringFormat={}{0:0.#}}" Width="80" />
-                            <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="80" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                <!-- ┌────────────────────────────────────────────────┐
+                     │  PAGE 4 – Applied Demand Cases                │
+                     └────────────────────────────────────────────────┘ -->
+                <Border Style="{StaticResource A4PageStyle}"
+                        Visibility="{Binding IncludeDemandCases,
+                            Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="IV.  Applied Demand Cases"
+                                   Style="{StaticResource ChapterHeadingStyle}" />
 
-                    <!-- ════════════════════════════════════════════════════
-                         IV. Capacity Charts
-                         ════════════════════════════════════════════════ -->
-                    <TextBlock Text="IV.  Capacity Charts"
-                               Style="{StaticResource SectionTitleTextStyle}"
-                               FontSize="16" Margin="0,24,0,8"
-                               Visibility="{Binding IncludePmCharts, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <ItemsControl ItemsSource="{Binding ChartPreviews}"
-                                  Visibility="{Binding IncludePmCharts, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="2" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border BorderBrush="{DynamicResource BorderGreyBrush}"
-                                        BorderThickness="1"
-                                        Margin="0,0,10,10"
-                                        Padding="6">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Title}"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="11"
-                                                   Margin="0,0,0,4" />
-                                        <controls:DiagramCanvas2D
-                                            Height="280"
-                                            Points="{Binding ChartPoints}"
-                                            ReferenceLines="{Binding ReferenceLines}"
-                                            XAxisLabel="{Binding XAxisLabel}"
-                                            YAxisLabel="{Binding YAxisLabel}"
-                                            ShowGrid="True"
-                                            ShowLabels="True"
-                                            ShowDemandPoint="False"
-                                            ShowGoverningPoint="False"
-                                            ShowReferenceLines="True"
-                                            ShowNominalCurve="True" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        <DataGrid ItemsSource="{Binding DemandCases}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0"
+                                  FontSize="11">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Case Name"    Binding="{Binding CaseName}"      Width="140" />
+                                <DataGridTextColumn Header="Original LC"  Binding="{Binding OriginalLoadCase}" Width="100" />
+                                <DataGridTextColumn Header="Label"        Binding="{Binding Label}"         Width="70" />
+                                <DataGridTextColumn Header="Story"        Binding="{Binding Story}"         Width="70" />
+                                <DataGridTextColumn Header="Station"      Binding="{Binding Station}"       Width="70" />
+                                <DataGridTextColumn Header="P"            Binding="{Binding Pu,  StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Mx"           Binding="{Binding Mux, StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="My"           Binding="{Binding Muy, StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="PMM Ratio"    Binding="{Binding PmmRatio, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="Source"       Binding="{Binding Source}"        Width="70" />
+                            </DataGrid.Columns>
+                        </DataGrid>
 
-                </StackPanel>
-            </Border>
+                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 4 —" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
         </ScrollViewer>
     </Grid>
 </UserControl>

@@ -6,11 +6,32 @@ namespace MBColumn.Application.Services.Etabs;
 public interface IEtabsDesignForceImportService
 {
     ImportedEtabsForceDatabase ImportDesignForces(
-        string modelFilePath, 
-        string modelName, 
+        string modelFilePath,
+        string modelName,
         bool loadColumnForces = true,
         bool loadPierForces = true,
-        Action<int, string, int>? progressCallback = null);
+        Action<int, string, int>? progressCallback = null,
+        IReadOnlyList<string>? combosFilter = null);
+
+    /// <summary>
+    /// Returns true if the database contains any design force records (column or pier).
+    /// </summary>
+    bool HasDesignResults(ImportedEtabsForceDatabase database);
+
+    // ── Per-table loaders (used for step-by-step preload progress) ──────────
+
+    EtabsDesignForceTable LoadColumnElementForcesTable(IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadPierElementForcesTable(IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadColumnDesignForcesTable(IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadPierDesignForcesTable(IReadOnlyList<string>? combosFilter = null);
+
+    ImportedEtabsForceDatabase BuildDatabase(
+        string modelFilePath,
+        string modelName,
+        EtabsDesignForceTable colElementForces,
+        EtabsDesignForceTable pierElementForces,
+        EtabsDesignForceTable colDesignForces,
+        EtabsDesignForceTable pierDesignForces);
 
     /// <summary>
     /// Parses column forces from a previously imported raw database, applying column filter,

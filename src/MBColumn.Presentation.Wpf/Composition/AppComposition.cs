@@ -1,4 +1,5 @@
 using MBColumn.Application.Services;
+using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Etabs;
@@ -19,6 +20,7 @@ public sealed class AppComposition : IDisposable
     public IProjectFileDialogService ProjectFileDialogService { get; }
     public IProjectNameDialogService ProjectNameDialogService { get; }
     public IEtabsImportDialogService EtabsImportDialogService { get; }
+    public IEtabsForceRefreshDialogService EtabsForceRefreshDialogService { get; }
     public ProjectSession ProjectSession { get; }
 
     private readonly ColumnCalculationService calculationService;
@@ -45,6 +47,17 @@ public sealed class AppComposition : IDisposable
         EtabsImportDialogService = new EtabsImportDialogService(
             etabsConnection, etabsColumns, etabsForces, etabsForceCache, etabsPierShells, irregularGeometry,
             etabsDesignForceImport, importedForceCache);
+
+        var forceMapper = new EtabsForceMapper();
+        var changeDetector = new EtabsForceChangeDetector();
+        var resultStateService = new EtabsResultStateService(etabsConnection);
+        var reconciliationService = new EtabsBindingReconciliationService();
+        IEtabsForceRefreshService forceRefreshService = new EtabsForceRefreshService(
+            etabsConnection, etabsForces, etabsColumns,
+            reconciliationService, forceMapper, changeDetector, resultStateService);
+
+        EtabsForceRefreshDialogService = new EtabsForceRefreshDialogService(
+            etabsConnection, forceRefreshService, etabsColumns, ProjectService);
 
         IDesignCodeService aciCode = new Aci318DesignCodeService();
         IDesignCodeService ec2Code = new Ec2DesignCodeService();
@@ -86,7 +99,8 @@ public sealed class AppComposition : IDisposable
             ProjectFileDialogService,
             ProjectNameDialogService,
             EtabsImportDialogService,
-            ProjectSession);
+            ProjectSession,
+            EtabsForceRefreshDialogService);
     }
 
     public void Dispose()

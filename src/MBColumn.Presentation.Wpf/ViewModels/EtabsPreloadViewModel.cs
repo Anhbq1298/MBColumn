@@ -3,7 +3,7 @@ using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
-using System.Linq;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -16,13 +16,20 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
     private readonly IEtabsDesignForceImportService? designForceImportService;
     private readonly IImportedEtabsForceCache? forceCache;
     private readonly UnitSystem targetUnitSystem;
+    private readonly RelayCommand proceedCommand;
+    private readonly RelayCommand nextCommand;
+    private readonly RelayCommand selectAllCombosCommand;
+    private readonly RelayCommand clearAllCombosCommand;
     private CancellationTokenSource? cts;
+    private TaskCompletionSource<bool>? comboSelectionTcs;
     private bool cancelled;
 
     private double progress;
     private string statusMessage = "Initializing…";
     private bool hasError;
     private bool isComplete;
+    private bool isAwaitingComboSelection;
+    private string loadComboFilterText = "";
 
     public EtabsPreloadViewModel(
         IEtabsConnectionService connectionService,
@@ -43,8 +50,12 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
             new() { Label = "Connecting to ETABS" },
             new() { Label = "Loading columns & sections" },
             new() { Label = "Loading load combinations" },
-            new() { Label = "Importing element forces" },
-            new() { Label = "Importing design forces" },
+            new() { Label = "Element forces" },
+            new() { Label = "Columns", IsSubStep = true },
+            new() { Label = "Piers",   IsSubStep = true },
+            new() { Label = "Design forces" },
+            new() { Label = "Columns", IsSubStep = true },
+            new() { Label = "Piers",   IsSubStep = true },
         ];
 
         foreach (var step in Steps)
@@ -59,20 +70,79 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
             };
         }
 
+        AvailableCombinations = [];
+        FilteredCombinations = new ListCollectionView(AvailableCombinations)
+        {
+            Filter = o => o is EtabsLoadCombinationViewModel c &&
+                          (string.IsNullOrEmpty(loadComboFilterText) ||
+                           c.Name.Contains(loadComboFilterText, StringComparison.OrdinalIgnoreCase))
+        };
+
         CancelCommand = new RelayCommand(Cancel);
+        proceedCommand = new RelayCommand(OnProceed,
+            () => IsAwaitingComboSelection && AvailableCombinations.Any(c => c.IsSelected));
+        nextCommand = new RelayCommand(() => RequestClose?.Invoke(this, true), () => IsComplete);
+        selectAllCombosCommand = new RelayCommand(
+            () => { foreach (var c in AvailableCombinations) c.IsSelected = true; },
+            () => IsAwaitingComboSelection);
+        clearAllCombosCommand = new RelayCommand(
+            () => { foreach (var c in AvailableCombinations) c.IsSelected = false; },
+            () => IsAwaitingComboSelection);
     }
 
     public ObservableCollection<EtabsPreloadStep> Steps { get; }
+    public ObservableCollection<EtabsLoadCombinationViewModel> AvailableCombinations { get; }
+    public ListCollectionView FilteredCombinations { get; }
+
     public int CompletedCount => Steps.Count(s => s.IsDone || s.IsError);
     public string CompletedStepsText => $"[{CompletedCount}/{Steps.Count}]";
+    public int SelectedComboCount => AvailableCombinations.Count(c => c.IsSelected);
+    public string ComboSelectionCountText => $"[{SelectedComboCount}/{AvailableCombinations.Count}]";
+
     public EtabsPreloadData? Result { get; private set; }
     public ICommand CancelCommand { get; }
+    public ICommand ProceedCommand => proceedCommand;
+    public ICommand NextCommand => nextCommand;
+    public ICommand SelectAllCombosCommand => selectAllCombosCommand;
+    public ICommand ClearAllCombosCommand => clearAllCombosCommand;
     public event EventHandler<bool>? RequestClose;
 
     public double Progress        { get => progress;       private set => Set(ref progress, value); }
     public string StatusMessage   { get => statusMessage;  private set => Set(ref statusMessage, value); }
     public bool   HasError        { get => hasError;       private set => Set(ref hasError, value); }
-    public bool   IsComplete      { get => isComplete;     private set => Set(ref isComplete, value); }
+    public bool IsComplete
+    {
+        get => isComplete;
+        private set
+        {
+            Set(ref isComplete, value);
+            nextCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public bool IsAwaitingComboSelection
+    {
+        get => isAwaitingComboSelection;
+        private set
+        {
+            Set(ref isAwaitingComboSelection, value);
+            proceedCommand.RaiseCanExecuteChanged();
+            selectAllCombosCommand.RaiseCanExecuteChanged();
+            clearAllCombosCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public string LoadComboFilterText
+    {
+        get => loadComboFilterText;
+        set
+        {
+            if (loadComboFilterText == value) return;
+            loadComboFilterText = value;
+            Raise();
+            FilteredCombinations.Refresh();
+        }
+    }
 
     public async Task StartAsync()
     {
@@ -86,7 +156,22 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         cancelled = true;
         cts?.Cancel();
         progressDriftCts?.Cancel();
+        comboSelectionTcs?.TrySetResult(false);
         RequestClose?.Invoke(this, false);
+    }
+
+    private void OnProceed()
+    {
+        IsAwaitingComboSelection = false;
+        StatusMessage = "Proceeding with import…";
+        comboSelectionTcs?.TrySetResult(true);
+    }
+
+    private void OnComboSelectionChanged()
+    {
+        Raise(nameof(SelectedComboCount));
+        Raise(nameof(ComboSelectionCountText));
+        proceedCommand.RaiseCanExecuteChanged();
     }
 
     private CancellationTokenSource? progressDriftCts;
@@ -98,25 +183,19 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         var token = progressDriftCts.Token;
 
         Progress = start;
-        var steps = expectedDurationSeconds * 20; // 20 steps per second (50ms interval)
+        var steps = expectedDurationSeconds * 20;
         var stepVal = (target - start) / steps;
-        var maxLimit = start + (target - start) * 0.95; // Only drift up to 95%
+        var maxLimit = start + (target - start) * 0.95;
 
         Task.Run(async () =>
         {
             for (int i = 0; i < steps; i++)
             {
                 if (token.IsCancellationRequested) return;
-
-                // Update on UI thread
                 System.Windows.Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    if (Progress < maxLimit)
-                    {
-                        Progress += stepVal;
-                    }
+                    if (Progress < maxLimit) Progress += stepVal;
                 });
-
                 await Task.Delay(50, CancellationToken.None);
             }
         }, token);
@@ -128,6 +207,9 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         Progress = finalVal;
     }
 
+    private static EtabsDesignForceTable EmptyTable(string key) =>
+        new() { TableKey = key, FieldKeys = [], Records = [] };
+
     private async Task RunPreloadAsync(CancellationToken ct)
     {
         // ─── Step 1: Connect ───────────────────────────────────────────────
@@ -136,10 +218,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         await Task.Yield();
 
         EtabsConnectionResultDto connResult;
-        try
-        {
-            connResult = connectionService.ConnectToRunningEtabs();
-        }
+        try { connResult = connectionService.ConnectToRunningEtabs(); }
         catch (Exception ex)
         {
             Steps[0].SetError(ex.Message);
@@ -159,7 +238,6 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
         var info = connResult.ModelInfo!;
         Steps[0].SetDone(info.ModelName);
         Progress = 15;
-
         if (ct.IsCancellationRequested) return;
 
         // ─── Step 2: Load columns ──────────────────────────────────────────
@@ -184,7 +262,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
 
         if (ct.IsCancellationRequested) return;
 
-        // ─── Step 3: Load combinations ─────────────────────────────────────
+        // ─── Step 3: Load combination names ────────────────────────────────
         Steps[2].SetRunning();
         StatusMessage = "Loading load combinations…";
         await Task.Yield();
@@ -206,105 +284,146 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
 
         if (ct.IsCancellationRequested) return;
 
-        // ─── Step 4 & 5: Load Forces (Element + Design) ─────────────────────
+        // ─── PAUSE: let user select combinations ───────────────────────────
+        comboSelectionTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        AvailableCombinations.Clear();
+        foreach (var name in combos)
+            AvailableCombinations.Add(new EtabsLoadCombinationViewModel(name, _ => OnComboSelectionChanged()));
+
+        Raise(nameof(SelectedComboCount));
+        Raise(nameof(ComboSelectionCountText));
+        IsAwaitingComboSelection = true;
+        StatusMessage = $"{combos.Count} combinations available — select then click Proceed.";
+
+        await comboSelectionTcs.Task;
+        if (cancelled) return;
+
+        var selectedCombos = AvailableCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList();
+        Steps[2].SetDone($"{combos.Count} combinations · {selectedCombos.Count} selected");
+
+        // ─── Steps 3–8: Force import ───────────────────────────────────────
         if (designForceImportService is not null && forceCache is not null)
         {
             try
             {
-                if (forceCache.HasValidCache(info.ModelPath))
+                bool hasCols = columns.Any(c => c.SectionType != SectionShapeType.Irregular);
+                bool hasPiers = pierShellImportService is not null &&
+                    await Task.Run(() => pierShellImportService.GetPierGroups(targetUnitSystem).Count > 0, ct);
+
+                // ─── Element forces (parent) ───────────────────────────────
+                Steps[3].SetRunning();
+
+                // ─── 4: Element forces — columns ──────────────────────────
+                EtabsDesignForceTable colElem;
+                if (hasCols)
                 {
-                    Steps[3].SetDone("cached");
-                    Steps[4].SetDone("cached");
-                    Progress = 100;
+                    Steps[4].SetRunning($"Loading for {selectedCombos.Count} combo(s)…");
+                    StatusMessage = "Loading column element forces…";
+                    StartProgressDrift(45, 60, 7.0);
+                    colElem = await Task.Run(
+                        () => designForceImportService.LoadColumnElementForcesTable(selectedCombos), ct);
+                    StopProgressDrift(60);
+                    Steps[4].SetDone($"{colElem.Records.Count:N0} rows");
+                    Progress = 60;
                 }
                 else
                 {
-                    int colElementRows = 0;
-                    int pierElementRows = 0;
-                    int colDesignRows = 0;
-                    int pierDesignRows = 0;
-
-                    var db = await Task.Run(() =>
-                    {
-                        bool hasCols = columns.Any(c => c.SectionType != MBColumn.Domain.Enums.SectionShapeType.Irregular);
-                        bool hasPiers = false;
-                        if (pierShellImportService is not null)
-                        {
-                            var pierGroups = pierShellImportService.GetPierGroups(targetUnitSystem);
-                            hasPiers = pierGroups.Count > 0;
-                        }
-
-                        return designForceImportService.ImportDesignForces(
-                            info.ModelPath,
-                            info.ModelName,
-                            hasCols,
-                            hasPiers,
-                            (phase, tableName, rowCount) =>
-                            {
-                                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-                                {
-                                    if (rowCount == 0)
-                                    {
-                                        // Start of sub-phase
-                                        if (phase == 1) // Column Element
-                                        {
-                                            Steps[3].SetRunning("Loading columns element forces…");
-                                            StatusMessage = "Loading columns element forces…";
-                                            StartProgressDrift(45, 57.5, 3.0);
-                                        }
-                                        else if (phase == 2) // Pier Element
-                                        {
-                                            Steps[3].UpdateDetail("Loading piers element forces…");
-                                            StatusMessage = "Loading piers element forces…";
-                                            StartProgressDrift(57.5, 70.0, 3.0);
-                                        }
-                                        else if (phase == 3) // Column Design
-                                        {
-                                            Steps[3].SetDone($"{(colElementRows + pierElementRows):N0} rows");
-                                            
-                                            Steps[4].SetRunning("Loading columns design forces…");
-                                            StatusMessage = "Loading columns design forces…";
-                                            StartProgressDrift(70, 85.0, 3.0);
-                                        }
-                                        else if (phase == 4) // Pier Design
-                                        {
-                                            Steps[4].UpdateDetail("Loading piers design forces…");
-                                            StatusMessage = "Loading piers design forces…";
-                                            StartProgressDrift(85.0, 100.0, 3.0);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // End of sub-phase
-                                        if (phase == 1)
-                                        {
-                                            colElementRows = rowCount;
-                                            StopProgressDrift(57.5);
-                                        }
-                                        else if (phase == 2)
-                                        {
-                                            pierElementRows = rowCount;
-                                            StopProgressDrift(70.0);
-                                        }
-                                        else if (phase == 3)
-                                        {
-                                            colDesignRows = rowCount;
-                                            StopProgressDrift(85.0);
-                                        }
-                                        else if (phase == 4)
-                                        {
-                                            pierDesignRows = rowCount;
-                                            StopProgressDrift(100.0);
-                                        }
-                                    }
-                                });
-                            });
-                    }, ct);
-
-                    forceCache.Set(db);
-                    Steps[3].SetDone($"{(colElementRows + pierElementRows):N0} rows");
-                    Steps[4].SetDone($"{(colDesignRows + pierDesignRows):N0} rows");
+                    Steps[4].SetDone("N/A");
+                    colElem = EmptyTable("Element Forces - Columns");
                 }
+
+                if (ct.IsCancellationRequested) return;
+
+                // ─── 5: Element forces — piers ────────────────────────────
+                EtabsDesignForceTable pierElem;
+                if (hasPiers)
+                {
+                    Steps[5].SetRunning($"Loading for {selectedCombos.Count} combo(s)…");
+                    StatusMessage = "Loading pier element forces…";
+                    StartProgressDrift(60, 72, 5.0);
+                    pierElem = await Task.Run(
+                        () => designForceImportService.LoadPierElementForcesTable(selectedCombos), ct);
+                    StopProgressDrift(72);
+                    Steps[5].SetDone($"{pierElem.Records.Count:N0} rows");
+                    Progress = 72;
+                }
+                else
+                {
+                    Steps[5].SetDone("N/A");
+                    pierElem = EmptyTable("Pier Forces");
+                }
+
+                Steps[3].SetDone();
+
+                if (ct.IsCancellationRequested) return;
+
+                // ─── Design forces (parent) ────────────────────────────────
+                Steps[6].SetRunning();
+
+                // ─── 7: Design forces — columns ───────────────────────────
+                EtabsDesignForceTable colDesign;
+                if (hasCols)
+                {
+                    Steps[7].SetRunning("Checking design results…");
+                    StatusMessage = "Loading column design forces…";
+                    StartProgressDrift(72, 86, 7.0);
+                    colDesign = await Task.Run(
+                        () => designForceImportService.LoadColumnDesignForcesTable(selectedCombos), ct);
+                    StopProgressDrift(86);
+
+                    if (colDesign.HasRecords)
+                        Steps[7].SetDone($"{colDesign.Records.Count:N0} rows");
+                    else
+                        Steps[7].SetError("Not yet designed — run concrete design in ETABS first");
+
+                    Progress = 86;
+                }
+                else
+                {
+                    Steps[7].SetDone("N/A");
+                    colDesign = EmptyTable("Design Forces - Columns");
+                }
+
+                if (ct.IsCancellationRequested) return;
+
+                // ─── 8: Design forces — piers ─────────────────────────────
+                EtabsDesignForceTable pierDesign;
+                if (hasPiers)
+                {
+                    Steps[8].SetRunning("Checking design results…");
+                    StatusMessage = "Loading pier design forces…";
+                    StartProgressDrift(86, 97, 5.0);
+                    pierDesign = await Task.Run(
+                        () => designForceImportService.LoadPierDesignForcesTable(selectedCombos), ct);
+                    StopProgressDrift(97);
+
+                    if (pierDesign.HasRecords)
+                        Steps[8].SetDone($"{pierDesign.Records.Count:N0} rows");
+                    else
+                        Steps[8].SetError("Not yet designed — run concrete design in ETABS first");
+
+                    Progress = 97;
+                }
+                else
+                {
+                    Steps[8].SetDone("N/A");
+                    pierDesign = EmptyTable("Design Forces - Piers");
+                }
+
+                Steps[6].SetDone();
+
+                var db = designForceImportService.BuildDatabase(
+                    info.ModelPath, info.ModelName,
+                    colElem, pierElem, colDesign, pierDesign);
+
+                bool hasDesign = db.ColumnForces.HasRecords || db.PierForces.HasRecords;
+                StatusMessage = hasDesign
+                    ? "Ready — opening import dialog…"
+                    : "Design results not found for selected combinations. Import continues with element forces only.";
+
+                Progress = 100;
+                forceCache.Set(db);
             }
             catch (OperationCanceledException)
             {
@@ -312,35 +431,29 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                Steps[3].SetError($"skipped ({ex.Message})");
-                Steps[4].SetError($"skipped ({ex.Message})");
+                foreach (var s in Steps.Skip(3)) s.SetError($"skipped ({ex.Message})");
             }
         }
         else
         {
-            Steps[3].SetDone("N/A");
-            Steps[4].SetDone("N/A");
+            foreach (var s in Steps.Skip(3)) s.SetDone("N/A");
             Progress = 100;
         }
 
         Result = new EtabsPreloadData
         {
-            ModelName      = info.ModelName,
-            ModelPath      = info.ModelPath,
-            PresentUnits   = info.PresentUnits,
-            StoryCount     = info.StoryCount,
-            PierCount      = info.PierCount,
-            FrameObjectCount = info.FrameObjectCount,
-            Columns        = columns,
-            LoadCombinations = combos,
+            ModelName                = info.ModelName,
+            ModelPath                = info.ModelPath,
+            PresentUnits             = info.PresentUnits,
+            StoryCount               = info.StoryCount,
+            PierCount                = info.PierCount,
+            FrameObjectCount         = info.FrameObjectCount,
+            Columns                  = columns,
+            LoadCombinations         = combos,
+            SelectedLoadCombinations = selectedCombos,
         };
 
-        StatusMessage = "Ready — opening import dialog…";
+        StatusMessage = "All done — click Next to continue.";
         IsComplete = true;
-
-        await Task.Delay(350, CancellationToken.None);
-
-        System.Windows.Application.Current?.Dispatcher.Invoke(
-            () => RequestClose?.Invoke(this, true));
     }
 }

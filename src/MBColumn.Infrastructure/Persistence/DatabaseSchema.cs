@@ -177,6 +177,7 @@ internal static class DatabaseSchema
     {
         if (connection.State != System.Data.ConnectionState.Open)
             connection.Open();
+        Exec(connection, "PRAGMA foreign_keys = ON");
         EnsureCreated(connection, "Project");
     }
 

@@ -735,8 +735,6 @@
                 <ColumnDefinition Width="220" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="200" />
             </Grid.ColumnDefinitions>
 
             <!-- Demand Cases (left) -->
@@ -957,46 +955,7 @@
 
                     <!-- Force rows TabControl -->
                     <TabControl FontSize="11">
-                        <!-- Tab 1: All Forces (raw preview) -->
-                        <TabItem Header="All Forces">
-                            <DataGrid ItemsSource="{Binding ForceRows}"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="True"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      CanUserReorderColumns="False"
-                                      HeadersVisibility="Column"
-                                      SelectionMode="Extended"
-                                      FontSize="11"
-                                      RowHeight="22"
-                                      BorderBrush="{DynamicResource BorderGreyBrush}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="LoadcaseMBname"
-                                                        Binding="{Binding LoadcaseMBname}"
-                                                        Width="180" />
-                                    <DataGridTextColumn Header="LOADCASE"
-                                                        Binding="{Binding LoadCombination}"
-                                                        Width="120" />
-                                    <DataGridTextColumn Header="STORY"
-                                                        Binding="{Binding Story}"
-                                                        Width="80" />
-                                    <DataGridTextColumn Header="Col Label"
-                                                        Binding="{Binding Label}"
-                                                        Width="80" />
-                                    <DataGridTextColumn Header="P"
-                                                        Binding="{Binding P, StringFormat=N2}"
-                                                        Width="70" />
-                                    <DataGridTextColumn Header="Mx"
-                                                        Binding="{Binding M2, StringFormat=N2}"
-                                                        Width="70" />
-                                    <DataGridTextColumn Header="My"
-                                                        Binding="{Binding M3, StringFormat=N2}"
-                                                        Width="70" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </TabItem>
-                        <!-- Tab 2: By Section (filtered by MB Column Section Story+Label) -->
-                        <!-- Tab 2: Column Forces (filtered by ObjectType == Column) -->
+                        <!-- Tab 1: Column Forces (filtered by ObjectType == Column) -->
                         <TabItem Header="Column Forces">
                             <DataGrid ItemsSource="{Binding FilteredColumnMappedForceRows}"
                                       AutoGenerateColumns="False"
@@ -1051,31 +1010,6 @@
                 </DockPanel>
             </GroupBox>
 
-            <!-- Stations (right) -->
-            <GroupBox Grid.Column="6"
-                      Header="Stations"
-                      BorderBrush="{DynamicResource BorderGreyBrush}"
-                      Foreground="{DynamicResource DarkNavyBrush}"
-                      Padding="12">
-                <StackPanel>
-                    <TextBlock Text="Include forces at:"
-                               FontSize="11"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               Margin="0,0,0,8" />
-                    <CheckBox Content="Top"
-                              IsChecked="{Binding ImportTop, Mode=TwoWay}"
-                              Margin="0,3"
-                              FontSize="12" />
-                    <CheckBox Content="Bottom"
-                              IsChecked="{Binding ImportBottom, Mode=TwoWay}"
-                              Margin="0,3"
-                              FontSize="12" />
-                    <CheckBox Content="Mid-height"
-                              IsChecked="{Binding ImportMid, Mode=TwoWay}"
-                              Margin="0,3"
-                              FontSize="12" />
-                </StackPanel>
-            </GroupBox>
         </Grid>
 
         <!-- ═══════════════════════════════════════════════════════
@@ -1256,14 +1190,11 @@
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Text="Combos" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
                             <TextBlock Grid.Row="0" Grid.Column="1"
                                        Text="{Binding SelectedLoadCombinationCount, StringFormat='{}{0} selected'}"
                                        FontSize="11" Margin="0,0,0,4" />
-                            <TextBlock Grid.Row="1" Text="Stations" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewStationsText}" FontSize="11" />
                         </Grid>
                     </StackPanel>
                 </Border>

@@ -12,4 +12,5 @@ public sealed class EtabsPreloadData
     public int FrameObjectCount { get; init; }
     public IReadOnlyList<EtabsColumnImportDto> Columns { get; init; } = [];
     public IReadOnlyList<string> LoadCombinations { get; init; } = [];
+    public IReadOnlyList<string> SelectedLoadCombinations { get; init; } = [];
 }
