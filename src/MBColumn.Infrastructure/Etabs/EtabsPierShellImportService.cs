@@ -70,27 +70,36 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
         if (!c.PierAreaMap.TryGetValue(key, out var areaNames) || areaNames.Count == 0)
             return [];
 
-        var units = model.GetPresentUnits();
-        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
+        var originalUnits = model.GetPresentUnits();
+        var (targetUnits, _, lengthFactor, _) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
 
-        var segments = new List<EtabsPierShellSegmentDto>(areaNames.Count);
-        foreach (var areaName in areaNames)
+        try
         {
-            if (!c.AreaInfo.TryGetValue(areaName, out var info)) continue;
-            if (!c.AreaPoints.TryGetValue(areaName, out var points)) continue;
+            model.SetPresentUnits(targetUnits);
 
-            var centerline = ExtractPlanCenterlineSegment(points);
-            if (centerline is null) continue;
+            var segments = new List<EtabsPierShellSegmentDto>(areaNames.Count);
+            foreach (var areaName in areaNames)
+            {
+                if (!c.AreaInfo.TryGetValue(areaName, out var info)) continue;
+                if (!c.AreaPoints.TryGetValue(areaName, out var points)) continue;
 
-            var thicknessMm = c.GetOrFetchThickness(model, info.Prop, lengthToMm)
-                              ?? FallbackThicknessMm;
-            var (start, end) = centerline.Value;
-            segments.Add(new EtabsPierShellSegmentDto(
-                areaName, pierLabel, storyName, info.Label,
-                info.Prop, thicknessMm, start, end));
+                var centerline = ExtractPlanCenterlineSegment(points);
+                if (centerline is null) continue;
+
+                var thicknessMm = c.GetOrFetchThickness(model, info.Prop, lengthFactor)
+                                  ?? FallbackThicknessMm;
+                var (start, end) = centerline.Value;
+                segments.Add(new EtabsPierShellSegmentDto(
+                    areaName, pierLabel, storyName, info.Label,
+                    info.Prop, thicknessMm, start, end));
+            }
+
+            return segments;
         }
-
-        return segments;
+        finally
+        {
+            model.SetPresentUnits(originalUnits);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -109,54 +118,59 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
     // Two bulk calls cover the whole model; only pier-assigned areas get a GetPier COM call.
     private static AreaScanCache BuildCache(cSapModel model, UnitSystem targetSystem)
     {
-        var units = model.GetPresentUnits();
-        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
+        var originalUnits = model.GetPresentUnits();
+        var (targetUnits, _, lengthFactor, _) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
 
-        // ── Bulk 1: label + story for every area (1 COM call) ────────────────────────────
-        int nAreas = 0;
-        string[] bulkNames = [], bulkLabels = [], bulkStories = [];
-        model.AreaObj.GetLabelNameList(ref nAreas, ref bulkNames, ref bulkLabels, ref bulkStories);
-
-        var labelStory = new Dictionary<string, (string Label, string Story)>(
-            nAreas, StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < nAreas; i++)
-            labelStory[bulkNames[i]] = (bulkLabels[i] ?? "", bulkStories[i] ?? "");
-
-        // ── Per area: XY coordinates via joint connectivity (GetPoints + GetCoordCartesian) ──
-        // GetAllAreas bulk approach was unreliable: ptDelimiter interpretation varies by
-        // ETABS version and caused coordinates from one shell to be assigned to another.
-        // Joint connectivity is the authoritative source — each joint has a unique ID and
-        // stable XYZ, so this path is always correct.
-        var areaPoints = new Dictionary<string, List<(double X, double Y)>>(
-            nAreas, StringComparer.OrdinalIgnoreCase);
-        foreach (var name in bulkNames)
-            areaPoints[name] = GetPointsFallback(model, name, lengthToMm);
-
-        // ── Per area: pier label + section property (only 1 COM call per area) ──────────
-        var areaInfo = new Dictionary<string, AreaRecord>(StringComparer.OrdinalIgnoreCase);
-        var pierAreaMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var areaName in bulkNames)
+        try
         {
-            string pier = "";
-            try { model.AreaObj.GetPier(areaName, ref pier); } catch { }
-            if (string.IsNullOrEmpty(pier) || string.Equals(pier, "None", StringComparison.OrdinalIgnoreCase)) continue;
+            model.SetPresentUnits(targetUnits);
 
-            if (!labelStory.TryGetValue(areaName, out var ls) || string.IsNullOrEmpty(ls.Story))
-                continue;
+            // ── Bulk 1: label + story for every area (1 COM call) ────────────────────────────
+            int nAreas = 0;
+            string[] bulkNames = [], bulkLabels = [], bulkStories = [];
+            model.AreaObj.GetLabelNameList(ref nAreas, ref bulkNames, ref bulkLabels, ref bulkStories);
 
-            string prop = "";
-            try { model.AreaObj.GetProperty(areaName, ref prop); } catch { }
+            var labelStory = new Dictionary<string, (string Label, string Story)>(
+                nAreas, StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < nAreas; i++)
+                labelStory[bulkNames[i]] = (bulkLabels[i] ?? "", bulkStories[i] ?? "");
 
-            areaInfo[areaName] = new AreaRecord(pier, ls.Story, ls.Label, prop ?? "");
+            // ── Per area: XY coordinates via joint connectivity (GetPoints + GetCoordCartesian) ──
+            var areaPoints = new Dictionary<string, List<(double X, double Y)>>(
+                nAreas, StringComparer.OrdinalIgnoreCase);
+            foreach (var name in bulkNames)
+                areaPoints[name] = GetPointsFallback(model, name, lengthFactor);
 
-            var mapKey = $"{pier}|{ls.Story}";
-            if (!pierAreaMap.TryGetValue(mapKey, out var list))
-                pierAreaMap[mapKey] = list = [];
-            list.Add(areaName);
+            // ── Per area: pier label + section property (only 1 COM call per area) ──────────
+            var areaInfo = new Dictionary<string, AreaRecord>(StringComparer.OrdinalIgnoreCase);
+            var pierAreaMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var areaName in bulkNames)
+            {
+                string pier = "";
+                try { model.AreaObj.GetPier(areaName, ref pier); } catch { }
+                if (string.IsNullOrEmpty(pier) || string.Equals(pier, "None", StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (!labelStory.TryGetValue(areaName, out var ls) || string.IsNullOrEmpty(ls.Story))
+                    continue;
+
+                string prop = "";
+                try { model.AreaObj.GetProperty(areaName, ref prop); } catch { }
+
+                areaInfo[areaName] = new AreaRecord(pier, ls.Story, ls.Label, prop ?? "");
+
+                var mapKey = $"{pier}|{ls.Story}";
+                if (!pierAreaMap.TryGetValue(mapKey, out var list))
+                    pierAreaMap[mapKey] = list = [];
+                list.Add(areaName);
+            }
+
+            return new AreaScanCache(areaInfo, pierAreaMap, areaPoints);
         }
-
-        return new AreaScanCache(areaInfo, pierAreaMap, areaPoints);
+        finally
+        {
+            model.SetPresentUnits(originalUnits);
+        }
     }
 
     // -------------------------------------------------------------------

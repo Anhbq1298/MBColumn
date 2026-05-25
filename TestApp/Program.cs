@@ -21,7 +21,7 @@ var columnService = new EtabsColumnImportService(connection);
 var designImport  = new EtabsDesignForceImportService(connection);
 
 var allColumns = columnService.GetCandidateColumns(UnitSystem.Metric);
-var targetLabels = new HashSet<string>(["C198", "C200"], StringComparer.OrdinalIgnoreCase);
+var targetLabels = new HashSet<string>(["C3"], StringComparer.OrdinalIgnoreCase);
 var selectedColumns = allColumns.Where(c => targetLabels.Contains(c.Label)).ToList();
 
 Console.WriteLine($"Found {selectedColumns.Count} column object(s) matching C198/C200:");
@@ -39,10 +39,14 @@ if (selectedColumns.Count == 0)
 
 // ── Preload raw design force table ──────────────────────────────────────────
 Console.WriteLine("Preloading raw design force tables from ETABS...");
-var db = designImport.ImportDesignForces(info.ModelPath, info.ModelName);
+var db = designImport.ImportDesignForces(info.ModelPath, info.ModelName, MBColumn.Domain.Enums.UnitSystem.Metric);
 
 var colTable = db.ColumnForces;
 Console.WriteLine($"Column design table: '{colTable.TableKey}'  records={colTable.Records.Count}  fields=[{string.Join(", ", colTable.FieldKeys)}]");
+Console.WriteLine();
+
+var elemTable = db.ColumnElementForces;
+Console.WriteLine($"Column element table: '{elemTable.TableKey}'  records={elemTable.Records.Count}  fields=[{string.Join(", ", elemTable.FieldKeys)}]");
 Console.WriteLine();
 
 if (!colTable.HasRecords)
@@ -88,7 +92,7 @@ Console.WriteLine($"Using combos: {string.Join(", ", selectedCombos)}");
 Console.WriteLine();
 
 // ── Parse forces from cached raw table ──────────────────────────────────────
-var forces = designImport.ParseColumnForces(db, selectedColumns, selectedCombos, UnitSystem.Metric);
+var forces = designImport.ParseColumnElementForces(db, selectedColumns, selectedCombos, UnitSystem.Metric);
 
 Console.WriteLine($"Returned {forces.Count} force row(s).");
 Console.WriteLine();

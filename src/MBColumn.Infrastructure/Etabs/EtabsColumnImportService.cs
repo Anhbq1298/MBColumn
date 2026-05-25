@@ -23,65 +23,74 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var units = model.GetPresentUnits();
-        var (_, lengthToMm) = EtabsConnectionService.GetConversionFactors(units, targetSystem);
+        var originalUnits = model.GetPresentUnits();
+        var (targetUnits, _, lengthFactor, _) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
 
-        // Two bulk table calls instead of one PropFrame API call per section
-        var sections = LoadConcreteSections(model, lengthToMm);
-
-        int count = 0;
-        string[] names = [];
-        string[] labels = [];
-        string[] stories = [];
-        model.FrameObj.GetLabelNameList(ref count, ref names, ref labels, ref stories);
-
-        var columns = new List<EtabsColumnImportDto>();
-        for (var i = 0; i < count; i++)
+        try
         {
-            var orientation = eFrameDesignOrientation.Null;
-            if (model.FrameObj.GetDesignOrientation(names[i], ref orientation) != 0
-                || orientation != eFrameDesignOrientation.Column)
-                continue;
+            model.SetPresentUnits(targetUnits);
 
-            var sectionName = "";
-            var sAuto = "";
-            model.FrameObj.GetSection(names[i], ref sectionName, ref sAuto);
+            // Two bulk table calls instead of one PropFrame API call per section
+            var sections = LoadConcreteSections(model, lengthFactor);
 
-            // Skip non-concrete and unsupported shapes — only rect and circle imported
-            if (!sections.TryGetValue(sectionName, out var sec))
-                continue;
+            int count = 0;
+            string[] names = [];
+            string[] labels = [];
+            string[] stories = [];
+            model.FrameObj.GetLabelNameList(ref count, ref names, ref labels, ref stories);
 
-            var pierName = "";
-            model.FrameObj.GetPier(names[i], ref pierName);
+            var columns = new List<EtabsColumnImportDto>();
+            for (var i = 0; i < count; i++)
+            {
+                var orientation = eFrameDesignOrientation.Null;
+                if (model.FrameObj.GetDesignOrientation(names[i], ref orientation) != 0
+                    || orientation != eFrameDesignOrientation.Column)
+                    continue;
 
-            string point1 = "", point2 = "";
-            model.FrameObj.GetPoints(names[i], ref point1, ref point2);
-            double x1 = 0, y1 = 0, z1 = 0;
-            model.PointObj.GetCoordCartesian(point1, ref x1, ref y1, ref z1);
-            double x2 = 0, y2 = 0, z2 = 0;
-            model.PointObj.GetCoordCartesian(point2, ref x2, ref y2, ref z2);
-            double lengthMm = System.Math.Sqrt(System.Math.Pow(x1 - x2, 2) + System.Math.Pow(y1 - y2, 2) + System.Math.Pow(z1 - z2, 2)) * lengthToMm;
+                var sectionName = "";
+                var sAuto = "";
+                model.FrameObj.GetSection(names[i], ref sectionName, ref sAuto);
 
-            var uniqueSection = BuildUniqueSectionKey(sectionName, sec.Type, sec.Width, sec.Height, sec.Diameter);
+                // Skip non-concrete and unsupported shapes — only rect and circle imported
+                if (!sections.TryGetValue(sectionName, out var sec))
+                    continue;
 
-            columns.Add(new EtabsColumnImportDto(
-                names[i],
-                pierName ?? "",
-                stories[i] ?? "",
-                labels[i] ?? "",
-                uniqueSection,
-                sectionName,
-                sec.Material,
-                sec.Type,
-                sec.Width,
-                sec.Height,
-                sec.Diameter,
-                lengthMm,
-                "",
-                "Ready"));
+                var pierName = "";
+                model.FrameObj.GetPier(names[i], ref pierName);
+
+                string point1 = "", point2 = "";
+                model.FrameObj.GetPoints(names[i], ref point1, ref point2);
+                double x1 = 0, y1 = 0, z1 = 0;
+                model.PointObj.GetCoordCartesian(point1, ref x1, ref y1, ref z1);
+                double x2 = 0, y2 = 0, z2 = 0;
+                model.PointObj.GetCoordCartesian(point2, ref x2, ref y2, ref z2);
+                double lengthMm = System.Math.Sqrt(System.Math.Pow(x1 - x2, 2) + System.Math.Pow(y1 - y2, 2) + System.Math.Pow(z1 - z2, 2)) * lengthFactor;
+
+                var uniqueSection = BuildUniqueSectionKey(sectionName, sec.Type, sec.Width, sec.Height, sec.Diameter);
+
+                columns.Add(new EtabsColumnImportDto(
+                    names[i],
+                    pierName ?? "",
+                    stories[i] ?? "",
+                    labels[i] ?? "",
+                    uniqueSection,
+                    sectionName,
+                    sec.Material,
+                    sec.Type,
+                    sec.Width,
+                    sec.Height,
+                    sec.Diameter,
+                    lengthMm,
+                    "",
+                    "Ready"));
+            }
+
+            return columns;
         }
-
-        return columns;
+        finally
+        {
+            model.SetPresentUnits(originalUnits);
+        }
     }
 
     public IReadOnlyList<string> GetLoadCombinations()

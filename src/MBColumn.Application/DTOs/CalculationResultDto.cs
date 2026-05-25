@@ -46,5 +46,12 @@ public sealed record CalculationResultDto(
     public HandCalcValidationReport? HandCalcValidation { get; init; }
     public string SevenPointValidationReport { get; init; } = "";
     public IReadOnlyList<SevenPointValidationRowDto> SevenPointValidationRows { get; init; } = [];
+
+    // Raw material values in SI units (MPa) for report generation
+    public double FcMpa { get; init; }
+    public double FyMpa { get; init; }
+    public double EsMpa { get; init; }
+    public double AlphaCc { get; init; } = 0.85;
+    public double DiameterMm { get; init; }
 }
 

@@ -8,6 +8,7 @@ public interface IEtabsDesignForceImportService
     ImportedEtabsForceDatabase ImportDesignForces(
         string modelFilePath,
         string modelName,
+        UnitSystem targetSystem,
         bool loadColumnForces = true,
         bool loadPierForces = true,
         Action<int, string, int>? progressCallback = null,
@@ -20,14 +21,15 @@ public interface IEtabsDesignForceImportService
 
     // ── Per-table loaders (used for step-by-step preload progress) ──────────
 
-    EtabsDesignForceTable LoadColumnElementForcesTable(IReadOnlyList<string>? combosFilter = null);
-    EtabsDesignForceTable LoadPierElementForcesTable(IReadOnlyList<string>? combosFilter = null);
-    EtabsDesignForceTable LoadColumnDesignForcesTable(IReadOnlyList<string>? combosFilter = null);
-    EtabsDesignForceTable LoadPierDesignForcesTable(IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadColumnElementForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadPierElementForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadColumnDesignForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null);
+    EtabsDesignForceTable LoadPierDesignForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null);
 
     ImportedEtabsForceDatabase BuildDatabase(
         string modelFilePath,
         string modelName,
+        UnitSystem targetSystem,
         EtabsDesignForceTable colElementForces,
         EtabsDesignForceTable pierElementForces,
         EtabsDesignForceTable colDesignForces,

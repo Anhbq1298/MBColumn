@@ -1,12 +1,19 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Reports.Builders;
+using MBColumn.Application.Reports.Models;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
-using System.Linq;
+using MBColumn.Domain.Interfaces;
+using MBColumn.Infrastructure.DesignCodes;
+using MBColumn.Infrastructure.Math;
+using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Presentation.Wpf.Commands;
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Windows.Input;
-using Microsoft.Win32;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
@@ -16,6 +23,12 @@ public sealed class ReportTabViewModel : ViewModelBase
     private readonly PmSevenPointReportMapper _pm7Mapper = new();
     private readonly MBColumn.Domain.Interfaces.IUnitConversionService _units = new MBColumn.Infrastructure.Math.UnitConversionService();
     private CalculationResultDto? _cachedResult;
+    private CancellationTokenSource? _reportCts;
+
+    // Cached project metadata (set from LoadFromCurrentWorkspace)
+    private string _cachedProjectName = "";
+    private string _cachedGroupName = "";
+    private string _cachedDesignTierName = "";
 
     private bool includeInputData = true;
     private bool includeBoundaryCoordinates = true;
@@ -36,20 +49,42 @@ public sealed class ReportTabViewModel : ViewModelBase
     private string rebarSummary = "";
     private string forceUnit = "";
     private string momentUnit = "";
+    private bool isExportBusy;
+    private bool isGeneratingReport;
     private GoverningChartPreviewViewModel? governingChart;
 
     private double sectionWidth;
     private double sectionHeight;
     private double clearCover;
 
+    // Interaction diagram chart data
+    private IReadOnlyList<ControlPointDto> pmPoints = [];
+    private IReadOnlyList<ChartReferenceLineDto> pmReferenceLines = [];
+    private IReadOnlyList<ControlPointDto> mmPoints = [];
+    private string pmXAxisLabel = "M";
+    private string pmYAxisLabel = "P";
+    private string mmXAxisLabel = "Mx";
+    private string mmYAxisLabel = "My";
+    private double pmRatio;
+    private double mmRatio;
+    private string pmSliceLabel = "P-M Interaction";
+
     public ReportTabViewModel()
     {
         GeneratePreviewCommand = new RelayCommand(GeneratePreview);
-
+        PreviewPdfCommand = new RelayCommand(PreviewPdf, CanExport);
+        SaveAsPdfCommand = new RelayCommand(SaveAsPdf, CanExport);
+        SaveAsHtmlCommand = new RelayCommand(SaveAsHtml, CanExport);
     }
 
     public ICommand GeneratePreviewCommand { get; }
+    public ICommand PreviewPdfCommand { get; }
+    public ICommand SaveAsPdfCommand { get; }
+    public ICommand SaveAsHtmlCommand { get; }
 
+    public ObservableCollection<ReportSection> ReportSections { get; } = new();
+    public bool IsGeneratingReport { get => isGeneratingReport; private set { Set(ref isGeneratingReport, value); Raise(nameof(HasReportSections)); } }
+    public bool HasReportSections  => ReportSections.Count > 0 && !isGeneratingReport;
 
     public ObservableCollection<ReportDemandCaseRowViewModel> DemandCases { get; } = [];
     public ObservableCollection<ReportPm7RowViewModel> Pm7Rows { get; } = [];
@@ -70,6 +105,19 @@ public sealed class ReportTabViewModel : ViewModelBase
     public bool HasGoverningChart  => governingChart?.IsAvailable == true;
     public bool HasNoPmChartData   => governingChart?.IsAvailable != true;
 
+    // Interaction diagram data for in-report charts
+    public IReadOnlyList<ControlPointDto>    PmPoints         { get => pmPoints;         private set => Set(ref pmPoints, value); }
+    public IReadOnlyList<ChartReferenceLineDto> PmReferenceLines { get => pmReferenceLines; private set => Set(ref pmReferenceLines, value); }
+    public IReadOnlyList<ControlPointDto>    MmPoints         { get => mmPoints;         private set => Set(ref mmPoints, value); }
+    public string PmXAxisLabel { get => pmXAxisLabel; private set => Set(ref pmXAxisLabel, value); }
+    public string PmYAxisLabel { get => pmYAxisLabel; private set => Set(ref pmYAxisLabel, value); }
+    public string MmXAxisLabel { get => mmXAxisLabel; private set => Set(ref mmXAxisLabel, value); }
+    public string MmYAxisLabel { get => mmYAxisLabel; private set => Set(ref mmYAxisLabel, value); }
+    public double PmRatio      { get => pmRatio;      private set => Set(ref pmRatio, value); }
+    public double MmRatio      { get => mmRatio;      private set => Set(ref mmRatio, value); }
+    public string PmSliceLabel { get => pmSliceLabel; private set => Set(ref pmSliceLabel, value); }
+    public bool   HasChartData => pmPoints.Count > 0;
+
     public bool IncludeInputData           { get => includeInputData;           set => Set(ref includeInputData, value); }
     public bool IncludeBoundaryCoordinates { get => includeBoundaryCoordinates; set => Set(ref includeBoundaryCoordinates, value); }
     public bool IncludeRebarCoordinates    { get => includeRebarCoordinates;    set => Set(ref includeRebarCoordinates, value); }
@@ -83,6 +131,8 @@ public sealed class ReportTabViewModel : ViewModelBase
     public bool IncludePm7Table            { get => includePm7Table;            set => Set(ref includePm7Table, value); }
 
     public bool IsOutdated          { get => isOutdated;          private set => Set(ref isOutdated, value); }
+    public bool IsExportBusy        { get => isExportBusy;        private set { Set(ref isExportBusy, value); RaiseExportCanExecute(); } }
+
     public string ResultStatusText  { get => resultStatusText;    private set => Set(ref resultStatusText, value); }
     public string ProjectName       { get => projectName;         private set => Set(ref projectName, value); }
     public string GroupName         { get => groupName;           private set => Set(ref groupName, value); }
@@ -97,18 +147,30 @@ public sealed class ReportTabViewModel : ViewModelBase
     public string MomentUnit        { get => momentUnit;          private set => Set(ref momentUnit, value); }
 
     public bool HasPm7Data => Pm7Rows.Count > 0;
+    public bool HasResult  => _cachedResult is not null;
 
     public void Clear()
     {
         ProjectName = GroupName = DesignTierName = SectionShape = DesignCode =
             UnitSystem = MaterialSummary = GeometrySummary = RebarSummary =
             ForceUnit = MomentUnit = "";
+        _cachedProjectName = _cachedGroupName = _cachedDesignTierName = "";
         ResultStatusText = "No result";
         IsOutdated = false;
         _cachedResult = null;
+        _reportCts?.Cancel();
+        ReportSections.Clear();
+        Raise(nameof(HasReportSections));
         DemandCases.Clear();
         Pm7Rows.Clear();
         GoverningChart = null;
+        PmPoints = [];
+        PmReferenceLines = [];
+        MmPoints = [];
+        PmRatio = 0;
+        MmRatio = 0;
+        Raise(nameof(HasChartData));
+        RaiseExportCanExecute();
     }
 
     public void MarkOutdated()
@@ -127,6 +189,10 @@ public sealed class ReportTabViewModel : ViewModelBase
         string designTierName,
         bool isOutdated)
     {
+        _cachedProjectName  = projectName;
+        _cachedGroupName    = groupName;
+        _cachedDesignTierName = designTierName;
+
         ProjectName = projectName;
         GroupName = groupName;
         DesignTierName = designTierName;
@@ -145,8 +211,8 @@ public sealed class ReportTabViewModel : ViewModelBase
         ResultStatusText = result.HasResult ? (IsOutdated ? "Outdated" : "Current") : "No result";
 
         _cachedResult = result.Result;
+        if (_cachedResult is not null) BuildChartData(_cachedResult);
 
-        // Resolve display units from unit system
         bool isMetric = input.UnitSystem == Domain.Enums.UnitSystem.Metric;
         ForceUnit  = isMetric ? "kN"   : "kip";
         MomentUnit = isMetric ? "kNm"  : "kip-ft";
@@ -178,22 +244,250 @@ public sealed class ReportTabViewModel : ViewModelBase
         }
 
         GeneratePreview();
+        RaiseExportCanExecute();
+        _ = RefreshReportSectionsAsync();
     }
+
+    // ── Interaction diagram chart data ────────────────────────────────────────
+
+    private void BuildChartData(CalculationResultDto result)
+    {
+        try
+        {
+            var theta = result.GoverningThetaDegrees;
+            var pmDiagram = _diagramSvc.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
+            var pmDemand  = _diagramSvc.BuildPmAngleDemandPoints(result.LoadCaseResults, theta);
+
+            PmPoints         = [..pmDiagram.Points, ..pmDemand, ..pmDiagram.SpecialCapacityPoints];
+            PmReferenceLines = pmDiagram.ReferenceLines;
+            PmXAxisLabel     = $"M ({pmDiagram.MUnit})";
+            PmYAxisLabel     = $"P ({pmDiagram.PUnit})";
+            PmRatio          = result.Ratio;
+            PmSliceLabel     = $"P-M  at θ = {theta:F1}°  (governing)";
+
+            var mmDiagram = _diagramSvc.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
+            var mmDemand  = _diagramSvc.BuildMxMyDemandPoints(result.LoadCaseResults);
+            MmPoints     = [..mmDiagram.Points, ..mmDemand];
+            MmXAxisLabel = $"Mx ({mmDiagram.MUnit})";
+            MmYAxisLabel = $"My ({mmDiagram.MUnit})";
+            MmRatio      = result.Ratio;
+        }
+        catch
+        {
+            PmPoints = [];
+            PmReferenceLines = [];
+            MmPoints = [];
+        }
+        Raise(nameof(HasChartData));
+    }
+
+    // ── Report sections (full dynamic preview) ────────────────────────────────
+
+    private async Task RefreshReportSectionsAsync()
+    {
+        _reportCts?.Cancel();
+        _reportCts = new CancellationTokenSource();
+        var ct = _reportCts.Token;
+
+        if (_cachedResult is null)
+        {
+            ReportSections.Clear();
+            Raise(nameof(HasReportSections));
+            return;
+        }
+
+        try
+        {
+            IsGeneratingReport = true;
+            ReportSections.Clear();
+            Raise(nameof(HasReportSections));
+
+            var result    = _cachedResult;
+            var projName  = _cachedProjectName;
+            var grpName   = _cachedGroupName;
+            var tierName  = _cachedDesignTierName;
+
+            var sections = await Task.Run(() =>
+            {
+                ct.ThrowIfCancellationRequested();
+
+                IDesignCodeService codeService = result.DesignCode == DesignCodeType.Aci318Style
+                    ? new Aci318DesignCodeService()
+                    : new Ec2DesignCodeService { AlphaCc = result.AlphaCc };
+                IUnitConversionService unitService = new UnitConversionService();
+
+                string? sectionSvg = null;
+                try
+                {
+                    sectionSvg = SectionGeometryRenderer.RenderSection(
+                        result.SectionShape,
+                        result.SectionWidthMm, result.SectionHeightMm,
+                        result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
+                        result.CoverMm, result.RebarCoordinates);
+                }
+                catch { }
+
+                ct.ThrowIfCancellationRequested();
+
+                var builder = new CalculationReportBuilder();
+                var data    = builder.Build(projName, grpName, tierName, result, codeService, unitService);
+                data = data with { SectionGeometrySvg = sectionSvg, RebarLayoutSvg = sectionSvg };
+                return data.Sections;
+            }, ct);
+
+            ct.ThrowIfCancellationRequested();
+
+            foreach (var section in sections)
+                ReportSections.Add(section);
+            Raise(nameof(HasReportSections));
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            if (!ct.IsCancellationRequested)
+            {
+                ReportSections.Add(new ReportSection("!", "Report Generation Error",
+                    [new NoteBlock($"Failed to generate report: {ex.Message}")]));
+                Raise(nameof(HasReportSections));
+            }
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+                IsGeneratingReport = false;
+        }
+    }
+
+    // ── Export commands ───────────────────────────────────────────────────────
+
+    private bool CanExport() => _cachedResult is not null && !IsExportBusy;
+
+    private void RaiseExportCanExecute()
+    {
+        (PreviewPdfCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (SaveAsPdfCommand  as RelayCommand)?.RaiseCanExecuteChanged();
+        (SaveAsHtmlCommand as RelayCommand)?.RaiseCanExecuteChanged();
+    }
+
+    private void PreviewPdf()
+    {
+        if (_cachedResult is null) return;
+        try
+        {
+            IsExportBusy = true;
+            var data = BuildReportData();
+            string tmp = Path.Combine(Path.GetTempPath(),
+                $"MBColumn_Calculation_Report_Preview_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
+            renderer.RenderToFile(data, tmp);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tmp) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"PDF preview failed:\n{ex.Message}", "Export Error",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+        finally { IsExportBusy = false; }
+    }
+
+    private void SaveAsPdf()
+    {
+        if (_cachedResult is null) return;
+        var dialog = new SaveFileDialog
+        {
+            Title = "Save as PDF",
+            Filter = "PDF files (*.pdf)|*.pdf",
+            FileName = "MBColumn_Calculation_Report.pdf"
+        };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            IsExportBusy = true;
+            var data = BuildReportData();
+            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
+            renderer.RenderToFile(data, dialog.FileName);
+            System.Windows.MessageBox.Show($"PDF saved to:\n{dialog.FileName}", "Export Complete",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"PDF export failed:\n{ex.Message}", "Export Error",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+        finally { IsExportBusy = false; }
+    }
+
+    private void SaveAsHtml()
+    {
+        if (_cachedResult is null) return;
+        var dialog = new SaveFileDialog
+        {
+            Title = "Save as HTML",
+            Filter = "HTML files (*.html)|*.html",
+            FileName = "MBColumn_Calculation_Report.html"
+        };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            IsExportBusy = true;
+            var data = BuildReportData();
+            var renderer = new MBColumn.Infrastructure.Reports.Html.HtmlCalculationReportRenderer();
+            renderer.RenderToFile(data, dialog.FileName);
+            System.Windows.MessageBox.Show($"HTML saved to:\n{dialog.FileName}", "Export Complete",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"HTML export failed:\n{ex.Message}", "Export Error",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
+        finally { IsExportBusy = false; }
+    }
+
+    // ── Report data builder ───────────────────────────────────────────────────
+
+    private ReportData BuildReportData()
+    {
+        var result = _cachedResult ?? throw new InvalidOperationException("No calculation result available.");
+
+        // Generate SVG graphics
+        string? sectionSvg = null;
+        try
+        {
+            sectionSvg = SectionGeometryRenderer.RenderSection(
+                result.SectionShape,
+                result.SectionWidthMm, result.SectionHeightMm,
+                result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
+                result.CoverMm,
+                result.RebarCoordinates);
+        }
+        catch { /* skip graphic on error */ }
+
+        IDesignCodeService codeService = result.DesignCode == DesignCodeType.Aci318Style
+            ? new Aci318DesignCodeService()
+            : new Ec2DesignCodeService { AlphaCc = result.AlphaCc };
+        IUnitConversionService unitService = new UnitConversionService();
+
+        var builder = new CalculationReportBuilder();
+        var data = builder.Build(_cachedProjectName, _cachedGroupName, _cachedDesignTierName, result, codeService, unitService);
+
+        return data with { SectionGeometrySvg = sectionSvg, RebarLayoutSvg = sectionSvg };
+    }
+
+    // ── Preview helpers ───────────────────────────────────────────────────────
 
     private void GeneratePreview()
     {
         BuildPm7Rows();
         BuildGoverningChart();
         Raise(nameof(HasPm7Data));
+        _ = RefreshReportSectionsAsync();
     }
 
     private void BuildPm7Rows()
     {
         Pm7Rows.Clear();
         if (_cachedResult?.SevenPointValidationRows is not { Count: > 0 } rows) return;
-
-        var fUnit = string.IsNullOrEmpty(ForceUnit) ? "" : $" ({ForceUnit})";
-        var mUnit = string.IsNullOrEmpty(MomentUnit) ? "" : $" ({MomentUnit})";
 
         bool isMetric = ForceUnit == "kN";
         var mapped = _pm7Mapper.Map(rows, _units, isMetric);
@@ -220,7 +514,6 @@ public sealed class ReportTabViewModel : ViewModelBase
         GoverningChart = null;
         if (_cachedResult is null) return;
 
-        // Identify governing load case by highest PMM ratio
         var governing = _cachedResult.LoadCaseResults
             .Where(r => double.IsFinite(r.PmmRatio))
             .OrderByDescending(r => r.PmmRatio)
@@ -239,7 +532,6 @@ public sealed class ReportTabViewModel : ViewModelBase
             LoadCaseName = governing?.LoadCaseName ?? "",
         };
 
-        // PM curve for governing theta slice
         if (_cachedResult.ControlPoints is not null)
         {
             try
@@ -251,10 +543,9 @@ public sealed class ReportTabViewModel : ViewModelBase
                 vm.PUnit = pmDiag.PUnit;
                 vm.MUnit = pmDiag.MUnit;
             }
-            catch { /* leave PM chart empty — show placeholder */ }
+            catch { }
         }
 
-        // MM contour from MxMyDiagram (at governing P level)
         if (_cachedResult.MxMyDiagram?.Points is { Count: > 0 } mmPts)
         {
             vm.MmChartPoints = mmPts;
@@ -262,7 +553,6 @@ public sealed class ReportTabViewModel : ViewModelBase
                 vm.MUnit = _cachedResult.MxMyDiagram.MUnit ?? "";
         }
 
-        // Demand points for governing load case
         if (governing is not null && double.IsFinite(governing.PmmRatio) && governing.PmmRatio > 0)
         {
             string label = governing.LoadCaseName;
@@ -300,8 +590,6 @@ public sealed class ReportTabViewModel : ViewModelBase
 
         GoverningChart = vm;
     }
-
-
 
     private static string BuildGeometrySummary(InputViewModel input)
         => input.SelectedSectionShape switch

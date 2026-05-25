@@ -2,546 +2,474 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
+             xmlns:models="clr-namespace:MBColumn.Application.Reports.Models;assembly=MBColumn.Application"
              MinHeight="560">
 
     <UserControl.Resources>
 
-        <!-- A4 page border style ─────────────────────────────────────────── -->
+        <!-- ── Converters ─────────────────────────────────────────────────── -->
+        <!-- NullOrEmptyToCollapsedConverter already registered in App.xaml    -->
+
+        <!-- ── Block DataTemplates ────────────────────────────────────────── -->
+
+        <!-- HeadingBlock -->
+        <DataTemplate x:Key="HeadingTemplate" DataType="{x:Type models:HeadingBlock}">
+            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Margin="0,10,0,2">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontSize"   Value="11"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Foreground" Value="#555555"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Level}" Value="2">
+                                <Setter Property="FontSize"   Value="13"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Foreground" Value="#1A3A5C"/>
+                                <Setter Property="Margin"     Value="0,14,0,4"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="3">
+                                <Setter Property="FontSize"   Value="12"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#1A3A5C"/>
+                                <Setter Property="Margin"     Value="0,12,0,3"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Level}" Value="4">
+                                <Setter Property="FontSize"   Value="11"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="Foreground" Value="#2E5F8A"/>
+                                <Setter Property="Margin"     Value="0,8,0,2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
+
+        <!-- ParagraphBlock -->
+        <DataTemplate x:Key="ParagraphTemplate" DataType="{x:Type models:ParagraphBlock}">
+            <TextBlock Text="{Binding Text}" FontSize="10.5" TextWrapping="Wrap"
+                       Foreground="#333" Margin="0,3,0,3" LineHeight="16"/>
+        </DataTemplate>
+
+        <!-- NoteBlock -->
+        <DataTemplate x:Key="NoteTemplate" DataType="{x:Type models:NoteBlock}">
+            <Border Background="#EBF5FB" BorderBrush="#AED6F1" BorderThickness="1"
+                    CornerRadius="2" Padding="8,6" Margin="0,4,0,4">
+                <TextBlock Text="{Binding Text}" FontSize="10" TextWrapping="Wrap"
+                           Foreground="#1A5276" FontStyle="Italic"/>
+            </Border>
+        </DataTemplate>
+
+        <!-- FormulaBlock -->
+        <DataTemplate x:Key="FormulaTemplate" DataType="{x:Type models:FormulaBlock}">
+            <Border BorderBrush="#DDDDDD" BorderThickness="1" Background="#FAFAFA"
+                    CornerRadius="2" Padding="8,6" Margin="0,4,0,4">
+                <StackPanel>
+                    <!-- Title -->
+                    <TextBlock Text="{Binding Title}" FontSize="10" Foreground="#555"
+                               FontWeight="SemiBold" Margin="0,0,0,4"
+                               Visibility="{Binding Title,
+                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                    <!-- Main formula (LaTeX) -->
+                    <controls:SafeFormulaControl Formula="{Binding LatexFormula}" Scale="17"
+                                                 FormulaForeground="#1A3A5C" Margin="0,2,0,2"
+                                                 Visibility="{Binding LatexFormula,
+                                                     Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                    <!-- Substitution -->
+                    <controls:SafeFormulaControl Formula="{Binding SubstitutionText}" Scale="13"
+                                                 FormulaForeground="#555555" Margin="0,2,0,2"
+                                                 Visibility="{Binding SubstitutionText,
+                                                     Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                    <!-- Result -->
+                    <controls:SafeFormulaControl Formula="{Binding ResultText}" Scale="13"
+                                                 FormulaForeground="#1A3A5C" Margin="0,2,0,0"
+                                                 Visibility="{Binding ResultText,
+                                                     Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- TableBlock -->
+        <DataTemplate x:Key="TableTemplate" DataType="{x:Type models:TableBlock}">
+            <Border BorderBrush="#DDDDDD" BorderThickness="1" Margin="0,4,0,4">
+                <controls:ReportTableControl Block="{Binding}"/>
+            </Border>
+        </DataTemplate>
+
+        <!-- SteelTableBlock -->
+        <DataTemplate x:Key="SteelTableTemplate" DataType="{x:Type models:SteelTableBlock}">
+            <StackPanel Margin="0,4,0,4">
+                <DataGrid ItemsSource="{Binding Rows}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal" RowHeaderWidth="0"
+                          FontSize="10" BorderBrush="#DDDDDD" BorderThickness="1">
+                    <DataGrid.ColumnHeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background"   Value="#1A3A5C"/>
+                            <Setter Property="Foreground"   Value="White"/>
+                            <Setter Property="FontWeight"   Value="SemiBold"/>
+                            <Setter Property="Padding"      Value="4,3"/>
+                            <Setter Property="FontSize"     Value="10"/>
+                        </Style>
+                    </DataGrid.ColumnHeaderStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="#"         Binding="{Binding Index}"    Width="28"/>
+                        <DataGridTextColumn Header="X (mm)"   Binding="{Binding XMm}"      Width="*"/>
+                        <DataGridTextColumn Header="Y (mm)"   Binding="{Binding YMm}"      Width="*"/>
+                        <DataGridTextColumn Header="d (mm)"   Binding="{Binding DMm}"      Width="*"/>
+                        <DataGridTextColumn Header="εs"       Binding="{Binding EpsilonS}" Width="*"/>
+                        <DataGridTextColumn Header="fs (MPa)" Binding="{Binding FsMpa}"    Width="*"/>
+                        <DataGridTextColumn Header="As (mm²)" Binding="{Binding AsMm2}"    Width="*"/>
+                        <DataGridTextColumn Header="Fs (kN)"  Binding="{Binding FsKn}"     Width="*"/>
+                        <DataGridTextColumn Header="FsY"      Binding="{Binding FsYKnm}"   Width="*"/>
+                        <DataGridTextColumn Header="FsX"      Binding="{Binding FsXKnm}"   Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <!-- Sum row -->
+                <Border Background="#E8F4FD" BorderBrush="#DDDDDD" BorderThickness="0,0,1,1" Padding="4,3">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Σ  " FontWeight="SemiBold" FontSize="10"/>
+                        <TextBlock Text="Fs = " FontSize="10" Foreground="#555"/>
+                        <TextBlock Text="{Binding SumFs}" FontSize="10" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                        <TextBlock Text="FsY = " FontSize="10" Foreground="#555"/>
+                        <TextBlock Text="{Binding SumFsY}" FontSize="10" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                        <TextBlock Text="FsX = " FontSize="10" Foreground="#555"/>
+                        <TextBlock Text="{Binding SumFsX}" FontSize="10" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- ImageBlock — SVG rendered via SharpVectors -->
+        <DataTemplate x:Key="ImageTemplate" DataType="{x:Type models:ImageBlock}">
+            <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
+                    Padding="8" Margin="0,4,0,4">
+                <StackPanel HorizontalAlignment="Center">
+                    <controls:SvgImageControl SvgContent="{Binding SvgContent}"
+                                              MaxDisplayWidth="{Binding WidthPct,
+                                                  Converter={StaticResource PctOf720Converter}}"
+                                              HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Caption}" FontSize="9" Foreground="#555"
+                               HorizontalAlignment="Center" FontStyle="Italic" Margin="0,4,0,0"
+                               Visibility="{Binding Caption,
+                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- DividerBlock -->
+        <DataTemplate x:Key="DividerTemplate" DataType="{x:Type models:DividerBlock}">
+            <Separator Margin="0,6,0,6" Background="#DDDDDD"/>
+        </DataTemplate>
+
+        <!-- PageBreakBlock -->
+        <DataTemplate x:Key="PageBreakTemplate" DataType="{x:Type models:PageBreakBlock}">
+            <Border Margin="0,8,0,8" Height="2" Background="#E0E6EF"/>
+        </DataTemplate>
+
+        <!-- SummaryBoxBlock -->
+        <DataTemplate x:Key="SummaryBoxTemplate" DataType="{x:Type models:SummaryBoxBlock}">
+            <Border Padding="12,10" Margin="0,6,0,6" CornerRadius="3" BorderThickness="2">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background"   Value="#EAFAF1"/>
+                        <Setter Property="BorderBrush"  Value="#27AE60"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsPass}" Value="False">
+                                <Setter Property="Background"  Value="#FDEDEC"/>
+                                <Setter Property="BorderBrush" Value="#E74C3C"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="SemiBold"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#1E8449"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPass}" Value="False">
+                                        <Setter Property="Foreground" Value="#C0392B"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Grid.Column="1" Text="{Binding Value}"
+                               FontSize="18" FontWeight="Bold" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#1E8449"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPass}" Value="False">
+                                        <Setter Property="Foreground" Value="#C0392B"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- ── Template Selector ──────────────────────────────────────────── -->
+        <controls:ReportBlockTemplateSelector x:Key="BlockSelector"
+            HeadingTemplate   ="{StaticResource HeadingTemplate}"
+            ParagraphTemplate ="{StaticResource ParagraphTemplate}"
+            NoteTemplate      ="{StaticResource NoteTemplate}"
+            FormulaTemplate   ="{StaticResource FormulaTemplate}"
+            TableTemplate     ="{StaticResource TableTemplate}"
+            SteelTableTemplate="{StaticResource SteelTableTemplate}"
+            ImageTemplate     ="{StaticResource ImageTemplate}"
+            DividerTemplate   ="{StaticResource DividerTemplate}"
+            PageBreakTemplate ="{StaticResource PageBreakTemplate}"
+            SummaryBoxTemplate="{StaticResource SummaryBoxTemplate}"/>
+
+        <!-- ── Layout helpers ─────────────────────────────────────────────── -->
         <Style x:Key="A4PageStyle" TargetType="Border">
-            <Setter Property="Background" Value="White" />
-            <Setter Property="Width" Value="794" />
-            <Setter Property="HorizontalAlignment" Value="Left" />
-            <!-- 0.1 inch = 9.6 dip margin on all sides -->
-            <Setter Property="Padding" Value="9.6" />
-            <Setter Property="Margin" Value="0,0,0,20" />
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Width"      Value="794"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Padding"    Value="36,32"/>
+            <Setter Property="Margin"     Value="0,0,0,20"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect BlurRadius="8" ShadowDepth="3" Opacity="0.18" Color="#000000" />
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="3" Opacity="0.18"/>
                 </Setter.Value>
             </Setter>
-        </Style>
-
-        <!-- Chapter heading ──────────────────────────────────────────────── -->
-        <Style x:Key="ChapterHeadingStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
-            <Setter Property="Margin" Value="0,4,0,12" />
-        </Style>
-
-        <!-- Page number ──────────────────────────────────────────────────── -->
-        <Style x:Key="PageNumberStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="Foreground" Value="#AAAAAA" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
-            <Setter Property="Margin" Value="0,6,0,0" />
-        </Style>
-
-        <!-- Field label in 2-col grid ────────────────────────────────────── -->
-        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#666666" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Margin" Value="0,0,0,4" />
-        </Style>
-
-        <!-- Caption / note text ──────────────────────────────────────────── -->
-        <Style x:Key="CaptionStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="10" />
-            <Setter Property="Foreground" Value="#888888" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-            <Setter Property="FontStyle" Value="Italic" />
-        </Style>
-
-        <!-- Inline placeholder (no data) ─────────────────────────────────── -->
-        <Style x:Key="PlaceholderStyle" TargetType="Border">
-            <Setter Property="Background" Value="#F8F8F8" />
-            <Setter Property="BorderBrush" Value="#DDDDDD" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="14" />
-            <Setter Property="Margin" Value="0,0,0,10" />
         </Style>
 
     </UserControl.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260" />
-            <ColumnDefinition Width="14" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="240"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- ═══════════════════════════════════════════════════════════
-             Settings panel
+             Left: settings + export panel
              ═══════════════════════════════════════════════════════ -->
-        <Border Grid.Column="0"
-                Style="{StaticResource CardBorderStyle}"
-                Padding="16">
+        <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="16">
             <StackPanel>
-                <TextBlock Text="Report Settings"
+                <TextBlock Text="Calculation Report"
                            Style="{StaticResource SectionTitleTextStyle}"
-                           FontSize="15" />
+                           FontSize="14"/>
 
-                <TextBlock Text="Sections"
-                           Style="{StaticResource FieldLabelTextStyle}"
-                           Margin="0,16,0,6" />
-                <CheckBox Content="Input Data"
-                          IsChecked="{Binding IncludeInputData}"
-                          Margin="0,0,0,6" />
-                <CheckBox Content="PM 7 Verification Points"
-                          IsChecked="{Binding IncludePm7Table}"
-                          Margin="0,0,0,6" />
-                <CheckBox Content="Critical Chart"
-                          IsChecked="{Binding IncludeGoverningChart}"
-                          Margin="0,0,0,6" />
-                <CheckBox Content="Demand Cases"
-                          IsChecked="{Binding IncludeDemandCases}"
-                          Margin="0,0,0,6" />
+                <!-- Status -->
+                <Border Background="#F0F4F8" BorderBrush="#CCD6E0" BorderThickness="1"
+                        CornerRadius="2" Padding="8,6" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ResultStatusText}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock Text="Generating report…" FontSize="10" Foreground="#888"
+                                   Margin="0,3,0,0"
+                                   Visibility="{Binding IsGeneratingReport,
+                                       Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <TextBlock FontSize="10" Foreground="#555" Margin="0,3,0,0"
+                                   Visibility="{Binding HasReportSections,
+                                       Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Run Text="{Binding ReportSections.Count, Mode=OneWay}"/>
+                            <Run Text=" sections ready"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
 
-                <Button Content="Refresh"
+                <!-- Outdated warning -->
+                <Border Background="#FFF7E6" BorderBrush="#C98600" BorderThickness="1"
+                        CornerRadius="2" Padding="8,6" Margin="0,8,0,0"
+                        Visibility="{Binding IsOutdated,
+                            Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock TextWrapping="Wrap" FontSize="10"
+                               Text="Result outdated — recalculate before exporting."/>
+                </Border>
+
+                <!-- Refresh -->
+                <Button Content="Refresh Preview"
                         Command="{Binding GeneratePreviewCommand}"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,18,0,0" />
+                        Margin="0,14,0,0"/>
+
+                <!-- Print -->
                 <Button Content="Print"
                         x:Name="PrintButton"
                         Click="PrintButton_Click"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,8,0,0" />
+                        Margin="0,6,0,0"/>
 
-                <Button Content="Export PDF"
-                        IsEnabled="False"
+                <Separator Margin="0,14,0,8"/>
+                <TextBlock Text="Export"
+                           Style="{StaticResource FieldLabelTextStyle}"
+                           Margin="0,0,0,4"/>
+
+                <Button Content="Preview PDF"
+                        Command="{Binding PreviewPdfCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Margin="0,0,0,0"
+                        ToolTip="Open a temporary PDF in the default viewer"/>
+
+                <Button Content="Save as PDF"
+                        Command="{Binding SaveAsPdfCommand}"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,8,0,0" />
+                        Margin="0,6,0,0"
+                        ToolTip="Save the full calculation report as PDF"/>
+
+                <Button Content="Save as HTML"
+                        Command="{Binding SaveAsHtmlCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,6,0,0"
+                        ToolTip="Save as a self-contained HTML file"/>
             </StackPanel>
         </Border>
 
         <!-- ═══════════════════════════════════════════════════════════
-             Report preview – A4 pages
+             Right: dynamic report preview
              ═══════════════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Column="2"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Auto"
-                      Background="#CCCCCC">
-            <StackPanel x:Name="ReportContent"
-                        Margin="24,24,24,40"
-                        HorizontalAlignment="Left">
+        <Grid Grid.Column="2" Background="#CCCCCC">
+            <Grid.RowDefinitions>
+                <!-- Interaction diagram charts — shown when result data is available -->
+                <RowDefinition Height="Auto"/>
+                <!-- Scrolling A4 report sections -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-                <!-- ┌────────────────────────────────────────────────┐
-                     │  PAGE 1 – Report header + Input Data           │
-                     └────────────────────────────────────────────────┘ -->
-                <Border Style="{StaticResource A4PageStyle}">
-                    <StackPanel>
+            <!-- ── Interaction diagram chart bar ─────────────────────────── -->
+            <Border Grid.Row="0" Background="White"
+                    BorderBrush="#D6DEE6" BorderThickness="0,0,0,1"
+                    Visibility="{Binding HasChartData,
+                        Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid Margin="8,8,8,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                        <!-- Outdated banner -->
-                        <Border Background="#FFF7E6" BorderBrush="#C98600"
-                                BorderThickness="1" Padding="10" Margin="0,0,0,12"
-                                Visibility="{Binding IsOutdated,
-                                    Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock TextWrapping="Wrap"
-                                       Text="Input or demand cases changed after the last calculation. Recalculate before generating the final report."
-                                       FontSize="11" />
-                        </Border>
+                    <!-- P-M diagram -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding PmSliceLabel}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="4,0,0,4"/>
+                        <controls:DiagramCanvas2D
+                            Height="280"
+                            Points="{Binding PmPoints}"
+                            ReferenceLines="{Binding PmReferenceLines}"
+                            XAxisLabel="{Binding PmXAxisLabel}"
+                            YAxisLabel="{Binding PmYAxisLabel}"
+                            Ratio="{Binding PmRatio}"
+                            ShowGrid="True"
+                            ShowLabels="True"
+                            ShowDemandPoint="True"
+                            ShowDemandLabel="False"
+                            ShowNominalCurve="True"
+                            ShowReferenceLines="True"/>
+                    </StackPanel>
 
-                        <!-- Report title -->
+                    <!-- Mx-My diagram -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Mx-My Interaction"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="4,0,0,4"/>
+                        <controls:DiagramCanvas2D
+                            Height="280"
+                            Points="{Binding MmPoints}"
+                            XAxisLabel="{Binding MmXAxisLabel}"
+                            YAxisLabel="{Binding MmYAxisLabel}"
+                            Ratio="{Binding MmRatio}"
+                            ShowGrid="True"
+                            ShowLabels="True"
+                            ShowDemandPoint="True"
+                            ShowDemandLabel="False"
+                            ShowNominalCurve="True"
+                            UseEqualAspect="True"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- No result placeholder (visible only when no sections) -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasReportSections,
+                              Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                <Border Style="{StaticResource A4PageStyle}" Margin="24,24,24,40" HorizontalAlignment="Left">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,60">
                         <TextBlock Text="MB Column – Engineering Calculation Report"
-                                   FontSize="20" FontWeight="Bold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}" />
-                        <TextBlock Text="{Binding ResultStatusText, StringFormat='Result status: {0}'}"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   FontSize="11" Margin="0,4,0,0" />
-                        <Separator Margin="0,12,0,12" />
-
-                        <!-- ── I. Input Data ────────────────────────────── -->
-                        <StackPanel Visibility="{Binding IncludeInputData,
-                                        Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="I.  Input Data"
-                                       Style="{StaticResource ChapterHeadingStyle}" />
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="220" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Project" />
-                                <TextBlock Grid.Column="1" Text="{Binding ProjectName}" FontSize="11" />
-
-                                <TextBlock Grid.Row="1" Style="{StaticResource FieldLabelStyle}" Text="Group" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GroupName}" FontSize="11" />
-
-                                <TextBlock Grid.Row="2" Style="{StaticResource FieldLabelStyle}" Text="Design Tier" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DesignTierName}" FontSize="11" />
-
-                                <TextBlock Grid.Row="3" Style="{StaticResource FieldLabelStyle}" Text="Section Shape" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SectionShape}" FontSize="11" />
-
-                                <TextBlock Grid.Row="4" Style="{StaticResource FieldLabelStyle}" Text="Design Code" />
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DesignCode}" FontSize="11" />
-
-                                <TextBlock Grid.Row="5" Style="{StaticResource FieldLabelStyle}" Text="Unit System" />
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding UnitSystem}" FontSize="11" />
-
-                                <TextBlock Grid.Row="6" Style="{StaticResource FieldLabelStyle}" Text="Material" />
-                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding MaterialSummary}"
-                                           TextWrapping="Wrap" FontSize="11" />
-
-                                <TextBlock Grid.Row="7" Style="{StaticResource FieldLabelStyle}" Text="Geometry" />
-                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding GeometrySummary}"
-                                           TextWrapping="Wrap" FontSize="11" />
-
-                                <TextBlock Grid.Row="8" Style="{StaticResource FieldLabelStyle}" Text="Reinforcement" />
-                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarSummary}"
-                                           TextWrapping="Wrap" FontSize="11" />
-
-                                <controls:SectionPreviewCanvas Grid.Column="2" Grid.RowSpan="9"
-                                                               Height="160"
-                                                               MinHeight="160"
-                                                               HorizontalAlignment="Stretch"
-                                                               VerticalAlignment="Top"
-                                                               Margin="10,0,0,0"
-                                                               SectionWidth="{Binding SectionWidth}"
-                                                               SectionHeight="{Binding SectionHeight}"
-                                                               BoundaryPoints="{Binding BoundaryPoints}"
-                                                               Rebars="{Binding Rebars}"
-                                                               Cover="{Binding ClearCover}" />
-                            </Grid>
-
-                            <Grid Margin="0,15,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Boundary Points -->
-                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                    <TextBlock Text="Boundary Coordinates" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4" />
-                                    <DataGrid ItemsSource="{Binding BoundaryPoints}"
-                                              AutoGenerateColumns="False"
-                                              IsReadOnly="True"
-                                              CanUserAddRows="False"
-                                              HeadersVisibility="Column"
-                                              GridLinesVisibility="Horizontal"
-                                              RowHeaderWidth="0"
-                                              FontSize="10">
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Pt" Binding="{Binding Index}" Width="*" />
-                                            <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
-                                            <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </StackPanel>
-
-                                <!-- Rebar Coordinates -->
-                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                    <TextBlock Text="Rebar Coordinates" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4" />
-                                    <DataGrid ItemsSource="{Binding Rebars}"
-                                              AutoGenerateColumns="False"
-                                              IsReadOnly="True"
-                                              CanUserAddRows="False"
-                                              HeadersVisibility="Column"
-                                              GridLinesVisibility="Horizontal"
-                                              RowHeaderWidth="0"
-                                              FontSize="10">
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*" />
-                                            <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
-                                            <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
-                                            <DataGridTextColumn Header="Size" Binding="{Binding Label}" Width="*" />
-                                        </DataGrid.Columns>
-                                    </DataGrid>
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-
-                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 1 —" />
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Margin="0,16,0,0" FontSize="12" Foreground="#888"
+                                   HorizontalAlignment="Center"
+                                   Text="{Binding ResultStatusText, StringFormat='Status: {0}'}"/>
+                        <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#888"
+                                   HorizontalAlignment="Center"
+                                   Visibility="{Binding IsGeneratingReport,
+                                       Converter={StaticResource BoolToVisibilityConverter}}"
+                                   Text="Generating report, please wait…"/>
+                        <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#888"
+                                   HorizontalAlignment="Center"
+                                   Visibility="{Binding IsGeneratingReport,
+                                       Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                   Text="Run a calculation to generate the full report."/>
                     </StackPanel>
                 </Border>
+            </ScrollViewer>
 
-                <!-- ┌────────────────────────────────────────────────┐
-                     │  PAGE 2 – PM 7 Verification Points            │
-                     └────────────────────────────────────────────────┘ -->
-                <Border Style="{StaticResource A4PageStyle}"
-                        Visibility="{Binding IncludePm7Table,
-                            Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel>
-                        <TextBlock Text="II.  PM 7 Verification Points"
-                                   Style="{StaticResource ChapterHeadingStyle}" />
-                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Margin="0,0,0,10"
-                                   Text="Seven PM control points derived from strain-compatibility analysis. Values are design (reduced) axial force φPn and uniaxial moment φMn at the governing bending direction." />
-
-                        <!-- No data placeholder -->
-                        <Border Style="{StaticResource PlaceholderStyle}"
-                                Visibility="{Binding HasPm7Data,
-                                    Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                            <TextBlock Text="PM 7 verification data not available. Calculate the section first."
-                                       Foreground="#888888" FontStyle="Italic" FontSize="11" />
-                        </Border>
-
-                        <!-- PM 7 Table -->
-                        <DataGrid ItemsSource="{Binding Pm7Rows}"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  RowHeaderWidth="0"
-                                  FontSize="11"
-                                  Visibility="{Binding HasPm7Data,
-                                      Converter={StaticResource BoolToVisibilityConverter}}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="No."
-                                                    Binding="{Binding Index}"
-                                                    Width="36" />
-                                <DataGridTextColumn Header="Code"
-                                                    Binding="{Binding PointCode}"
-                                                    Width="56" />
-                                <DataGridTextColumn Header="Verification Point"
-                                                    Binding="{Binding PointName}"
-                                                    Width="160" />
-                                <DataGridTextColumn Header="Strain State"
-                                                    Binding="{Binding StrainDescription}"
-                                                    Width="*" />
-                                <DataGridTextColumn Binding="{Binding SolverPDisplay}"
-                                                    Width="90"
-                                                    ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.HeaderTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding DataContext.ForceUnit, RelativeSource={RelativeSource AncestorType=DataGrid}, StringFormat='φPn ({0})'}"/>
-                                        </DataTemplate>
-                                    </DataGridTextColumn.HeaderTemplate>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Binding="{Binding SolverMDisplay}"
-                                                    Width="90"
-                                                    ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.HeaderTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding DataContext.MomentUnit, RelativeSource={RelativeSource AncestorType=DataGrid}, StringFormat='φMn ({0})'}"/>
-                                        </DataTemplate>
-                                    </DataGridTextColumn.HeaderTemplate>
-                                </DataGridTextColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <!-- Units note -->
-                        <TextBlock Margin="0,8,0,0"
-                                   Style="{StaticResource CaptionStyle}"
-                                   Visibility="{Binding HasPm7Data,
-                                       Converter={StaticResource BoolToVisibilityConverter}}">
-                            <Run Text="Force units: " />
-                            <Run Text="{Binding ForceUnit, Mode=OneWay}" />
-                            <Run Text="  |  Moment units: " />
-                            <Run Text="{Binding MomentUnit, Mode=OneWay}" />
-                            <Run Text="  |  N/A = value not available from solver result." />
-                        </TextBlock>
-
-                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 2 —" />
-                    </StackPanel>
-                </Border>
-
-                <!-- ┌────────────────────────────────────────────────┐
-                     │  PAGE 3 – Critical Chart Visualization        │
-                     └────────────────────────────────────────────────┘ -->
-                <Border Style="{StaticResource A4PageStyle}"
-                        Visibility="{Binding IncludeGoverningChart,
-                            Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel>
-                        <TextBlock Text="III.  Critical Utilization Slice"
-                                   Style="{StaticResource ChapterHeadingStyle}" />
-
-                        <!-- No governing data -->
-                        <Border Style="{StaticResource PlaceholderStyle}"
-                                Visibility="{Binding HasNoPmChartData,
-                                    Converter={StaticResource BoolToVisibilityConverter}}">
-                            <TextBlock Text="Critical chart visualization is not available from the current solver result. Calculate the section first."
-                                       Foreground="#888888" FontStyle="Italic" FontSize="11" />
-                        </Border>
-
-                        <!-- Governing chart content -->
-                        <StackPanel Visibility="{Binding HasGoverningChart,
-                                        Converter={StaticResource BoolToVisibilityConverter}}">
-
-                            <!-- Caption -->
-                            <Border Background="#EBF5FB" BorderBrush="#AED6F1"
-                                    BorderThickness="1" CornerRadius="3"
-                                    Padding="10" Margin="0,0,0,12">
+            <!-- Dynamic sections — ItemsControl is the direct ScrollViewer child so
+                 VirtualizingStackPanel can skip off-screen sections entirely. -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasReportSections,
+                              Converter={StaticResource BoolToVisibilityConverter}}">
+                <ItemsControl x:Name="ReportContent"
+                              ItemsSource="{Binding ReportSections}"
+                              Margin="24,24,24,40"
+                              HorizontalAlignment="Left"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.ScrollUnit="Pixel">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:ReportSection}">
+                            <Border Style="{StaticResource A4PageStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding GoverningChart.Caption}"
-                                               TextWrapping="Wrap" FontSize="11"
-                                               Foreground="#1A5276" />
-                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
-                                                Visibility="{Binding GoverningChart.LoadCaseName,
-                                                    Converter={StaticResource NullOrEmptyToCollapsedConverter}}">
-                                        <TextBlock Text="Governing case: " FontSize="10" Foreground="#555" />
-                                        <TextBlock Text="{Binding GoverningChart.LoadCaseName}"
-                                                   FontSize="10" Foreground="#555" FontWeight="SemiBold" />
-                                    </StackPanel>
+
+                                    <!-- Section title bar -->
+                                    <Border Background="#1A3A5C" Padding="10,7"
+                                            Margin="0,0,0,14" CornerRadius="2">
+                                        <TextBlock FontSize="13" FontWeight="Bold"
+                                                   Foreground="White">
+                                            <Run Text="{Binding Number, Mode=OneWay}"/>
+                                            <Run Text=".  "/>
+                                            <Run Text="{Binding Title, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </Border>
+
+                                    <!-- Blocks -->
+                                    <ItemsControl ItemsSource="{Binding Blocks}"
+                                                  ItemTemplateSelector="{StaticResource BlockSelector}"/>
                                 </StackPanel>
                             </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-                            <!-- Two charts stacked vertically -->
-                            <StackPanel>
-
-                                <!-- 2D PM chart (governing θ slice) -->
-                                <StackPanel Margin="0,0,0,16"
-                                            Visibility="{Binding GoverningChart.HasPmChart,
-                                                Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <TextBlock Text="2D P-M Interaction (governing θ)"
-                                               FontSize="11" FontWeight="SemiBold"
-                                               Margin="0,0,0,4" />
-                                    <controls:DiagramCanvas2D
-                                        Height="340"
-                                        Points="{Binding GoverningChart.PmAllPoints}"
-                                        ReferenceLines="{Binding GoverningChart.PmReferenceLines}"
-                                        XAxisLabel="{Binding GoverningChart.PmXAxisLabel}"
-                                        YAxisLabel="{Binding GoverningChart.PmYAxisLabel}"
-                                        HighlightedDemandLabel="{Binding GoverningChart.LoadCaseName}"
-                                        ShowGrid="True"
-                                        ShowLabels="True"
-                                        ShowDemandPoint="True"
-                                        ShowDemandLabel="False"
-                                        ShowSpecialPoints="False"
-                                        ShowGoverningPoint="True"
-                                        ShowReferenceLines="True"
-                                        ShowNominalCurve="True" />
-                                    <!-- PM legend -->
-                                    <Border Background="#FFF8F8" BorderBrush="#F5BEBE"
-                                            BorderThickness="1" CornerRadius="3"
-                                            Padding="8,5" Margin="0,4,0,0"
-                                            Visibility="{Binding GoverningChart.HasDemandPoint,
-                                                Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Ellipse Width="10" Height="10" Fill="#E31B23"
-                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
-                                            <TextBlock FontSize="10" VerticalAlignment="Center">
-                                                <Run Text="{Binding GoverningChart.LoadCaseName, Mode=OneWay}" FontWeight="SemiBold" />
-                                                <Run Text="  |  Mθ = " />
-                                                <Run Text="{Binding GoverningChart.DemandMthetaDisplay, Mode=OneWay}" />
-                                                <Run Text=",  P = " />
-                                                <Run Text="{Binding GoverningChart.DemandPDisplay, Mode=OneWay}" />
-                                            </TextBlock>
-                                        </StackPanel>
-                                    </Border>
-                                    <!-- PM chart not available placeholder -->
-                                    <Border Style="{StaticResource PlaceholderStyle}"
-                                            Visibility="{Binding GoverningChart.HasPmChart,
-                                                Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                        <TextBlock Text="P-M slice not available from current solver result."
-                                                   Foreground="#888888" FontStyle="Italic" FontSize="10" />
-                                    </Border>
-                                </StackPanel>
-
-                                <!-- 2D MM chart -->
-                                <StackPanel Visibility="{Binding GoverningChart.HasMmChart,
-                                                Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <TextBlock Text="2D M-M Contour (at governing P level)"
-                                               FontSize="11" FontWeight="SemiBold"
-                                               Margin="0,0,0,4" />
-                                    <controls:DiagramCanvas2D
-                                        Height="340"
-                                        Points="{Binding GoverningChart.MmAllPoints}"
-                                        ReferenceLines="{Binding GoverningChart.MmReferenceLines}"
-                                        XAxisLabel="{Binding GoverningChart.MmXAxisLabel}"
-                                        YAxisLabel="{Binding GoverningChart.MmYAxisLabel}"
-                                        HighlightedDemandLabel="{Binding GoverningChart.LoadCaseName}"
-                                        ShowGrid="True"
-                                        ShowLabels="True"
-                                        ShowDemandPoint="True"
-                                        ShowDemandLabel="False"
-                                        ShowSpecialPoints="False"
-                                        ShowGoverningPoint="False"
-                                        ShowReferenceLines="True"
-                                        ShowNominalCurve="True"
-                                        UseEqualAspect="True" />
-                                    <!-- MM legend -->
-                                    <Border Background="#FFF8F8" BorderBrush="#F5BEBE"
-                                            BorderThickness="1" CornerRadius="3"
-                                            Padding="8,5" Margin="0,4,0,0"
-                                            Visibility="{Binding GoverningChart.HasDemandPoint,
-                                                Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Ellipse Width="10" Height="10" Fill="#E31B23"
-                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
-                                            <TextBlock FontSize="10" VerticalAlignment="Center">
-                                                <Run Text="{Binding GoverningChart.LoadCaseName, Mode=OneWay}" FontWeight="SemiBold" />
-                                                <Run Text="  |  Mx = " />
-                                                <Run Text="{Binding GoverningChart.DemandMxDisplay, Mode=OneWay}" />
-                                                <Run Text=",  My = " />
-                                                <Run Text="{Binding GoverningChart.DemandMyDisplay, Mode=OneWay}" />
-                                            </TextBlock>
-                                        </StackPanel>
-                                    </Border>
-                                    <!-- MM chart not available placeholder -->
-                                    <Border Style="{StaticResource PlaceholderStyle}"
-                                            Visibility="{Binding GoverningChart.HasMmChart,
-                                                Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                        <TextBlock Text="M-M contour not available from current solver result."
-                                                   Foreground="#888888" FontStyle="Italic" FontSize="10" />
-                                    </Border>
-                                </StackPanel>
-
-                            </StackPanel>
-
-                        </StackPanel>
-
-                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 3 —" />
-                    </StackPanel>
-                </Border>
-
-                <!-- ┌────────────────────────────────────────────────┐
-                     │  PAGE 4 – Applied Demand Cases                │
-                     └────────────────────────────────────────────────┘ -->
-                <Border Style="{StaticResource A4PageStyle}"
-                        Visibility="{Binding IncludeDemandCases,
-                            Converter={StaticResource BoolToVisibilityConverter}}">
-                    <StackPanel>
-                        <TextBlock Text="IV.  Applied Demand Cases"
-                                   Style="{StaticResource ChapterHeadingStyle}" />
-
-                        <DataGrid ItemsSource="{Binding DemandCases}"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="Horizontal"
-                                  RowHeaderWidth="0"
-                                  FontSize="11">
-                            <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsFailing}" Value="True">
-                                            <Setter Property="Background" Value="#FFEBEB" />
-                                            <Setter Property="Foreground" Value="#D32F2F" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Case Name"    Binding="{Binding CaseName}"      Width="140" />
-                                <DataGridTextColumn Header="P"            Binding="{Binding Pu,  StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Mx"           Binding="{Binding Mux, StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="My"           Binding="{Binding Muy, StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="PMM Ratio"    Binding="{Binding PmmRatio, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightAlignText}" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <TextBlock Style="{StaticResource PageNumberStyle}" Text="— 4 —" />
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
-        </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

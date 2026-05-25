@@ -13,5 +13,6 @@
     <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
     <conv:NullOrEmptyToCollapsedConverter x:Key="NullOrEmptyToCollapsedConverter" />
     <conv:NonZeroToVisibilityConverter x:Key="NonZeroToVisibilityConverter" />
+    <conv:PctOf720Converter x:Key="PctOf720Converter" />
 </ResourceDictionary>
 

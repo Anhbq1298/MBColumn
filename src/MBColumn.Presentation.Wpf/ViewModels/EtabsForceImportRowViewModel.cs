@@ -59,6 +59,8 @@ public sealed class EtabsForceImportRowViewModel : ViewModelBase
     public double P { get; }
     public double M2 { get; }
     public double M3 { get; }
+    public double Mx => M2;
+    public double My => M3;
     public double V2 { get; }
     public double V3 { get; }
     public string Station { get; }

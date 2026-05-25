@@ -322,7 +322,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
                     StatusMessage = "Loading column element forces…";
                     StartProgressDrift(45, 60, 7.0);
                     colElem = await Task.Run(
-                        () => designForceImportService.LoadColumnElementForcesTable(selectedCombos), ct);
+                        () => designForceImportService.LoadColumnElementForcesTable(targetUnitSystem, selectedCombos), ct);
                     StopProgressDrift(60);
                     Steps[4].SetDone($"{colElem.Records.Count:N0} rows");
                     Progress = 60;
@@ -343,7 +343,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
                     StatusMessage = "Loading pier element forces…";
                     StartProgressDrift(60, 72, 5.0);
                     pierElem = await Task.Run(
-                        () => designForceImportService.LoadPierElementForcesTable(selectedCombos), ct);
+                        () => designForceImportService.LoadPierElementForcesTable(targetUnitSystem, selectedCombos), ct);
                     StopProgressDrift(72);
                     Steps[5].SetDone($"{pierElem.Records.Count:N0} rows");
                     Progress = 72;
@@ -369,7 +369,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
                     StatusMessage = "Loading column design forces…";
                     StartProgressDrift(72, 86, 7.0);
                     colDesign = await Task.Run(
-                        () => designForceImportService.LoadColumnDesignForcesTable(selectedCombos), ct);
+                        () => designForceImportService.LoadColumnDesignForcesTable(targetUnitSystem, selectedCombos), ct);
                     StopProgressDrift(86);
 
                     if (colDesign.HasRecords)
@@ -395,7 +395,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
                     StatusMessage = "Loading pier design forces…";
                     StartProgressDrift(86, 97, 5.0);
                     pierDesign = await Task.Run(
-                        () => designForceImportService.LoadPierDesignForcesTable(selectedCombos), ct);
+                        () => designForceImportService.LoadPierDesignForcesTable(targetUnitSystem, selectedCombos), ct);
                     StopProgressDrift(97);
 
                     if (pierDesign.HasRecords)
@@ -415,6 +415,7 @@ public sealed class EtabsPreloadViewModel : ViewModelBase
 
                 var db = designForceImportService.BuildDatabase(
                     info.ModelPath, info.ModelName,
+                    targetUnitSystem,
                     colElem, pierElem, colDesign, pierDesign);
 
                 bool hasDesign = db.ColumnForces.HasRecords || db.PierForces.HasRecords;

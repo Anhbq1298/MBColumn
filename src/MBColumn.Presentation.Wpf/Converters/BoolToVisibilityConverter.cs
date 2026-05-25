@@ -40,3 +40,15 @@ public sealed class NonZeroToVisibilityConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Converts a WidthPct value (e.g. 60.0) to pixels relative to a 720px content area.</summary>
+public sealed class PctOf720Converter : IValueConverter
+{
+    private const double ContentWidth = 720.0;
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is double pct ? pct / 100.0 * ContentWidth : ContentWidth;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+

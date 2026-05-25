@@ -122,6 +122,48 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `class` | **IrregularSectionMapper** | Maps data structures for IrregularSection. Key methods: ValidateAndMap. | `IrregularSectionMapper.cs` |
 
+### Reports/Builders
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **CalculationReportBuilder** | /// Builds a complete ReportData with all 10 report sections /// from project metadata and a CalculationResultDto. ///. Key methods: Build. | `CalculationReportBuilder.cs` |
+| `class` | **CircularSevenPointBuilder** | /// Generates the 7-point independent verification for circular sections /// using the circular compression segment method. /// Correct centroid formula: ybar = (2/3)(R²-yNA²)^(3/2) / Aseg ///. Key methods: Build. | `CircularSevenPointBuilder.cs` |
+| `class` | **ConclusionSectionBuilder** | Represents the ConclusionSectionBuilder class. Key methods: Build. | `ConclusionSectionBuilder.cs` |
+| `class` | **DemandCaseSectionBuilder** | Represents the DemandCaseSectionBuilder class. Key methods: BuildAppliedDemand, BuildDemandResults. | `DemandCaseSectionBuilder.cs` |
+| `class` | **GeometryMaterialSectionBuilder** | Represents the GeometryMaterialSectionBuilder class. Key methods: Build. | `GeometryMaterialSectionBuilder.cs` |
+| `class` | **PmmAngleSweepSectionBuilder** | Represents the PmmAngleSweepSectionBuilder class. Key methods: Build. | `PmmAngleSweepSectionBuilder.cs` |
+| `class` | **PmmMethodologySectionBuilder** | Represents the PmmMethodologySectionBuilder class. Key methods: Build. | `PmmMethodologySectionBuilder.cs` |
+| `class` | **PmmSummarySectionBuilder** | Represents the PmmSummarySectionBuilder class. Key methods: Build. | `PmmSummarySectionBuilder.cs` |
+| `class` | **ProjectInfoSectionBuilder** | Represents the ProjectInfoSectionBuilder class. Key methods: Build. | `ProjectInfoSectionBuilder.cs` |
+| `class` | **RectangularSevenPointBuilder** | Represents the RectangularSevenPointBuilder class. Key methods: BuildTheta0, BuildTheta90. | `RectangularSevenPointBuilder.cs` |
+
+### Reports/Interfaces
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `interface` | **ICalculationReportBuilder** | Defines the contract for ICalculationReportBuilder. | `ICalculationReportBuilder.cs` |
+| `interface` | **IReportRenderer** | Defines the contract for IReportRenderer. | `IReportRenderer.cs` |
+
+### Reports/Models
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `record` | **DividerBlock** | Represents the DividerBlock record. | `ReportBlock.cs` |
+| `record` | **FormulaBlock** | Represents the FormulaBlock record. | `ReportBlock.cs` |
+| `record` | **FormulaStep** | Represents the FormulaStep record. | `FormulaStep.cs` |
+| `record` | **HeadingBlock** | Represents the HeadingBlock record. | `ReportBlock.cs` |
+| `record` | **ImageBlock** | Represents the ImageBlock record. | `ReportBlock.cs` |
+| `record` | **NoteBlock** | Represents the NoteBlock record. | `ReportBlock.cs` |
+| `record` | **PageBreakBlock** | Represents the PageBreakBlock record. | `ReportBlock.cs` |
+| `record` | **ParagraphBlock** | Represents the ParagraphBlock record. | `ReportBlock.cs` |
+| `record` | **RebarContributionRow** | Data structure representing a row for RebarContribution. | `RebarContributionRow.cs` |
+| `record` | **ReportBlock** | Represents the ReportBlock record. Key properties: KeepTogether, CanSplitByRows, EstimatedHeight. | `ReportBlock.cs` |
+| `record` | **ReportData** | Represents the ReportData record. Key properties: ProjectName, GroupName, DesignTierName, GeneratedAt. | `ReportData.cs` |
+| `record` | **ReportSection** | Represents the ReportSection record. | `ReportSection.cs` |
+| `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportBlock.cs` |
+| `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportBlock.cs` |
+| `record` | **TableBlock** | Represents the TableBlock record. | `ReportBlock.cs` |
+
 ### Services
 
 | Type | Name | Description | File |
@@ -342,6 +384,24 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ImperialRebarDatabase** | Represents the ImperialRebarDatabase class. Key methods: GetBars, TryGet. | `ImperialRebarDatabase.cs` |
 | `class` | **SingaporeRebarDatabase** | Represents the SingaporeRebarDatabase class. Key methods: GetBars, TryGet. | `SingaporeRebarDatabase.cs` |
 
+### Reports/Graphics
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **SectionGeometryRenderer** | /// Generates SVG diagrams for section geometry and rebar layout. /// All coordinates in mm; SVG output is scaled to fit a fixed viewport. ///. Key methods: RenderRectangularSection, RenderCircularSection, RenderSection. | `SectionGeometryRenderer.cs` |
+
+### Reports/Html
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **HtmlCalculationReportRenderer** | /// Generates a self-contained HTML calculation report with inline CSS, /// embedded SVG, and print-friendly A4 page styling. ///. Key methods: RenderToFile, RenderToBytes. | `HtmlCalculationReportRenderer.cs` |
+
+### Reports/Pdf
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **QuestPdfCalculationReportRenderer** | /// Renders a ReportData to an A4 PDF using QuestPDF. /// No content is clipped. Formula blocks keep together. Tables split by complete rows only. ///. Key methods: RenderToFile, RenderToBytes. | `QuestPdfCalculationReportRenderer.cs` |
+
 ### Root
 
 | Type | Name | Description | File |
@@ -452,9 +512,13 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ChartTransformHelper** | Represents the ChartTransformHelper class. Key methods: AutoFit2D, ToScreen, ToData, TicksX. Key properties: MinX, MaxX, MinY, MaxY. | `ChartTransformHelper.cs` |
 | `class` | **DiagramCanvas2D** | Represents the DiagramCanvas2D class. Key methods: ResetView, ClipClosedPolylineBelowYForTesting, ClipOpenPolylineAboveYForTesting. Key properties: Points, ReferenceLines, XAxisLabel, YAxisLabel. | `DiagramCanvas2D.cs` |
 | `class` | **InteractionViewport3D** | Represents the InteractionViewport3D class. Key methods: ResetCamera, BuildEngineeringAxesForTesting. Key properties: Points, DemandPoint, DemandPoints, GoverningPoint. | `InteractionViewport3D.cs` |
+| `class` | **ReportBlockTemplateSelector** | Represents the ReportBlockTemplateSelector class. Key methods: SelectTemplate. Key properties: HeadingTemplate, ParagraphTemplate, NoteTemplate, FormulaTemplate. | `ReportBlockTemplateSelector.cs` |
 | `class` | **ReportPaginator** | /// Paginates a FrameworkElement across multiple printed pages by slicing it /// vertically after scaling to fit the page width. ///. Key methods: GetPage. Key properties: IsPageCountValid, PageCount, PageSize, Source. | `ReportPaginator.cs` |
+| `class` | **ReportTableControl** | /// Renders a TableBlock (string[][] rows) as a WPF Grid with headers and data rows. ///. Key properties: Block. | `ReportTableControl.cs` |
+| `class` | **SafeFormulaControl** | /// Renders a LaTeX formula using WpfMath. /// Normalizes double-backslash (produced by raw string literals) to single-backslash before rendering. /// Falls back to readable plain text if WpfMath cannot parse the formula. ///. Key properties: Formula, Scale, FormulaForeground. | `SafeFormulaControl.cs` |
 | `class` | **SectionPreviewCanvas** | Represents the SectionPreviewCanvas class. Key properties: SectionWidth, SectionHeight, SectionShape, Cover. | `SectionPreviewCanvas.cs` |
 | `class` | **SectionStateInsetCanvas** | /// Sidebar panel that renders a PmChartInsetFigureDto (section with NA, compression/tension zones). /// Fills its available area; legend sits at the bottom. ///. Key properties: InsetFigure. | `SectionStateInsetCanvas.cs` |
+| `class` | **SvgImageControl** | /// Renders an SVG string as a WPF image using SharpVectors. /// Rendering is deferred to background priority so it never blocks the UI thread. ///. Key properties: SvgContent, MaxDisplayWidth. | `SvgImageControl.cs` |
 | `class` | **TooltipRenderer** | Represents the TooltipRenderer class. Key methods: Build. | `TooltipRenderer.cs` |
 | `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
 | `record` | **struct** | Represents the struct record. Key methods: From. | `InteractionViewport3D.cs` |
@@ -471,6 +535,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **InverseBoolToVisibilityConverter** | Represents the InverseBoolToVisibilityConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
 | `class` | **NonZeroToVisibilityConverter** | Represents the NonZeroToVisibilityConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
 | `class` | **NullOrEmptyToCollapsedConverter** | Represents the NullOrEmptyToCollapsedConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
+| `class` | **PctOf720Converter** | Converts a WidthPct value (e.g. 60.0) to pixels relative to a 720px content area. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
 
 ### Root
 
@@ -571,7 +636,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **ReportDemandCaseRowViewModel** | Represents the ReportDemandCaseRowViewModel record. Key properties: IsFailing. | `ReportTabViewModel.cs` |
 | `class` | **ReportPaginatorService** | Provides service logic and operations for ReportPaginator. Key methods: Paginate. | `A4ReportModels.cs` |
 | `class` | **ReportPm7RowViewModel** | Represents the ReportPm7RowViewModel class. Key properties: Index, PointCode, PointName, StrainDescription. | `A4ReportModels.cs` |
-| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: GeneratePreviewCommand, DemandCases, Pm7Rows, BoundaryPoints. | `ReportTabViewModel.cs` |
+| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: GeneratePreviewCommand, PreviewPdfCommand, SaveAsPdfCommand, SaveAsHtmlCommand. | `ReportTabViewModel.cs` |
 | `class` | **ReportUnitConverter** | Represents the ReportUnitConverter class. Key methods: MmToDip, InchToDip. | `A4ReportModels.cs` |
 | `class` | **ResultViewModel** | Represents the ResultViewModel class. Key methods: ToggleViewport, CloseViewport. Key properties: PM, MM, PM3D, MM3D. | `ResultViewModel.cs` |
 | `class` | **SectionCadEditorViewModel** | Represents the SectionCadEditorViewModel class. Key methods: AddBoundaryPoint, AddRebar, AddPolylinePoint, UpdatePolylinePreview. Key properties: BoundaryPoints, Rebars, Draft, ToolMode. | `SectionCadEditorViewModel.cs` |

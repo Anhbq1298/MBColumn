@@ -773,7 +773,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         {
             try
             {
-                var db = designForceImportService.ImportDesignForces(modelFilePath, modelName);
+                var db = designForceImportService.ImportDesignForces(modelFilePath, modelName, targetUnitSystem);
                 importedForceCache.Set(db);
 
                 ExportColumnForceCsv(db);

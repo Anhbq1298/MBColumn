@@ -269,7 +269,14 @@ public sealed class ColumnCalculationService(
                 input.UnitSystem,
                 input.DesignCode),
             SevenPointValidationReport = report,
-            SevenPointValidationRows = validationReportDto?.ValidationRows ?? []
+            SevenPointValidationRows = validationReportDto?.ValidationRows ?? [],
+            FcMpa = fcMpa,
+            FyMpa = fyMpa,
+            EsMpa = esMpa,
+            AlphaCc = input.AlphaCc,
+            DiameterMm = sectionWidthMm == sectionHeightMm && section.Shape == SectionShapeType.Circular
+                ? sectionWidthMm
+                : 0
         };
     }
 

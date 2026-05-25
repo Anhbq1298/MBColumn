@@ -33,6 +33,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     public ImportedEtabsForceDatabase ImportDesignForces(
         string modelFilePath,
         string modelName,
+        UnitSystem targetSystem,
         bool loadColumnForces = true,
         bool loadPierForces = true,
         Action<int, string, int>? progressCallback = null,
@@ -86,7 +87,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     public bool HasDesignResults(ImportedEtabsForceDatabase database)
         => database.ColumnForces.HasRecords || database.PierForces.HasRecords;
 
-    public EtabsDesignForceTable LoadColumnElementForcesTable(IReadOnlyList<string>? combosFilter = null)
+    public EtabsDesignForceTable LoadColumnElementForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null)
     {
         var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
         var comboSet = BuildComboSet(combosFilter);
@@ -94,7 +95,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         return LoadAndFilter(model, ["Element Forces - Columns"], "Element Forces - Columns", [], comboSet);
     }
 
-    public EtabsDesignForceTable LoadPierElementForcesTable(IReadOnlyList<string>? combosFilter = null)
+    public EtabsDesignForceTable LoadPierElementForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null)
     {
         var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
         var comboSet = BuildComboSet(combosFilter);
@@ -102,7 +103,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         return LoadAndFilter(model, ["Pier Forces"], "Pier Forces", [], comboSet);
     }
 
-    public EtabsDesignForceTable LoadColumnDesignForcesTable(IReadOnlyList<string>? combosFilter = null)
+    public EtabsDesignForceTable LoadColumnDesignForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null)
     {
         var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
         var comboSet = BuildComboSet(combosFilter);
@@ -110,7 +111,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         return LoadAndFilter(model, ColumnTableKeys, "Design Forces - Columns", [], comboSet);
     }
 
-    public EtabsDesignForceTable LoadPierDesignForcesTable(IReadOnlyList<string>? combosFilter = null)
+    public EtabsDesignForceTable LoadPierDesignForcesTable(UnitSystem targetSystem, IReadOnlyList<string>? combosFilter = null)
     {
         var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
         var comboSet = BuildComboSet(combosFilter);
@@ -121,6 +122,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     public ImportedEtabsForceDatabase BuildDatabase(
         string modelFilePath,
         string modelName,
+        UnitSystem targetSystem,
         EtabsDesignForceTable colElementForces,
         EtabsDesignForceTable pierElementForces,
         EtabsDesignForceTable colDesignForces,
@@ -141,6 +143,18 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         };
     }
 
+    private static (double ForceFactor, double LengthFactor, double MomentFactor) GetParseMultipliers(ImportedEtabsForceDatabase database, UnitSystem targetSystem)
+    {
+        var (targetUnits, fFactor, lFactor, mFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
+        if (database.DatabaseUnits == (int)targetUnits)
+        {
+            return (fFactor, lFactor, mFactor);
+        }
+        
+        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors((eUnits)database.DatabaseUnits, targetSystem);
+        return (fKn, lMm, EtabsConnectionService.GetMomentFactor(fKn, lMm, targetSystem));
+    }
+
     public IReadOnlyList<EtabsForceResultDto> ParseColumnForces(
         ImportedEtabsForceDatabase database,
         IReadOnlyList<EtabsColumnImportDto> columns,
@@ -150,9 +164,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         if (!database.ColumnForces.HasRecords || columns.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
-            (eUnits)database.DatabaseUnits, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
+        var (forceToKn, lengthToMm, momentFactor) = GetParseMultipliers(database, targetSystem);
 
         var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
         var columnByStoryLabel = new Dictionary<string, EtabsColumnImportDto>(
@@ -247,9 +259,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         if (!database.PierForces.HasRecords || piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
-            (eUnits)database.DatabaseUnits, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
+        var (forceToKn, _, momentFactor) = GetParseMultipliers(database, targetSystem);
 
         var requestedPiers = new HashSet<string>(
             piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
@@ -334,9 +344,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     {
         if (!database.ColumnForces.HasRecords) return [];
 
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
-            (eUnits)database.DatabaseUnits, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
+        var (forceToKn, _, momentFactor) = GetParseMultipliers(database, targetSystem);
 
         var candidates = new List<(string Story, string Label, string Combo, string RawStation,
                                    double P, double M2, double M3, double V2)>();
@@ -401,9 +409,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     {
         if (!database.PierForces.HasRecords) return [];
 
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
-            (eUnits)database.DatabaseUnits, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
+        var (forceToKn, _, momentFactor) = GetParseMultipliers(database, targetSystem);
 
         var candidates = new List<(string Pier, string Story, string Combo, string StepType,
                                    string RawLoc, double P, double M2, double M3, double V2, double V3)>();
@@ -485,9 +491,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         if (!database.ColumnElementForces.HasRecords || columns.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
-            (eUnits)database.DatabaseUnits, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
+        var (forceToKn, lengthToMm, momentFactor) = GetParseMultipliers(database, targetSystem);
 
         var columnByStoryLabel = new Dictionary<string, EtabsColumnImportDto>(StringComparer.OrdinalIgnoreCase);
         foreach (var col in columns)
@@ -514,10 +518,10 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
 
             candidates.Add((col, combo, stepType, rawLoc,
                 ParseDouble(GetFieldAny(f, "P", "Pu")),
-                ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
-                ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
-                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
-                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
+                ParseDouble(GetFieldAny(f, "M2", "M22", "Moment 2", "M2 Top", "M2-Top", "Mu2")),
+                ParseDouble(GetFieldAny(f, "M3", "M33", "Moment 3", "M3 Top", "M3-Top", "Mu3")),
+                ParseDouble(GetFieldAny(f, "V2", "V22", "Shear 2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "V33", "Shear 3", "Vu3"))));
         }
 
         var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
@@ -587,9 +591,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         if (!database.PierElementForces.HasRecords || piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var (forceToKn, lengthToMm) = EtabsConnectionService.GetConversionFactors(
-            (eUnits)database.DatabaseUnits, targetSystem);
-        var momentFactor = forceToKn * lengthToMm / 1000.0;
+        var (forceToKn, _, momentFactor) = GetParseMultipliers(database, targetSystem);
 
         var requestedPiers = new HashSet<string>(
             piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
@@ -616,10 +618,10 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
 
             candidates.Add((pier, story, combo, stepType, rawLoc,
                 ParseDouble(GetFieldAny(f, "P", "Pu")),
-                ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
-                ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
-                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
-                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
+                ParseDouble(GetFieldAny(f, "M2", "M22", "Moment 2", "M2 Top", "M2-Top", "Mu2")),
+                ParseDouble(GetFieldAny(f, "M3", "M33", "Moment 3", "M3 Top", "M3-Top", "Mu3")),
+                ParseDouble(GetFieldAny(f, "V2", "V22", "Shear 2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "V33", "Shear 3", "Vu3"))));
         }
 
         var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
