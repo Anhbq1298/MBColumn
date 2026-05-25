@@ -183,7 +183,7 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         {
             var columnDtos = binding.ColumnObjects.Select(col => new EtabsColumnImportDto(
                 col.Key, "", col.Story, col.Label, col.Key, col.Label,
-                "", Domain.Enums.SectionShapeType.Rectangular, 0, 0, 0, "", "Ready")).ToList();
+                "", Domain.Enums.SectionShapeType.Rectangular, 0, 0, 0, 0, "", "Ready")).ToList();
 
             IReadOnlyList<EtabsForceResultDto> forces;
             if (request.ForceSource == MbColumnForceSourceMode.ElementForces)

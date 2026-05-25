@@ -1,4 +1,6 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Domain.Enums;
+using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Application.Services;
 
@@ -32,8 +34,13 @@ public sealed class PmSevenPointReportMapper
     ];
 
     public IReadOnlyList<ReportVerificationPointRow> Map(
-        IReadOnlyList<SevenPointValidationRowDto> rows)
+        IReadOnlyList<SevenPointValidationRowDto> rows,
+        IUnitConversionService units,
+        bool isMetric)
     {
+        var forceUnit = isMetric ? ForceUnit.kN : ForceUnit.Kip;
+        var momentUnit = isMetric ? MomentUnit.kNm : MomentUnit.KipFt;
+
         var result = new List<ReportVerificationPointRow>(rows.Count);
         for (int i = 0; i < rows.Count; i++)
         {
@@ -44,10 +51,10 @@ public sealed class PmSevenPointReportMapper
                 PointCode = i < Codes.Length ? Codes[i] : $"CP-{i + 1:D2}",
                 PointName = i < Names.Length ? Names[i] : row.PointName,
                 StrainDescription = i < Strains.Length ? Strains[i] : row.HandCalcState,
-                HandCalcAxialForce = Safe(row.HandCalcPn),
-                HandCalcMoment = Safe(row.HandCalcMn),
-                SolverAxialForce = Safe(row.SolverPn),
-                SolverMoment = Safe(row.SolverMn),
+                HandCalcAxialForce = Safe(units.ForceFromN(row.HandCalcPn, forceUnit)),
+                HandCalcMoment = Safe(units.MomentFromNmm(row.HandCalcMn, momentUnit)),
+                SolverAxialForce = Safe(units.ForceFromN(row.SolverPn, forceUnit)),
+                SolverMoment = Safe(units.MomentFromNmm(row.SolverMn, momentUnit)),
                 AxialForceDeviationPct = Safe(row.PnDeviationPercent),
                 MomentDeviationPct = Safe(row.MnDeviationPercent),
                 Note = row.HandCalcState,

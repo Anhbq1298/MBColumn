@@ -1,6 +1,7 @@
 using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
+using System.Linq;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -13,6 +14,7 @@ public sealed class ReportTabViewModel : ViewModelBase
 {
     private readonly DiagramDataService _diagramSvc = new();
     private readonly PmSevenPointReportMapper _pm7Mapper = new();
+    private readonly MBColumn.Domain.Interfaces.IUnitConversionService _units = new MBColumn.Infrastructure.Math.UnitConversionService();
     private CalculationResultDto? _cachedResult;
 
     private bool includeInputData = true;
@@ -36,19 +38,23 @@ public sealed class ReportTabViewModel : ViewModelBase
     private string momentUnit = "";
     private GoverningChartPreviewViewModel? governingChart;
 
+    private double sectionWidth;
+    private double sectionHeight;
+    private double clearCover;
+
     public ReportTabViewModel()
     {
         GeneratePreviewCommand = new RelayCommand(GeneratePreview);
-        ExportSevenPointReportCommand = new RelayCommand(
-            ExportSevenPointReport,
-            () => _cachedResult?.SevenPointValidationReport is { Length: > 0 });
+
     }
 
     public ICommand GeneratePreviewCommand { get; }
-    public ICommand ExportSevenPointReportCommand { get; }
+
 
     public ObservableCollection<ReportDemandCaseRowViewModel> DemandCases { get; } = [];
     public ObservableCollection<ReportPm7RowViewModel> Pm7Rows { get; } = [];
+    public ObservableCollection<PreviewBoundaryPoint> BoundaryPoints { get; } = [];
+    public ObservableCollection<PreviewRebarPoint> Rebars { get; } = [];
 
     public GoverningChartPreviewViewModel? GoverningChart
     {
@@ -68,6 +74,11 @@ public sealed class ReportTabViewModel : ViewModelBase
     public bool IncludeBoundaryCoordinates { get => includeBoundaryCoordinates; set => Set(ref includeBoundaryCoordinates, value); }
     public bool IncludeRebarCoordinates    { get => includeRebarCoordinates;    set => Set(ref includeRebarCoordinates, value); }
     public bool IncludeDemandCases         { get => includeDemandCases;         set => Set(ref includeDemandCases, value); }
+
+    public double SectionWidth { get => sectionWidth; set => Set(ref sectionWidth, value); }
+    public double SectionHeight { get => sectionHeight; set => Set(ref sectionHeight, value); }
+    public double ClearCover { get => clearCover; set => Set(ref clearCover, value); }
+
     public bool IncludeGoverningChart      { get => includeGoverningChart;      set => Set(ref includeGoverningChart, value); }
     public bool IncludePm7Table            { get => includePm7Table;            set => Set(ref includePm7Table, value); }
 
@@ -127,6 +138,9 @@ public sealed class ReportTabViewModel : ViewModelBase
                           $"Es = {input.Es:0.##} {input.StressLabel}";
         GeometrySummary = BuildGeometrySummary(input);
         RebarSummary = BuildRebarSummary(input);
+        SectionWidth = input.SectionWidth;
+        SectionHeight = input.SectionHeight;
+        ClearCover = input.Cover;
         IsOutdated = isOutdated && result.HasResult;
         ResultStatusText = result.HasResult ? (IsOutdated ? "Outdated" : "Current") : "No result";
 
@@ -135,7 +149,13 @@ public sealed class ReportTabViewModel : ViewModelBase
         // Resolve display units from unit system
         bool isMetric = input.UnitSystem == Domain.Enums.UnitSystem.Metric;
         ForceUnit  = isMetric ? "kN"   : "kip";
-        MomentUnit = isMetric ? "kN·m" : "kip·ft";
+        MomentUnit = isMetric ? "kNm"  : "kip-ft";
+
+        BoundaryPoints.Clear();
+        foreach (var p in input.PreviewBoundaryPoints) BoundaryPoints.Add(p);
+
+        Rebars.Clear();
+        foreach (var r in input.PreviewRebars) Rebars.Add(r);
 
         DemandCases.Clear();
         foreach (var lc in input.LoadCases)
@@ -175,7 +195,8 @@ public sealed class ReportTabViewModel : ViewModelBase
         var fUnit = string.IsNullOrEmpty(ForceUnit) ? "" : $" ({ForceUnit})";
         var mUnit = string.IsNullOrEmpty(MomentUnit) ? "" : $" ({MomentUnit})";
 
-        var mapped = _pm7Mapper.Map(rows);
+        bool isMetric = ForceUnit == "kN";
+        var mapped = _pm7Mapper.Map(rows, _units, isMetric);
         foreach (var r in mapped)
         {
             Pm7Rows.Add(new ReportPm7RowViewModel
@@ -241,24 +262,46 @@ public sealed class ReportTabViewModel : ViewModelBase
                 vm.MUnit = _cachedResult.MxMyDiagram.MUnit ?? "";
         }
 
+        // Demand points for governing load case
+        if (governing is not null && double.IsFinite(governing.PmmRatio) && governing.PmmRatio > 0)
+        {
+            string label = governing.LoadCaseName;
+            double thetaRad = thetaDeg * Math.PI / 180.0;
+            double mtheta = governing.MuxDisplay * Math.Cos(thetaRad) + governing.MuyDisplay * Math.Sin(thetaRad);
+            vm.DemandMtheta = mtheta;
+
+            vm.PmDemandPoint = new ControlPointDto(
+                DiagramType.PM, mtheta, governing.PuDisplay,
+                governing.PuDisplay, governing.PuDisplay,
+                governing.MuxDisplay, governing.MuyDisplay,
+                1.0, thetaDeg, 0,
+                label, "Demand",
+                IsDemand: true, IsGoverning: false, IsReference: false, IsNominal: false,
+                Utilization: governing.PmmRatio);
+
+            double capacityMtheta = governing.CapacityMxDisplay * Math.Cos(thetaRad) + governing.CapacityMyDisplay * Math.Sin(thetaRad);
+            var pmLine = new ChartReferenceLineDto(0, 0, capacityMtheta, governing.CapacityPDisplay, "", "Proportional", IsDashed: true);
+            var pmRefLines = vm.PmReferenceLines.ToList();
+            pmRefLines.Add(pmLine);
+            vm.PmReferenceLines = pmRefLines;
+
+            vm.MmDemandPoint = new ControlPointDto(
+                DiagramType.MM, governing.MuxDisplay, governing.MuyDisplay,
+                0, 0,
+                governing.MuxDisplay, governing.MuyDisplay,
+                1.0, 0, 0,
+                label, "Demand",
+                IsDemand: true, IsGoverning: false, IsReference: false, IsNominal: false,
+                Utilization: governing.PmmRatio);
+
+            var mmLine = new ChartReferenceLineDto(0, 0, governing.CapacityMxDisplay, governing.CapacityMyDisplay, "", "Proportional", IsDashed: true);
+            vm.MmReferenceLines = [mmLine];
+        }
+
         GoverningChart = vm;
     }
 
-    private void ExportSevenPointReport()
-    {
-        if (_cachedResult is null || string.IsNullOrWhiteSpace(_cachedResult.SevenPointValidationReport))
-            return;
 
-        var sfd = new SaveFileDialog
-        {
-            Filter = "Markdown files (*.md)|*.md|Text files (*.txt)|*.txt|All files (*.*)|*.*",
-            DefaultExt = ".md",
-            FileName = "PM-7-Verification-Report"
-        };
-
-        if (sfd.ShowDialog() == true)
-            File.WriteAllText(sfd.FileName, _cachedResult.SevenPointValidationReport);
-    }
 
     private static string BuildGeometrySummary(InputViewModel input)
         => input.SelectedSectionShape switch
@@ -287,4 +330,7 @@ public sealed record ReportDemandCaseRowViewModel(
     double PmmRatio,
     double CapacityP,
     double CapacityMx,
-    double CapacityMy);
+    double CapacityMy)
+{
+    public bool IsFailing => PmmRatio > 1.0;
+}

@@ -14,5 +14,6 @@ public sealed record EtabsColumnImportDto(
     double Width,
     double Height,
     double Diameter,
+    double LengthMm,
     string LinkedSection,
     string Status);

@@ -157,6 +157,8 @@ public sealed class InputViewModel : ViewModelBase
         DeleteLoadCaseCommand = new RelayCommand<LoadCaseViewModel>(DeleteLoadCase);
         DeleteSelectedLoadCasesCommand = new RelayCommand<object>(DeleteSelectedLoadCases);
         RemoveDuplicateLoadCasesCommand = new RelayCommand(RemoveDuplicateLoadCases);
+        ImportLoadCasesCommand = new RelayCommand(ImportLoadCases);
+        ExportLoadCasesCommand = new RelayCommand(ExportLoadCases);
         GenerateIrregularRebarsCommand = new RelayCommand(GenerateIrregularRebars);
         GenerateEqualSpacingRebarsCommand = new RelayCommand(GenerateEqualSpacingRebars);
         ImportDxfCommand = new RelayCommand(ImportDxf, () => this.dxfImportDialogService is not null);
@@ -524,6 +526,8 @@ public sealed class InputViewModel : ViewModelBase
     public ICommand DeleteLoadCaseCommand { get; }
     public ICommand DeleteSelectedLoadCasesCommand { get; }
     public ICommand RemoveDuplicateLoadCasesCommand { get; }
+    public ICommand ImportLoadCasesCommand { get; }
+    public ICommand ExportLoadCasesCommand { get; }
 
     public string SectionPreviewLabel { get => sectionPreviewLabel; private set => Set(ref sectionPreviewLabel, value); }
     public string RebarPreviewLabel { get => rebarPreviewLabel; private set => Set(ref rebarPreviewLabel, value); }
@@ -712,13 +716,15 @@ public sealed class InputViewModel : ViewModelBase
             CoverPreviewLabel = $"Cover = {Cover:0.###} {LengthLabel}";
             if (valid)
             {
+                int ptIndex = 1;
                 foreach (var pt in IrregularInput.BoundaryPoints)
-                    PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(pt.X, pt.Y));
+                    PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(ptIndex++, pt.X, pt.Y));
+                int rebarIndex = 1;
                 foreach (var r in IrregularInput.Rebars)
                 {
                     double area = r.AreaMm2 ?? 0;
                     double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : 20.0;
-                    PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam, r.BarSize ?? ""));
+                    PreviewRebars.Add(new PreviewRebarPoint(rebarIndex++, r.X, r.Y, diam, r.BarSize ?? ""));
                 }
             }
             UpdateSectionPropertiesPanel();
@@ -742,9 +748,10 @@ public sealed class InputViewModel : ViewModelBase
                 return;
             }
 
+            int customRebarIndex = 1;
             foreach (var b in customCoordinates)
             {
-                PreviewRebars.Add(new PreviewRebarPoint(b.X, b.Y, b.Diameter, b.BarSizeLabel));
+                PreviewRebars.Add(new PreviewRebarPoint(customRebarIndex++, b.X, b.Y, b.Diameter, b.BarSizeLabel));
             }
 
             IsSectionPreviewValid = true;
@@ -767,16 +774,24 @@ public sealed class InputViewModel : ViewModelBase
                 return;
             }
 
+            double w = UnitSystem == UnitSystem.Metric ? Width : Width * 25.4;
+            double h = UnitSystem == UnitSystem.Metric ? Height : Height * 25.4;
+            PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(1, -w / 2.0, h / 2.0));
+            PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(2, w / 2.0, h / 2.0));
+            PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(3, w / 2.0, -h / 2.0));
+            PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(4, -w / 2.0, -h / 2.0));
+
             double uFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
             var uBars = AvailableBars;
             var uBar = uBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase)) ?? uBars.FirstOrDefault();
             double uBarDiameterMm = uBar?.DiameterMm ?? 20.0;
 
+            int rectEqRebarIndex = 1;
             foreach (var r in IrregularInput.Rebars)
             {
                 double area = r.AreaMm2 ?? 0;
                 double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : uBarDiameterMm;
-                PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam / uFactor, r.BarSize ?? ""));
+                PreviewRebars.Add(new PreviewRebarPoint(rectEqRebarIndex++, r.X, r.Y, diam / uFactor, r.BarSize ?? ""));
             }
 
             IsSectionPreviewValid = true;
@@ -804,6 +819,13 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
+        double wBase = UnitSystem == UnitSystem.Metric ? Width : Width * 25.4;
+        double hBase = UnitSystem == UnitSystem.Metric ? Height : Height * 25.4;
+        PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(1, -wBase / 2.0, hBase / 2.0));
+        PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(2, wBase / 2.0, hBase / 2.0));
+        PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(3, wBase / 2.0, -hBase / 2.0));
+        PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(4, -wBase / 2.0, -hBase / 2.0));
+
         IReadOnlyList<RebarCoordinateDto> bars;
         try
         {
@@ -820,9 +842,10 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
+        int genRebarIndex = 1;
         foreach (var b in bars)
         {
-            PreviewRebars.Add(new PreviewRebarPoint(b.X, b.Y, b.Diameter, b.BarSizeLabel));
+            PreviewRebars.Add(new PreviewRebarPoint(genRebarIndex++, b.X, b.Y, b.Diameter, b.BarSizeLabel));
         }
 
         SyncRebarsToTable(bars);
@@ -855,6 +878,14 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
+        double boundaryRadius = (UnitSystem == UnitSystem.Metric ? Diameter : Diameter * 25.4) / 2.0;
+        int segments = 36;
+        for (int i = 0; i < segments; i++)
+        {
+            double angle = 2.0 * Math.PI * i / segments;
+            PreviewBoundaryPoints.Add(new PreviewBoundaryPoint(i + 1, boundaryRadius * Math.Cos(angle), boundaryRadius * Math.Sin(angle)));
+        }
+
         if (SelectedRebarLayoutType == RebarLayoutType.EqualSpacing)
         {
             double cFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
@@ -862,11 +893,12 @@ public sealed class InputViewModel : ViewModelBase
             var cBar = cBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase)) ?? cBars.FirstOrDefault();
             double cBarDiameterMm = cBar?.DiameterMm ?? 20.0;
 
+            int circEqRebarIndex = 1;
             foreach (var r in IrregularInput.Rebars)
             {
                 double area = r.AreaMm2 ?? 0;
                 double diam = area > 0 ? 2.0 * Math.Sqrt(area / Math.PI) : cBarDiameterMm;
-                PreviewRebars.Add(new PreviewRebarPoint(r.X, r.Y, diam / cFactor, r.BarSize ?? ""));
+                PreviewRebars.Add(new PreviewRebarPoint(circEqRebarIndex++, r.X, r.Y, diam / cFactor, r.BarSize ?? ""));
             }
 
             IsSectionPreviewValid = true;
@@ -937,7 +969,7 @@ public sealed class InputViewModel : ViewModelBase
             double angle = 2.0 * Math.PI * i / effectiveBarCount + Math.PI / 2.0;
             double x = previewRadius * Math.Cos(angle);
             double y = previewRadius * Math.Sin(angle);
-            PreviewRebars.Add(new PreviewRebarPoint(x, y, previewBarDiameter, bar.DisplayLabel));
+            PreviewRebars.Add(new PreviewRebarPoint(i + 1, x, y, previewBarDiameter, bar.DisplayLabel));
             
             circularCoords.Add(new RebarCoordinateDto(
                 $"B{i + 1}",
@@ -1105,6 +1137,78 @@ public sealed class InputViewModel : ViewModelBase
             .ToList();
         foreach (var dup in duplicates)
             LoadCases.Remove(dup);
+    }
+
+    private void ExportLoadCases()
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            FileName = "LoadCases.csv",
+            DefaultExt = ".csv",
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            try
+            {
+                var lines = new System.Collections.Generic.List<string> { "Case Name,P,Mx,My,Source,Include" };
+                foreach (var lc in LoadCases)
+                {
+                    lines.Add($"{lc.Name},{lc.Pu},{lc.Mux},{lc.Muy},{lc.Source},{lc.IsActive}");
+                }
+                System.IO.File.WriteAllLines(dlg.FileName, lines);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to export: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void ImportLoadCases()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            DefaultExt = ".csv",
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            try
+            {
+                var lines = System.IO.File.ReadAllLines(dlg.FileName);
+                if (lines.Length <= 1) return;
+                var imported = new System.Collections.Generic.List<LoadCaseViewModel>();
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var parts = line.Split(',');
+                    if (parts.Length >= 4)
+                    {
+                        var lc = new LoadCaseViewModel(
+                            Guid.NewGuid().ToString("N")[..8],
+                            parts[0],
+                            double.TryParse(parts[1], out var p) ? p : 0,
+                            double.TryParse(parts[2], out var mx) ? mx : 0,
+                            double.TryParse(parts[3], out var my) ? my : 0,
+                            parts.Length > 5 ? (bool.TryParse(parts[5], out var inc) ? inc : true) : true
+                        );
+                        if (parts.Length > 4) lc.Source = parts[4];
+                        imported.Add(lc);
+                    }
+                }
+                if (imported.Count > 0)
+                {
+                    LoadCases.Clear();
+                    foreach (var lc in imported) LoadCases.Add(lc);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Failed to import: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
     }
 
     private void SelectDefaultMaterialGrades(bool applyValues)
@@ -1293,6 +1397,16 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
+    }
+
+    public void ResetToDefaults()
+    {
+        SelectedDesignCode = DesignCodeType.Aci318Style;
+        SelectedMaterialLibrary = MaterialLibraryType.America;
+
+        if (unitSystem == UnitSystem.Metric) ApplyMetricDefaults(); else ApplyImperialDefaults();
+        
+        UpdateSectionPreview();
     }
 
     private IReadOnlyList<RebarCoordinateDto> BuildCustomRebarCoordinates()

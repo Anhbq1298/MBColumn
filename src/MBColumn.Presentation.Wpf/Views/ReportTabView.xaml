@@ -106,10 +106,7 @@
                         Click="PrintButton_Click"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Margin="0,8,0,0" />
-                <Button Content="Export 7-Point Report (md)"
-                        Command="{Binding ExportSevenPointReportCommand}"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,8,0,0" />
+
                 <Button Content="Export PDF"
                         IsEnabled="False"
                         Style="{StaticResource SecondaryButtonStyle}"
@@ -163,6 +160,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="150" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="220" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -205,6 +203,64 @@
                                 <TextBlock Grid.Row="8" Style="{StaticResource FieldLabelStyle}" Text="Reinforcement" />
                                 <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarSummary}"
                                            TextWrapping="Wrap" FontSize="11" />
+
+                                <controls:SectionPreviewCanvas Grid.Column="2" Grid.RowSpan="9"
+                                                               Height="160"
+                                                               MinHeight="160"
+                                                               HorizontalAlignment="Stretch"
+                                                               VerticalAlignment="Top"
+                                                               Margin="10,0,0,0"
+                                                               SectionWidth="{Binding SectionWidth}"
+                                                               SectionHeight="{Binding SectionHeight}"
+                                                               BoundaryPoints="{Binding BoundaryPoints}"
+                                                               Rebars="{Binding Rebars}"
+                                                               Cover="{Binding ClearCover}" />
+                            </Grid>
+
+                            <Grid Margin="0,15,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Boundary Points -->
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Boundary Coordinates" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4" />
+                                    <DataGrid ItemsSource="{Binding BoundaryPoints}"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              CanUserAddRows="False"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              RowHeaderWidth="0"
+                                              FontSize="10">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Pt" Binding="{Binding Index}" Width="*" />
+                                            <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
+                                            <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+
+                                <!-- Rebar Coordinates -->
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="Rebar Coordinates" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4" />
+                                    <DataGrid ItemsSource="{Binding Rebars}"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              CanUserAddRows="False"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              RowHeaderWidth="0"
+                                              FontSize="10">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*" />
+                                            <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
+                                            <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
+                                            <DataGridTextColumn Header="Size" Binding="{Binding Label}" Width="*" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
 
@@ -223,7 +279,7 @@
                                    Style="{StaticResource ChapterHeadingStyle}" />
                         <TextBlock Style="{StaticResource CaptionStyle}"
                                    Margin="0,0,0,10"
-                                   Text="Seven PM control points derived from strain-compatibility analysis. Values are design (reduced) axial force φPn and uniaxial moment φMn at the governing bending direction. Comparison shown against independent hand-calculation where available." />
+                                   Text="Seven PM control points derived from strain-compatibility analysis. Values are design (reduced) axial force φPn and uniaxial moment φMn at the governing bending direction." />
 
                         <!-- No data placeholder -->
                         <Border Style="{StaticResource PlaceholderStyle}"
@@ -257,30 +313,24 @@
                                 <DataGridTextColumn Header="Strain State"
                                                     Binding="{Binding StrainDescription}"
                                                     Width="*" />
-                                <DataGridTextColumn Header="Hand φPn"
-                                                    Binding="{Binding HandCalcPDisplay}"
-                                                    Width="80"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Hand φMn"
-                                                    Binding="{Binding HandCalcMDisplay}"
-                                                    Width="80"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Solver φPn"
-                                                    Binding="{Binding SolverPDisplay}"
-                                                    Width="80"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Solver φMn"
-                                                    Binding="{Binding SolverMDisplay}"
-                                                    Width="80"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="ΔP%"
-                                                    Binding="{Binding DeviationPDisplay}"
-                                                    Width="58"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="ΔM%"
-                                                    Binding="{Binding DeviationMDisplay}"
-                                                    Width="58"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Binding="{Binding SolverPDisplay}"
+                                                    Width="90"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DataContext.ForceUnit, RelativeSource={RelativeSource AncestorType=DataGrid}, StringFormat='φPn ({0})'}"/>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding SolverMDisplay}"
+                                                    Width="90"
+                                                    ElementStyle="{StaticResource RightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DataContext.MomentUnit, RelativeSource={RelativeSource AncestorType=DataGrid}, StringFormat='φMn ({0})'}"/>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
 
@@ -340,33 +390,49 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Two charts side by side -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="10" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                            <!-- Two charts stacked vertically -->
+                            <StackPanel>
 
                                 <!-- 2D PM chart (governing θ slice) -->
-                                <StackPanel Grid.Column="0"
+                                <StackPanel Margin="0,0,0,16"
                                             Visibility="{Binding GoverningChart.HasPmChart,
                                                 Converter={StaticResource BoolToVisibilityConverter}}">
                                     <TextBlock Text="2D P-M Interaction (governing θ)"
                                                FontSize="11" FontWeight="SemiBold"
                                                Margin="0,0,0,4" />
                                     <controls:DiagramCanvas2D
-                                        Height="300"
-                                        Points="{Binding GoverningChart.PmChartPoints}"
+                                        Height="340"
+                                        Points="{Binding GoverningChart.PmAllPoints}"
                                         ReferenceLines="{Binding GoverningChart.PmReferenceLines}"
                                         XAxisLabel="{Binding GoverningChart.PmXAxisLabel}"
                                         YAxisLabel="{Binding GoverningChart.PmYAxisLabel}"
+                                        HighlightedDemandLabel="{Binding GoverningChart.LoadCaseName}"
                                         ShowGrid="True"
                                         ShowLabels="True"
-                                        ShowDemandPoint="False"
+                                        ShowDemandPoint="True"
+                                        ShowDemandLabel="False"
+                                        ShowSpecialPoints="False"
                                         ShowGoverningPoint="True"
                                         ShowReferenceLines="True"
                                         ShowNominalCurve="True" />
+                                    <!-- PM legend -->
+                                    <Border Background="#FFF8F8" BorderBrush="#F5BEBE"
+                                            BorderThickness="1" CornerRadius="3"
+                                            Padding="8,5" Margin="0,4,0,0"
+                                            Visibility="{Binding GoverningChart.HasDemandPoint,
+                                                Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="10" Height="10" Fill="#E31B23"
+                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock FontSize="10" VerticalAlignment="Center">
+                                                <Run Text="{Binding GoverningChart.LoadCaseName, Mode=OneWay}" FontWeight="SemiBold" />
+                                                <Run Text="  |  Mθ = " />
+                                                <Run Text="{Binding GoverningChart.DemandMthetaDisplay, Mode=OneWay}" />
+                                                <Run Text=",  P = " />
+                                                <Run Text="{Binding GoverningChart.DemandPDisplay, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
                                     <!-- PM chart not available placeholder -->
                                     <Border Style="{StaticResource PlaceholderStyle}"
                                             Visibility="{Binding GoverningChart.HasPmChart,
@@ -377,23 +443,45 @@
                                 </StackPanel>
 
                                 <!-- 2D MM chart -->
-                                <StackPanel Grid.Column="2"
-                                            Visibility="{Binding GoverningChart.HasMmChart,
+                                <StackPanel Visibility="{Binding GoverningChart.HasMmChart,
                                                 Converter={StaticResource BoolToVisibilityConverter}}">
                                     <TextBlock Text="2D M-M Contour (at governing P level)"
                                                FontSize="11" FontWeight="SemiBold"
                                                Margin="0,0,0,4" />
                                     <controls:DiagramCanvas2D
-                                        Height="300"
-                                        Points="{Binding GoverningChart.MmChartPoints}"
+                                        Height="340"
+                                        Points="{Binding GoverningChart.MmAllPoints}"
+                                        ReferenceLines="{Binding GoverningChart.MmReferenceLines}"
                                         XAxisLabel="{Binding GoverningChart.MmXAxisLabel}"
                                         YAxisLabel="{Binding GoverningChart.MmYAxisLabel}"
+                                        HighlightedDemandLabel="{Binding GoverningChart.LoadCaseName}"
                                         ShowGrid="True"
                                         ShowLabels="True"
-                                        ShowDemandPoint="False"
+                                        ShowDemandPoint="True"
+                                        ShowDemandLabel="False"
+                                        ShowSpecialPoints="False"
                                         ShowGoverningPoint="False"
-                                        ShowReferenceLines="False"
-                                        ShowNominalCurve="True" />
+                                        ShowReferenceLines="True"
+                                        ShowNominalCurve="True"
+                                        UseEqualAspect="True" />
+                                    <!-- MM legend -->
+                                    <Border Background="#FFF8F8" BorderBrush="#F5BEBE"
+                                            BorderThickness="1" CornerRadius="3"
+                                            Padding="8,5" Margin="0,4,0,0"
+                                            Visibility="{Binding GoverningChart.HasDemandPoint,
+                                                Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="10" Height="10" Fill="#E31B23"
+                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock FontSize="10" VerticalAlignment="Center">
+                                                <Run Text="{Binding GoverningChart.LoadCaseName, Mode=OneWay}" FontWeight="SemiBold" />
+                                                <Run Text="  |  Mx = " />
+                                                <Run Text="{Binding GoverningChart.DemandMxDisplay, Mode=OneWay}" />
+                                                <Run Text=",  My = " />
+                                                <Run Text="{Binding GoverningChart.DemandMyDisplay, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
                                     <!-- MM chart not available placeholder -->
                                     <Border Style="{StaticResource PlaceholderStyle}"
                                             Visibility="{Binding GoverningChart.HasMmChart,
@@ -402,7 +490,8 @@
                                                    Foreground="#888888" FontStyle="Italic" FontSize="10" />
                                     </Border>
                                 </StackPanel>
-                            </Grid>
+
+                            </StackPanel>
 
                         </StackPanel>
 
@@ -428,17 +517,23 @@
                                   GridLinesVisibility="Horizontal"
                                   RowHeaderWidth="0"
                                   FontSize="11">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFailing}" Value="True">
+                                            <Setter Property="Background" Value="#FFEBEB" />
+                                            <Setter Property="Foreground" Value="#D32F2F" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Case Name"    Binding="{Binding CaseName}"      Width="140" />
-                                <DataGridTextColumn Header="Original LC"  Binding="{Binding OriginalLoadCase}" Width="100" />
-                                <DataGridTextColumn Header="Label"        Binding="{Binding Label}"         Width="70" />
-                                <DataGridTextColumn Header="Story"        Binding="{Binding Story}"         Width="70" />
-                                <DataGridTextColumn Header="Station"      Binding="{Binding Station}"       Width="70" />
                                 <DataGridTextColumn Header="P"            Binding="{Binding Pu,  StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
                                 <DataGridTextColumn Header="Mx"           Binding="{Binding Mux, StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
                                 <DataGridTextColumn Header="My"           Binding="{Binding Muy, StringFormat={}{0:0.#}}" Width="70" ElementStyle="{StaticResource RightAlignText}" />
                                 <DataGridTextColumn Header="PMM Ratio"    Binding="{Binding PmmRatio, StringFormat={}{0:0.###}}" Width="80" ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="Source"       Binding="{Binding Source}"        Width="70" />
                             </DataGrid.Columns>
                         </DataGrid>
 

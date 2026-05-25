@@ -82,7 +82,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         ConfigureOutput(model, loadCombinations);
 
         var selectedComboSet = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
-        return QueryElementForcesTable(model, columns, selectedComboSet, dbForceToKn, dbMomentFactor);
+        return QueryElementForcesTable(model, columns, selectedComboSet, dbForceToKn, dbMomentFactor, dbLengthToMm);
     }
 
     public IReadOnlyList<EtabsForceResultDto> GetPierElementForces(
@@ -341,7 +341,8 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         IReadOnlyList<EtabsColumnImportDto> columns,
         HashSet<string> selectedCombos,
         double forceToKn,
-        double momentFactor)
+        double momentFactor,
+        double lengthToMm)
     {
         string[] fieldsKeysIncluded = [];
         string[] fields = [];
@@ -421,9 +422,23 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         foreach (var (col, combo, stepType, rawLoc, p, m2, m3, v2) in candidates)
         {
             var rangeKey = $"{col.ObjectName}|{combo}|{stepType}";
-            var station  = stationRanges.TryGetValue(rangeKey, out var range)
-                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
-                : NormalizeStation(rawLoc);
+            var station = NormalizeStation(rawLoc);
+            if (TryParseDouble(rawLoc) is double v)
+            {
+                if (col.LengthMm > 0)
+                {
+                    var stationMm = v * lengthToMm;
+                    if (SMath.Abs(stationMm) < 1.0) station = "Bottom";
+                    else if (SMath.Abs(stationMm - col.LengthMm) < 1.0) station = "Top";
+                    else station = "Mid";
+                }
+                else if (stationRanges.TryGetValue(rangeKey, out var range))
+                {
+                    if (SMath.Abs(v - range.Min) < 1e-6) station = "Bottom";
+                    else if (SMath.Abs(v - range.Max) < 1e-6) station = "Top";
+                    else station = "Mid";
+                }
+            }
 
             // Envelope combos produce Max and Min rows — append step type to distinguish them
             var isSingleStep = string.IsNullOrEmpty(stepType)
@@ -584,6 +599,14 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             var idx = Array.FindIndex(fields, f => string.Equals(f.Trim(), candidate, StringComparison.OrdinalIgnoreCase));
             if (idx >= 0) return idx;
         }
+
+        // Fallback for fields with units, e.g. "Station (m)"
+        foreach (var candidate in candidates)
+        {
+            var idx = Array.FindIndex(fields, f => f.Trim().StartsWith(candidate, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0) return idx;
+        }
+
         return -1;
     }
 

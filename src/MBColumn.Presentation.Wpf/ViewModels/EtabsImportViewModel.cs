@@ -312,7 +312,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     // SectionPreviewCanvas bindings
     public IReadOnlyList<PreviewBoundaryPoint> BoundaryPreviewPoints
-        => rawBoundaryPoints.Select(p => new PreviewBoundaryPoint(p.X, p.Y)).ToList();
+        => rawBoundaryPoints.Select((p, i) => new PreviewBoundaryPoint(i + 1, p.X, p.Y)).ToList();
     public SectionShapeType BoundaryPreviewSectionShape
         => SelectedColumn?.SectionType ?? SectionShapeType.Rectangular;
     public double BoundaryPreviewWidth
@@ -730,6 +730,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         dto.Width,
                         dto.Height,
                         dto.Diameter,
+                        dto.LengthMm,
                         dto.LinkedSection,
                         dto.Status)));
             }
@@ -910,7 +911,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                                 pier,
                                 prop,
                                 SectionShapeType.Irregular,
-                                0, 0, 0,
+                                0, 0, 0, 0,
                                 "",
                                 "Ready"));
                         }
@@ -980,6 +981,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 dto.Width,
                 dto.Height,
                 dto.Diameter,
+                dto.LengthMm,
                 dto.LinkedSection,
                 dto.Status)));
         }
@@ -1404,7 +1406,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var columnDtos = frameColumns.Select(c => new EtabsColumnImportDto(
                 c.ObjectName, c.Pier, c.Story, c.Label,
                 c.UniqueSection, c.EtabsSectionName, c.Material,
-                c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
 
             // Use the preloaded raw cache when it matches the current model — avoids a second COM call
             var rawDb      = importedForceCache?.HasValidCache(ModelPath) == true ? importedForceCache.Current : null;
@@ -1896,7 +1898,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
                         c.ObjectName, c.Pier, c.Story, c.Label,
                         c.UniqueSection, c.EtabsSectionName, c.Material,
-                        c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                        c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
                     rows.AddRange(designForceImportService.ParseColumnElementForces(rawDb, columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
                 if (selectedPiers.Count > 0)
@@ -1915,7 +1917,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
                             c.ObjectName, c.Pier, c.Story, c.Label,
                             c.UniqueSection, c.EtabsSectionName, c.Material,
-                            c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                            c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
 
                         rows.AddRange(forceImportService.GetElementForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                     }
@@ -1961,7 +1963,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     var columnDtos = selectedFrameColumns2.Select(c => new EtabsColumnImportDto(
                         c.ObjectName, c.Pier, c.Story, c.Label,
                         c.UniqueSection, c.EtabsSectionName, c.Material,
-                        c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                        c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
                     var colRows = designForceImportService.ParseColumnForces(rawDb, columnDtos, selectedCombos, targetUnitSystem);
                     ForceCacheStatus += $" → ParseCol={colRows.Count} [story={columnDtos[0].StoryName}|label={columnDtos[0].Label}|combo={selectedCombos[0]}]";
                     if (colRows.Count == 0)
@@ -1989,7 +1991,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         var columnDtos = selectedFrameColumns2.Select(c => new EtabsColumnImportDto(
                             c.ObjectName, c.Pier, c.Story, c.Label,
                             c.UniqueSection, c.EtabsSectionName, c.Material,
-                            c.SectionType, c.Width, c.Height, c.Diameter, c.LinkedSection, c.Status)).ToList();
+                            c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
                         rows.AddRange(forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                     }
                     catch (Exception ex)

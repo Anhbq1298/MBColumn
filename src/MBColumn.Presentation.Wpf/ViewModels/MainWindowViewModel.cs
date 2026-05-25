@@ -695,8 +695,14 @@ public sealed class MainWindowViewModel : ViewModelBase
             try
             {
                 var snapshot = projectService.LoadColumnInput(column.Id);
-                if (snapshot is not null)
+                if (snapshot != null)
+                {
                     Input.LoadFromSnapshot(snapshot);
+                }
+                else
+                {
+                    Input.ResetToDefaults();
+                }
 
                 ApplyCurrentColumnResult();
             }

@@ -287,6 +287,8 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         var previousId = selectedNode?.Id;
         var previousIsGroup = selectedNode is GroupItemViewModel;
         
+        var expandedStates = Nodes.OfType<GroupItemViewModel>().ToDictionary(g => g.Id, g => g.IsExpanded);
+
         Nodes.Clear();
 
         var groups = projectService.GetGroups();
@@ -297,6 +299,10 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         foreach (var groupRecord in groups)
         {
             var groupVm = CreateItem(groupRecord);
+            if (expandedStates.TryGetValue(groupRecord.Id, out var expanded))
+                groupVm.IsExpanded = expanded;
+            else
+                groupVm.IsExpanded = true;
             groupDict[groupRecord.Id] = groupVm;
             rootNodes.Add(groupVm);
         }

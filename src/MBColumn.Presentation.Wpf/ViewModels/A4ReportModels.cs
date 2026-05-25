@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using System.Linq;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
@@ -104,6 +105,28 @@ public sealed class GoverningChartPreviewViewModel
     public IReadOnlyList<ControlPointDto> PmChartPoints  { get; set; } = [];
     public IReadOnlyList<ChartReferenceLineDto> PmReferenceLines { get; set; } = [];
     public IReadOnlyList<ControlPointDto> MmChartPoints  { get; set; } = [];
+    public IReadOnlyList<ChartReferenceLineDto> MmReferenceLines { get; set; } = [];
+
+    public ControlPointDto? PmDemandPoint  { get; set; }
+    public ControlPointDto? MmDemandPoint  { get; set; }
+    public double? DemandMtheta { get; set; }
+
+    public bool   HasDemandPoint       => PmDemandPoint is not null;
+    public string DemandPDisplay       => Fmt(DemandP);
+    public string DemandMthetaDisplay  => Fmt(DemandMtheta);
+    public string DemandMxDisplay      => Fmt(DemandMx);
+    public string DemandMyDisplay      => Fmt(DemandMy);
+
+    private static string Fmt(double? v)
+        => v.HasValue && double.IsFinite(v.Value) ? v.Value.ToString("0.##") : "—";
+
+    public IReadOnlyList<ControlPointDto> PmAllPoints =>
+        PmDemandPoint is null ? PmChartPoints
+            : PmChartPoints.Append(PmDemandPoint).ToList();
+
+    public IReadOnlyList<ControlPointDto> MmAllPoints =>
+        MmDemandPoint is null ? MmChartPoints
+            : MmChartPoints.Append(MmDemandPoint).ToList();
 
     public string PUnit { get; set; } = "";
     public string MUnit { get; set; } = "";

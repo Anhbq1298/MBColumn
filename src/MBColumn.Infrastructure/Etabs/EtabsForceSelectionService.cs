@@ -18,7 +18,7 @@ public sealed class EtabsForceSelectionService : IEtabsForceSelectionService
                 col.Label,
                 "",
                 Domain.Enums.SectionShapeType.Rectangular,
-                0, 0, 0, "", "Ready")))
+                0, 0, 0, 0, "", "Ready")))
             .ToList();
     }
 

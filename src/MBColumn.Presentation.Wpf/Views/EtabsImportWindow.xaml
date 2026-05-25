@@ -441,6 +441,7 @@
                             <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" IsReadOnly="True" />
                             <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
                             <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="80" IsReadOnly="True" />
+                            <DataGridTextColumn Header="Length (mm)" Binding="{Binding LengthMm, StringFormat=N0}" Width="80" IsReadOnly="True" />
                             <DataGridTextColumn Header="Section" Binding="{Binding ImportGroupName}" Width="*" IsReadOnly="True">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">

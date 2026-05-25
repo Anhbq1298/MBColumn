@@ -29,6 +29,8 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty XGridStepProperty = DependencyProperty.Register(nameof(XGridStep), typeof(double), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty YGridStepProperty = DependencyProperty.Register(nameof(YGridStep), typeof(double), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty HighlightedDemandLabelProperty = DependencyProperty.Register(nameof(HighlightedDemandLabel), typeof(string), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ShowSpecialPointsProperty = DependencyProperty.Register(nameof(ShowSpecialPoints), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ShowDemandLabelProperty = DependencyProperty.Register(nameof(ShowDemandLabel), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
     private const double HitTolerance = 10.0;
 
@@ -61,6 +63,8 @@ public class DiagramCanvas2D : FrameworkElement
     public double XGridStep { get => (double)GetValue(XGridStepProperty); set => SetValue(XGridStepProperty, value); }
     public double YGridStep { get => (double)GetValue(YGridStepProperty); set => SetValue(YGridStepProperty, value); }
     public string? HighlightedDemandLabel { get => (string?)GetValue(HighlightedDemandLabelProperty); set => SetValue(HighlightedDemandLabelProperty, value); }
+    public bool ShowSpecialPoints { get => (bool)GetValue(ShowSpecialPointsProperty); set => SetValue(ShowSpecialPointsProperty, value); }
+    public bool ShowDemandLabel   { get => (bool)GetValue(ShowDemandLabelProperty);   set => SetValue(ShowDemandLabelProperty, value); }
 
     public void ResetView() => InvalidateVisual();
 
@@ -140,7 +144,7 @@ public class DiagramCanvas2D : FrameworkElement
     private static double? DesignCompressionCap(IReadOnlyList<ControlPointDto> points)
     {
         var cap = points.FirstOrDefault(p => p.IsReference && p.Label.Equals("Pmax", StringComparison.OrdinalIgnoreCase));
-        return cap is null ? null : cap.Y;
+        return cap?.Y;
     }
 
     private static void DrawBelowCapSegments(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> ordered, double? cap, Pen pen)
@@ -508,7 +512,20 @@ public class DiagramCanvas2D : FrameworkElement
             if (p.Utilization > 0)
             {
                 var originPt = transform.ToScreen(0, 0);
-                var capacityPt = transform.ToScreen(p.X / p.Utilization, p.Y / p.Utilization);
+                double t = 1.0;
+                var designCurve = points.Where(pt => !pt.IsDemand && !pt.IsGoverning && !pt.IsReference && !pt.IsSpecialPoint && !pt.IsNominal).ToList();
+                if (designCurve.Count > 1 && (Math.Abs(p.X) > 1e-6 || Math.Abs(p.Y) > 1e-6))
+                {
+                    t = FindRayIntersectionMultiplier(designCurve, p.X, p.Y);
+                }
+                
+                double? cap = DesignCompressionCap(points);
+                if (cap.HasValue && p.Y * t > cap.Value && p.Y > 1e-6)
+                {
+                    t = cap.Value / p.Y;
+                }
+                
+                var capacityPt = transform.ToScreen(p.X * t, p.Y * t);
                 
                 var rayPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 227, 27, 35)), 1.2) { DashStyle = DashStyles.Dash };
                 rayPen.Freeze();
@@ -521,7 +538,8 @@ public class DiagramCanvas2D : FrameworkElement
             redBrush.Freeze();
             ringPen.Freeze();
             dc.DrawEllipse(redBrush, ringPen, pt, 7, 7);
-            DrawText(dc, p.Label, 11, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
+            if (ShowDemandLabel)
+                DrawText(dc, p.Label, 11, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
         }
         foreach (var p in points.Where(p => p.GroupKey == "LabeledPoint"))
         {
@@ -533,13 +551,41 @@ public class DiagramCanvas2D : FrameworkElement
                 DrawText(dc, $"@ {p.Label}", 10.5, brush, new Point(pt.X + 8, pt.Y - 12), FontWeights.Normal);
             }
         }
-        foreach (var p in points.Where(p => p.IsSpecialPoint))
+        if (ShowSpecialPoints)
         {
-            var brush = GetSpecialPointBrush(p.Label);
-            var pt = transform.ToScreen(p.X, p.Y);
-            dc.DrawEllipse(Brushes.White, new Pen(brush, 1.8), pt, 4.5, 4.5);
-            // Labels for special points are removed to avoid overlap; managed via Legend
+            foreach (var p in points.Where(p => p.IsSpecialPoint))
+            {
+                var brush = GetSpecialPointBrush(p.Label);
+                var pt = transform.ToScreen(p.X, p.Y);
+                dc.DrawEllipse(Brushes.White, new Pen(brush, 1.8), pt, 4.5, 4.5);
+            }
         }
+    }
+
+    private static double FindRayIntersectionMultiplier(IReadOnlyList<ControlPointDto> polygon, double dx, double dy)
+    {
+        double bestT = 1000.0;
+        int count = polygon.Count;
+        for (int i = 0; i < count; i++)
+        {
+            var p1 = polygon[i];
+            var p2 = polygon[(i + 1) % count]; // check closing segment too
+
+            double cross = dx * (p2.Y - p1.Y) - dy * (p2.X - p1.X);
+            if (Math.Abs(cross) > 1e-6)
+            {
+                double u = (dy * p1.X - dx * p1.Y) / cross;
+                if (u >= -1e-6 && u <= 1 + 1e-6)
+                {
+                    double t = (p1.X * p2.Y - p1.Y * p2.X) / cross;
+                    if (t > 1e-6 && t < bestT)
+                    {
+                        bestT = t;
+                    }
+                }
+            }
+        }
+        return bestT == 1000.0 ? 1.0 : bestT;
     }
 
     private static Brush GetSpecialPointBrush(string label)

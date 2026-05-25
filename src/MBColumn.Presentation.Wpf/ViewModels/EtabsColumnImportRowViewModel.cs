@@ -21,6 +21,7 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
         double width,
         double height,
         double diameter,
+        double lengthMm,
         string linkedSection,
         string status)
     {
@@ -36,6 +37,7 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
         Width = width;
         Height = height;
         Diameter = diameter;
+        LengthMm = lengthMm;
         LinkedSection = linkedSection;
         Status = status;
     }
@@ -63,6 +65,7 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
     public double Width { get; }
     public double Height { get; }
     public double Diameter { get; }
+    public double LengthMm { get; }
     public string LinkedSection { get; }
     public string Status { get; }
     public bool IsRectangular => SectionType == SectionShapeType.Rectangular;

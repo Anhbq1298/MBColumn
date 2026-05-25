@@ -62,7 +62,7 @@ public static class ReportHandCalcService
         var fu = unitSystem == UnitSystem.Metric ? ForceUnit.kN   : ForceUnit.Kip;
         var mu = unitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt;
         string fLabel = unitSystem == UnitSystem.Metric ? "kN"    : "kip";
-        string mLabel = unitSystem == UnitSystem.Metric ? "kN·m"  : "kip·ft";
+        string mLabel = unitSystem == UnitSystem.Metric ? "kNm"   : "kip-ft";
 
         // LaTeX notation strings differ by code
         string fcdL  = isAci ? @"0.85 f'_c"       : @"\eta f_{cd}";
