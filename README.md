@@ -4,6 +4,11 @@ MBColumn is a clean-room .NET 8 WPF desktop application for reinforced-concrete 
 
 It is designed for learning, validation, and preliminary engineering review workflows. It is not a certified design-code engine.
 
+> [!TIP]
+> **For AI Coding Agents / Developers:**
+> 1. To quickly understand the application architecture, domain entities, DTOs, services, and solvers, please read the comprehensive class diagram in [src/class_diagram.md](file:///c:/repo/MBColumn/MBColumn/src/class_diagram.md) first. This will save token context space and speed up your workflow.
+> 2. Whenever you modify C# source files (`.cs`), you **MUST** regenerate the class diagram by running `python tools/update_class_diagram.py` (or configure Git to use local hooks via `git config core.hooksPath .githooks`).
+
 ## Current Scope
 
 - Rectangular reinforced-concrete column sections.
@@ -30,6 +35,20 @@ dotnet test tests\MBColumn.Tests\MBColumn.Tests.csproj
 ```
 
 Build artifacts are redirected to the `built/` directory. The final binaries can be found in `built/bin/`.
+
+### Auto-Updating Class Diagram (Recommended)
+
+To automatically keep the architecture and class diagram in [src/class_diagram.md](file:///c:/repo/MBColumn/MBColumn/src/class_diagram.md) perfectly synchronized with C# source file changes:
+
+1. **Configure Git Hooks** (Run once after cloning to automatically regenerate the diagram on every commit):
+   ```powershell
+   git config core.hooksPath .githooks
+   ```
+
+2. **Run Live File Watcher** (Optional, to automatically update the diagram in real-time as you edit and save code in your IDE):
+   ```powershell
+   python tools/watch_class_diagram.py
+   ```
 
 ## Repository Guide
 
