@@ -8,21 +8,17 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **ReportVerificationPointRow** | Data structure representing a row for ReportVerificationPoint. Key properties: StrainDescription, Note, PointCode. | `ReportVerificationPointRow.cs` |
-| `enum` | **ControlPointThetaSelectionMode** | Enumeration defining states/types for ControlPointThetaSelectionMode. Key properties: ThetaDeg, NeutralAxisDepth, IntegrationMethod. | `ControlPointExportRow.cs` |
-| `enum` | **IrregularRebarModeType** | Enumeration defining states/types for IrregularRebarModeType. | `IrregularRebarModeType.cs` |
-| `enum` | **RebarLayoutType** | Enumeration defining states/types for RebarLayoutType. | `RebarLayoutType.cs` |
-| `enum` | **ValidationSeverity** | Enumeration defining states/types for ValidationSeverity. | `ValidationIssue.cs` |
-| `record` | **CalculationResultDto** | Data transfer object carrying CalculationResult data. Key properties: SevenPointValidationRows, CirclePolygonSegmentCount, SectionHeightMm. | `CalculationResultDto.cs` |
+| `record` | **CalculationResultDto** | Data transfer object carrying CalculationResult data. Key properties: LoadCaseResults, GoverningLoadCaseId, ControlPointTable, SectionShape. | `CalculationResultDto.cs` |
 | `record` | **CapacityDebugPointDto** | Data transfer object carrying CapacityDebugPoint data. | `CapacityDebugPointDto.cs` |
 | `record` | **ChartReferenceLineDto** | Data transfer object carrying ChartReferenceLine data. | `ChartReferenceLineDto.cs` |
-| `record` | **ColumnInputDto** | Data transfer object carrying ColumnInput data. Key properties: Ec2Solver, RebarLayoutType, AlphaCc. | `ColumnInputDto.cs` |
+| `record` | **ColumnInputDto** | Data transfer object carrying ColumnInput data. Key properties: LoadCases, RebarLayoutType, SectionShape, Diameter. | `ColumnInputDto.cs` |
 | `record` | **ControlPointDto** | Data transfer object carrying ControlPoint data. Key properties: IsSpecialPoint. | `ControlPointDto.cs` |
-| `record` | **ControlPointExportRow** | Data structure representing a row for ControlPointExport. Key properties: ThetaDeg, NeutralAxisDepth, IntegrationMethod. | `ControlPointExportRow.cs` |
-| `record` | **ControlPointPreviewResult** | Represents the ControlPointPreviewResult component. | `ControlPointExportRow.cs` |
+| `record` | **ControlPointExportRow** | Data structure representing a row for ControlPointExport. Key properties: ThetaDeg, PointIndex, P, MxPositive. | `ControlPointExportRow.cs` |
+| `record` | **ControlPointPreviewResult** | Encapsulates the result of ControlPointPreview operations. | `ControlPointExportRow.cs` |
 | `record` | **ControlPointTableDto** | Data transfer object carrying ControlPointTable data. | `ControlPointTableDto.cs` |
 | `record` | **ControlPointTableRowDto** | Data transfer object carrying ControlPointTableRow data. | `ControlPointTableDto.cs` |
-| `record` | **ControlPointValidationRow** | Represents the ControlPointValidationRow component. | `ControlPointValidationRow.cs` |
+| `enum` | **ControlPointThetaSelectionMode** | Enumeration defining states/types for ControlPointThetaSelectionMode. | `ControlPointExportRow.cs` |
+| `record` | **ControlPointValidationRow** | Data structure representing a row for ControlPointValidation. | `ControlPointValidationRow.cs` |
 | `record` | **DiagramDataDto** | Data transfer object carrying DiagramData data. | `DiagramDataDto.cs` |
 | `record` | **HandCalcValidationReport** | Represents the HandCalcValidationReport record. Key methods: NotSupported. Key properties: ComparisonNote. | `HandCalcValidationReport.cs` |
 | `record` | **InsetLineDto** | Data transfer object carrying InsetLine data. | `PmChartInsetFigureDto.cs` |
@@ -30,73 +26,78 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **IrregularBoundaryPointDto** | Data transfer object carrying IrregularBoundaryPoint data. | `IrregularBoundaryPointDto.cs` |
 | `record` | **IrregularRebarCoordinateDto** | Data transfer object carrying IrregularRebarCoordinate data. | `IrregularRebarCoordinateDto.cs` |
 | `record` | **IrregularRebarInputDto** | Data transfer object carrying IrregularRebarInput data. | `IrregularRebarInputDto.cs` |
+| `enum` | **IrregularRebarModeType** | Enumeration defining states/types for IrregularRebarModeType. | `IrregularRebarModeType.cs` |
 | `record` | **IrregularSectionInputDto** | Data transfer object carrying IrregularSectionInput data. | `IrregularSectionInputDto.cs` |
 | `record` | **IrregularSectionValidationResult** | Encapsulates the result of IrregularSectionValidation operations. Key methods: Errors. | `IrregularSectionValidationResult.cs` |
 | `record` | **LoadCaseDto** | Data transfer object carrying LoadCase data. | `LoadCaseDto.cs` |
-| `record` | **LoadCaseResultDto** | Data transfer object carrying LoadCaseResult data. Key properties: CapacityMxDisplay, CapacityMyDisplay, CapacityPDisplay. | `LoadCaseResultDto.cs` |
+| `record` | **LoadCaseResultDto** | Data transfer object carrying LoadCaseResult data. Key properties: CapacityPDisplay, CapacityMxDisplay, CapacityMyDisplay. | `LoadCaseResultDto.cs` |
 | `record` | **MmDiagramDto** | Data transfer object carrying MmDiagram data. | `MmDiagramDto.cs` |
 | `record` | **MxMyDiagramDto** | Data transfer object carrying MxMyDiagram data. | `MxMyDiagramDto.cs` |
-| `record` | **PmAngleDiagramDto** | Data transfer object carrying PmAngleDiagram data. Key properties: NominalCapacityPoints, SpecialCapacityPoints, ReducedCapacityPoints. | `PmAngleDiagramDto.cs` |
+| `record` | **PmAngleDiagramDto** | Data transfer object carrying PmAngleDiagram data. Key properties: ReferenceLines, NominalCapacityPoints, ReducedCapacityPoints, SpecialCapacityPoints. | `PmAngleDiagramDto.cs` |
 | `record` | **PmChartInsetFigureDto** | Data transfer object carrying PmChartInsetFigure data. | `PmChartInsetFigureDto.cs` |
 | `record` | **PmChartInsetSelectedStateDto** | Data transfer object carrying PmChartInsetSelectedState data. | `PmChartInsetFigureDto.cs` |
 | `record` | **PmDiagramDto** | Data transfer object carrying PmDiagram data. | `PmDiagramDto.cs` |
 | `record` | **PmValidationReportDto** | Data transfer object carrying PmValidationReport data. | `PmValidationReportDto.cs` |
-| `record` | **PmmSurfaceDto** | Data transfer object carrying PmmSurface data. Key properties: SpecialCapacityPoints. | `PmmSurfaceDto.cs` |
+| `record` | **PmmSurfaceDto** | Data transfer object carrying PmmSurface data. Key properties: SpecialCapacityPoints, XAxisLabel, YAxisLabel, ZAxisLabel. | `PmmSurfaceDto.cs` |
 | `record` | **RebarCoordinateDto** | Data transfer object carrying RebarCoordinate data. | `RebarCoordinateDto.cs` |
 | `record` | **RebarLayoutInputDto** | Data transfer object carrying RebarLayoutInput data. | `RebarLayoutInputDto.cs` |
+| `enum` | **RebarLayoutType** | Enumeration defining states/types for RebarLayoutType. | `RebarLayoutType.cs` |
 | `record` | **RebarSideInputDto** | Data transfer object carrying RebarSideInput data. | `RebarSideInputDto.cs` |
-| `record` | **ReportFormulaBlock** | Represents the ReportFormulaBlock component. | `ReportFormulaBlock.cs` |
+| `record` | **ReportFormulaBlock** | Represents the ReportFormulaBlock record. | `ReportFormulaBlock.cs` |
+| `class` | **ReportVerificationPointRow** | Data structure representing a row for ReportVerificationPoint. Key properties: Index, PointCode, PointName, StrainDescription. | `ReportVerificationPointRow.cs` |
 | `record` | **SevenPointValidationRowDto** | Data transfer object carrying SevenPointValidationRow data. | `SevenPointValidationRowDto.cs` |
-| `record` | **ValidationIssue** | Represents the ValidationIssue component. | `ValidationIssue.cs` |
-| `record` | **ValidationResultDto** | Data transfer object carrying ValidationResult data. | `ValidationResultDto.cs` |
+| `record` | **ValidationIssue** | Represents the ValidationIssue record. | `ValidationIssue.cs` |
+| `record` | **ValidationResultDto** | Data transfer object carrying ValidationResult data. Key properties: Valid. | `ValidationResultDto.cs` |
+| `enum` | **ValidationSeverity** | Enumeration defining states/types for ValidationSeverity. | `ValidationIssue.cs` |
 
 ### DTOs/Etabs
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **EtabsBindingValidationResult** | Encapsulates the result of EtabsBindingValidation operations. Key properties: CurrentModelName, ObjectKey, ModelChanged. | `EtabsBindingValidationResult.cs` |
-| `class` | **EtabsColumnObjectKey** | Represents the EtabsColumnObjectKey class. Key properties: UniqueName, X, Story. | `EtabsColumnObjectKey.cs` |
-| `class` | **EtabsDesignForceRecord** | Represents the EtabsDesignForceRecord class. | `EtabsDesignForceRecord.cs` |
-| `class` | **EtabsDesignForceTable** | Represents the EtabsDesignForceTable class. Key properties: TableVersion. | `EtabsDesignForceTable.cs` |
-| `class` | **EtabsForceRefreshPreview** | Represents the EtabsForceRefreshPreview class. Key properties: AddedRows, RemapRequired, MissingObjects. | `EtabsForceRefreshPreview.cs` |
-| `class` | **EtabsForceRefreshRequest** | Represents the EtabsForceRefreshRequest class. Key properties: ImportBottom, RefreshAllSections, SelectedLoadCombinations. | `EtabsForceRefreshRequest.cs` |
-| `class` | **EtabsForceRowChange** | Represents the EtabsForceRowChange class. Key properties: Status, Location, LoadCaseName. | `EtabsForceRowChange.cs` |
-| `class` | **EtabsImportMetadataDto** | Data transfer object carrying EtabsImportMetadata data. Key properties: PierName, OpeningCount, EtabsSectionName. | `EtabsImportMetadataDto.cs` |
-| `class` | **EtabsIrregularBoundaryDto** | Data transfer object carrying EtabsIrregularBoundary data. Key properties: SourceSectionProperties, PierLabel, StoryName. | `EtabsIrregularBoundaryDto.cs` |
-| `class` | **EtabsModelFingerprint** | Represents the EtabsModelFingerprint class. Key properties: ModelFilePath, ImportedAt, ModelFileName. | `EtabsModelFingerprint.cs` |
-| `class` | **EtabsObjectBindingHealth** | Represents the EtabsObjectBindingHealth class. Key properties: CurrentModelName, ObjectKey, ModelChanged. | `EtabsBindingValidationResult.cs` |
-| `class` | **EtabsPierObjectKey** | Represents the EtabsPierObjectKey class. Key properties: PierName, X1, CenterY. | `EtabsPierObjectKey.cs` |
-| `class` | **EtabsSectionBinding** | Represents the EtabsSectionBinding class. Key properties: MbColumnSectionId, PierObjects, MbColumnSectionName. | `EtabsSectionBinding.cs` |
-| `class` | **EtabsSectionRefreshSummary** | Represents the EtabsSectionRefreshSummary class. Key properties: AddedRows, RecommendedAction, MissingObjects. | `EtabsSectionRefreshSummary.cs` |
-| `class` | **EtabsSourceObjectRefDto** | Data transfer object carrying EtabsSourceObjectRef data. Key properties: SourceModelPath, MBColumnUnitsAtImport, StoryFrom. | `EtabsTierImportMetadataDto.cs` |
-| `class` | **EtabsTierImportMetadataDto** | Data transfer object carrying EtabsTierImportMetadata data. Key properties: SourceModelPath, MBColumnUnitsAtImport, StoryFrom. | `EtabsTierImportMetadataDto.cs` |
-| `class` | **ImportedEtabsForceDatabase** | Data storage/cache handler for ImportedEtabsForceDatabase. Key properties: DatabaseUnits. | `ImportedEtabsForceDatabase.cs` |
-| `class` | **MbColumnMappedForceRow** | Data structure representing a row for MbColumnMappedForce. Key properties: Mx, Location, My. | `MbColumnMappedForceRow.cs` |
-| `class` | **MbColumnSectionImport** | Represents the MbColumnSectionImport class. Key properties: SelectedItems, SectionName. | `MbColumnSectionImport.cs` |
-| `class` | **MbColumnSectionImportItem** | Represents the MbColumnSectionImportItem class. Key properties: Story, ObjectType, Label. | `MbColumnSectionImportItem.cs` |
 | `enum` | **EtabsBindingHealthStatus** | Enumeration defining states/types for EtabsBindingHealthStatus. | `EtabsBindingHealthStatus.cs` |
-| `enum` | **EtabsForceRowChangeStatus** | Enumeration defining states/types for EtabsForceRowChangeStatus. Key properties: Status, Location, LoadCaseName. | `EtabsForceRowChange.cs` |
-| `enum` | **EtabsImportedObjectType** | Enumeration defining states/types for EtabsImportedObjectType. | `EtabsImportedObjectType.cs` |
-| `enum` | **EtabsResultState** | Enumeration defining states/types for EtabsResultState. | `EtabsResultState.cs` |
-| `enum` | **EtabsSectionRefreshAction** | Enumeration defining states/types for EtabsSectionRefreshAction. Key properties: AddedRows, RecommendedAction, MissingObjects. | `EtabsSectionRefreshSummary.cs` |
-| `enum` | **MbColumnForceSourceMode** | Enumeration defining states/types for MbColumnForceSourceMode. | `MbColumnForceSourceMode.cs` |
+| `class` | **EtabsBindingValidationResult** | Encapsulates the result of EtabsBindingValidation operations. Key properties: ModelChanged, CurrentModelPath, CurrentModelName, ObjectHealthList. | `EtabsBindingValidationResult.cs` |
 | `record` | **EtabsColumnImportDto** | Data transfer object carrying EtabsColumnImport data. | `EtabsColumnImportDto.cs` |
+| `class` | **EtabsColumnObjectKey** | Represents the EtabsColumnObjectKey class. Key properties: Story, Label, UniqueName, X. | `EtabsColumnObjectKey.cs` |
 | `record` | **EtabsConnectionResultDto** | Data transfer object carrying EtabsConnectionResult data. | `EtabsConnectionResultDto.cs` |
-| `record` | **EtabsForceCacheBuildResult** | Represents the EtabsForceCacheBuildResult component. | `EtabsForceCacheBuildResult.cs` |
-| `record` | **EtabsForceCacheQuery** | Represents the EtabsForceCacheQuery component. | `EtabsForceCacheQuery.cs` |
+| `class` | **EtabsDesignForceRecord** | Represents the EtabsDesignForceRecord class. Key properties: SourceTableKey. | `EtabsDesignForceRecord.cs` |
+| `class` | **EtabsDesignForceTable** | Represents the EtabsDesignForceTable class. Key properties: TableKey, TableVersion, FieldKeys, Records. | `EtabsDesignForceTable.cs` |
+| `record` | **EtabsForceCacheBuildResult** | Encapsulates the result of EtabsForceCacheBuild operations. | `EtabsForceCacheBuildResult.cs` |
+| `record` | **EtabsForceCacheQuery** | Represents the EtabsForceCacheQuery record. | `EtabsForceCacheQuery.cs` |
+| `class` | **EtabsForceRefreshPreview** | Represents the EtabsForceRefreshPreview class. Key properties: SectionsAffected, LoadCombinationsSelected, ExistingLoadRows, NewLoadRows. | `EtabsForceRefreshPreview.cs` |
+| `class` | **EtabsForceRefreshRequest** | Represents the EtabsForceRefreshRequest class. Key properties: Bindings, SelectedLoadCombinations, ForceSource, ImportTop. | `EtabsForceRefreshRequest.cs` |
 | `record` | **EtabsForceResultDto** | Data transfer object carrying EtabsForceResult data. | `EtabsForceResultDto.cs` |
+| `class` | **EtabsForceRowChange** | Represents the EtabsForceRowChange class. Key properties: LoadCaseName, Location, OldP, NewP. | `EtabsForceRowChange.cs` |
+| `enum` | **EtabsForceRowChangeStatus** | Enumeration defining states/types for EtabsForceRowChangeStatus. | `EtabsForceRowChange.cs` |
+| `class` | **EtabsImportMetadataDto** | Data transfer object carrying EtabsImportMetadata data. Key properties: SourceModelPath, SourceModelName, EtabsObjectName, PierName. | `EtabsImportMetadataDto.cs` |
 | `record` | **EtabsImportSummaryDto** | Data transfer object carrying EtabsImportSummary data. | `EtabsImportSummaryDto.cs` |
+| `enum` | **EtabsImportedObjectType** | Enumeration defining states/types for EtabsImportedObjectType. | `EtabsImportedObjectType.cs` |
+| `class` | **EtabsIrregularBoundaryDto** | Data transfer object carrying EtabsIrregularBoundary data. Key properties: ClockwisePolylines, OpeningPolylines, PierLabel, StoryName. | `EtabsIrregularBoundaryDto.cs` |
+| `class` | **EtabsModelFingerprint** | Represents the EtabsModelFingerprint class. Key properties: ModelFilePath, ModelFileName, ImportedAt. | `EtabsModelFingerprint.cs` |
 | `record` | **EtabsModelInfoDto** | Data transfer object carrying EtabsModelInfo data. | `EtabsModelInfoDto.cs` |
+| `class` | **EtabsObjectBindingHealth** | Represents the EtabsObjectBindingHealth class. Key properties: SectionName, ObjectKey, Status, SuggestedRemapKey. | `EtabsBindingValidationResult.cs` |
+| `class` | **EtabsPierObjectKey** | Represents the EtabsPierObjectKey class. Key properties: Story, PierName, X1, Y1. | `EtabsPierObjectKey.cs` |
 | `record` | **EtabsPierShellSegmentDto** | Data transfer object carrying EtabsPierShellSegment data. | `EtabsPierShellSegmentDto.cs` |
+| `enum` | **EtabsResultState** | Enumeration defining states/types for EtabsResultState. | `EtabsResultState.cs` |
+| `class` | **EtabsSectionBinding** | Represents the EtabsSectionBinding class. Key properties: MbColumnSectionId, MbColumnSectionName, ObjectType, ForceSource. | `EtabsSectionBinding.cs` |
 | `record` | **EtabsSectionMappingDto** | Data transfer object carrying EtabsSectionMapping data. | `EtabsSectionMappingDto.cs` |
+| `enum` | **EtabsSectionRefreshAction** | Enumeration defining states/types for EtabsSectionRefreshAction. | `EtabsSectionRefreshSummary.cs` |
+| `class` | **EtabsSectionRefreshSummary** | Represents the EtabsSectionRefreshSummary class. Key properties: SectionName, Status, OldRowCount, NewRowCount. | `EtabsSectionRefreshSummary.cs` |
+| `class` | **EtabsSourceObjectRefDto** | Data transfer object carrying EtabsSourceObjectRef data. Key properties: ObjectName, Label, Story, SectionName. | `EtabsTierImportMetadataDto.cs` |
+| `class` | **EtabsTierImportMetadataDto** | Data transfer object carrying EtabsTierImportMetadata data. Key properties: SourceModelPath, SourceModelName, ImportedUnits, MBColumnUnitsAtImport. | `EtabsTierImportMetadataDto.cs` |
+| `class` | **ImportedEtabsForceDatabase** | Represents the ImportedEtabsForceDatabase class. Key properties: ModelFilePath, ModelName, ImportedAt. | `ImportedEtabsForceDatabase.cs` |
+| `enum` | **MbColumnForceSourceMode** | Enumeration defining states/types for MbColumnForceSourceMode. | `MbColumnForceSourceMode.cs` |
+| `class` | **MbColumnMappedForceRow** | Data structure representing a row for MbColumnMappedForce. Key properties: MbColumnSectionName, LoadCaseName, ObjectType, Story. | `MbColumnMappedForceRow.cs` |
+| `class` | **MbColumnSectionImport** | Represents the MbColumnSectionImport class. Key properties: SectionName, SelectedItems. | `MbColumnSectionImport.cs` |
+| `class` | **MbColumnSectionImportItem** | Represents the MbColumnSectionImportItem class. Key properties: ObjectType, Story, Label, Key. | `MbColumnSectionImportItem.cs` |
+| `enum` | **value** | Enumeration defining states/types for value. Key properties: DatabaseUnits, ColumnForces, PierForces, ColumnElementForces. | `ImportedEtabsForceDatabase.cs` |
 
 ### DTOs/ImportExport
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **DxfSectionImportResult** | Encapsulates the result of DxfSectionImport operations. Key properties: BoundaryVertices, BoundaryPolylineCount, BoundaryVertexCount. | `DxfSectionImportResult.cs` |
-| `record` | **DxfRebarImportItem** | Represents the DxfRebarImportItem component. | `DxfRebarImportItem.cs` |
-| `record` | **DxfSectionImportRequest** | Represents the DxfSectionImportRequest component. | `DxfSectionImportRequest.cs` |
+| `record` | **DxfRebarImportItem** | Represents the DxfRebarImportItem record. | `DxfRebarImportItem.cs` |
+| `record` | **DxfSectionImportRequest** | Represents the DxfSectionImportRequest record. | `DxfSectionImportRequest.cs` |
+| `class` | **DxfSectionImportResult** | Encapsulates the result of DxfSectionImport operations. Key properties: BoundaryVertices, Rebars, Warnings, Errors. | `DxfSectionImportResult.cs` |
 | `record` | **IrregularBoundaryPointCsvDto** | Data transfer object carrying IrregularBoundaryPointCsv data. | `IrregularBoundaryPointCsvDto.cs` |
 | `record` | **IrregularRebarCsvDto** | Data transfer object carrying IrregularRebarCsv data. | `IrregularRebarCsvDto.cs` |
 
@@ -104,10 +105,10 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **ColumnInputSnapshot** | Represents the ColumnInputSnapshot class. Key properties: BoundaryPoints, Muy, Pu. | `ColumnInputSnapshot.cs` |
-| `class` | **SnapshotBoundaryPoint** | Represents the SnapshotBoundaryPoint class. Key properties: BoundaryPoints, Muy, Pu. | `ColumnInputSnapshot.cs` |
-| `class` | **SnapshotLoadCase** | Represents the SnapshotLoadCase class. Key properties: BoundaryPoints, Muy, Pu. | `ColumnInputSnapshot.cs` |
-| `class` | **SnapshotRebar** | Represents the SnapshotRebar class. Key properties: BoundaryPoints, Muy, Pu. | `ColumnInputSnapshot.cs` |
+| `class` | **ColumnInputSnapshot** | Represents the ColumnInputSnapshot class. Key properties: UnitSystem, DesignCode, Ec2Solver, IntegrationMethod. | `ColumnInputSnapshot.cs` |
+| `class` | **SnapshotBoundaryPoint** | Represents the SnapshotBoundaryPoint class. Key properties: PtIndex, X, Y. | `ColumnInputSnapshot.cs` |
+| `class` | **SnapshotLoadCase** | Represents the SnapshotLoadCase class. Key properties: Id, Label, OriginalLoadCaseName, SourceObjectName. | `ColumnInputSnapshot.cs` |
+| `class` | **SnapshotRebar** | Represents the SnapshotRebar class. Key properties: RebarIndex, X, Y, BarSize. | `ColumnInputSnapshot.cs` |
 
 ### Interfaces
 
@@ -126,80 +127,88 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **ColumnCalculationService** | Provides service logic and operations for ColumnCalculation. Key methods: Calculate. | `ColumnCalculationService.cs` |
+| `record` | **ColumnRecord** | Represents the ColumnRecord record. | `IProjectService.cs` |
 | `class` | **CompressionZonePolygonBuilder** | Represents the CompressionZonePolygonBuilder class. Key methods: ClipByNeutralAxis, ClipTensionSideByNeutralAxis. | `CompressionZonePolygonBuilder.cs` |
 | `class` | **ControlPointBuilderService** | Provides service logic and operations for ControlPointBuilder. Key methods: Build. | `ControlPointBuilderService.cs` |
 | `class` | **ControlPointCsvExportService** | Provides service logic and operations for ControlPointCsvExport. Key methods: Export. | `ControlPointCsvExportService.cs` |
 | `class` | **ControlPointPreviewService** | Provides service logic and operations for ControlPointPreview. Key methods: BuildPreview. | `ControlPointPreviewService.cs` |
-| `class` | **ControlPointTableBuilderService** | Builds the design-code control-point table for each of the four principal bending axes: X, Y, -X, -Y. | `ControlPointTableBuilderService.cs` |
-| `class` | **DiagramDataService** | Provides service logic and operations for DiagramData. Key methods: BuildSurfaceMesh, CleanAndSortMmBoundaryPoints, BuildPmmSurfaceRenderDataAtPLevels, BuildPmDiagramRenderData, BuildMxMyDiagramData. | `DiagramDataService.cs` |
-| `class` | **InputValidationService** | Provides service logic and operations for InputValidation. Key methods: Validate. | `InputValidationService.cs` |
-| `class` | **InteractionSurfaceService** | Provides service logic and operations for InteractionSurface. Key methods: Build. | `InteractionSurfaceService.cs` |
-| `class` | **IrregularSectionValidationService** | Provides service logic and operations for IrregularSectionValidation. Key methods: ValidateRebars, ValidateBoundary, TryResolveDiameter. | `IrregularSectionValidationService.cs` |
-| `class` | **PmChartInsetBuilderService** | Provides service logic and operations for PmChartInsetBuilder. | `PmChartInsetBuilderService.cs` |
-| `class` | **PmChartInsetStateResolverService** | Provides service logic and operations for PmChartInsetStateResolver. Key methods: FromCapacityPoint, FromNavigation, FromLoadCase. | `PmChartInsetStateResolverService.cs` |
-| `class` | **PmCurveBuilderService** | Provides service logic and operations for PmCurveBuilder. Key methods: BuildPmInteractionDebugCsv, BuildPmAngleReferenceLines, ValidatePmCapacityPolyline, ValidateStraightTrimSegment, BuildPmAngleCurve. | `PmCurveBuilderService.cs` |
-| `class` | **PmSevenPointReportMapper** | Maps data structures for PmSevenPointReport. Key methods: FormatPctOrNa, FormatOrNa, Map. | `PmSevenPointReportMapper.cs` |
-| `class` | **RatioCheckService** | Provides service logic and operations for RatioCheck. Key methods: Cross, Length, Normalize, Check, CheckBatch. | `RatioCheckService.cs` |
-| `class` | **RebarCoordinateBuilderService** | Provides service logic and operations for RebarCoordinateBuilder. Key methods: BuildCircular, Build. | `RebarCoordinateBuilderService.cs` |
-| `class` | **ReportHandCalcService** | Independently calculates selected PMM control points using transparent hand-calculation formulas and compares results against the solver surface. Supports ACI 318 (Whitney rectangular stress block) and EC2 (simplified rectangular block, λ/η). Only rectangular sections are supported. | `ReportHandCalcService.cs` |
-| `class` | **SpecialCapacityPointsService** | Generates five structurally significant capacity points for every neutral-axis angle on an interaction surface: max compression, balanced, tension-controlled, pure bending, and max tension. The source InteractionSurface is searched/interpolated; no additional solver passes are performed. | `SpecialCapacityPointsService.cs` |
-| `enum` | **CurveAxis** | Represents the CurveAxis component. | `PmCurveBuilderService.cs` |
-| `enum` | **PmDebugMomentAxis** | Validates that the ACI compression trim segment of a design PM curve is a clean straight horizontal line at exactly <paramref name="designPMaxDisplay"/>. Returns a list of defect descriptions (empty = valid). | `PmCurveBuilderService.cs` |
+| `class` | **ControlPointTableBuilderService** | /// Builds the design-code control-point table /// for each of the four principal bending axes: X, Y, -X, -Y. ///. Key methods: Build. | `ControlPointTableBuilderService.cs` |
+| `enum` | **CurveAxis** | Enumeration defining states/types for CurveAxis. | `PmCurveBuilderService.cs` |
+| `class` | **DiagramDataService** | Provides service logic and operations for DiagramData. Key methods: BuildMm, BuildSurface, BuildPmDiagramRenderData, BuildMmDiagramRenderData. | `DiagramDataService.cs` |
+| `record` | **GroupRecord** | Represents the GroupRecord record. | `IProjectService.cs` |
 | `interface` | **IControlPointCsvExportService** | Provides service logic and operations for IControlPointCsvExport. | `IControlPointCsvExportService.cs` |
 | `interface` | **IControlPointPreviewService** | Provides service logic and operations for IControlPointPreview. | `IControlPointPreviewService.cs` |
 | `interface` | **IIrregularSectionValidationService** | Provides service logic and operations for IIrregularSectionValidation. | `IIrregularSectionValidationService.cs` |
-| `interface` | **IProjectService** | Service handling operations for IProject. | `IProjectService.cs` |
+| `interface` | **IProjectService** | Provides service logic and operations for IProject. | `IProjectService.cs` |
 | `interface` | **IRebarCoordinateBuilderService** | Provides service logic and operations for IRebarCoordinateBuilder. | `IRebarCoordinateBuilderService.cs` |
-| `record` | **ColumnRecord** | Represents the ColumnRecord record. | `IProjectService.cs` |
-| `record` | **GroupRecord** | Represents the GroupRecord component. | `IProjectService.cs` |
-| `record` | **PmCurveBuildDiagnostics** | Represents the PmCurveBuildDiagnostics component. | `PmCurveBuilderService.cs` |
-| `record` | **SpecialCapacityEntry** | Represents the SpecialCapacityEntry component. | `SpecialCapacityPointsService.cs` |
+| `class` | **InputValidationService** | Provides service logic and operations for InputValidation. Key methods: Validate. | `InputValidationService.cs` |
+| `class` | **InteractionSurfaceService** | Provides service logic and operations for InteractionSurface. Key methods: Build. | `InteractionSurfaceService.cs` |
+| `class` | **IrregularSectionValidationService** | Provides service logic and operations for IrregularSectionValidation. Key methods: ValidateBoundary, ValidateRebars, TryResolveDiameter. | `IrregularSectionValidationService.cs` |
+| `class` | **PmChartInsetBuilderService** | Provides service logic and operations for PmChartInsetBuilder. Key methods: Build. | `PmChartInsetBuilderService.cs` |
+| `class` | **PmChartInsetStateResolverService** | Provides service logic and operations for PmChartInsetStateResolver. Key methods: FromLoadCase, FromNavigation, FromCapacityPoint. | `PmChartInsetStateResolverService.cs` |
+| `record` | **PmCurveBuildDiagnostics** | Represents the PmCurveBuildDiagnostics record. | `PmCurveBuilderService.cs` |
+| `class` | **PmCurveBuilderService** | Provides service logic and operations for PmCurveBuilder. Key methods: BuildPmAngleCurve, BuildPmAngleReferenceLines, BuildPmInteractionDebugCsv, ExportPmInteractionDebugCsv. Key properties: EnableDebugDiagnostics, LastDiagnostics. | `PmCurveBuilderService.cs` |
+| `enum` | **PmDebugMomentAxis** | Enumeration defining states/types for PmDebugMomentAxis. | `PmCurveBuilderService.cs` |
+| `class` | **PmSevenPointReportMapper** | Maps data structures for PmSevenPointReport. Key methods: Map, FormatOrNa, FormatPctOrNa. | `PmSevenPointReportMapper.cs` |
+| `class` | **RatioCheckService** | Provides service logic and operations for RatioCheck. Key methods: Check, CheckBatch. | `RatioCheckService.cs` |
+| `class` | **RebarCoordinateBuilderService** | Provides service logic and operations for RebarCoordinateBuilder. Key methods: Build, BuildCircular. | `RebarCoordinateBuilderService.cs` |
+| `class` | **ReportHandCalcService** | /// Independently calculates selected PMM control points using transparent hand-calculation /// formulas and compares results against the solver surface. /// Supports ACI 318 (Whitney rectangular stress block) and EC2 (simplified rectangular block, λ/η). /// Only rectangular sections are supported. ///. Key methods: Build. | `ReportHandCalcService.cs` |
+| `record` | **SpecialCapacityEntry** | Represents the SpecialCapacityEntry record. | `SpecialCapacityPointsService.cs` |
+| `class` | **SpecialCapacityPointsService** | /// Generates five structurally significant capacity points for every neutral-axis angle /// on an interaction surface: max compression, balanced, tension-controlled, pure bending, /// and max tension. The source InteractionSurface is searched/interpolated; no additional /// solver passes are performed. ///. Key methods: Build. | `SpecialCapacityPointsService.cs` |
+| `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
+| `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
+| `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
+| `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
+| `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
+| `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
+| `record` | **struct** | Represents the struct record. Key methods: Cross, Length, Normalize, Dot. | `RatioCheckService.cs` |
 
 ### Services/Etabs
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **EtabsForceCacheIdentity** | Represents the EtabsForceCacheIdentity class. Key properties: SelectedCombos, ObjectType, CachedAt. | `IEtabsForceCacheStore.cs` |
-| `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Message, Success. | `IEtabsForceRefreshService.cs` |
-| `class` | **EtabsForceScope** | Represents the EtabsForceScope class. Key properties: ImportBottom, LoadCombinations, ImportTop. | `IEtabsForceSelectionService.cs` |
+| `class` | **EtabsForceCacheIdentity** | Represents the EtabsForceCacheIdentity class. Key properties: ForceSource, ObjectType, SelectedCombos, Model. | `IEtabsForceCacheStore.cs` |
+| `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Success, Message, Preview. | `IEtabsForceRefreshService.cs` |
+| `class` | **EtabsForceScope** | Represents the EtabsForceScope class. Key properties: Bindings, LoadCombinations, ForceSource, ImportTop. | `IEtabsForceSelectionService.cs` |
 | `class` | **EtabsSectionForceFilterService** | Provides service logic and operations for EtabsSectionForceFilter. Key methods: FilterForcesForSection, FindMissingItems. | `EtabsSectionForceFilterService.cs` |
 | `interface` | **IEtabsBindingReconciliationService** | Provides service logic and operations for IEtabsBindingReconciliation. | `IEtabsBindingReconciliationService.cs` |
 | `interface` | **IEtabsColumnImportService** | Provides service logic and operations for IEtabsColumnImport. | `IEtabsColumnImportService.cs` |
 | `interface` | **IEtabsConnectionService** | Provides service logic and operations for IEtabsConnection. | `IEtabsConnectionService.cs` |
 | `interface` | **IEtabsDesignForceImportService** | Provides service logic and operations for IEtabsDesignForceImport. | `IEtabsDesignForceImportService.cs` |
-| `interface` | **IEtabsForceCacheResolver** | Defines the contract for EtabsForceCacheResolver. | `IEtabsForceCacheResolver.cs` |
+| `interface` | **IEtabsForceCacheResolver** | Defines the contract for IEtabsForceCacheResolver. | `IEtabsForceCacheResolver.cs` |
 | `interface` | **IEtabsForceCacheService** | Provides service logic and operations for IEtabsForceCache. | `IEtabsForceCacheService.cs` |
-| `interface` | **IEtabsForceCacheStore** | Defines the contract for EtabsForceCacheStore. Key properties: SelectedCombos, ObjectType, CachedAt. | `IEtabsForceCacheStore.cs` |
-| `interface` | **IEtabsForceChangeDetector** | Defines the contract for EtabsForceChangeDetector. | `IEtabsForceChangeDetector.cs` |
+| `interface` | **IEtabsForceCacheStore** | Defines the contract for IEtabsForceCacheStore. | `IEtabsForceCacheStore.cs` |
+| `interface` | **IEtabsForceChangeDetector** | Defines the contract for IEtabsForceChangeDetector. | `IEtabsForceChangeDetector.cs` |
 | `interface` | **IEtabsForceImportService** | Provides service logic and operations for IEtabsForceImport. | `IEtabsForceImportService.cs` |
 | `interface` | **IEtabsForceMapper** | Maps data structures for IEtabsForce. | `IEtabsForceMapper.cs` |
-| `interface` | **IEtabsForceRefreshService** | Provides service logic and operations for IEtabsForceRefresh. Key properties: Message, Success. | `IEtabsForceRefreshService.cs` |
-| `interface` | **IEtabsForceSelectionService** | Provides service logic and operations for IEtabsForceSelection. Key properties: ImportBottom, LoadCombinations, ImportTop. | `IEtabsForceSelectionService.cs` |
+| `interface` | **IEtabsForceRefreshService** | Provides service logic and operations for IEtabsForceRefresh. | `IEtabsForceRefreshService.cs` |
+| `interface` | **IEtabsForceSelectionService** | Provides service logic and operations for IEtabsForceSelection. | `IEtabsForceSelectionService.cs` |
 | `interface` | **IEtabsPierShellImportService** | Provides service logic and operations for IEtabsPierShellImport. | `IEtabsPierShellImportService.cs` |
 | `interface` | **IEtabsResultStateService** | Provides service logic and operations for IEtabsResultState. | `IEtabsResultStateService.cs` |
 | `interface` | **IEtabsSectionForceFilterService** | Provides service logic and operations for IEtabsSectionForceFilter. | `IEtabsSectionForceFilterService.cs` |
 | `interface` | **IEtabsSectionImportMapper** | Maps data structures for IEtabsSectionImport. | `IEtabsSectionImportMapper.cs` |
-| `interface` | **IImportedEtabsForceCache** | Data storage/cache handler for IImportedEtabsForceCache. | `IImportedEtabsForceCache.cs` |
-| `interface` | **IIrregularPierGeometryBuilder** | Defines the contract for IrregularPierGeometryBuilder. | `IIrregularPierGeometryBuilder.cs` |
+| `interface` | **IImportedEtabsForceCache** | Defines the contract for IImportedEtabsForceCache. | `IImportedEtabsForceCache.cs` |
+| `interface` | **IIrregularPierGeometryBuilder** | Defines the contract for IIrregularPierGeometryBuilder. | `IIrregularPierGeometryBuilder.cs` |
 
 ### Services/Geometry
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **PolygonGeometry** | Represents the PolygonGeometry class. Key methods: Centroid, MoveToCentroidOrigin, SignedArea, EnsureClockwise, SegmentsIntersect. | `PolygonGeometry.cs` |
+| `class` | **PolygonGeometry** | Represents the PolygonGeometry class. Key methods: SignedArea, Area, Centroid, IsClockwise. | `PolygonGeometry.cs` |
 
 ### Services/ImportExport
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **DxfImportService** | Provides service logic and operations for DxfImport. Key methods: ImportSection, GetLayerNames. | `DxfImportService.cs` |
-| `class` | **IrregularSectionCsvService** | Provides service logic and operations for IrregularSectionCsv. Key methods: ImportBoundary, ExportBoundary, ParseBoundary, ExportRebars, SerializeBoundary. | `IrregularSectionCsvService.cs` |
+| `record` | **DxfCircleEntity** | Represents the DxfCircleEntity record. | `DxfImportService.cs` |
+| `record` | **DxfEntity** | Represents the DxfEntity record. | `DxfImportService.cs` |
+| `record` | **DxfGenericEntity** | Represents the DxfGenericEntity record. | `DxfImportService.cs` |
+| `class` | **DxfImportService** | Provides service logic and operations for DxfImport. Key methods: GetLayerNames, ImportSection. | `DxfImportService.cs` |
+| `record` | **DxfPolylineEntity** | Represents the DxfPolylineEntity record. | `DxfImportService.cs` |
 | `interface` | **IDxfImportService** | Provides service logic and operations for IDxfImport. | `IDxfImportService.cs` |
 | `interface` | **IIrregularSectionCsvService** | Provides service logic and operations for IIrregularSectionCsv. | `IIrregularSectionCsvService.cs` |
-| `record` | **DxfCircleEntity** | Represents the DxfCircleEntity component. | `DxfImportService.cs` |
-| `record` | **DxfEntity** | Represents the DxfEntity component. | `DxfImportService.cs` |
-| `record` | **DxfGenericEntity** | Represents the DxfGenericEntity component. | `DxfImportService.cs` |
-| `record` | **DxfPolylineEntity** | Represents the DxfPolylineEntity component. | `DxfImportService.cs` |
+| `class` | **IrregularSectionCsvService** | Provides service logic and operations for IrregularSectionCsv. Key methods: ImportBoundary, ImportRebars, ParseBoundary, ParseRebars. | `IrregularSectionCsvService.cs` |
+| `record` | **struct** | Represents the struct record. | `DxfImportService.cs` |
 
 ### Validators
 
@@ -213,23 +222,25 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `record` | **CircularSection** | Represents the CircularSection record. | `CircularSection.cs` |
+| `record` | **CircularSection** | Represents the CircularSection record. Key properties: RadiusMm, WidthMm, HeightMm, AreaMm2. | `CircularSection.cs` |
 | `record` | **ColumnSection** | Represents the ColumnSection record. | `ColumnSection.cs` |
-| `record` | **ConcreteMaterial** | Represents the ConcreteMaterial component. | `ConcreteMaterial.cs` |
+| `record` | **ConcreteMaterial** | Represents the ConcreteMaterial record. | `ConcreteMaterial.cs` |
 | `record` | **ControlPoint** | Represents the ControlPoint record. Key properties: IsSpecialPoint. | `ControlPoint.cs` |
 | `record` | **DiagramControlPointSet** | Represents the DiagramControlPointSet record. Key properties: SpecialCapacityPoints. | `DiagramControlPointSet.cs` |
-| `record` | **InteractionPoint** | Represents the InteractionPoint record. Key properties: IsSpecialPoint, ThetaRad. | `InteractionPoint.cs` |
-| `record` | **InteractionSurface** | Represents the InteractionSurface record. | `InteractionSurface.cs` |
-| `record` | **IrregularSection** | Represents the IrregularSection record. | `IrregularSection.cs` |
-| `record` | **LoadDemand** | Represents the LoadDemand component. | `LoadDemand.cs` |
-| `record` | **NominalCapacity** | Represents the NominalCapacity component. | `InteractionPoint.cs` |
-| `record` | **RatioResult** | Encapsulates the result of Ratio operations. Key properties: CapacityMny, CapacityMnx, DemandMagnitude. | `RatioResult.cs` |
-| `record` | **Rebar** | Represents the Rebar component. | `Rebar.cs` |
-| `record` | **RebarLayout** | Represents the RebarLayout component. | `RebarLayout.cs` |
-| `record` | **RectangularSection** | Represents the RectangularSection record. | `RectangularSection.cs` |
-| `record` | **ReducedCapacity** | Represents the ReducedCapacity component. | `InteractionPoint.cs` |
-| `record` | **SteelMaterial** | Represents the SteelMaterial component. | `SteelMaterial.cs` |
-| `record` | **StrainState** | Represents the StrainState component. | `InteractionPoint.cs` |
+| `record` | **InteractionPoint** | Represents the InteractionPoint record. Key properties: ThetaRad, IsSpecialPoint, SpecialPointType, DesignP. | `InteractionPoint.cs` |
+| `record` | **InteractionSurface** | Represents the InteractionSurface record. Key properties: RowLength. | `InteractionSurface.cs` |
+| `record` | **IrregularSection** | Represents the IrregularSection record. Key properties: WidthMm, HeightMm, AreaMm2. | `IrregularSection.cs` |
+| `record` | **LoadDemand** | Represents the LoadDemand record. | `LoadDemand.cs` |
+| `record` | **NominalCapacity** | Represents the NominalCapacity record. | `InteractionPoint.cs` |
+| `record` | **RatioResult** | Encapsulates the result of Ratio operations. Key properties: DemandMagnitude, CapacityMagnitude, CapacityPn, CapacityMnx. | `RatioResult.cs` |
+| `record` | **Rebar** | Represents the Rebar record. | `Rebar.cs` |
+| `record` | **RebarLayout** | Represents the RebarLayout record. | `RebarLayout.cs` |
+| `record` | **RectangularSection** | Represents the RectangularSection record. Key properties: WidthMm, HeightMm, AreaMm2. | `RectangularSection.cs` |
+| `record` | **ReducedCapacity** | Represents the ReducedCapacity record. | `InteractionPoint.cs` |
+| `record` | **SteelMaterial** | Represents the SteelMaterial record. | `SteelMaterial.cs` |
+| `record` | **StrainState** | Represents the StrainState record. | `InteractionPoint.cs` |
+| `record` | **struct** | Represents the struct record. | `Point2D.cs` |
+| `record` | **struct** | Represents the struct record. Key properties: Width, Height, MaxDimension, CenterX. | `Rect2D.cs` |
 
 ### Enums
 
@@ -252,15 +263,15 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `interface` | **ICircularInteractionSolver** | Defines the contract for CircularInteractionSolver. | `ICircularInteractionSolver.cs` |
-| `interface` | **IControlPointBuilder** | Defines the contract for ControlPointBuilder. | `IControlPointBuilder.cs` |
+| `interface` | **ICircularInteractionSolver** | Defines the contract for ICircularInteractionSolver. | `ICircularInteractionSolver.cs` |
+| `interface` | **IControlPointBuilder** | Defines the contract for IControlPointBuilder. | `IControlPointBuilder.cs` |
 | `interface` | **IDesignCodeService** | Provides service logic and operations for IDesignCode. | `IDesignCodeService.cs` |
-| `interface` | **IDesignCodeServiceFactory** | Defines the contract for DesignCodeServiceFactory. | `IDesignCodeServiceFactory.cs` |
-| `interface` | **IInteractionSolver** | Defines the contract for InteractionSolver. | `IInteractionSolver.cs` |
-| `interface` | **IInteractionSolverFactory** | Defines the contract for InteractionSolverFactory. | `IInteractionSolverFactory.cs` |
-| `interface` | **IIrregularInteractionSolver** | Defines the contract for IrregularInteractionSolver. | `IIrregularInteractionSolver.cs` |
+| `interface` | **IDesignCodeServiceFactory** | Defines the contract for IDesignCodeServiceFactory. | `IDesignCodeServiceFactory.cs` |
+| `interface` | **IInteractionSolver** | Defines the contract for IInteractionSolver. | `IInteractionSolver.cs` |
+| `interface` | **IInteractionSolverFactory** | Defines the contract for IInteractionSolverFactory. | `IInteractionSolverFactory.cs` |
+| `interface` | **IIrregularInteractionSolver** | Defines the contract for IIrregularInteractionSolver. | `IIrregularInteractionSolver.cs` |
 | `interface` | **IRatioCheckService** | Provides service logic and operations for IRatioCheck. | `IRatioCheckService.cs` |
-| `interface` | **IRebarDatabase** | Represents the IRebarDatabase component. | `IRebarDatabase.cs` |
+| `interface` | **IRebarDatabase** | Defines the contract for IRebarDatabase. | `IRebarDatabase.cs` |
 | `interface` | **IUnitConversionService** | Provides service logic and operations for IUnitConversion. | `IUnitConversionService.cs` |
 | `record` | **RebarDefinition** | Represents the RebarDefinition record. | `IRebarDatabase.cs` |
 
@@ -270,88 +281,96 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteEffectiveStrengthFactor, NominalCompressionLimit, ConcretePeakStrain, Phi, CompressionDesignLimit. Key properties: AlphaCc. | `Aci318DesignCodeService.cs` |
+| `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteEffectiveStrengthFactor. Key properties: ConcreteStressBlockFactor, AlphaCc, UseLetterControlPoints, SupportsNominalReferenceCurve. | `Aci318DesignCodeService.cs` |
 | `class` | **DesignCodeServiceFactory** | Represents the DesignCodeServiceFactory class. Key methods: Get. | `DesignCodeServiceFactory.cs` |
-| `class` | **Ec2DesignCodeService** | Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). Concrete strain limits and parabolic parameters follow Table 3.1 with piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. | `Ec2DesignCodeService.cs` |
+| `class` | **Ec2DesignCodeService** | /// Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. /// Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). /// Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). /// Concrete strain limits and parabolic parameters follow Table 3.1 with /// piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. ///. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: ConcreteStressBlockFactor, EpsilonUd, AlphaCc, UseLetterControlPoints. | `Ec2DesignCodeService.cs` |
 
 ### Etabs
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AreaScanCache** | Represents the AreaScanCache component. | `EtabsPierShellImportService.cs` |
-| `class` | **EtabsBindingReconciliationService** | Provides service logic and operations for EtabsBindingReconciliation. Key methods: ReconcilePierObject, ReconcileColumnObject, ValidateBindings. | `EtabsBindingReconciliationService.cs` |
+| `record` | **AreaRecord** | Represents the AreaRecord record. | `EtabsPierShellImportService.cs` |
+| `class` | **AreaScanCache** | Represents the AreaScanCache class. Key methods: GetOrFetchThickness. | `EtabsPierShellImportService.cs` |
+| `class` | **EtabsBindingReconciliationService** | Provides service logic and operations for EtabsBindingReconciliation. Key methods: ValidateBindings, ReconcileColumnObject, ReconcilePierObject. | `EtabsBindingReconciliationService.cs` |
 | `class` | **EtabsColumnImportService** | Provides service logic and operations for EtabsColumnImport. Key methods: GetCandidateColumns, GetLoadCombinations. | `EtabsColumnImportService.cs` |
-| `class` | **EtabsConnectionService** | Provides service logic and operations for EtabsConnection. Key methods: Disconnect, ConnectToRunningEtabs. | `EtabsConnectionService.cs` |
-| `class` | **EtabsDesignForceImportService** | Preloads raw Design Forces - Columns and Design Forces - Piers tables from ETABS into <see cref="ImportedEtabsForceDatabase"/> without filtering or unit conversion, so the data can later be parsed on demand by the Force Filter without additional COM calls. | `EtabsDesignForceImportService.cs` |
-| `class` | **EtabsForceCacheResolver** | Resolves the correct cached force rows by source mode and object type. Design Forces use the preloaded ImportedEtabsForceDatabase. Element Forces require ETABS connection (live COM) and are not pre-cached. | `EtabsForceCacheResolver.cs` |
-| `class` | **EtabsForceCacheService** | Provides service logic and operations for EtabsForceCache. Key methods: Query, Clear, Dispose, Build. Key properties: StatusText. | `EtabsForceCacheService.cs` |
+| `class` | **EtabsConnectionService** | Provides service logic and operations for EtabsConnection. Key methods: ConnectToRunningEtabs, Disconnect. Key properties: IsConnected. | `EtabsConnectionService.cs` |
+| `class` | **EtabsDesignForceImportService** | /// Preloads raw Design Forces - Columns and Design Forces - Piers tables from ETABS /// into ImportedEtabsForceDatabase without filtering or unit conversion, /// so the data can later be parsed on demand by the Force Filter without additional COM calls. ///. Key methods: ImportDesignForces, HasDesignResults, LoadColumnElementForcesTable, LoadPierElementForcesTable. | `EtabsDesignForceImportService.cs` |
+| `class` | **EtabsForceCacheResolver** | /// Resolves the correct cached force rows by source mode and object type. /// Design Forces use the preloaded ImportedEtabsForceDatabase. /// Element Forces require ETABS connection (live COM) and are not pre-cached. ///. Key methods: Resolve, HasData. | `EtabsForceCacheResolver.cs` |
+| `class` | **EtabsForceCacheService** | Provides service logic and operations for EtabsForceCache. Key methods: Build, Query, Clear, Dispose. Key properties: IsBuilt, StatusText. | `EtabsForceCacheService.cs` |
 | `class` | **EtabsForceChangeDetector** | Represents the EtabsForceChangeDetector class. Key methods: CompareSectionForces. | `EtabsForceChangeDetector.cs` |
-| `class` | **EtabsForceImportService** | Provides service logic and operations for EtabsForceImport. Key methods: GetForces, GetElementForces, GetPierElementForces, GetPierForces. | `EtabsForceImportService.cs` |
-| `class` | **EtabsForceMapper** | Maps data structures for EtabsForce. Key methods: ToLoadCases, MapPierForces, MapColumnForces. | `EtabsForceMapper.cs` |
-| `class` | **EtabsForceRefreshService** | Provides service logic and operations for EtabsForceRefresh. Key methods: RunEtabsDesign, RunEtabsAnalysis, Apply, BuildPreview, CheckResultState. | `EtabsForceRefreshService.cs` |
+| `class` | **EtabsForceImportService** | Provides service logic and operations for EtabsForceImport. Key methods: GetForces, GetPierForces, GetElementForces, GetPierElementForces. | `EtabsForceImportService.cs` |
+| `class` | **EtabsForceMapper** | Maps data structures for EtabsForce. Key methods: MapColumnForces, MapPierForces, ToLoadCases. | `EtabsForceMapper.cs` |
+| `class` | **EtabsForceRefreshService** | Provides service logic and operations for EtabsForceRefresh. Key methods: CheckResultState, RunEtabsAnalysis, RunEtabsDesign, BuildPreview. | `EtabsForceRefreshService.cs` |
 | `class` | **EtabsForceSelectionService** | Provides service logic and operations for EtabsForceSelection. Key methods: BuildColumnScope. | `EtabsForceSelectionService.cs` |
-| `class` | **EtabsPierShellImportService** | Provides service logic and operations for EtabsPierShellImport. Key methods: GetSegments, GetStoryNames. | `EtabsPierShellImportService.cs` |
-| `class` | **EtabsResultStateService** | Provides service logic and operations for EtabsResultState. Key methods: CheckDesignForceAvailability, CheckElementForceAvailability. | `EtabsResultStateService.cs` |
-| `class` | **ImportedEtabsForceCache** | In-memory singleton cache for the raw ETABS design force database preloaded during Import ETABS. The cache is invalidated whenever the model file path changes or <see cref="Clear"/> is called. | `ImportedEtabsForceCache.cs` |
+| `class` | **EtabsPierShellImportService** | Provides service logic and operations for EtabsPierShellImport. Key methods: GetStoryNames, GetSegments. | `EtabsPierShellImportService.cs` |
+| `class` | **EtabsResultStateService** | Provides service logic and operations for EtabsResultState. Key methods: CheckElementForceAvailability, CheckDesignForceAvailability. | `EtabsResultStateService.cs` |
+| `class` | **ImportedEtabsForceCache** | /// In-memory singleton cache for the raw ETABS design force database preloaded during Import ETABS. /// The cache is invalidated whenever the model file path changes or Clear is called. ///. Key methods: HasValidCache, Set, Clear. Key properties: Current, HasCache. | `ImportedEtabsForceCache.cs` |
 | `class` | **IrregularPierGeometryBuilder** | Represents the IrregularPierGeometryBuilder class. Key methods: BuildBoundary. | `IrregularPierGeometryBuilder.cs` |
-| `record` | **AreaRecord** | Represents the AreaRecord record. Key methods: GetSegments, GetStoryNames. | `EtabsPierShellImportService.cs` |
+| `record` | **in** | Represents the in record. Key methods: ParsePierForces. | `EtabsDesignForceImportService.cs` |
+| `record` | **in** | Represents the in record. Key methods: ParseAllColumnForces. | `EtabsDesignForceImportService.cs` |
+| `record` | **in** | Represents the in record. Key methods: ParseAllPierForces. | `EtabsDesignForceImportService.cs` |
+| `record` | **in** | Represents the in record. Key methods: ParseColumnElementForces. | `EtabsDesignForceImportService.cs` |
+| `record` | **in** | Represents the in record. Key methods: ParsePierElementForces. | `EtabsDesignForceImportService.cs` |
+| `record` | **in** | Represents the in record. | `EtabsDesignForceImportService.cs` |
+| `record` | **struct** | Represents the struct record. | `EtabsColumnImportService.cs` |
 
 ### Math
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **GeometryHelper** | Represents the GeometryHelper class. Key methods: MomentMagnitude, DegreesToRadians. | `GeometryHelper.cs` |
+| `class` | **GeometryHelper** | Represents the GeometryHelper class. Key methods: DegreesToRadians, MomentMagnitude. | `GeometryHelper.cs` |
 | `class` | **LinearInterpolationService** | Provides service logic and operations for LinearInterpolation. Key methods: Lerp. | `LinearInterpolationService.cs` |
 | `class` | **PolygonClipper** | Represents the PolygonClipper class. | `PolygonClipper.cs` |
-| `class` | **UnitConversionService** | Provides service logic and operations for UnitConversion. Key methods: MomentToNmm, ForceFromN, MomentFromNmm, LengthToMm, ConvertLength. | `UnitConversionService.cs` |
+| `class` | **UnitConversionService** | Provides service logic and operations for UnitConversion. Key methods: LengthToMm, LengthFromMm, ConvertLength, ForceToN. | `UnitConversionService.cs` |
 
 ### Persistence
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **ColumnInputRow** | Represents the ColumnInputRow component. | `ProjectService.cs` |
-| `class` | **ColumnRow** | Represents the ColumnRow component. | `ProjectService.cs` |
-| `class` | **DatabaseSchema** | Represents the DatabaseSchema class. Key methods: Open, OpenResultDb, EnsureCreated. | `DatabaseSchema.cs` |
-| `class` | **GroupRow** | Represents the GroupRow component. | `ProjectService.cs` |
-| `class` | **ProjectRow** | Represents the ProjectRow component. | `ProjectService.cs` |
-| `class` | **ProjectService** | Provides service logic and operations for Project. Key methods: SaveProjectAs, AddGroup, OpenProject, RenameProject, MoveColumn. Key properties: ProjectName, Id, InputJson. | `ProjectService.cs` |
-| `class` | **ResultCacheRow** | Represents the ResultCacheRow component. | `ProjectService.cs` |
+| `class` | **ColumnInputRow** | Data structure representing a row for ColumnInput. Key properties: InputJson. | `ProjectService.cs` |
+| `class` | **ColumnRow** | Data structure representing a row for Column. Key properties: Id, GroupId, Name, SortOrder. | `ProjectService.cs` |
+| `class` | **DatabaseSchema** | Represents the DatabaseSchema class. Key methods: EnsureCreated, Open, OpenResultDb. | `DatabaseSchema.cs` |
+| `class` | **GroupRow** | Data structure representing a row for Group. Key properties: Id, Name, SortOrder. | `ProjectService.cs` |
+| `class` | **ProjectRow** | Data structure representing a row for Project. Key properties: Name. | `ProjectService.cs` |
+| `class` | **ProjectService** | Provides service logic and operations for Project. Key methods: Dispose, NewProject, RenameProject, OpenProject. Key properties: CurrentFilePath, ProjectName, IsModified. | `ProjectService.cs` |
+| `class` | **ResultCacheRow** | Data structure representing a row for ResultCache. Key properties: InputHash, ResultJson. | `ProjectService.cs` |
 
 ### Rebar
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **ImperialRebarDatabase** | Data storage/cache handler for ImperialRebarDatabase. Key methods: TryGet, GetBars. | `ImperialRebarDatabase.cs` |
-| `class` | **SingaporeRebarDatabase** | Data storage/cache handler for SingaporeRebarDatabase. Key methods: TryGet, GetBars. | `SingaporeRebarDatabase.cs` |
+| `class` | **ImperialRebarDatabase** | Represents the ImperialRebarDatabase class. Key methods: GetBars, TryGet. | `ImperialRebarDatabase.cs` |
+| `class` | **SingaporeRebarDatabase** | Represents the SingaporeRebarDatabase class. Key methods: GetBars, TryGet. | `SingaporeRebarDatabase.cs` |
 
 ### Root
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **Program** | Represents the Program component. | `test_flow.cs` |
+| `class` | **Program** | Represents the Program class. | `test_flow.cs` |
 
 ### Solvers
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **Aci318DesignAdapter** | Represents the Aci318DesignAdapter class. Key methods: Create, ApplyDesignRules. | `DesignCodeAdapters.cs` |
-| `class` | **CircularFiberInteractionSolver** | Circular RC interaction solver using strain compatibility and numerical concrete fibers. Concrete is integrated over the circular area and reinforcing bars are handled as discrete steel fibers at centroid-based coordinates. | `CircularFiberInteractionSolver.cs` |
-| `class` | **DesignCodeAdapterFactory** | Represents the DesignCodeAdapterFactory class. Key methods: Create, ApplyDesignRules. | `DesignCodeAdapters.cs` |
-| `class` | **Eurocode2DesignAdapter** | Represents the Eurocode2DesignAdapter class. Key methods: Create, ApplyDesignRules. | `DesignCodeAdapters.cs` |
-| `class` | **InteractionSolverFactory** | Represents the InteractionSolverFactory class. Key methods: Get, GetCircular, GetLegacy, GetIrregular. | `InteractionSolverFactory.cs` |
+| `class` | **Aci318DesignAdapter** | Represents the Aci318DesignAdapter class. Key methods: ApplyDesignRules. | `DesignCodeAdapters.cs` |
+| `class` | **CircularFiberInteractionSolver** | /// Circular RC interaction solver using strain compatibility and numerical concrete fibers. /// Concrete is integrated over the circular area and reinforcing bars are handled as /// discrete steel fibers at centroid-based coordinates. ///. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, ConcreteGridDivisions. | `CircularFiberInteractionSolver.cs` |
+| `record` | **ConcreteFiber** | Represents the ConcreteFiber record. | `CircularFiberInteractionSolver.cs` |
+| `record` | **DesignCapacityPoint** | Represents the DesignCapacityPoint record. | `PmmModels.cs` |
+| `class` | **DesignCodeAdapterFactory** | Represents the DesignCodeAdapterFactory class. Key methods: Create. | `DesignCodeAdapters.cs` |
+| `class` | **Eurocode2DesignAdapter** | Represents the Eurocode2DesignAdapter class. Key methods: ApplyDesignRules. | `DesignCodeAdapters.cs` |
+| `interface` | **IDesignCodeAdapter** | Represents the IDesignCodeAdapter class. | `PmmModels.cs` |
+| `interface` | **ISectionIntegrator** | Defines the contract for ISectionIntegrator. | `PmmModels.cs` |
+| `interface` | **ISweepStrategy** | Defines the contract for ISweepStrategy. | `PmmModels.cs` |
+| `class` | **InteractionSolverFactory** | Represents the InteractionSolverFactory class. Key methods: Get, GetLegacy, GetCircular, GetIrregular. | `InteractionSolverFactory.cs` |
+| `record` | **NeutralAxisState** | Represents the NeutralAxisState record. Key properties: DepthIndex, AngleIndex, ThetaRad, NeutralAxisDepth. | `PmmModels.cs` |
 | `class` | **NeutralAxisSweepStrategy** | Represents the NeutralAxisSweepStrategy class. Key methods: GenerateStates, ProjectExtreme. | `NeutralAxisSweepStrategy.cs` |
-| `class` | **PmmInteractionSolver** | Represents the PmmInteractionSolver class. Key methods: Solve. Key properties: CirclePolygonSegmentCount, NeutralAxisSamples, CircularAngularFiberCount. | `PmmInteractionSolver.cs` |
+| `record` | **PmmInput** | Represents the PmmInput record. | `PmmModels.cs` |
+| `class` | **PmmInteractionSolver** | Represents the PmmInteractionSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, RectangularFiberCountX, RectangularFiberCountY. | `PmmInteractionSolver.cs` |
+| `record` | **PmmResult** | Encapsulates the result of Pmm operations. | `PmmModels.cs` |
 | `class` | **PmmSolver** | Represents the PmmSolver class. Key methods: Solve. | `PmmSolver.cs` |
-| `interface` | **IDesignCodeAdapter** | Defines the contract for DesignCodeAdapter. Key properties: NominalMx, ConcreteMy, MaxSteelStrain. | `PmmModels.cs` |
-| `interface` | **ISectionIntegrator** | Defines the contract for SectionIntegrator. Key properties: NominalMx, ConcreteMy, MaxSteelStrain. | `PmmModels.cs` |
-| `interface` | **ISweepStrategy** | Represents the ISweepStrategy component. | `PmmModels.cs` |
-| `record` | **ConcreteFiber** | Represents the ConcreteFiber component. | `CircularFiberInteractionSolver.cs` |
-| `record` | **DesignCapacityPoint** | Represents the DesignCapacityPoint record. Key properties: NominalMx, ConcreteMy, MaxSteelStrain. | `PmmModels.cs` |
-| `record` | **NeutralAxisState** | Represents the NeutralAxisState component. | `PmmModels.cs` |
-| `record` | **PmmInput** | Represents the PmmInput record. Key properties: NominalMx, ConcreteMy, MaxSteelStrain. | `PmmModels.cs` |
-| `record` | **PmmResult** | Represents the PmmResult component. | `PmmModels.cs` |
-| `record` | **SectionIntegrationResult** | Encapsulates the result of SectionIntegration operations. Key properties: NominalMx, ConcreteMy, MaxSteelStrain. | `PmmModels.cs` |
-| `record` | **SolverSettings** | Represents the SolverSettings component. | `PmmModels.cs` |
+| `record` | **SectionIntegrationResult** | Encapsulates the result of SectionIntegration operations. Key properties: NominalP, NominalMx, NominalMy, ConcreteForce. | `PmmModels.cs` |
+| `record` | **SolverSettings** | Represents the SolverSettings record. Key properties: AngleStepDegrees, NeutralAxisSamples, RectangularFiberCountX, RectangularFiberCountY. | `PmmModels.cs` |
+| `record` | **struct** | Represents the struct record. | `PmmModels.cs` |
 
 ### Solvers/Integration
 
@@ -360,39 +379,43 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **FiberSectionIntegrator** | Represents the FiberSectionIntegrator class. Key methods: Integrate. | `FiberSectionIntegrator.cs` |
 | `class` | **PolygonSectionIntegrator** | Represents the PolygonSectionIntegrator class. Key methods: Integrate. | `PolygonSectionIntegrator.cs` |
 | `class` | **SectionIntegratorFactory** | Represents the SectionIntegratorFactory class. Key methods: Create. | `SectionIntegratorFactory.cs` |
+| `record` | **struct** | Represents the struct record. | `FiberSectionIntegrator.cs` |
+| `record` | **struct** | Represents the struct record. | `FiberSectionIntegrator.cs` |
+| `record` | **struct** | Represents the struct record. | `PolygonSectionIntegrator.cs` |
 
 ### Solvers/Legacy
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AciFiberInteractionSolver** | Represents the AciFiberInteractionSolver class. Key methods: Solve. Key properties: ConcreteGridDivisions, AngleStepDegrees, NeutralAxisSamples. | `AciFiberInteractionSolver.cs` |
+| `class` | **AciFiberInteractionSolver** | Represents the AciFiberInteractionSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, ConcreteGridDivisions. | `AciFiberInteractionSolver.cs` |
 | `class` | **Ec2BoundaryInteractionSolver** | Represents the Ec2BoundaryInteractionSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples. | `Ec2BoundaryInteractionSolver.cs` |
-| `class` | **Ec2FiberInteractionSolver** | Represents the Ec2FiberInteractionSolver class. Key methods: Solve. Key properties: ConcreteGridDivisions, AngleStepDegrees, NeutralAxisSamples. | `Ec2FiberInteractionSolver.cs` |
-| `class` | **Ec2SimplifiedStressBlockInteractionSolver** | Eurocode 2 (EN 1992-1-1:2004) §3.1.7 — simplified rectangular concrete stress block. Uses Sutherland-Hodgman analytical polygon clipping (no fiber grid). Block stress = η × fcd, block depth = λ × c. All material parameters are read from IDesignCodeService; no local hardcoded constants. Moment sign: Mnx = Σ(force × y), Mny = Σ(force × x). Phi = 1.0. | `Ec2SimplifiedStressBlockInteractionSolver.cs` |
-| `class` | **EcPmmFiberAnalyticSolver** | Represents the EcPmmFiberAnalyticSolver class. Key methods: Solve. Key properties: FiberCount, AngleStepDegrees, NeutralAxisSamples. | `EcPmmFiberAnalyticSolver.cs` |
-| `class` | **StrainCompatibilityInteractionSolver** | Represents the StrainCompatibilityInteractionSolver class. Key methods: Solve. Key properties: ConcreteGridDivisions, AngleStepDegrees, NeutralAxisSamples. | `StrainCompatibilityInteractionSolver.cs` |
-| `record` | **Fiber** | Represents the Fiber component. | `Ec2FiberInteractionSolver.cs` |
-| `record` | **Point** | Represents the Point component. | `StrainCompatibilityInteractionSolver.cs` |
-| `record` | **SectionPoint** | Represents the SectionPoint component. | `Ec2SimplifiedStressBlockInteractionSolver.cs` |
+| `class` | **Ec2FiberInteractionSolver** | Represents the Ec2FiberInteractionSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, ConcreteGridDivisions. | `Ec2FiberInteractionSolver.cs` |
+| `class` | **Ec2SimplifiedStressBlockInteractionSolver** | /// Eurocode 2 (EN 1992-1-1:2004) §3.1.7 — simplified rectangular concrete stress block. /// Uses Sutherland-Hodgman analytical polygon clipping (no fiber grid). /// Block stress = η × fcd, block depth = λ × c. /// All material parameters are read from IDesignCodeService; no local hardcoded constants. /// Moment sign: Mnx = Σ(force × y), Mny = Σ(force × x). Phi = 1.0. ///. Key methods: Solve, LambdaFor, EtaFor. Key properties: AngleStepDegrees, NeutralAxisSamples. | `Ec2SimplifiedStressBlockInteractionSolver.cs` |
+| `class` | **EcPmmFiberAnalyticSolver** | Represents the EcPmmFiberAnalyticSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, FiberCount. | `EcPmmFiberAnalyticSolver.cs` |
+| `record` | **Fiber** | Represents the Fiber record. | `Ec2FiberInteractionSolver.cs` |
+| `record` | **Point** | Represents the Point record. | `StrainCompatibilityInteractionSolver.cs` |
+| `record` | **SectionPoint** | Represents the SectionPoint record. | `Ec2SimplifiedStressBlockInteractionSolver.cs` |
+| `class` | **StrainCompatibilityInteractionSolver** | Represents the StrainCompatibilityInteractionSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, ConcreteGridDivisions. | `StrainCompatibilityInteractionSolver.cs` |
+| `record` | **struct** | Represents the struct record. | `AciFiberInteractionSolver.cs` |
 
 ### Solvers/StrainPoints
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **Aci318StrainLimitAdapter** | Represents the Aci318StrainLimitAdapter class. Key methods: GetStrengthReductionFactor, GetPureCompressionCapacityLimit, GetSteelDesignStressLimit, GetConcreteDesignStress, GetSteelTensionStrainLimit. | `Aci318StrainLimitAdapter.cs` |
-| `class` | **Ec2StrainLimitAdapter** | Represents the Ec2StrainLimitAdapter class. Key methods: GetStrengthReductionFactor, GetPureCompressionCapacityLimit, GetSteelDesignStressLimit, GetConcreteDesignStress, GetSteelTensionStrainLimit. | `Ec2StrainLimitAdapter.cs` |
-| `class` | **PmComparisonService** | Provides service logic and operations for PmComparison. Key methods: Compare. Key properties: PassFail, NeutralAxisAngle, Mn_Polygon. | `PmComparisonService.cs` |
+| `class` | **Aci318StrainLimitAdapter** | Represents the Aci318StrainLimitAdapter class. Key methods: GetConcreteUltimateCompressionStrain, GetSteelYieldStrain, GetSteelTensionStrainLimit, GetStressBlockParameters. Key properties: CodeName. | `Aci318StrainLimitAdapter.cs` |
+| `class` | **Ec2StrainLimitAdapter** | Represents the Ec2StrainLimitAdapter class. Key methods: GetConcreteUltimateCompressionStrain, GetSteelYieldStrain, GetSteelTensionStrainLimit, GetStressBlockParameters. Key properties: CodeName. | `Ec2StrainLimitAdapter.cs` |
+| `interface` | **IStrainLimitDesignCodeAdapter** | Represents the IStrainLimitDesignCodeAdapter class. | `IStrainLimitDesignCodeAdapter.cs` |
+| `record` | **PmComparisonPointResult** | Encapsulates the result of PmComparisonPoint operations. Key properties: PointName, TargetStrainState, NeutralAxisDepth, NeutralAxisAngle. | `PmComparisonService.cs` |
+| `class` | **PmComparisonService** | Provides service logic and operations for PmComparison. Key methods: Compare. | `PmComparisonService.cs` |
 | `class` | **PmValidationReportService** | Provides service logic and operations for PmValidationReport. Key methods: BuildReport. | `PmValidationReportService.cs` |
-| `class` | **RebarStrainStressResult** | Encapsulates the result of RebarStrainStress operations. Key properties: XMm, NominalAxialForceN, ExtremeCompressionStrain. | `StrainControlledPmModels.cs` |
-| `class` | **StrainControlledPmPointResult** | Encapsulates the result of StrainControlledPmPoint operations. Key properties: XMm, NominalAxialForceN, ExtremeCompressionStrain. | `StrainControlledPmModels.cs` |
+| `class` | **RebarStrainStressResult** | Encapsulates the result of RebarStrainStress operations. Key properties: Strain, StressMpa, ForceN, AreaMm2. | `StrainControlledPmModels.cs` |
+| `class` | **StrainControlledPmPointResult** | Encapsulates the result of StrainControlledPmPoint operations. Key properties: CodeName, PointName, TargetTensileSteelStrain, NeutralAxisDepthMm. | `StrainControlledPmModels.cs` |
 | `class` | **StrainControlledSevenPointStrategy** | Represents the StrainControlledSevenPointStrategy class. Key methods: GeneratePoints. | `StrainControlledSevenPointStrategy.cs` |
-| `class` | **StrainPointDefinition** | Represents the StrainPointDefinition class. Key properties: XMm, NominalAxialForceN, ExtremeCompressionStrain. | `StrainControlledPmModels.cs` |
-| `class` | **StrainStateResult** | Encapsulates the result of StrainState operations. Key properties: XMm, NominalAxialForceN, ExtremeCompressionStrain. | `StrainControlledPmModels.cs` |
-| `class` | **StrengthReductionResult** | Encapsulates the result of StrengthReduction operations. Key properties: Phi, StrengthEffectivenessFactor, Classification. | `IStrainLimitDesignCodeAdapter.cs` |
-| `class` | **StressBlockParameters** | Represents the StressBlockParameters class. Key properties: Phi, StrengthEffectivenessFactor, Classification. | `IStrainLimitDesignCodeAdapter.cs` |
-| `enum` | **StrainPointType** | Enumeration defining states/types for StrainPointType. Key properties: XMm, NominalAxialForceN, ExtremeCompressionStrain. | `StrainControlledPmModels.cs` |
-| `interface` | **IStrainLimitDesignCodeAdapter** | Defines the contract for StrainLimitDesignCodeAdapter. Key properties: Phi, StrengthEffectivenessFactor, Classification. | `IStrainLimitDesignCodeAdapter.cs` |
-| `record` | **PmComparisonPointResult** | Encapsulates the result of PmComparisonPoint operations. Key methods: Compare. Key properties: PassFail, NeutralAxisAngle, Mn_Polygon. | `PmComparisonService.cs` |
+| `class` | **StrainPointDefinition** | Represents the StrainPointDefinition class. Key properties: PointName, PointType, TargetTensileSteelStrain, Description. | `StrainControlledPmModels.cs` |
+| `enum` | **StrainPointType** | Enumeration defining states/types for StrainPointType. | `StrainControlledPmModels.cs` |
+| `class` | **StrainStateResult** | Encapsulates the result of StrainState operations. Key properties: ExtremeCompressionStrain, ExtremeTensionSteelStrain, RegionClassification. | `StrainControlledPmModels.cs` |
+| `class` | **StrengthReductionResult** | Encapsulates the result of StrengthReduction operations. Key properties: Phi, Classification. | `IStrainLimitDesignCodeAdapter.cs` |
+| `class` | **StressBlockParameters** | Represents the StressBlockParameters class. Key properties: DepthFactorBeta, StrengthEffectivenessFactor. | `IStrainLimitDesignCodeAdapter.cs` |
 
 ## MBColumn.Presentation.Wpf
 
@@ -400,39 +423,45 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **BulkObservableCollection** | ObservableCollection that supports batch adds via AddRange, firing a single Reset notification instead of one per item. | `BulkObservableCollection.cs` |
+| `class` | **BulkObservableCollection** | /// ObservableCollection that supports batch adds via AddRange, /// firing a single Reset notification instead of one per item. ///. Key methods: AddRange. | `BulkObservableCollection.cs` |
 
 ### Commands
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AsyncRelayCommand** | Represents the AsyncRelayCommand class. Key methods: Execute, RaiseCanExecuteChanged, CanExecute. | `RelayCommand.cs` |
-| `class` | **RelayCommand** | Represents the RelayCommand class. Key methods: Execute, RaiseCanExecuteChanged, CanExecute. | `RelayCommand.cs` |
-| `class` | **RelayCommand** | Represents the RelayCommand class. Key methods: Execute, RaiseCanExecuteChanged, CanExecute. | `RelayCommand.cs` |
+| `class` | **AsyncRelayCommand** | Represents the AsyncRelayCommand class. Key methods: CanExecute, Execute, RaiseCanExecuteChanged. | `RelayCommand.cs` |
+| `class` | **RelayCommand** | Represents the RelayCommand class. Key methods: CanExecute, Execute, RaiseCanExecuteChanged. | `RelayCommand.cs` |
+| `class` | **RelayCommand** | Represents the RelayCommand class. Key methods: CanExecute, Execute, RaiseCanExecuteChanged. | `RelayCommand.cs` |
 
 ### Composition
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AppComposition** | Represents the AppComposition class. Key methods: Create, CreateMainWindowViewModel, Dispose. Key properties: EtabsImportDialogService, EtabsForceRefreshDialogService, MessageService. | `AppComposition.cs` |
+| `class` | **AppComposition** | Represents the AppComposition class. Key methods: Create, CreateMainWindowViewModel, Dispose. Key properties: ProjectService, MessageService, ProjectFileDialogService, ProjectNameDialogService. | `AppComposition.cs` |
 
 ### Controls
 
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **AxisRenderer2D** | Represents the AxisRenderer2D class. Key methods: Draw. | `AxisRenderer2D.cs` |
-| `class` | **AxisTickService** | Service handling operations for AxisTick. | `AxisTickService.cs` |
+| `class` | **AxisTickService** | Provides service logic and operations for AxisTick. Key methods: Generate, GenerateFixed, Format. | `AxisTickService.cs` |
+| `record` | **AxisTicks** | Represents the AxisTicks record. | `AxisTickService.cs` |
+| `record` | **Bounds3D** | Represents the Bounds3D record. | `InteractionViewport3D.cs` |
+| `record` | **CachedScene** | Represents the CachedScene record. | `InteractionViewport3D.cs` |
 | `class` | **ChartInteractionState** | Represents the ChartInteractionState class. Key methods: Reset. | `ChartInteractionState.cs` |
-| `class` | **ChartTransformHelper** | Represents the ChartTransformHelper class. Key methods: ToData, AxisTicksX, AutoFit2D, TicksY, AxisTicksY. Key properties: MaxX, MinX, Plot. | `ChartTransformHelper.cs` |
-| `class` | **DiagramCanvas2D** | Represents the DiagramCanvas2D class. Key methods: ClipClosedPolylineBelowYForTesting, ResetView, ClipOpenPolylineAboveYForTesting. Key properties: ResetVersion, ShowCapacityControlPoints, ShowDemandPoint. | `DiagramCanvas2D.cs` |
-| `class` | **InteractionViewport3D** | Represents the InteractionViewport3D class. Key methods: BuildEngineeringAxesForTesting, From, ResetCamera. Key properties: ResetVersion, ShowSurface, ShowDemandPoint. | `InteractionViewport3D.cs` |
-| `class` | **ReportPaginator** | Paginates a FrameworkElement across multiple printed pages by slicing it vertically after scaling to fit the page width. | `ReportPaginator.cs` |
-| `class` | **SectionPreviewCanvas** | Represents the SectionPreviewCanvas class. Key properties: RebarLabel, SectionLabel, Cover. | `SectionPreviewCanvas.cs` |
-| `class` | **SectionStateInsetCanvas** | Sidebar panel that renders a PmChartInsetFigureDto (section with NA, compression/tension zones). Fills its available area; legend sits at the bottom. | `SectionStateInsetCanvas.cs` |
+| `class` | **ChartTransformHelper** | Represents the ChartTransformHelper class. Key methods: AutoFit2D, ToScreen, ToData, TicksX. Key properties: MinX, MaxX, MinY, MaxY. | `ChartTransformHelper.cs` |
+| `class` | **DiagramCanvas2D** | Represents the DiagramCanvas2D class. Key methods: ResetView, ClipClosedPolylineBelowYForTesting, ClipOpenPolylineAboveYForTesting. Key properties: Points, ReferenceLines, XAxisLabel, YAxisLabel. | `DiagramCanvas2D.cs` |
+| `class` | **InteractionViewport3D** | Represents the InteractionViewport3D class. Key methods: ResetCamera, BuildEngineeringAxesForTesting. Key properties: Points, DemandPoint, DemandPoints, GoverningPoint. | `InteractionViewport3D.cs` |
+| `class` | **ReportPaginator** | /// Paginates a FrameworkElement across multiple printed pages by slicing it /// vertically after scaling to fit the page width. ///. Key methods: GetPage. Key properties: IsPageCountValid, PageCount, PageSize, Source. | `ReportPaginator.cs` |
+| `class` | **SectionPreviewCanvas** | Represents the SectionPreviewCanvas class. Key properties: SectionWidth, SectionHeight, SectionShape, Cover. | `SectionPreviewCanvas.cs` |
+| `class` | **SectionStateInsetCanvas** | /// Sidebar panel that renders a PmChartInsetFigureDto (section with NA, compression/tension zones). /// Fills its available area; legend sits at the bottom. ///. Key properties: InsetFigure. | `SectionStateInsetCanvas.cs` |
 | `class` | **TooltipRenderer** | Represents the TooltipRenderer class. Key methods: Build. | `TooltipRenderer.cs` |
-| `record` | **AxisTicks** | Represents the AxisTicks record. Key methods: Format, GenerateFixed, Generate. | `AxisTickService.cs` |
-| `record` | **Bounds3D** | Represents the Bounds3D record. Key methods: BuildEngineeringAxesForTesting, From, ResetCamera. Key properties: ResetVersion, ShowSurface, ShowDemandPoint. | `InteractionViewport3D.cs` |
-| `record` | **CachedScene** | Represents the CachedScene component. | `InteractionViewport3D.cs` |
+| `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
+| `record` | **struct** | Represents the struct record. Key methods: From. | `InteractionViewport3D.cs` |
+| `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
+| `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
+| `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
+| `record` | **struct** | Represents the struct record. Key properties: IsValid. | `InteractionViewport3D.cs` |
 
 ### Converters
 
@@ -448,131 +477,132 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **App** | Represents the App class. | `App.xaml.cs` |
-| `class` | **ControlPointsWindow** | User interface component for ControlPointsWindow. | `ControlPointsWindow.xaml.cs` |
-| `class` | **ExportControlPointsWindow** | User interface component for ExportControlPointsWindow. | `ExportControlPointsWindow.xaml.cs` |
-| `class` | **MainWindow** | User interface component for MainWindow. | `MainWindow.xaml.cs` |
-| `record` | **ControlPointRow** | Represents the ControlPointRow component. | `ControlPointsWindow.xaml.cs` |
+| `record` | **ControlPointRow** | Data structure representing a row for ControlPoint. | `ControlPointsWindow.xaml.cs` |
+| `class` | **ControlPointsWindow** | Represents the ControlPointsWindow class. | `ControlPointsWindow.xaml.cs` |
+| `class` | **ExportControlPointsWindow** | Represents the ExportControlPointsWindow class. | `ExportControlPointsWindow.xaml.cs` |
+| `class` | **MainWindow** | Represents the MainWindow class. | `MainWindow.xaml.cs` |
 
 ### Services
 
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **ControlPointExportDialogService** | Provides service logic and operations for ControlPointExportDialog. Key methods: ShowDialog. | `ControlPointExportDialogService.cs` |
-| `class` | **DxfImportDialogService** | Provides service logic and operations for DxfImportDialog. | `DxfImportDialogService.cs` |
-| `class` | **EtabsForceRefreshDialogService** | Provides service logic and operations for EtabsForceRefreshDialog. | `EtabsForceRefreshDialogService.cs` |
-| `class` | **EtabsImportDialogService** | Provides service logic and operations for EtabsImportDialog. | `EtabsImportDialogService.cs` |
-| `class` | **MessageBoxService** | Provides service logic and operations for MessageBox. Key methods: ConfirmWarning, ShowWarning, ShowInformation, ShowError. | `IMessageService.cs` |
-| `class` | **ProjectFileDialogService** | Provides service logic and operations for ProjectFileDialog. | `IProjectFileDialogService.cs` |
-| `class` | **ProjectNameDialogService** | Provides service logic and operations for ProjectNameDialog. | `IProjectNameDialogService.cs` |
-| `class` | **ProjectSession** | Represents the ProjectSession class. Key methods: StoreColumnResult, ClearResults, SelectColumn, CurrentColumnHasResult, TryGetCurrentColumnResult. | `ProjectSession.cs` |
-| `class` | **RecentProjectsService** | Provides service logic and operations for RecentProjects. Key methods: ClearRecent, AddRecent, GetRecent. | `RecentProjectsService.cs` |
+| `class` | **DxfImportDialogService** | Provides service logic and operations for DxfImportDialog. Key methods: ShowDialog. | `DxfImportDialogService.cs` |
+| `class` | **EtabsForceRefreshDialogService** | Provides service logic and operations for EtabsForceRefreshDialog. Key methods: ShowDialog. | `EtabsForceRefreshDialogService.cs` |
+| `record` | **EtabsImportDialogResult** | Encapsulates the result of EtabsImportDialog operations. | `EtabsImportDialogResult.cs` |
+| `class` | **EtabsImportDialogService** | Provides service logic and operations for EtabsImportDialog. Key methods: ShowDialog. | `EtabsImportDialogService.cs` |
+| `record` | **EtabsImportedSectionInput** | Represents the EtabsImportedSectionInput record. | `EtabsImportDialogResult.cs` |
 | `interface` | **IControlPointExportDialogService** | Provides service logic and operations for IControlPointExportDialog. | `IControlPointExportDialogService.cs` |
 | `interface` | **IDxfImportDialogService** | Provides service logic and operations for IDxfImportDialog. | `IDxfImportDialogService.cs` |
 | `interface` | **IEtabsForceRefreshDialogService** | Provides service logic and operations for IEtabsForceRefreshDialog. | `IEtabsForceRefreshDialogService.cs` |
 | `interface` | **IEtabsImportDialogService** | Provides service logic and operations for IEtabsImportDialog. | `IEtabsImportDialogService.cs` |
-| `interface` | **IMessageService** | Provides service logic and operations for IMessage. Key methods: ConfirmWarning, ShowWarning, ShowInformation, ShowError. | `IMessageService.cs` |
+| `interface` | **IMessageService** | Provides service logic and operations for IMessage. | `IMessageService.cs` |
 | `interface` | **IProjectFileDialogService** | Provides service logic and operations for IProjectFileDialog. | `IProjectFileDialogService.cs` |
 | `interface` | **IProjectNameDialogService** | Provides service logic and operations for IProjectNameDialog. | `IProjectNameDialogService.cs` |
-| `record` | **EtabsImportDialogResult** | Represents the EtabsImportDialogResult component. | `EtabsImportDialogResult.cs` |
-| `record` | **EtabsImportedSectionInput** | Represents the EtabsImportedSectionInput component. | `EtabsImportDialogResult.cs` |
+| `class` | **MessageBoxService** | Provides service logic and operations for MessageBox. Key methods: ShowError, ShowInformation, ShowWarning, ConfirmWarning. | `IMessageService.cs` |
+| `class` | **ProjectFileDialogService** | Provides service logic and operations for ProjectFileDialog. Key methods: ShowOpenProjectDialog, ShowSaveProjectAsDialog. | `IProjectFileDialogService.cs` |
+| `class` | **ProjectNameDialogService** | Provides service logic and operations for ProjectNameDialog. Key methods: PromptProjectName, PromptColumnName, PromptSelectSections. | `IProjectNameDialogService.cs` |
+| `class` | **ProjectSession** | Represents the ProjectSession class. Key methods: SelectColumn, StoreCurrentColumnResult, StoreColumnResult, TryGetCurrentColumnResult. Key properties: CurrentColumnId. | `ProjectSession.cs` |
+| `class` | **RecentProjectsService** | Provides service logic and operations for RecentProjects. Key methods: GetRecent, ClearRecent, AddRecent. | `RecentProjectsService.cs` |
 
 ### ViewModels
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **A4ReportPageViewModel** | View model representing state and commands for A4ReportPage UI. Key methods: MmToDip, Paginate, InchToDip. Key properties: HandCalcPDisplay, SolverPDisplay, KeepTogether. | `A4ReportModels.cs` |
-| `class` | **CadPointViewModel** | View model representing state and commands for CadPoint UI. Key properties: X, Y. | `CadPointViewModel.cs` |
-| `class` | **CadRebarViewModel** | View model representing state and commands for CadRebar UI. Key properties: X, BarSize, Y. | `CadRebarViewModel.cs` |
+| `class` | **A4ReportPageViewModel** | Represents the A4ReportPageViewModel class. Key properties: PageNumber, PageWidthMm, PageHeightMm, MarginMm. | `A4ReportModels.cs` |
+| `class` | **CadPointViewModel** | Represents the CadPointViewModel class. Key properties: X, Y. | `CadPointViewModel.cs` |
+| `class` | **CadRebarViewModel** | Represents the CadRebarViewModel class. Key properties: X, Y, BarSize, AreaMm2. | `CadRebarViewModel.cs` |
 | `class` | **CadSnapService** | Provides service logic and operations for CadSnap. Key methods: Snap. | `CadSnapService.cs` |
-| `class` | **ColumnItemViewModel** | View model representing state and commands for ColumnItem UI. Key properties: MoveToGroupOptions, DuplicateCommand, Status. | `ColumnItemViewModel.cs` |
-| `class` | **DxfImportViewModel** | View model binding the DxfImport UI component. | `DxfImportViewModel.cs` |
-| `class` | **EtabsColumnImportRowViewModel** | View model representing state and commands for EtabsColumnImportRow UI. Key properties: EtabsSectionName, LinkedSection, IsSelected. | `EtabsColumnImportRowViewModel.cs` |
-| `class` | **EtabsForceImportRowViewModel** | View model representing state and commands for EtabsForceImportRow UI. Key properties: M2, V2, IsSelected. | `EtabsForceImportRowViewModel.cs` |
-| `class` | **EtabsForceRefreshSectionRowViewModel** | View model representing state and commands for EtabsForceRefreshSectionRow UI. Key methods: SetAvailableCombinations. Key properties: LoadComboFilterText, BusyText, StatusText. | `EtabsForceRefreshViewModel.cs` |
-| `class` | **EtabsForceRefreshViewModel** | View model representing state and commands for EtabsForceRefresh UI. Key methods: SetAvailableCombinations. Key properties: LoadComboFilterText, BusyText, StatusText. | `EtabsForceRefreshViewModel.cs` |
-| `class` | **EtabsImportSummaryRowViewModel** | View model representing state and commands for EtabsImportSummaryRow UI. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `class` | **EtabsImportViewModel** | View model representing state and commands for EtabsImport UI. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `class` | **EtabsLoadCombinationViewModel** | View model representing state and commands for EtabsLoadCombination UI. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `class` | **EtabsPreloadData** | Represents the EtabsPreloadData class. Key properties: Columns, PresentUnits, FrameObjectCount. | `EtabsPreloadData.cs` |
-| `class` | **EtabsPreloadStep** | Represents the EtabsPreloadStep component. | `EtabsPreloadStep.cs` |
-| `class` | **EtabsPreloadViewModel** | View model representing state and commands for EtabsPreload UI. Key methods: Cancel. Key properties: CancelCommand, AvailableCombinations, IsComplete. | `EtabsPreloadViewModel.cs` |
-| `class` | **EtabsSectionMappingViewModel** | View model representing state and commands for EtabsSectionMapping UI. Key properties: EtabsSectionName, TieDiameter, TotalBars. | `EtabsSectionMappingViewModel.cs` |
-| `class` | **EtabsStoryOptionViewModel** | View model representing state and commands for EtabsStoryOption UI. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `class` | **EtabsUniqueSectionOptionViewModel** | View model representing state and commands for EtabsUniqueSectionOption UI. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `class` | **ExplorerNodeViewModel** | View model representing state and commands for ExplorerNode UI. Key properties: IsRenaming, Id, IsSelected. | `ExplorerNodeViewModel.cs` |
-| `class` | **ExportControlPointsViewModel** | View model representing state and commands for ExportControlPoints UI. Key methods: RefreshPreview. Key properties: EmptyStateMessage, PreviewSummary, IsCustomThetaSelected. | `ExportControlPointsViewModel.cs` |
-| `class` | **GoverningChartPreviewViewModel** | View model representing state and commands for GoverningChartPreview UI. Key methods: MmToDip, Paginate, InchToDip. Key properties: HandCalcPDisplay, SolverPDisplay, KeepTogether. | `A4ReportModels.cs` |
-| `class` | **GroupActionViewModel** | View model representing state and commands for GroupAction UI. Key properties: Name, Command. | `GroupActionViewModel.cs` |
-| `class` | **GroupItemViewModel** | View model representing state and commands for GroupItem UI. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand. | `GroupItemViewModel.cs` |
-| `class` | **InputViewModel** | View model representing state and commands for Input UI. Key methods: ToDto, UpdateSectionPreview, ApplyDxfImportResult, StressValue, ToSnapshot. Key properties: PreviewIyyText, IsRectangularSection, GenerateEqualSpacingRebarsCommand. | `InputViewModel.cs` |
-| `class` | **IrregularBoundaryPointViewModel** | View model representing state and commands for IrregularBoundaryPoint UI. Key properties: PtIndex, X, Y. | `IrregularBoundaryPointViewModel.cs` |
-| `class` | **IrregularRebarRowViewModel** | View model representing state and commands for IrregularRebarRow UI. Key properties: X, BarSize, RebarIndex. | `IrregularRebarRowViewModel.cs` |
-| `class` | **IrregularSectionInputViewModel** | View model representing state and commands for IrregularSectionInput UI. Key methods: ExportBoundaryFile, ImportBoundaryFile, ToDto, LoadDefaultLShape, ImportRebarFile. Key properties: RebarMode, BoundaryPoints, AddBoundaryRowCommand. | `IrregularSectionInputViewModel.cs` |
-| `class` | **LoadCaseViewModel** | View model representing state and commands for LoadCase UI. Key methods: ToDto. Key properties: HasValidationError, Source, Muy. | `LoadCaseViewModel.cs` |
-| `class` | **MM3DViewModel** | View model representing state and commands for MM3D UI. Key methods: Load. Key properties: ResetVersion, ShowSurface, ShowWireframe. | `MM3DViewModel.cs` |
-| `class` | **MMDiagramViewModel** | View model representing state and commands for MMDiagram UI. Key methods: Load. Key properties: ResetVersion, ResetViewCommand, BoundaryPoints. | `MMDiagramViewModel.cs` |
-| `class` | **MainWindowViewModel** | View model representing state and commands for MainWindow UI. Key properties: CalculateCommand, IsCalculating, IsSaving. | `MainWindowViewModel.cs` |
-| `class` | **MbColumnMappedForceRowViewModel** | View model representing state and commands for MbColumnMappedForceRow UI. Key properties: Mx, Location, My. | `MbColumnMappedForceRowViewModel.cs` |
-| `class` | **MbColumnSectionSummaryViewModel** | View model representing state and commands for MbColumnSectionSummary UI. Key properties: ObjectType, SectionName, SelectedItems. | `MbColumnSectionSummaryViewModel.cs` |
-| `class` | **MbColumnSectionViewModel** | View model representing state and commands for MbColumnSection UI. Key methods: RemoveItem, AddItem. Key properties: Items, CancelRenameCommand, CommitRenameCommand. | `MbColumnSectionViewModel.cs` |
-| `class` | **PM3DViewModel** | View model representing state and commands for PM3D UI. Key methods: Load. Key properties: ToggleAxialLoadSliceCommand, SelectedAxialLoad, ToggleSurfaceCommand. | `PM3DViewModel.cs` |
-| `class` | **PMDiagramViewModel** | View model representing state and commands for PMDiagram UI. Key methods: LoadPmAngle. Key properties: ResetVersion, ResetViewCommand, YAxisLabel. | `PMDiagramViewModel.cs` |
-| `class` | **PolylineDraft** | Represents the PolylineDraft class. Key methods: Clear. | `PolylineDraft.cs` |
-| `class` | **ProjectExplorerViewModel** | View model representing state and commands for ProjectExplorer UI. Key methods: ClearSectionStatuses, SetSectionStatus, RefreshMoveToGroupOptions, SelectNode, CommitRename. Key properties: AddColumnCommand, ProjectName, Nodes. | `ProjectExplorerViewModel.cs` |
-| `class` | **ProjectGroupOptionViewModel** | View model binding the ProjectGroupOption UI component. | `EtabsImportViewModel.cs` |
-| `class` | **RebarLayoutViewModel** | View model representing state and commands for RebarLayout UI. Key properties: Top, Right, Left. | `RebarLayoutViewModel.cs` |
-| `class` | **RebarSideInputViewModel** | View model representing state and commands for RebarSideInput UI. Key methods: SetWarning, SetBarCountSilently, ToDto, SetGlobalInputs. Key properties: Cover, BarCount, BarCountWarning. | `RebarSideInputViewModel.cs` |
-| `class` | **ReportBlockViewModel** | View model representing state and commands for ReportBlock UI. Key methods: MmToDip, Paginate, InchToDip. Key properties: HandCalcPDisplay, SolverPDisplay, KeepTogether. | `A4ReportModels.cs` |
-| `class` | **ReportPaginatorService** | Provides service logic and operations for ReportPaginator. Key methods: MmToDip, Paginate, InchToDip. Key properties: HandCalcPDisplay, SolverPDisplay, KeepTogether. | `A4ReportModels.cs` |
-| `class` | **ReportPm7RowViewModel** | View model representing state and commands for ReportPm7Row UI. Key methods: MmToDip, Paginate, InchToDip. Key properties: HandCalcPDisplay, SolverPDisplay, KeepTogether. | `A4ReportModels.cs` |
-| `class` | **ReportTabViewModel** | View model representing state and commands for ReportTab UI. Key methods: MarkOutdated, LoadFromCurrentWorkspace, Clear. Key properties: ResultStatusText, BoundaryPoints, GeneratePreviewCommand. | `ReportTabViewModel.cs` |
-| `class` | **ReportUnitConverter** | Represents the ReportUnitConverter class. Key methods: MmToDip, Paginate, InchToDip. Key properties: HandCalcPDisplay, SolverPDisplay, KeepTogether. | `A4ReportModels.cs` |
-| `class` | **ResultViewModel** | View model representing state and commands for Result UI. Key methods: CloseViewport, ToggleViewport. Key properties: SelectedPointNeutralAxisDepthDisplay, SelectedPointTypeDisplay, ViewportDropdownText. | `ResultViewModel.cs` |
-| `class` | **SectionCadEditorViewModel** | View model representing state and commands for SectionCadEditor UI. Key methods: AddPolylinePoint, AddRebar, UpdatePolylinePreview, ApplyToSource, CancelPolyline. Key properties: ToolMode, GridSpacing, BoundaryPoints. | `SectionCadEditorViewModel.cs` |
-| `class` | **SnapResult** | Represents the SnapResult component. | `SnapResult.cs` |
-| `class` | **ViewModelBase** | Represents the ViewModelBase class. | `ViewModelBase.cs` |
-| `class` | **ViewportOptionViewModel** | View model binding the ViewportOption UI component. | `ViewportOptionViewModel.cs` |
 | `enum` | **CadToolMode** | Enumeration defining states/types for CadToolMode. | `CadToolMode.cs` |
-| `enum` | **DiagramViewportType** | Enumeration defining states/types for DiagramViewportType. Key properties: IsSelected, DisplayName, Type. | `ViewportOptionViewModel.cs` |
-| `enum` | **EtabsDuplicateHandlingMode** | Enumeration defining states/types for EtabsDuplicateHandlingMode. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `enum` | **MaterialLibraryType** | Represents the MaterialLibraryType component. | `InputViewModel.cs` |
-| `enum` | **PreloadStepStatus** | Enumeration defining states/types for PreloadStepStatus. Key methods: UpdateDetail, SetRunning, SetError, SetDone. Key properties: Status, Detail, IsSubStep. | `EtabsPreloadStep.cs` |
+| `class` | **ColumnItemViewModel** | Represents the ColumnItemViewModel class. Key properties: GroupId, MoveToGroupOptions, Status, StatusText. | `ColumnItemViewModel.cs` |
+| `record` | **DesignCodeOption** | Represents the DesignCodeOption record. | `InputViewModel.cs` |
+| `enum` | **DiagramViewportType** | Enumeration defining states/types for DiagramViewportType. | `ViewportOptionViewModel.cs` |
+| `class` | **DxfImportViewModel** | Represents the DxfImportViewModel class. Key properties: LayerNames, PreviewRebars, BrowseFileCommand, RefreshLayersCommand. | `DxfImportViewModel.cs` |
+| `record` | **Ec2SolverOption** | Represents the Ec2SolverOption record. | `InputViewModel.cs` |
+| `class` | **EtabsColumnImportRowViewModel** | Represents the EtabsColumnImportRowViewModel class. Key properties: IsSelected, ObjectName, Pier, Story. | `EtabsColumnImportRowViewModel.cs` |
+| `enum` | **EtabsDuplicateHandlingMode** | Enumeration defining states/types for EtabsDuplicateHandlingMode. | `EtabsImportViewModel.cs` |
+| `record` | **EtabsDuplicateHandlingOption** | Represents the EtabsDuplicateHandlingOption record. | `EtabsImportViewModel.cs` |
+| `class` | **EtabsForceImportRowViewModel** | Represents the EtabsForceImportRowViewModel class. Key properties: IsSelected, ObjectName, Pier, Story. | `EtabsForceImportRowViewModel.cs` |
+| `class` | **EtabsForceRefreshSectionRowViewModel** | Represents the EtabsForceRefreshSectionRowViewModel class. Key properties: SectionName, StatusText, OldRows, NewRows. | `EtabsForceRefreshViewModel.cs` |
+| `class` | **EtabsForceRefreshViewModel** | Represents the EtabsForceRefreshViewModel class. Key methods: SetAvailableCombinations. Key properties: Result, ExistingBindings, LoadCombinations, SectionRows. | `EtabsForceRefreshViewModel.cs` |
+| `class` | **EtabsImportSummaryRowViewModel** | Represents the EtabsImportSummaryRowViewModel class. Key properties: SourceColumn, Mapping, NewSectionName, Pier. | `EtabsImportViewModel.cs` |
+| `class` | **EtabsImportViewModel** | Represents the EtabsImportViewModel class. Key methods: ApplyPreloadData, AssignSelectedItemsToSection, RemoveItemFromSection, DeleteMbColumnSection. Key properties: ImportResult, Columns, FilteredColumns, TierObjectCandidatesView. | `EtabsImportViewModel.cs` |
+| `class` | **EtabsLoadCombinationViewModel** | Represents the EtabsLoadCombinationViewModel class. Key methods: SetSelectedSilently. Key properties: Name, IsSelected. | `EtabsImportViewModel.cs` |
+| `class` | **EtabsPreloadData** | Represents the EtabsPreloadData class. Key properties: ModelName, ModelPath, PresentUnits, StoryCount. | `EtabsPreloadData.cs` |
+| `class` | **EtabsPreloadStep** | Represents the EtabsPreloadStep class. Key methods: SetRunning, SetDone, SetError, UpdateDetail. Key properties: Label, IsSubStep, Status, Detail. | `EtabsPreloadStep.cs` |
+| `class` | **EtabsPreloadViewModel** | Represents the EtabsPreloadViewModel class. Key methods: StartAsync, Cancel. Key properties: Steps, AvailableCombinations, FilteredCombinations, CompletedCount. | `EtabsPreloadViewModel.cs` |
+| `class` | **EtabsSectionMappingViewModel** | Represents the EtabsSectionMappingViewModel class. Key properties: SectionTypes, EtabsSectionName, UniqueSection, SectionType. | `EtabsSectionMappingViewModel.cs` |
+| `class` | **EtabsStoryOptionViewModel** | Represents the EtabsStoryOptionViewModel class. Key properties: StoryName, Elevation, SortIndex, DisplayName. | `EtabsImportViewModel.cs` |
+| `class` | **EtabsUniqueSectionOptionViewModel** | Represents the EtabsUniqueSectionOptionViewModel class. Key properties: SectionName, SourceSectionName, ShapeType, ObjectCount. | `EtabsImportViewModel.cs` |
+| `class` | **ExplorerNodeViewModel** | Represents the ExplorerNodeViewModel class. Key properties: Id, Name, IsSelected, IsExpanded. | `ExplorerNodeViewModel.cs` |
+| `class` | **ExportControlPointsViewModel** | Represents the ExportControlPointsViewModel class. Key methods: RefreshPreview. Key properties: PreviewRows, RefreshPreviewCommand, ExportCsvCommand, CloseCommand. | `ExportControlPointsViewModel.cs` |
+| `class` | **GoverningChartPreviewViewModel** | Represents the GoverningChartPreviewViewModel class. Key properties: CriticalThetaDeg, UtilizationRatio, DemandP, DemandMx. | `A4ReportModels.cs` |
+| `class` | **GroupActionViewModel** | Represents the GroupActionViewModel class. Key properties: Name, Command. | `GroupActionViewModel.cs` |
+| `class` | **GroupItemViewModel** | Represents the GroupItemViewModel class. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand. | `GroupItemViewModel.cs` |
+| `class` | **InputViewModel** | Represents the InputViewModel class. Key methods: ToDto, UpdateSectionPreview, ResetToDefaults, ApplyDxfImportResult. Key properties: UnitSystems, GenerateIrregularRebarsCommand, GenerateEqualSpacingRebarsCommand, ImportDxfCommand. | `InputViewModel.cs` |
+| `class` | **IrregularBoundaryPointViewModel** | Represents the IrregularBoundaryPointViewModel class. Key properties: PtIndex, X, Y. | `IrregularBoundaryPointViewModel.cs` |
+| `record` | **IrregularRebarModeOption** | Represents the IrregularRebarModeOption record. | `IrregularSectionInputViewModel.cs` |
+| `class` | **IrregularRebarRowViewModel** | Represents the IrregularRebarRowViewModel class. Key properties: RebarIndex, X, Y, BarSize. | `IrregularRebarRowViewModel.cs` |
+| `class` | **IrregularSectionInputViewModel** | Represents the IrregularSectionInputViewModel class. Key methods: LoadDefaultLShape, ImportBoundaryFile, ImportRebarFile, ExportBoundaryFile. Key properties: BoundaryPoints, Rebars, RebarMode, BoundaryValidationMessage. | `IrregularSectionInputViewModel.cs` |
+| `record` | **LoadCaseResultRowViewModel** | Represents the LoadCaseResultRowViewModel record. Key properties: PDisplay, MxDisplay, MyDisplay, AngleDisplay. | `ResultViewModel.cs` |
+| `class` | **LoadCaseViewModel** | Represents the LoadCaseViewModel class. Key methods: ToDto. Key properties: Id, Name, Pu, Mux. | `LoadCaseViewModel.cs` |
+| `class` | **MM3DViewModel** | Represents the MM3DViewModel class. Key methods: Load. Key properties: MmSliceContours, SurfaceMesh, DemandPoint, GoverningPoint. | `MM3DViewModel.cs` |
+| `class` | **MMDiagramViewModel** | Represents the MMDiagramViewModel class. Key methods: Load. Key properties: DiagramTitle, XAxisLabel, YAxisLabel, BoundaryPoints. | `MMDiagramViewModel.cs` |
+| `class` | **MainWindowViewModel** | Represents the MainWindowViewModel class. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
+| `record` | **MaterialGradeOption** | Represents the MaterialGradeOption record. Key methods: StressValue, ModulusValue. | `InputViewModel.cs` |
+| `record` | **MaterialLibraryOption** | Represents the MaterialLibraryOption record. | `InputViewModel.cs` |
+| `enum` | **MaterialLibraryType** | Enumeration defining states/types for MaterialLibraryType. | `InputViewModel.cs` |
+| `class` | **MbColumnMappedForceRowViewModel** | Represents the MbColumnMappedForceRowViewModel class. Key properties: MbColumnSectionName, LoadCaseName, ObjectType, Story. | `MbColumnMappedForceRowViewModel.cs` |
+| `class` | **MbColumnSectionSummaryViewModel** | Represents the MbColumnSectionSummaryViewModel class. Key properties: SectionName, ObjectType, SelectedItems, MatchedForceRows. | `MbColumnSectionSummaryViewModel.cs` |
+| `class` | **MbColumnSectionViewModel** | Represents the MbColumnSectionViewModel class. Key methods: AddItem, RemoveItem. Key properties: Items, SectionName, EditName, IsRenaming. | `MbColumnSectionViewModel.cs` |
+| `class` | **PM3DViewModel** | Represents the PM3DViewModel class. Key methods: Load. Key properties: SurfacePoints, SpecialCapacityPoints, SurfaceMesh, WireframeLines. | `PM3DViewModel.cs` |
+| `class` | **PMDiagramViewModel** | Represents the PMDiagramViewModel class. Key methods: LoadPmAngle. Key properties: DiagramTitle, XAxisLabel, YAxisLabel, CapacityPoints. | `PMDiagramViewModel.cs` |
+| `class` | **PolylineDraft** | Represents the PolylineDraft class. Key methods: Clear. Key properties: IsActive. | `PolylineDraft.cs` |
+| `enum` | **PreloadStepStatus** | Enumeration defining states/types for PreloadStepStatus. | `EtabsPreloadStep.cs` |
+| `record` | **PreviewBoundaryPoint** | Represents the PreviewBoundaryPoint record. | `PreviewBoundaryPoint.cs` |
+| `record` | **PreviewRebarPoint** | Represents the PreviewRebarPoint record. | `PreviewRebarPoint.cs` |
+| `record` | **PreviewRebarVm** | Represents the PreviewRebarVm record. | `DxfImportViewModel.cs` |
+| `class` | **ProjectExplorerViewModel** | Represents the ProjectExplorerViewModel class. Key methods: SetSectionStatus, ClearSectionStatuses, SelectNode, SelectColumnById. Key properties: ProjectName, Nodes, SelectedNode, SelectedColumn. | `ProjectExplorerViewModel.cs` |
+| `class` | **ProjectGroupOptionViewModel** | Represents the ProjectGroupOptionViewModel class. Key properties: GroupId, GroupName, CreateGroup, DisplayName. | `EtabsImportViewModel.cs` |
+| `record` | **RebarLayoutTypeOption** | Represents the RebarLayoutTypeOption record. | `RebarLayoutTypeOption.cs` |
+| `class` | **RebarLayoutViewModel** | Represents the RebarLayoutViewModel class. Key properties: Top, Bottom, Left, Right. | `RebarLayoutViewModel.cs` |
+| `class` | **RebarSideInputViewModel** | Represents the RebarSideInputViewModel class. Key methods: ToDto, SetGlobalInputs, SetBarCountSilently, SetWarning. Key properties: Name, IsBarSizeEditable, IsCoverEditable, BarCount. | `RebarSideInputViewModel.cs` |
+| `class` | **ReportBlockViewModel** | Represents the ReportBlockViewModel class. Key properties: BlockType, Title, EstimatedHeightMm, KeepTogether. | `A4ReportModels.cs` |
+| `record` | **ReportDemandCaseRowViewModel** | Represents the ReportDemandCaseRowViewModel record. Key properties: IsFailing. | `ReportTabViewModel.cs` |
+| `class` | **ReportPaginatorService** | Provides service logic and operations for ReportPaginator. Key methods: Paginate. | `A4ReportModels.cs` |
+| `class` | **ReportPm7RowViewModel** | Represents the ReportPm7RowViewModel class. Key properties: Index, PointCode, PointName, StrainDescription. | `A4ReportModels.cs` |
+| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: GeneratePreviewCommand, DemandCases, Pm7Rows, BoundaryPoints. | `ReportTabViewModel.cs` |
+| `class` | **ReportUnitConverter** | Represents the ReportUnitConverter class. Key methods: MmToDip, InchToDip. | `A4ReportModels.cs` |
+| `class` | **ResultViewModel** | Represents the ResultViewModel class. Key methods: ToggleViewport, CloseViewport. Key properties: PM, MM, PM3D, MM3D. | `ResultViewModel.cs` |
+| `class` | **SectionCadEditorViewModel** | Represents the SectionCadEditorViewModel class. Key methods: AddBoundaryPoint, AddRebar, AddPolylinePoint, UpdatePolylinePreview. Key properties: BoundaryPoints, Rebars, Draft, ToolMode. | `SectionCadEditorViewModel.cs` |
+| `record` | **SectionIntegrationMethodOption** | Represents the SectionIntegrationMethodOption record. | `InputViewModel.cs` |
 | `enum` | **SectionStatus** | Enumeration defining states/types for SectionStatus. | `SectionStatus.cs` |
-| `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. Key properties: X, Kind, Y. | `SnapResult.cs` |
-| `record` | **DesignCodeOption** | Represents the DesignCodeOption record. Key methods: ToDto, UpdateSectionPreview, ApplyDxfImportResult, StressValue, ToSnapshot. Key properties: PreviewIyyText, IsRectangularSection, GenerateEqualSpacingRebarsCommand. | `InputViewModel.cs` |
-| `record` | **Ec2SolverOption** | Represents the Ec2SolverOption component. | `InputViewModel.cs` |
-| `record` | **EtabsDuplicateHandlingOption** | Represents the EtabsDuplicateHandlingOption record. Key methods: SetSelectedSilently, DeleteMbColumnSection, RemoveItemFromSection, ApplyPreloadData, GenerateSectionForceRows. Key properties: IsConnected, SelectedForceRowCount, Elevation. | `EtabsImportViewModel.cs` |
-| `record` | **IrregularRebarModeOption** | Represents the IrregularRebarModeOption component. | `IrregularSectionInputViewModel.cs` |
-| `record` | **LoadCaseResultRowViewModel** | View model representing state and commands for LoadCaseResultRow UI. Key methods: CloseViewport, ToggleViewport. Key properties: SelectedPointNeutralAxisDepthDisplay, SelectedPointTypeDisplay, ViewportDropdownText. | `ResultViewModel.cs` |
-| `record` | **MaterialGradeOption** | Represents the MaterialGradeOption record. Key methods: ToDto, UpdateSectionPreview, ApplyDxfImportResult, StressValue, ToSnapshot. Key properties: PreviewIyyText, IsRectangularSection, GenerateEqualSpacingRebarsCommand. | `InputViewModel.cs` |
-| `record` | **MaterialLibraryOption** | Represents the MaterialLibraryOption component. | `InputViewModel.cs` |
-| `record` | **PreviewBoundaryPoint** | Represents the PreviewBoundaryPoint component. | `PreviewBoundaryPoint.cs` |
-| `record` | **PreviewRebarPoint** | Represents the PreviewRebarPoint component. | `PreviewRebarPoint.cs` |
-| `record` | **PreviewRebarVm** | Represents the PreviewRebarVm record. Key properties: FilePath, SelectedRebarLayerName, SummaryText. | `DxfImportViewModel.cs` |
-| `record` | **RebarLayoutTypeOption** | Represents the RebarLayoutTypeOption component. | `RebarLayoutTypeOption.cs` |
-| `record` | **ReportDemandCaseRowViewModel** | View model representing state and commands for ReportDemandCaseRow UI. Key methods: MarkOutdated, LoadFromCurrentWorkspace, Clear. Key properties: ResultStatusText, BoundaryPoints, GeneratePreviewCommand. | `ReportTabViewModel.cs` |
-| `record` | **SectionIntegrationMethodOption** | Represents the SectionIntegrationMethodOption component. | `InputViewModel.cs` |
-| `record` | **SevenPointValidationRowViewModel** | View model representing state and commands for SevenPointValidationRow UI. Key methods: CloseViewport, ToggleViewport. Key properties: SelectedPointNeutralAxisDepthDisplay, SelectedPointTypeDisplay, ViewportDropdownText. | `ResultViewModel.cs` |
+| `record` | **SevenPointValidationRowViewModel** | Represents the SevenPointValidationRowViewModel record. Key properties: CDisplay, Pn7Display, Mn7Display, PnSolverDisplay. | `ResultViewModel.cs` |
+| `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. | `SnapResult.cs` |
+| `class` | **SnapResult** | Encapsulates the result of Snap operations. Key properties: X, Y, Kind, HasSnap. | `SnapResult.cs` |
+| `class` | **ViewModelBase** | Represents the ViewModelBase class. | `ViewModelBase.cs` |
+| `class` | **ViewportOptionViewModel** | Represents the ViewportOptionViewModel class. Key properties: Type, DisplayName, IsSelected. | `ViewportOptionViewModel.cs` |
+| `record` | **fields** | Represents the fields record. Key methods: GenerateSectionForceRows. | `EtabsImportViewModel.cs` |
+| `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions. | `ProjectExplorerViewModel.cs` |
 
 ### Views
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **DxfImportWindow** | User interface component for DxfImportWindow. | `DxfImportWindow.xaml.cs` |
-| `class` | **EtabsForceRefreshWindow** | User interface component for EtabsForceRefreshWindow. | `EtabsForceRefreshWindow.xaml.cs` |
-| `class` | **EtabsImportWindow** | User interface component for EtabsImportWindow. | `EtabsImportWindow.xaml.cs` |
-| `class` | **EtabsPreloadWindow** | User interface component for EtabsPreloadWindow. | `EtabsPreloadWindow.xaml.cs` |
-| `class` | **InputTabView** | User interface component for InputTabView. | `InputTabView.xaml.cs` |
-| `class` | **MM3DView** | User interface component for MM3DView. | `MM3DView.xaml.cs` |
-| `class` | **MMDiagramView** | User interface component for MMDiagramView. | `MMDiagramView.xaml.cs` |
-| `class` | **PM3DView** | User interface component for PM3DView. | `PM3DView.xaml.cs` |
-| `class` | **PMDiagramView** | User interface component for PMDiagramView. | `PMDiagramView.xaml.cs` |
-| `class` | **ProjectNameDialog** | User interface component for ProjectNameDialog. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
-| `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath. | `StartUpWindow.xaml.cs` |
-| `class` | **ReportTabView** | User interface component for ReportTabView. | `ReportTabView.xaml.cs` |
-| `class` | **ResultTabView** | User interface component for ResultTabView. | `ResultTabView.xaml.cs` |
-| `class` | **SectionCadEditorWindow** | User interface component for SectionCadEditorWindow. | `SectionCadEditorWindow.xaml.cs` |
-| `class` | **SectionSelectionItem** | Represents the SectionSelectionItem class. Key methods: GetSelectedIds. Key properties: Name, IsSelected, Id. | `SelectSectionsDialog.xaml.cs` |
-| `class` | **SelectSectionsDialog** | User interface component for SelectSectionsDialog. Key methods: GetSelectedIds. Key properties: Name, IsSelected, Id. | `SelectSectionsDialog.xaml.cs` |
-| `class` | **StartUpWindow** | User interface component for StartUpWindow. Key properties: FilePath. | `StartUpWindow.xaml.cs` |
-
+| `class` | **DxfImportWindow** | Represents the DxfImportWindow class. | `DxfImportWindow.xaml.cs` |
+| `class` | **EtabsForceRefreshWindow** | Represents the EtabsForceRefreshWindow class. | `EtabsForceRefreshWindow.xaml.cs` |
+| `class` | **EtabsImportWindow** | Represents the EtabsImportWindow class. | `EtabsImportWindow.xaml.cs` |
+| `class` | **EtabsPreloadWindow** | Represents the EtabsPreloadWindow class. | `EtabsPreloadWindow.xaml.cs` |
+| `class` | **InputTabView** | Represents the InputTabView class. | `InputTabView.xaml.cs` |
+| `class` | **MM3DView** | Represents the MM3DView class. | `MM3DView.xaml.cs` |
+| `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |
+| `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
+| `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
+| `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
+| `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath. | `StartUpWindow.xaml.cs` |
+| `class` | **ReportTabView** | Represents the ReportTabView class. | `ReportTabView.xaml.cs` |
+| `class` | **ResultTabView** | Represents the ResultTabView class. | `ResultTabView.xaml.cs` |
+| `class` | **SectionCadEditorWindow** | Represents the SectionCadEditorWindow class. | `SectionCadEditorWindow.xaml.cs` |
+| `class` | **SectionSelectionItem** | Represents the SectionSelectionItem class. Key methods: GetSelectedIds. Key properties: Id, Name, IsSelected. | `SelectSectionsDialog.xaml.cs` |
+| `class` | **SelectSectionsDialog** | Represents the SelectSectionsDialog class. | `SelectSectionsDialog.xaml.cs` |
+| `class` | **StartUpWindow** | Represents the StartUpWindow class. | `StartUpWindow.xaml.cs` |

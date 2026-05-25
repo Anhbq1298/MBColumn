@@ -1,0 +1,7 @@
+#!/bin/sh
+# Auto-update the class diagram before every commit
+echo "Auto-updating class diagram..."
+python tools/update_class_diagram.py
+
+# Automatically stage the updated class diagram
+git add src/class_diagram.md
