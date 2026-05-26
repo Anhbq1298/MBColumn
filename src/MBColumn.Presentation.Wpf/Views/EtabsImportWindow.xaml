@@ -970,18 +970,16 @@
                                       RowHeight="22"
                                       BorderBrush="{DynamicResource BorderGreyBrush}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding MbColumnSectionName}" Width="120" />
-                                    <DataGridTextColumn Header="LoadCombo" Binding="{Binding LoadCombo}" Width="200" />
+                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding LoadCaseName}" Width="*" />
                                     <DataGridTextColumn Header="Col Label" Binding="{Binding Label}" Width="80" />
                                     <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
-                                    <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="70" />
                                     <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat=N2}" Width="70" />
                                     <DataGridTextColumn Header="Mx" Binding="{Binding Mx, StringFormat=N2}" Width="70" />
                                     <DataGridTextColumn Header="My" Binding="{Binding My, StringFormat=N2}" Width="70" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
-                        
+
                         <!-- Tab 3: Pier Forces (filtered by ObjectType == Pier) -->
                         <TabItem Header="Pier Forces">
                             <DataGrid ItemsSource="{Binding FilteredPierMappedForceRows}"
@@ -996,11 +994,9 @@
                                       RowHeight="22"
                                       BorderBrush="{DynamicResource BorderGreyBrush}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding MbColumnSectionName}" Width="120" />
-                                    <DataGridTextColumn Header="LoadCombo" Binding="{Binding LoadCombo}" Width="200" />
+                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding LoadCaseName}" Width="*" />
                                     <DataGridTextColumn Header="Pier Label" Binding="{Binding Label}" Width="80" />
                                     <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
-                                    <DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="70" />
                                     <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat=N2}" Width="70" />
                                     <DataGridTextColumn Header="Mx" Binding="{Binding Mx, StringFormat=N2}" Width="70" />
                                     <DataGridTextColumn Header="My" Binding="{Binding My, StringFormat=N2}" Width="70" />

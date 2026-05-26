@@ -1,7 +1,9 @@
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
+using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -134,11 +136,19 @@ public sealed class SvgImageControl : FrameworkElement
                 var drawingImage = new DrawingImage(drawing);
                 drawingImage.Freeze();
 
+                // SharpVectors computes DrawingImage.Bounds from the unclipped drawing content,
+                // which can be much larger than the SVG viewBox. Parse the SVG's own width/height
+                // and set explicit dimensions so WPF allocates exactly the right layout space.
+                double svgW = ParseSvgDimension(capturedSvg, "width",  600);
+                double svgH = ParseSvgDimension(capturedSvg, "height", 460);
+                double scale = Math.Min(capturedWidth / svgW, 1.0);
+
                 var img = new Image
                 {
                     Source = drawingImage,
-                    MaxWidth = capturedWidth,
-                    Stretch = Stretch.Uniform,
+                    Width  = svgW * scale,
+                    Height = svgH * scale,
+                    Stretch = Stretch.Fill,   // explicit size → Fill maps 1:1 to viewBox
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                 };
@@ -162,5 +172,12 @@ public sealed class SvgImageControl : FrameworkElement
                     _placeholder.Text = "Diagram unavailable.";
             }
         });
+    }
+
+    private static double ParseSvgDimension(string svg, string attr, double fallback)
+    {
+        var m = Regex.Match(svg, $@"{attr}=""(\d+(?:\.\d+)?)""", RegexOptions.IgnoreCase);
+        return m.Success && double.TryParse(m.Groups[1].Value, NumberStyles.Any,
+            CultureInfo.InvariantCulture, out var v) ? v : fallback;
     }
 }

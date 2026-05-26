@@ -11,7 +11,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 {
     private static readonly string[] DesignForcesTableKeys = ["Design Forces - Columns", "Concrete Column Design Forces", "Concrete Design 1 - Column Summary", "Concrete Column Design Summary"];
     private static readonly string[] PierDesignForcesTableKeys = ["Design Forces - Piers", "Shear Wall Pier Design Forces", "Shear Wall 1 - Pier Summary", "Shear Wall Pier Summary"];
-    private static readonly string[] ElementForcesTableKeys = ["Element Forces - Frames", "Frame Object Internal Forces"];
+    private static readonly string[] ElementForcesTableKeys = ["Element Forces - Columns", "Element Forces - Frames", "Frame Object Internal Forces"];
 
     private readonly EtabsConnectionService connection;
 
@@ -161,11 +161,12 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
     {
         model.Results.Setup.DeselectAllCasesAndCombosForOutput();
         foreach (var combo in loadCombinations)
-        {
             model.Results.Setup.SetComboSelectedForOutput(combo, true);
-        }
-
         model.Results.Setup.SetOptionMultiValuedCombo(0);
+
+        // DatabaseTables API — limits rows returned by GetTableForEditingArray to selected combos only
+        var comboArray = loadCombinations.ToArray();
+        model.DatabaseTables.SetLoadCombinationsSelectedForDisplay(ref comboArray);
     }
 
     private static List<EtabsForceResultDto> QueryDesignForcesTable(
@@ -185,13 +186,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         foreach (var key in DesignForcesTableKeys)
         {
             ret = model.DatabaseTables.GetTableForDisplayArray(
-                key,
-                ref fieldsKeysIncluded,
-                "",
-                ref tableVersion,
-                ref fields,
-                ref numRecords,
-                ref tableData);
+                key, ref fieldsKeysIncluded, "", ref tableVersion, ref fields, ref numRecords, ref tableData);
             if (ret == 0 && numRecords > 0 && fields.Length > 0)
                 break;
         }
@@ -206,7 +201,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var m2Idx = IndexOf(fields, "M2", "M2 Top", "M2-Top", "Mu2");
         var m3Idx = IndexOf(fields, "M3", "M3 Top", "M3-Top", "Mu3");
         var v2Idx = IndexOf(fields, "V2", "Vu2");
-        var locIdx = IndexOf(fields, "Location", "Station");
+        var locIdx = IndexOf(fields, "Station", "Location");
 
         if (storyIdx < 0 || labelIdx < 0 || comboIdx < 0 || pIdx < 0)
         {
@@ -243,23 +238,13 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0));
         }
 
-        // Phase 2: min/max numeric station per (ObjectName|Combo) → Bottom/Mid/Top labels
-        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var grp in candidates.GroupBy(r => $"{r.Col.ObjectName}|{r.Combo}", StringComparer.OrdinalIgnoreCase))
-        {
-            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
-            if (nums.Count > 0)
-                stationRanges[grp.Key] = (nums.Min(), nums.Max());
-        }
-
         var results = new List<EtabsForceResultDto>(candidates.Count);
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (column, combo, rawLoc, p, m2, m3, v2) in candidates)
         {
-            var rangeKey = $"{column.ObjectName}|{combo}";
-            var station  = stationRanges.TryGetValue(rangeKey, out var range)
-                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+            var station = TryParseDouble(rawLoc) is double sv
+                ? sv.ToString("G6", CultureInfo.InvariantCulture)
                 : NormalizeStation(rawLoc);
 
             var key = $"{column.ObjectName}|{combo}|{station}";
@@ -434,39 +419,15 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0));
         }
 
-        // Phase 2: station ranges per (ObjectName|Combo|StepType) for numeric normalization
-        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var grp in candidates.GroupBy(
-            r => $"{r.Col.ObjectName}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
-        {
-            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
-            if (nums.Count > 0)
-                stationRanges[grp.Key] = (nums.Min(), nums.Max());
-        }
-
         var results = new List<EtabsForceResultDto>(candidates.Count);
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (col, combo, stepType, rawLoc, p, m2, m3, v2) in candidates)
         {
-            var rangeKey = $"{col.ObjectName}|{combo}|{stepType}";
-            var station = NormalizeStation(rawLoc);
-            if (TryParseDouble(rawLoc) is double v)
-            {
-                if (col.LengthMm > 0)
-                {
-                    var stationMm = v * lengthToMm;
-                    if (SMath.Abs(stationMm) < 1.0) station = "Bottom";
-                    else if (SMath.Abs(stationMm - col.LengthMm) < 1.0) station = "Top";
-                    else station = "Mid";
-                }
-                else if (stationRanges.TryGetValue(rangeKey, out var range))
-                {
-                    if (SMath.Abs(v - range.Min) < 1e-6) station = "Bottom";
-                    else if (SMath.Abs(v - range.Max) < 1e-6) station = "Top";
-                    else station = "Mid";
-                }
-            }
+            // Keep raw numeric station value for specificity; normalize named stations only.
+            var station = TryParseDouble(rawLoc) is double sv
+                ? sv.ToString("G6", CultureInfo.InvariantCulture)
+                : NormalizeStation(rawLoc);
 
             // Envelope combos produce Max and Min rows — append step type to distinguish them
             var isSingleStep = string.IsNullOrEmpty(stepType)
@@ -558,22 +519,13 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 v3Idx >= 0 ? ParseDouble(tableData[b + v3Idx]) : 0.0));
         }
 
-        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var grp in candidates.GroupBy(r => $"{r.Pier}|{r.Story}|{r.Combo}|{r.StepType}", StringComparer.OrdinalIgnoreCase))
-        {
-            var nums = grp.Select(r => TryParseDouble(r.RawLoc)).Where(v => v.HasValue).Select(v => v!.Value).ToList();
-            if (nums.Count > 0)
-                stationRanges[grp.Key] = (nums.Min(), nums.Max());
-        }
-
         var results = new List<EtabsForceResultDto>(candidates.Count);
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (pier, story, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
         {
-            var rangeKey = $"{pier}|{story}|{combo}|{stepType}";
-            var station  = stationRanges.TryGetValue(rangeKey, out var range)
-                ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+            var station = TryParseDouble(rawLoc) is double sv
+                ? sv.ToString("G6", CultureInfo.InvariantCulture)
                 : NormalizeStation(rawLoc);
 
             var isSingleStep = string.IsNullOrEmpty(stepType)

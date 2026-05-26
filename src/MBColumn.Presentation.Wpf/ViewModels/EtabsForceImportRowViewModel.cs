@@ -55,7 +55,7 @@ public sealed class EtabsForceImportRowViewModel : ViewModelBase
     public string Label { get; }
     public string EtabsSection { get; }
     public string LoadCombination { get; }
-    public string LoadcaseMBname => $"{LoadCombination}_{Story}_{Label}_{Station}";
+    public string LoadcaseMBname => $"{LoadCombination}-{Label}-{Story}-{Station}";
     public double P { get; }
     public double M2 { get; }
     public double M3 { get; }

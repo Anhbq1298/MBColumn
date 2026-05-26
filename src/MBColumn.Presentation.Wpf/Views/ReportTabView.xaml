@@ -158,6 +158,32 @@
             </Border>
         </DataTemplate>
 
+        <!-- DiagramBlock — rendered via DiagramCanvas2D (WPF native, no SVG clip-path issues) -->
+        <DataTemplate x:Key="DiagramTemplate" DataType="{x:Type models:DiagramBlock}">
+            <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
+                    Padding="8" Margin="0,4,0,4">
+                <StackPanel HorizontalAlignment="Center">
+                    <controls:DiagramCanvas2D
+                        Width="{Binding WidthPct, Converter={StaticResource PctOf720Converter}}"
+                        MinHeight="300"
+                        Points="{Binding Points}"
+                        ReferenceLines="{Binding ReferenceLines}"
+                        XAxisLabel="{Binding XAxisLabel}"
+                        YAxisLabel="{Binding YAxisLabel}"
+                        Ratio="{Binding Ratio}"
+                        UseEqualAspect="{Binding UseEqualAspect}"
+                        ShowNominalCurve="True"
+                        ShowSpecialPoints="False"
+                        ShowDemandLabel="False"
+                        Focusable="False"/>
+                    <TextBlock Text="{Binding Caption}" FontSize="9" Foreground="#555"
+                               HorizontalAlignment="Center" FontStyle="Italic" Margin="0,4,0,0"
+                               Visibility="{Binding Caption,
+                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
         <!-- DividerBlock -->
         <DataTemplate x:Key="DividerTemplate" DataType="{x:Type models:DividerBlock}">
             <Separator Margin="0,6,0,6" Background="#DDDDDD"/>
@@ -227,6 +253,7 @@
             TableTemplate     ="{StaticResource TableTemplate}"
             SteelTableTemplate="{StaticResource SteelTableTemplate}"
             ImageTemplate     ="{StaticResource ImageTemplate}"
+            DiagramTemplate   ="{StaticResource DiagramTemplate}"
             DividerTemplate   ="{StaticResource DividerTemplate}"
             PageBreakTemplate ="{StaticResource PageBreakTemplate}"
             SummaryBoxTemplate="{StaticResource SummaryBoxTemplate}"/>
@@ -334,70 +361,9 @@
              Right: dynamic report preview
              ═══════════════════════════════════════════════════════ -->
         <Grid Grid.Column="2" Background="#CCCCCC">
-            <Grid.RowDefinitions>
-                <!-- Interaction diagram charts — shown when result data is available -->
-                <RowDefinition Height="Auto"/>
-                <!-- Scrolling A4 report sections -->
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- ── Interaction diagram chart bar ─────────────────────────── -->
-            <Border Grid.Row="0" Background="White"
-                    BorderBrush="#D6DEE6" BorderThickness="0,0,0,1"
-                    Visibility="{Binding HasChartData,
-                        Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid Margin="8,8,8,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- P-M diagram -->
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="{Binding PmSliceLabel}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   Margin="4,0,0,4"/>
-                        <controls:DiagramCanvas2D
-                            Height="280"
-                            Points="{Binding PmPoints}"
-                            ReferenceLines="{Binding PmReferenceLines}"
-                            XAxisLabel="{Binding PmXAxisLabel}"
-                            YAxisLabel="{Binding PmYAxisLabel}"
-                            Ratio="{Binding PmRatio}"
-                            ShowGrid="True"
-                            ShowLabels="True"
-                            ShowDemandPoint="True"
-                            ShowDemandLabel="False"
-                            ShowNominalCurve="True"
-                            ShowReferenceLines="True"/>
-                    </StackPanel>
-
-                    <!-- Mx-My diagram -->
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Mx-My Interaction"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   Margin="4,0,0,4"/>
-                        <controls:DiagramCanvas2D
-                            Height="280"
-                            Points="{Binding MmPoints}"
-                            XAxisLabel="{Binding MmXAxisLabel}"
-                            YAxisLabel="{Binding MmYAxisLabel}"
-                            Ratio="{Binding MmRatio}"
-                            ShowGrid="True"
-                            ShowLabels="True"
-                            ShowDemandPoint="True"
-                            ShowDemandLabel="False"
-                            ShowNominalCurve="True"
-                            UseEqualAspect="True"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
 
             <!-- No result placeholder (visible only when no sections) -->
-            <ScrollViewer Grid.Row="1"
+            <ScrollViewer
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Auto"
                           Visibility="{Binding HasReportSections,
@@ -427,8 +393,7 @@
 
             <!-- Dynamic sections — ItemsControl is the direct ScrollViewer child so
                  VirtualizingStackPanel can skip off-screen sections entirely. -->
-            <ScrollViewer Grid.Row="1"
-                          VerticalScrollBarVisibility="Auto"
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Auto"
                           Visibility="{Binding HasReportSections,
                               Converter={StaticResource BoolToVisibilityConverter}}">

@@ -1889,10 +1889,13 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var selectedPiers = AllAssignedItems.Where(c => c.IsIrregular)
                 .Select(c => (c.Pier, c.Story)).ToList();
 
-            if (importedForceCache?.HasValidCache(ModelPath) == true && designForceImportService is not null)
+            var rawDb = importedForceCache?.Current;
+            if (rawDb is not null && designForceImportService is not null)
             {
-                var rawDb = importedForceCache.Current!;
-                ForceCacheStatus = $"[DBG] PATH=RawDB(Element) cols={selectedFrameColumns.Count} piers={selectedPiers.Count} combos={selectedCombos.Count}";
+                var elemRecCount = rawDb.ColumnElementForces.Records.Count;
+                var firstRecord  = elemRecCount > 0 ? rawDb.ColumnElementForces.Records[0] : null;
+                var firstFields  = firstRecord is not null ? string.Join(" | ", firstRecord.Fields.Select(kv => $"{kv.Key}={kv.Value}").Take(15)) : "(empty table)";
+                ConnectionStatus = $"[DBG-ELEM] records={elemRecCount}  first row: {firstFields}";
                 if (selectedFrameColumns.Count > 0)
                 {
                     var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
@@ -1904,39 +1907,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 if (selectedPiers.Count > 0)
                 {
                     rows.AddRange(designForceImportService.ParsePierElementForces(rawDb, selectedPiers, selectedCombos, targetUnitSystem).Select(CreateForceRow));
-                }
-            }
-            else
-            {
-                ForceCacheStatus = $"[DBG] PATH=LiveCOM(Element) cols={selectedFrameColumns.Count} piers={selectedPiers.Count} combos={selectedCombos.Count}";
-                // Element forces: live COM fallback, both frame columns and piers
-                if (selectedFrameColumns.Count > 0)
-                {
-                    try
-                    {
-                        var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
-                            c.ObjectName, c.Pier, c.Story, c.Label,
-                            c.UniqueSection, c.EtabsSectionName, c.Material,
-                            c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
-
-                        rows.AddRange(forceImportService.GetElementForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
-                    }
-                    catch (Exception ex)
-                    {
-                        ConnectionStatus = $"Warning: could not load column element forces — {ex.Message}";
-                    }
-                }
-
-                if (selectedPiers.Count > 0)
-                {
-                    try
-                    {
-                        rows.AddRange(forceImportService.GetPierElementForces(selectedPiers, selectedCombos, targetUnitSystem).Select(CreateForceRow));
-                    }
-                    catch (Exception ex)
-                    {
-                        ConnectionStatus = $"Warning: could not load pier element forces — {ex.Message}";
-                    }
                 }
             }
         }

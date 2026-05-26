@@ -61,13 +61,14 @@ public sealed class EtabsSectionForceFilterService : IEtabsSectionForceFilterSer
 
     private static string BuildLoadCaseName(string loadCombo, string story, string label, string location)
     {
-        var raw = $"{loadCombo}_{story}_{label}_{location}";
-        return raw
+        static string Clean(string s) => s
             .Replace(" ", "")
             .Replace("/", "_")
             .Replace("\\", "_")
             .Replace(":", "_")
             .Replace(";", "_");
+
+        return $"{Clean(loadCombo)}-{Clean(label)}-{Clean(story)}-{Clean(location)}";
     }
 
     private static (double Mx, double My) MapEtabsMomentsToMbColumn(double m2, double m3)

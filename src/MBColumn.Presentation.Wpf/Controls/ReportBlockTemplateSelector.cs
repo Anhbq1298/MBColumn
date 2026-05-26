@@ -13,6 +13,7 @@ public sealed class ReportBlockTemplateSelector : DataTemplateSelector
     public DataTemplate? TableTemplate      { get; set; }
     public DataTemplate? SteelTableTemplate { get; set; }
     public DataTemplate? ImageTemplate      { get; set; }
+    public DataTemplate? DiagramTemplate    { get; set; }
     public DataTemplate? DividerTemplate    { get; set; }
     public DataTemplate? PageBreakTemplate  { get; set; }
     public DataTemplate? SummaryBoxTemplate { get; set; }
@@ -26,6 +27,7 @@ public sealed class ReportBlockTemplateSelector : DataTemplateSelector
         TableBlock      => TableTemplate,
         SteelTableBlock => SteelTableTemplate,
         ImageBlock      => ImageTemplate,
+        DiagramBlock    => DiagramTemplate,
         DividerBlock    => DividerTemplate,
         PageBreakBlock  => PageBreakTemplate,
         SummaryBoxBlock => SummaryBoxTemplate,

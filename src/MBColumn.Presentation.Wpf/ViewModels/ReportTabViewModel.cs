@@ -7,6 +7,7 @@ using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Reports.Graphics;
+using static MBColumn.Infrastructure.Reports.Graphics.InteractionDiagramSvgRenderer;
 using MBColumn.Presentation.Wpf.Commands;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
@@ -316,22 +317,43 @@ public sealed class ReportTabViewModel : ViewModelBase
                     : new Ec2DesignCodeService { AlphaCc = result.AlphaCc };
                 IUnitConversionService unitService = new UnitConversionService();
 
+                // Generate all SVGs before Build() so section builders can embed them
                 string? sectionSvg = null;
+                try { sectionSvg = SectionGeometryRenderer.RenderSection(
+                    result.SectionShape,
+                    result.SectionWidthMm, result.SectionHeightMm,
+                    result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
+                    result.CoverMm, result.RebarCoordinates); }
+                catch { }
+
+                ct.ThrowIfCancellationRequested();
+
+                DiagramBlock? pmDiagramBlock = null, mmDiagramBlock = null;
                 try
                 {
-                    sectionSvg = SectionGeometryRenderer.RenderSection(
-                        result.SectionShape,
-                        result.SectionWidthMm, result.SectionHeightMm,
-                        result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
-                        result.CoverMm, result.RebarCoordinates);
+                    var diag = new DiagramDataService();
+                    double theta = result.GoverningThetaDegrees;
+                    var pmData   = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
+                    var pmAll    = pmData.Points.Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta)).Concat(pmData.SpecialCapacityPoints).ToList();
+                    pmDiagramBlock = new DiagramBlock(pmAll, pmData.ReferenceLines,
+                        $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", result.Ratio,
+                        UseEqualAspect: false, WidthPct: 90,
+                        Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
+
+                    var mmData  = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
+                    var mmAll   = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
+                    mmDiagramBlock = new DiagramBlock(mmAll, [],
+                        $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", result.Ratio,
+                        UseEqualAspect: true, WidthPct: 80,
+                        Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
                 }
                 catch { }
 
                 ct.ThrowIfCancellationRequested();
 
                 var builder = new CalculationReportBuilder();
-                var data    = builder.Build(projName, grpName, tierName, result, codeService, unitService);
-                data = data with { SectionGeometrySvg = sectionSvg, RebarLayoutSvg = sectionSvg };
+                var data    = builder.Build(projName, grpName, tierName, result, codeService, unitService,
+                                            sectionSvg, pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
                 return data.Sections;
             }, ct);
 
@@ -450,18 +472,34 @@ public sealed class ReportTabViewModel : ViewModelBase
     {
         var result = _cachedResult ?? throw new InvalidOperationException("No calculation result available.");
 
-        // Generate SVG graphics
         string? sectionSvg = null;
+        try { sectionSvg = SectionGeometryRenderer.RenderSection(
+            result.SectionShape,
+            result.SectionWidthMm, result.SectionHeightMm,
+            result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
+            result.CoverMm, result.RebarCoordinates); }
+        catch { }
+
+        DiagramBlock? pmDiagramBlock = null, mmDiagramBlock = null;
         try
         {
-            sectionSvg = SectionGeometryRenderer.RenderSection(
-                result.SectionShape,
-                result.SectionWidthMm, result.SectionHeightMm,
-                result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
-                result.CoverMm,
-                result.RebarCoordinates);
+            var diag = new DiagramDataService();
+            double theta = result.GoverningThetaDegrees;
+            var pmData   = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
+            var pmAll    = pmData.Points.Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta)).Concat(pmData.SpecialCapacityPoints).ToList();
+            pmDiagramBlock = new DiagramBlock(pmAll, pmData.ReferenceLines,
+                $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", result.Ratio,
+                UseEqualAspect: false, WidthPct: 90,
+                Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
+
+            var mmData  = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
+            var mmAll   = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
+            mmDiagramBlock = new DiagramBlock(mmAll, [],
+                $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", result.Ratio,
+                UseEqualAspect: true, WidthPct: 80,
+                Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
         }
-        catch { /* skip graphic on error */ }
+        catch { }
 
         IDesignCodeService codeService = result.DesignCode == DesignCodeType.Aci318Style
             ? new Aci318DesignCodeService()
@@ -469,9 +507,9 @@ public sealed class ReportTabViewModel : ViewModelBase
         IUnitConversionService unitService = new UnitConversionService();
 
         var builder = new CalculationReportBuilder();
-        var data = builder.Build(_cachedProjectName, _cachedGroupName, _cachedDesignTierName, result, codeService, unitService);
-
-        return data with { SectionGeometrySvg = sectionSvg, RebarLayoutSvg = sectionSvg };
+        return builder.Build(_cachedProjectName, _cachedGroupName, _cachedDesignTierName,
+                             result, codeService, unitService, sectionSvg,
+                             pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
     }
 
     // ── Preview helpers ───────────────────────────────────────────────────────
