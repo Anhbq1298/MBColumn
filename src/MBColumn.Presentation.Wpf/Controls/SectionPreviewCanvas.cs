@@ -127,11 +127,19 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 
         DrawAxes(dc, center, Math.Min(32, sw / 4), Math.Min(32, sh / 4));
 
-        foreach (var item in Rebars?.OfType<PreviewRebarPoint>() ?? [])
+        if (Rebars != null)
         {
-            var pt = new Point(center.X + item.X * scale, center.Y - item.Y * scale);
-            double r = Math.Max(2.5, item.Diameter * scale / 2.0);
-            dc.DrawEllipse(DarkNavyBrush, new Pen(Brushes.White, 0.6), pt, r, r);
+            foreach (var item in Rebars)
+            {
+                double cx = 0, cy = 0, dia = 0;
+                if (item is PreviewRebarPoint pr) { cx = pr.X; cy = pr.Y; dia = pr.Diameter; }
+                else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc) { cx = rc.X; cy = rc.Y; dia = rc.Diameter; }
+                else continue;
+
+                var pt = new Point(center.X + cx * scale, center.Y - cy * scale);
+                double r = Math.Max(2.5, dia * scale / 2.0);
+                dc.DrawEllipse(DarkNavyBrush, new Pen(Brushes.White, 0.6), pt, r, r);
+            }
         }
 
         if (SectionShape == SectionShapeType.Circular)
@@ -145,10 +153,26 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 
     private void DrawIrregularSection(DrawingContext dc)
     {
-        var bpts = BoundaryPoints?.OfType<PreviewBoundaryPoint>().ToList();
-        if (bpts == null || bpts.Count < 3) return;
+        var bpts = new List<Point>();
+        if (BoundaryPoints != null)
+        {
+            foreach (var bp in BoundaryPoints)
+            {
+                if (bp is PreviewBoundaryPoint pbp) bpts.Add(new Point(pbp.X, pbp.Y));
+                else if (bp is MBColumn.Application.DTOs.InsetPointDto ip) bpts.Add(new Point(ip.X, ip.Y));
+            }
+        }
+        if (bpts.Count < 3) return;
 
-        var rebars = Rebars?.OfType<PreviewRebarPoint>().ToList() ?? [];
+        var rebars = new List<(double X, double Y, double Diameter)>();
+        if (Rebars != null)
+        {
+            foreach (var item in Rebars)
+            {
+                if (item is PreviewRebarPoint pr) rebars.Add((pr.X, pr.Y, pr.Diameter));
+                else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc) rebars.Add((rc.X, rc.Y, rc.Diameter));
+            }
+        }
 
         double topText = 46, leftDim = 48, bottomDim = 38, rightPad = 20;
         double minX = Math.Min(0.0, bpts.Min(p => p.X));

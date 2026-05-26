@@ -235,8 +235,8 @@ public sealed class DiagramDataService
             .ToList();
         var points = new List<ControlPointDto>();
 
-        points.AddRange(BuildMxMyBoundaryAtDisplayP(surface.Where(p => !IsNominal(p)).ToList(), selectedPDisplay, nominal: false));
-        points.AddRange(BuildMxMyBoundaryAtDisplayP(surface.Where(IsNominal).ToList(), selectedPDisplay, nominal: true));
+        points.AddRange(BuildMxMyBoundaryAtDisplayP(surface, selectedPDisplay, nominal: false));
+        points.AddRange(BuildMxMyBoundaryAtDisplayP(surface, selectedPDisplay, nominal: true));
 
         foreach (var marker in set.MmPoints.Where(p => p.IsDemandPoint || p.IsGoverningPoint))
         {

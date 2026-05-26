@@ -96,7 +96,7 @@ public static class PmCurveBuilderService
         var raw = source.ToList();
         var clean = raw.Where(IsValid).ToList();
         var capacity = clean.Where(p => !p.IsDemandPoint && !p.IsGoverningPoint && !p.IsReferencePoint).ToList();
-        var designCapacity = capacity.Where(p => !IsNominalPoint(p)).ToList();
+        var designCapacity = capacity.ToList(); // Use all points for design (each point has ReducedDisplay properties)
         if (designCapacity.Count == 0) return [];
 
         var designRows = designCapacity
@@ -111,8 +111,7 @@ public static class PmCurveBuilderService
         var design = BuildAngleEnvelopeLoop(designRows, designPMaxRaw, designPMin, angleDegrees, nominal: false, forceStraightTrimCap: false).ToList();
 
         // Build nominal curve separately to respect its own (usually higher) cap
-        var nominalPointsSource = capacity.Where(IsNominalPoint).ToList();
-        Console.WriteLine($"DEBUG: capacity={capacity.Count}, nominalSource={nominalPointsSource.Count}");
+        var nominalPointsSource = capacity.ToList(); // Use all points for nominal (each point has NominalDisplay properties)
         var nominalRows = nominalPointsSource
             .GroupBy(p => p.GroupKey)
             .Select(g => g.OrderByDescending(p => p.NominalDisplayP).ToList())

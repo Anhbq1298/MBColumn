@@ -161,6 +161,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **ReportBlock** | Represents the ReportBlock record. Key properties: KeepTogether, CanSplitByRows, EstimatedHeight. | `ReportBlock.cs` |
 | `record` | **ReportData** | Represents the ReportData record. Key properties: ProjectName, GroupName, DesignTierName, GeneratedAt. | `ReportData.cs` |
 | `record` | **ReportSection** | Represents the ReportSection record. | `ReportSection.cs` |
+| `record` | **SectionPreviewBlock** | Represents the SectionPreviewBlock record. Key properties: SectionWidth, SectionHeight, Cover, UnitSystem. | `SectionPreviewBlock.cs` |
 | `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportBlock.cs` |
 | `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportBlock.cs` |
 | `record` | **TableBlock** | Represents the TableBlock record. | `ReportBlock.cs` |
@@ -403,6 +404,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **QuestPdfCalculationReportRenderer** | /// Renders a ReportData to an A4 PDF using QuestPDF. /// No content is clipped. Formula blocks keep together. Tables split by complete rows only. ///. Key methods: RenderToFile, RenderToBytes. | `QuestPdfCalculationReportRenderer.cs` |
+
+### Reports/Svg
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **DiagramSvgRenderer** | Represents the DiagramSvgRenderer class. Key methods: Render. | `DiagramSvgRenderer.cs` |
 
 ### Root
 

@@ -34,7 +34,7 @@ public sealed class A4ReportPageViewModel
     public int    PageNumber     { get; set; }
     public double PageWidthMm   { get; set; } = 210.0;
     public double PageHeightMm  { get; set; } = 297.0;
-    public double MarginMm      { get; set; } = 2.54;   // 0.1 inch
+    public double MarginMm      { get; set; } = 12.7;   // 0.5 inch
 
     public double ContentWidthMm  => PageWidthMm  - 2.0 * MarginMm;
     public double ContentHeightMm => PageHeightMm - 2.0 * MarginMm;
@@ -47,7 +47,7 @@ public sealed class A4ReportPageViewModel
     // WPF display helpers
     public double PageWidthDip   => ReportUnitConverter.MmToDip(PageWidthMm);
     public double PageHeightDip  => ReportUnitConverter.MmToDip(PageHeightMm);
-    public double MarginDip      => ReportUnitConverter.InchToDip(0.1);
+    public double MarginDip      => ReportUnitConverter.InchToDip(0.5);
 }
 
 // ── Paginator ──────────────────────────────────────────────────────────────

@@ -53,7 +53,9 @@ public sealed class SafeFormulaControl : ContentControl
 
         // Raw string literals in C# ($$"""...""") produce \\frac instead of \frac.
         // Normalize to single backslash so WpfMath receives valid LaTeX.
-        var normalized = raw.Replace(@"\\", @"\");
+        var normalized = raw.Replace(@"\\", @"\")
+                            .Replace(@"\quad", @"\;\;\;")
+                            .Replace(@"\ ", @"\;");
 
         // Show readable plain text immediately so the UI is never blocked.
         Content = MakeFallbackText(normalized);
@@ -61,11 +63,10 @@ public sealed class SafeFormulaControl : ContentControl
         // Defer expensive WpfMath parse+render to background so initial load stays responsive.
         Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
         {
-            // If Formula changed while queued, the next Refresh() will handle it.
-            if ((Formula ?? "").Replace(@"\\", @"\") != normalized) return;
+            if ((Formula ?? "").Replace(@"\\", @"\").Replace(@"\quad", @"\;\;\;").Replace(@"\ ", @"\;") != normalized) return;
             try
             {
-                Content = new FormulaControl
+                var control = new FormulaControl
                 {
                     Formula = normalized,
                     Scale = Scale,
@@ -73,6 +74,13 @@ public sealed class SafeFormulaControl : ContentControl
                     VerticalAlignment = VerticalAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Left,
                 };
+                
+                // Force a measure to trigger parsing
+                control.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                if (control.Errors.Count == 0)
+                {
+                    Content = control;
+                }
             }
             catch { /* fallback text already shown */ }
         });

@@ -17,6 +17,7 @@ public sealed class ReportBlockTemplateSelector : DataTemplateSelector
     public DataTemplate? DividerTemplate    { get; set; }
     public DataTemplate? PageBreakTemplate  { get; set; }
     public DataTemplate? SummaryBoxTemplate { get; set; }
+    public DataTemplate? SectionPreviewTemplate { get; set; }
 
     public override DataTemplate? SelectTemplate(object item, DependencyObject container) => item switch
     {
@@ -31,6 +32,7 @@ public sealed class ReportBlockTemplateSelector : DataTemplateSelector
         DividerBlock    => DividerTemplate,
         PageBreakBlock  => PageBreakTemplate,
         SummaryBoxBlock => SummaryBoxTemplate,
+        SectionPreviewBlock => SectionPreviewTemplate,
         _               => base.SelectTemplate(item, container),
     };
 }

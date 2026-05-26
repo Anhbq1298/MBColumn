@@ -158,6 +158,30 @@
             </Border>
         </DataTemplate>
 
+        <!-- SectionPreviewBlock — rendered via SectionPreviewCanvas -->
+        <DataTemplate x:Key="SectionPreviewTemplate" DataType="{x:Type models:SectionPreviewBlock}">
+            <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
+                    Padding="8" Margin="0,4,0,4">
+                <StackPanel HorizontalAlignment="Center">
+                    <controls:SectionPreviewCanvas
+                        Width="{Binding WidthPct, Converter={StaticResource PctOf720Converter}}"
+                        MinHeight="300"
+                        SectionWidth="{Binding SectionWidth}"
+                        SectionHeight="{Binding SectionHeight}"
+                        Cover="{Binding Cover}"
+                        UnitSystem="{Binding UnitSystem}"
+                        SectionShape="{Binding SectionShape}"
+                        Rebars="{Binding Rebars}"
+                        BoundaryPoints="{Binding BoundaryPoints}"
+                        HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding Caption}" FontSize="9" Foreground="#555"
+                               HorizontalAlignment="Center" FontStyle="Italic" Margin="0,4,0,0"
+                               Visibility="{Binding Caption,
+                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
         <!-- DiagramBlock — rendered via DiagramCanvas2D (WPF native, no SVG clip-path issues) -->
         <DataTemplate x:Key="DiagramTemplate" DataType="{x:Type models:DiagramBlock}">
             <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
@@ -256,7 +280,8 @@
             DiagramTemplate   ="{StaticResource DiagramTemplate}"
             DividerTemplate   ="{StaticResource DividerTemplate}"
             PageBreakTemplate ="{StaticResource PageBreakTemplate}"
-            SummaryBoxTemplate="{StaticResource SummaryBoxTemplate}"/>
+            SummaryBoxTemplate="{StaticResource SummaryBoxTemplate}"
+            SectionPreviewTemplate="{StaticResource SectionPreviewTemplate}"/>
 
         <!-- ── Layout helpers ─────────────────────────────────────────────── -->
         <Style x:Key="A4PageStyle" TargetType="Border">
@@ -319,34 +344,10 @@
                                Text="Result outdated — recalculate before exporting."/>
                 </Border>
 
-                <!-- Refresh -->
-                <Button Content="Refresh Preview"
-                        Command="{Binding GeneratePreviewCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,14,0,0"/>
-
-                <!-- Print -->
-                <Button Content="Print"
-                        x:Name="PrintButton"
-                        Click="PrintButton_Click"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,6,0,0"/>
-
-                <Separator Margin="0,14,0,8"/>
-                <TextBlock Text="Export"
-                           Style="{StaticResource FieldLabelTextStyle}"
-                           Margin="0,0,0,4"/>
-
-                <Button Content="Preview PDF"
-                        Command="{Binding PreviewPdfCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,0,0,0"
-                        ToolTip="Open a temporary PDF in the default viewer"/>
-
                 <Button Content="Save as PDF"
                         Command="{Binding SaveAsPdfCommand}"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,6,0,0"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Margin="0,14,0,0"
                         ToolTip="Save the full calculation report as PDF"/>
 
                 <Button Content="Save as HTML"

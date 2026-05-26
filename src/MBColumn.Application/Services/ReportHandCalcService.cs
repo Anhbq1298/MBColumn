@@ -194,12 +194,12 @@ public static class ReportHandCalcService
             new("Gross concrete area",
                 @"A_g = b \times h",
                 $$"""A_g = {{F(b,0)}} \times {{F(h,0)}}""",
-                $$"""A_g = {{F(Ag,0)}}\ \mathrm{mm^2}"""),
+                $$"""A_g = {{F(Ag,0)}}\,\mathrm{mm^2}"""),
 
             new("Total steel area",
                 @"A_{st} = \sum A_{si}",
                 $$"""{{bars.Count}}\ \text{bars}""",
-                $$"""A_{st} = {{F(Ast,1)}}\ \mathrm{mm^2}"""),
+                $$"""A_{st} = {{F(Ast,1)}}\,\mathrm{mm^2}"""),
         };
 
         if (!isAci)
@@ -209,18 +209,18 @@ public static class ReportHandCalcService
             blocks.Add(new("Design concrete strength  (EC2 §3.1.6, Table 2.1N)",
                 @"f_{cd} = \alpha_{cc} f_{ck} / \gamma_c",
                 $$"""f_{cd} = {{F(alphaCc,2)}} \times {{F(fc,1)}} / 1.50""",
-                $$"""f_{cd} = {{F(fcd,2)}}\ \mathrm{MPa}"""));
+                $$"""f_{cd} = {{F(fcd,2)}}\,\mathrm{MPa}"""));
 
             blocks.Add(new($"Effectiveness factor  η = {F(eta,3)}",
                 @"\eta f_{cd} = \eta \cdot \alpha_{cc} f_{ck} / \gamma_c",
                 $$"""\eta = {{F(eta,3)}},\quad \eta f_{cd} = {{F(eta,3)}} \times {{F(fcd,2)}}""",
-                $$"""\eta f_{cd} = {{F(fConc,2)}}\ \mathrm{MPa}"""));
+                $$"""\eta f_{cd} = {{F(fConc,2)}}\,\mathrm{MPa}"""));
 
             double fydVal = code.SteelDesignStrength(fy);
             blocks.Add(new("Design steel strength  (EC2 Table 2.1N)",
                 @"f_{yd} = f_{yk} / \gamma_s",
                 $$"""f_{yd} = {{F(fy,1)}} / 1.15""",
-                $$"""f_{yd} = {{F(fydVal,2)}}\ \mathrm{MPa}"""));
+                $$"""f_{yd} = {{F(fydVal,2)}}\,\mathrm{MPa}"""));
         }
 
         blocks.Add(new(isAci
@@ -228,21 +228,21 @@ public static class ReportHandCalcService
                 : "Nominal pure axial compression  (EC2, simplified rect. block)",
             $$"""P_0 = {{fcdL}} (A_g - A_{st}) + {{fydL}} A_{st}""",
             $$"""P_0 = {{F(fConc,2)}} \times ({{F(Ag,0)}} - {{F(Ast,0)}}) + {{F(fyd,2)}} \times {{F(Ast,0)}}""",
-            $$"""P_0 = {{F(P0/1000,1)}}\ \mathrm{kN}"""));
+            $$"""P_0 = {{F(P0/1000,1)}}\,\mathrm{kN}"""));
 
         if (isAci)
         {
             blocks.Add(new("Design maximum compression  (ACI tied column α = 0.80, φ = 0.65)",
                 @"\phi P_{n,max} = \phi \cdot 0.80 \cdot P_0",
                 $$"""\phi P_{n,max} = 0.65 \times 0.80 \times {{F(P0/1000,1)}}""",
-                $$"""\phi P_{n,max} = {{F(PhiPnMax/1000,1)}}\ \mathrm{kN}"""));
+                $$"""\phi P_{n,max} = {{F(PhiPnMax/1000,1)}}\,\mathrm{kN}"""));
         }
         else
         {
             blocks.Add(new("Design axial capacity  (EC2: φ = 1.0, no compression cap)",
                 @"P_{Rd,max} = \phi \cdot P_0",
                 $$"""P_{Rd,max} = 1.0 \times {{F(P0/1000,1)}}""",
-                $$"""P_{Rd,max} = {{F(PhiPnMax/1000,1)}}\ \mathrm{kN}"""));
+                $$"""P_{Rd,max} = {{F(PhiPnMax/1000,1)}}\,\mathrm{kN}"""));
         }
 
         string assumption = isAci
@@ -300,22 +300,22 @@ public static class ReportHandCalcService
             new("Neutral axis depth",
                 $$"""c_{zero} = d_t""",
                 $$"""c_{zero} = {{F(dt,1)}}""",
-                $$"""c_{zero} = {{F(c,1)}}\ \mathrm{mm}"""),
+                $$"""c_{zero} = {{F(c,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
                 $$"""a = {{beta1L}} c_{zero}""",
                 $$"""a = {{F(beta1,4)}} \times {{F(c,1)}}""",
-                $$"""a = {{F(a,1)}}\ \mathrm{mm}"""),
+                $$"""a = {{F(a,1)}}\,\mathrm{mm}"""),
 
             new("Concrete compression force",
                 $$"""C_c = {{fcdL}} \cdot b \cdot a""",
                 $$"""C_c = {{F(fConc,2)}} \times {{F(b,0)}} \times {{F(a,1)}}""",
-                $$"""C_c = {{F(Cc/1000,1)}}\ \mathrm{kN}"""),
+                $$"""C_c = {{F(Cc/1000,1)}}\,\mathrm{kN}"""),
 
             new("Nominal axial and moment",
-                $$"""P_n = C_c + \sum A_{si} f_{si},\quad f_{si} = \mathrm{clamp}(E_s \varepsilon_{si},\,-{{fydL}},\,{{fydL}})""",
-                $$"""P_n = {{F(Pn/1000,1)}}\ \mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\ \mathrm{kN\cdot m}""",
-                $$"""\phi = {{F(phi,3)}},\quad \phi P_n = {{F(phi*Pn/1000,1)}}\ \mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\ \mathrm{kN\cdot m}"""),
+                $$"""P_n = C_c + \sum A_{si} f_{si},\quad f_{si} = E_s \varepsilon_{si} \quad (|f_{si}| \leq {{fydL}})""",
+                $$"""P_n = {{F(Pn/1000,1)}}\,\mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}""",
+                $$"""\phi = {{F(phi,3)}},\quad \phi P_n = {{F(phi*Pn/1000,1)}}\,\mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
         };
 
         return new ControlPointValidationRow(
@@ -369,22 +369,22 @@ public static class ReportHandCalcService
             new("Neutral axis depth",
                 $$$"""c_{half} = \\frac{ {{{ecuL}}} \\cdot d_t }{ {{{ecuL}}} + 0.5 \varepsilon_{y}}""",
                 $$"""c_{half} = \\frac{ {{F(ecu,4)}} \\times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(0.5*eyd,5)}} }""",
-                $$"""c_{half} = {{F(c,1)}}\ \mathrm{mm}"""),
+                $$"""c_{half} = {{F(c,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
                 $$"""a = {{beta1L}} c_{half}""",
                 $$"""a = {{F(beta1,4)}} \times {{F(c,1)}}""",
-                $$"""a = {{F(a,1)}}\ \mathrm{mm}"""),
+                $$"""a = {{F(a,1)}}\,\mathrm{mm}"""),
 
             new("Concrete compression force",
                 $$"""C_c = {{fcdL}} \cdot b \cdot a""",
                 $$"""C_c = {{F(fConc,2)}} \times {{F(b,0)}} \times {{F(a,1)}}""",
-                $$"""C_c = {{F(Cc/1000,1)}}\ \mathrm{kN}"""),
+                $$"""C_c = {{F(Cc/1000,1)}}\,\mathrm{kN}"""),
 
             new("Nominal axial and moment",
-                $$"""P_n = C_c + \sum A_{si} f_{si},\quad f_{si} = \mathrm{clamp}(E_s \varepsilon_{si},\,-{{fydL}},\,{{fydL}})""",
-                $$"""P_n = {{F(Pn/1000,1)}}\ \mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\ \mathrm{kN\cdot m}""",
-                $$"""\phi = {{F(phi,3)}},\quad \phi P_n = {{F(phi*Pn/1000,1)}}\ \mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\ \mathrm{kN\cdot m}"""),
+                $$"""P_n = C_c + \sum A_{si} f_{si},\quad f_{si} = E_s \varepsilon_{si} \quad (|f_{si}| \leq {{fydL}})""",
+                $$"""P_n = {{F(Pn/1000,1)}}\,\mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}""",
+                $$"""\phi = {{F(phi,3)}},\quad \phi P_n = {{F(phi*Pn/1000,1)}}\,\mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
         };
 
         return new ControlPointValidationRow(
@@ -443,27 +443,27 @@ public static class ReportHandCalcService
             new("Extreme tension bar depth from compression face",
                 @"d_t = h/2 - y_{min}",
                 $$"""d_t = {{F(h/2,1)}} - ({{F(bars.Min(r=>r.Y),1)}})""",
-                $$"""d_t = {{F(dt,1)}}\ \mathrm{mm}"""),
+                $$"""d_t = {{F(dt,1)}}\,\mathrm{mm}"""),
 
             new("Balanced neutral axis depth",
                 $$"""c_b = \\frac{ {{ecuL}} \\cdot d_t }{ {{ecuL}} + {{(fydL == @"f_y" ? @"\varepsilon_y" : @"\varepsilon_{yd}")}}}""",
                 $$"""c_b = \\frac{ {{F(ecu,4)}} \\times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(eyd,5)}} }""",
-                $$"""c_b = {{F(cb,1)}}\ \mathrm{mm}"""),
+                $$"""c_b = {{F(cb,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
                 $$"""a_b = {{beta1L}} c_b""",
                 $$"""a_b = {{F(beta1,4)}} \times {{F(cb,1)}}""",
-                $$"""a_b = {{F(ab,1)}}\ \mathrm{mm}"""),
+                $$"""a_b = {{F(ab,1)}}\,\mathrm{mm}"""),
 
             new("Concrete compression force",
                 $$"""C_c = {{fcdL}} \cdot b \cdot a_b""",
                 $$"""C_c = {{F(fConc,2)}} \times {{F(b,0)}} \times {{F(ab,1)}}""",
-                $$"""C_c = {{F(Cc/1000,1)}}\ \mathrm{kN}"""),
+                $$"""C_c = {{F(Cc/1000,1)}}\,\mathrm{kN}"""),
 
             new("Nominal axial and moment at balanced NA",
-                $$"""P_n = C_c + \sum A_{si} f_{si},\quad f_{si} = \mathrm{clamp}(E_s \varepsilon_{si},\,-{{fydL}},\,{{fydL}})""",
-                $$"""P_n = {{F(Pn/1000,1)}}\ \mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\ \mathrm{kN\cdot m}""",
-                $$"""\phi = {{F(phi,3)}},\quad \phi P_n = {{F(phi*Pn/1000,1)}}\ \mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\ \mathrm{kN\cdot m}"""),
+                $$"""P_n = C_c + \sum A_{si} f_{si},\quad f_{si} = E_s \varepsilon_{si} \quad (|f_{si}| \leq {{fydL}})""",
+                $$"""P_n = {{F(Pn/1000,1)}}\,\mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}""",
+                $$"""\phi = {{F(phi,3)}},\quad \phi P_n = {{F(phi*Pn/1000,1)}}\,\mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
         };
 
         string cp2Name = "Balanced Point";
@@ -529,17 +529,17 @@ public static class ReportHandCalcService
             new("Neutral axis depth at tension limit",
                 $$"""c_t = \\frac{ {{ecuL}} \\cdot d_t }{ {{ecuL}} + \varepsilon_{t,limit} }""",
                 $$"""c_t = \\frac{ {{F(ecu,4)}} \\times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(etLimit,4)}} }""",
-                $$"""c_t = {{F(ct,1)}}\ \mathrm{mm}"""),
+                $$"""c_t = {{F(ct,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
                 $$"""a_t = {{beta1L}} c_t""",
                 $$"""a_t = {{F(beta1,4)}} \times {{F(ct,1)}}""",
-                $$"""a_t = {{F(at,1)}}\ \mathrm{mm}"""),
+                $$"""a_t = {{F(at,1)}}\,\mathrm{mm}"""),
 
             new($"Design capacities  (φ = {F(phi,2)})",
                 $$"""\phi P_n,\quad \phi M_{nx}""",
-                $$"""\phi = {{F(phi,2)}},\quad P_n = {{F(Pn/1000,1)}}\ \mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\ \mathrm{kN\cdot m}""",
-                $$"""\phi P_n = {{F(phi*Pn/1000,1)}}\ \mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\ \mathrm{kN\cdot m}"""),
+                $$"""\phi = {{F(phi,2)}},\quad P_n = {{F(Pn/1000,1)}}\,\mathrm{kN},\quad M_{nx} = {{F(Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}""",
+                $$"""\phi P_n = {{F(phi*Pn/1000,1)}}\,\mathrm{kN},\quad \phi M_{nx} = {{F(phi*Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
         };
 
         return new ControlPointValidationRow(
@@ -597,18 +597,18 @@ public static class ReportHandCalcService
         {
             new("Find NA depth c where net axial = 0  (bisection)",
                 @"\left| P_n(c) \right| \leq \varepsilon_P \approx 0",
-                $$"""c\ \text{solved by bisection in}\ [0,\,h],\quad \varepsilon_P = 0.1\ \mathrm{N}""",
-                $$"""c = {{F(c,2)}}\ \mathrm{mm}"""),
+                $$"""c\ \text{solved by bisection in}\ [0,\,h],\quad \varepsilon_P = 0.1\,\mathrm{N}""",
+                $$"""c = {{F(c,2)}}\,\mathrm{mm}"""),
 
             new("Moment capacity at pure bending NA",
                 $$"""M_{nx}(c) = C_c \!\left(\\tfrac{h}{2}-\\tfrac{a}{2}\\right) + \sum A_{si} f_{si} y_i""",
-                $$"""a = {{beta1L}} c = {{F(beta1,4)}} \times {{F(c,2)}} = {{F(beta1*c,2)}}\ \mathrm{mm}""",
-                $$"""M_{nx} = {{F(Mn/1e6,1)}}\ \mathrm{kN \cdot m}"""),
+                $$"""a = {{beta1L}} c = {{F(beta1,4)}} \times {{F(c,2)}} = {{F(beta1*c,2)}}\,\mathrm{mm}""",
+                $$"""M_{nx} = {{F(Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
 
             new($"Design moment capacity  (φ = {F(phi,2)} at ε_t = {F(et,4)})",
                 @"\phi M_{nx}",
                 $$"""\phi = {{F(phi,2)}}""",
-                $$"""\phi M_{nx} = {{F(phi*Mn/1e6,1)}}\ \mathrm{kN \cdot m}"""),
+                $$"""\phi M_{nx} = {{F(phi*Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
         };
 
         return new ControlPointValidationRow(
@@ -651,17 +651,17 @@ public static class ReportHandCalcService
             new("Total steel area",
                 @"A_{st} = \sum A_{si}",
                 $$"""{{bars.Count}}\ \text{bars}""",
-                $$"""A_{st} = {{F(Ast,1)}}\ \mathrm{mm^2}"""),
+                $$"""A_{st} = {{F(Ast,1)}}\,\mathrm{mm^2}"""),
 
             new("Nominal pure tension (concrete neglected)",
                 $$"""P_{n,ten} = -{{fydL}} A_{st}""",
                 $$"""P_{n,ten} = -{{F(fyd,2)}} \times {{F(Ast,1)}}""",
-                $$"""P_{n,ten} = {{F(PnTen/1000,1)}}\ \mathrm{kN}"""),
+                $$"""P_{n,ten} = {{F(PnTen/1000,1)}}\,\mathrm{kN}"""),
 
             new($"Design pure tension  (φ = {F(phi,2)})",
                 $$"""\phi P_{n,ten} = \phi \cdot P_{n,ten}""",
                 $$"""\phi P_{n,ten} = {{F(phi,2)}} \times {{F(PnTen/1000,1)}}""",
-                $$"""\phi P_{n,ten} = {{F(PhiPn/1000,1)}}\ \mathrm{kN}"""),
+                $$"""\phi P_{n,ten} = {{F(PhiPn/1000,1)}}\,\mathrm{kN}"""),
         };
 
         return new ControlPointValidationRow(
