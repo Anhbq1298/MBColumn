@@ -5,6 +5,9 @@
     <Color x:Key="AccentBlueColor">#3B95E8</Color>
     <Color x:Key="AccentBlueSoftColor">#EAF5FF</Color>
     <Color x:Key="PrimaryBlueHoverColor">#2772BC</Color>
+    <Color x:Key="ActionBlueColor">#1F5F9F</Color>
+    <Color x:Key="ActionBlueHoverColor">#2874B8</Color>
+    <Color x:Key="ActionBluePressedColor">#174A7D</Color>
     <Color x:Key="DialogHeaderSubtitleColor">#D9ECFF</Color>
     <Color x:Key="AccentRedColor">#EF4444</Color>
     <Color x:Key="AccentGreenColor">#10B981</Color>
@@ -26,6 +29,9 @@
     <SolidColorBrush x:Key="AccentBlueBrush" Color="{DynamicResource AccentBlueColor}" />
     <SolidColorBrush x:Key="AccentBlueSoftBrush" Color="{DynamicResource AccentBlueSoftColor}" />
     <SolidColorBrush x:Key="PrimaryBlueHoverBrush" Color="{DynamicResource PrimaryBlueHoverColor}" />
+    <SolidColorBrush x:Key="ActionBlueBrush" Color="{DynamicResource ActionBlueColor}" />
+    <SolidColorBrush x:Key="ActionBlueHoverBrush" Color="{DynamicResource ActionBlueHoverColor}" />
+    <SolidColorBrush x:Key="ActionBluePressedBrush" Color="{DynamicResource ActionBluePressedColor}" />
     <SolidColorBrush x:Key="DialogHeaderSubtitleBrush" Color="{DynamicResource DialogHeaderSubtitleColor}" />
     <SolidColorBrush x:Key="AccentRedBrush" Color="{DynamicResource AccentRedColor}" />
     <SolidColorBrush x:Key="AccentGreenBrush" Color="{DynamicResource AccentGreenColor}" />

@@ -35,14 +35,23 @@
     <Style x:Key="PrimaryButtonStyle" TargetType="Button">
         <Setter Property="MinHeight" Value="34" />
         <Setter Property="Padding" Value="16,7" />
-        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ActionBlueBrush}" />
         <Setter Property="Foreground" Value="White" />
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryNavyBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ActionBlueBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Resources">
+            <Setter.Value>
+                <ResourceDictionary>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Style>
+                </ResourceDictionary>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -54,16 +63,17 @@
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          RecognizesAccessKey="True" />
+                                          RecognizesAccessKey="True"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource PrimaryBlueHoverBrush}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource PrimaryBlueHoverBrush}" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ActionBlueHoverBrush}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource ActionBlueHoverBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource DarkNavyBrush}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource DarkNavyBrush}" />
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource ActionBluePressedBrush}" />
+                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource ActionBluePressedBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Root" Property="Opacity" Value="0.55" />
@@ -101,6 +111,15 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Resources">
+            <Setter.Value>
+                <ResourceDictionary>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Style>
+                </ResourceDictionary>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -112,7 +131,8 @@
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          RecognizesAccessKey="True" />
+                                          RecognizesAccessKey="True"
+                                          TextElement.Foreground="{TemplateBinding Foreground}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

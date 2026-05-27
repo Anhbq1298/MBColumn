@@ -398,37 +398,31 @@
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
                                 
-                                <Grid Grid.Row="0" Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <WrapPanel Grid.Column="0">
-                                        <Button Content="+ Add case"
-                                                Command="{Binding AddLoadCaseCommand}"
-                                                Style="{StaticResource CompactButtonStyle}" />
-                                        <Button Content="Delete demand case"
-                                                Command="{Binding DeleteSelectedLoadCasesCommand}"
-                                                CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
-                                                Style="{StaticResource SecondaryButtonStyle}"
-                                                Padding="10,4"
-                                                FontSize="11.5"
-                                                Margin="8,0,0,0" />
-                                    </WrapPanel>
-                                    <WrapPanel Grid.Column="1">
-                                        <Button Content="Import from CSV"
-                                                Command="{Binding ImportLoadCasesCommand}"
-                                                Style="{StaticResource SecondaryButtonStyle}"
-                                                Padding="10,4"
-                                                FontSize="11.5"
-                                                Margin="0,0,8,0" />
-                                        <Button Content="Export to CSV"
-                                                Command="{Binding ExportLoadCasesCommand}"
-                                                Style="{StaticResource SecondaryButtonStyle}"
-                                                Padding="10,4"
-                                                FontSize="11.5" />
-                                    </WrapPanel>
-                                </Grid>
+                                <WrapPanel Grid.Row="0" Margin="0,0,0,10">
+                                    <Button Content="+ Add case"
+                                            Command="{Binding AddLoadCaseCommand}"
+                                            Style="{StaticResource CompactButtonStyle}"
+                                            Margin="0,0,8,6" />
+                                    <Button Content="Delete demand case"
+                                            Command="{Binding DeleteSelectedLoadCasesCommand}"
+                                            CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Padding="10,4"
+                                            FontSize="11.5"
+                                            Margin="0,0,8,6" />
+                                    <Button Content="Import from CSV"
+                                            Command="{Binding ImportLoadCasesCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Padding="10,4"
+                                            FontSize="11.5"
+                                            Margin="0,0,8,6" />
+                                    <Button Content="Export to CSV"
+                                            Command="{Binding ExportLoadCasesCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Padding="10,4"
+                                            FontSize="11.5"
+                                            Margin="0,0,8,6" />
+                                </WrapPanel>
                                 <DataGrid x:Name="LoadCasesGrid"
                                           Grid.Row="1"
                                           ItemsSource="{Binding LoadCases}"

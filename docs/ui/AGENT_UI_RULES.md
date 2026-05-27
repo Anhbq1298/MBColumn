@@ -5,6 +5,7 @@ Use this guide before changing WPF views in `src/MBColumn.Presentation.Wpf`.
 ## Design Direction
 
 - Keep the product visual language blue and white, but avoid heavy navy blocks. Use `PrimaryNavyBrush`, `DarkNavyBrush`, `AccentBlueBrush`, and `AccentBlueSoftBrush` from `Themes/Theme.Colors.xaml`.
+- Primary action buttons must use `PrimaryButtonStyle` or `CompactButtonStyle`: dark action blue background with white text/icons. Keep neutral actions on `SecondaryButtonStyle`.
 - Use the shared font stack from `AppFontFamily`: `Segoe UI Variable Text, Segoe UI, Aptos, Arial`. Use `TechnicalMonoFontFamily` only for code-like values or dense numeric output.
 - Do not hard-code new hex colors or font sizes in views unless the value is a one-off visualization color inside a drawing surface.
 

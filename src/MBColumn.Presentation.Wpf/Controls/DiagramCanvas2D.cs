@@ -33,13 +33,26 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty ShowDemandLabelProperty = DependencyProperty.Register(nameof(ShowDemandLabel), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
     private const double HitTolerance = 10.0;
+    private const double MinZoom = 0.35;
+    private const double MaxZoom = 18.0;
+    private double viewZoom = 1.0;
+    private Point? viewCenter;
+    private Point? hoverPosition;
+    private ControlPointDto? hoverPoint;
+    private bool isPanning;
+    private Point panStartScreen;
+    private Point panStartCenter;
 
     public DiagramCanvas2D()
     {
         Focusable = true;
         MouseMove += OnMouseMove;
-        MouseLeave += (_, _) => ToolTip = null;
+        MouseLeave += (_, _) => { hoverPoint = null; hoverPosition = null; InvalidateVisual(); };
         MouseLeftButtonDown += OnMouseLeftButtonDown;
+        MouseRightButtonDown += OnPanMouseDown;
+        MouseDown += OnAnyMouseDown;
+        MouseUp += OnAnyMouseUp;
+        MouseWheel += OnMouseWheel;
         SizeChanged += (_, _) => InvalidateVisual();
     }
 
@@ -66,15 +79,23 @@ public class DiagramCanvas2D : FrameworkElement
     public bool ShowSpecialPoints { get => (bool)GetValue(ShowSpecialPointsProperty); set => SetValue(ShowSpecialPointsProperty, value); }
     public bool ShowDemandLabel   { get => (bool)GetValue(ShowDemandLabelProperty);   set => SetValue(ShowDemandLabelProperty, value); }
 
-    public void ResetView() => InvalidateVisual();
+    public void ResetView()
+    {
+        viewZoom = 1.0;
+        viewCenter = null;
+        isPanning = false;
+        Cursor = Cursors.Arrow;
+        ReleaseMouseCapture();
+        InvalidateVisual();
+    }
 
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-        dc.DrawRoundedRectangle(Brushes.White, new Pen(new SolidColorBrush(Color.FromRgb(214, 222, 230)), 1), new Rect(0, 0, ActualWidth, ActualHeight), 6, 6);
+        dc.DrawRoundedRectangle(Brushes.White, new Pen(new SolidColorBrush(Color.FromRgb(226, 233, 240)), 1), new Rect(0, 0, ActualWidth, ActualHeight), 7, 7);
         var allFinitePoints = (Points ?? []).Where(IsFinite).ToList();
         var points = VisiblePoints(allFinitePoints).ToList();
-        var plot = new Rect(76, 62, Math.Max(10, ActualWidth - 116), Math.Max(10, ActualHeight - 126));
+        var plot = GetPlotRect();
         dc.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
         if (points.Count == 0)
         {
@@ -83,10 +104,8 @@ public class DiagramCanvas2D : FrameworkElement
             return;
         }
 
-        var transformPoints = ShowReferenceLines
-            ? points.Concat(ReferenceLineBoundsPoints()).ToList()
-            : points;
-        var transform = ChartTransformHelper.AutoFit2D(transformPoints, plot, BoundsOverride, UseEqualAspect);
+        var transform = BuildTransform(points, plot);
+        DrawPlotSurface(dc, plot);
         AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid, XGridStep, YGridStep);
         DrawCapacity(dc, transform, allFinitePoints);
         DrawCapacityControlPoints(dc, transform, points);
@@ -94,8 +113,44 @@ public class DiagramCanvas2D : FrameworkElement
         DrawConstructionReferenceLines(dc, transform);
         DrawSpecialPoints(dc, transform, points);
         DrawSelectedPoint(dc, transform);
+        DrawHoverOverlay(dc, transform, plot);
         DrawInsetFigure(dc, plot);
+        DrawInteractionHint(dc);
         dc.Pop();
+    }
+
+    private Rect GetPlotRect()
+        => new(76, 62, Math.Max(10, ActualWidth - 116), Math.Max(10, ActualHeight - 126));
+
+    private ChartTransformHelper BuildTransform(IReadOnlyList<ControlPointDto> visiblePoints, Rect plot)
+    {
+        var transformPoints = ShowReferenceLines
+            ? visiblePoints.Concat(ReferenceLineBoundsPoints()).ToList()
+            : visiblePoints;
+        var baseTransform = ChartTransformHelper.AutoFit2D(transformPoints, plot, BoundsOverride, UseEqualAspect);
+        if (viewZoom <= 1.0001 && viewCenter is null)
+        {
+            return baseTransform;
+        }
+
+        var center = viewCenter ?? new Point((baseTransform.MinX + baseTransform.MaxX) * 0.5, (baseTransform.MinY + baseTransform.MaxY) * 0.5);
+        double width = (baseTransform.MaxX - baseTransform.MinX) / Math.Max(MinZoom, viewZoom);
+        double height = (baseTransform.MaxY - baseTransform.MinY) / Math.Max(MinZoom, viewZoom);
+        var bounds = new Rect(new Point(center.X - width * 0.5, center.Y - height * 0.5), new Point(center.X + width * 0.5, center.Y + height * 0.5));
+        return ChartTransformHelper.AutoFit2D(transformPoints, plot, bounds, useEqualAspect: false, exactBounds: true);
+    }
+
+    private ChartTransformHelper BuildCurrentTransform()
+    {
+        var points = VisiblePoints((Points ?? []).Where(IsFinite)).ToList();
+        return BuildTransform(points, GetPlotRect());
+    }
+
+    private static void DrawPlotSurface(DrawingContext dc, Rect plot)
+    {
+        var fill = new LinearGradientBrush(Color.FromRgb(253, 254, 255), Color.FromRgb(248, 251, 254), 90);
+        var border = new Pen(new SolidColorBrush(Color.FromRgb(225, 232, 241)), 0.8);
+        dc.DrawRoundedRectangle(fill, border, plot, 5, 5);
     }
 
     private void DrawCapacity(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
@@ -615,6 +670,83 @@ public class DiagramCanvas2D : FrameworkElement
         dc.DrawEllipse(fill, stroke, pt, 6.5, 6.5);
     }
 
+    private void DrawHoverOverlay(DrawingContext dc, ChartTransformHelper transform, Rect plot)
+    {
+        if (hoverPosition is not { } mouse || hoverPoint is not { } point || !plot.Contains(mouse))
+        {
+            return;
+        }
+
+        var screen = transform.ToScreen(point.X, point.Y);
+        if (!IsFinite(screen)) return;
+
+        var crosshairPen = new Pen(new SolidColorBrush(Color.FromArgb(130, 47, 127, 208)), 0.9) { DashStyle = DashStyles.Dash };
+        var guidePen = new Pen(new SolidColorBrush(Color.FromArgb(90, 15, 23, 42)), 0.7);
+        dc.DrawLine(crosshairPen, new Point(screen.X, plot.Top), new Point(screen.X, plot.Bottom));
+        dc.DrawLine(crosshairPen, new Point(plot.Left, screen.Y), new Point(plot.Right, screen.Y));
+
+        dc.DrawLine(guidePen, new Point(screen.X, screen.Y), new Point(screen.X, plot.Bottom));
+        dc.DrawLine(guidePen, new Point(plot.Left, screen.Y), new Point(screen.X, screen.Y));
+
+        var haloBrush = new SolidColorBrush(Color.FromArgb(46, 47, 127, 208));
+        var ringPen = new Pen(new SolidColorBrush(Color.FromRgb(47, 127, 208)), 1.8);
+        dc.DrawEllipse(haloBrush, null, screen, 11, 11);
+        dc.DrawEllipse(Brushes.White, ringPen, screen, 5.5, 5.5);
+
+        DrawAxisChip(dc, AxisTickService.Format(point.X), new Point(screen.X, plot.Bottom + 16), horizontal: true);
+        DrawAxisChip(dc, AxisTickService.Format(point.Y), new Point(plot.Left - 44, screen.Y - 10), horizontal: false);
+        DrawHoverCard(dc, point, screen, plot);
+    }
+
+    private static void DrawAxisChip(DrawingContext dc, string text, Point anchor, bool horizontal)
+    {
+        var ft = CreateText(text, 9.0, Brushes.White, FontWeights.SemiBold);
+        double width = Math.Max(44, ft.Width + 12);
+        double height = 20;
+        var rect = horizontal
+            ? new Rect(anchor.X - width * 0.5, anchor.Y, width, height)
+            : new Rect(anchor.X, anchor.Y, width, height);
+        var fill = new SolidColorBrush(Color.FromRgb(37, 99, 160));
+        dc.DrawRoundedRectangle(fill, null, rect, 5, 5);
+        dc.DrawText(ft, new Point(rect.Left + (rect.Width - ft.Width) * 0.5, rect.Top + 2.5));
+    }
+
+    private void DrawHoverCard(DrawingContext dc, ControlPointDto point, Point screen, Rect plot)
+    {
+        string title = string.IsNullOrWhiteSpace(point.Label) ? PointTypeLabel(point) : point.Label;
+        string line1 = $"P {point.P:F2}";
+        string line2 = $"Mx {point.Mx:F2}   My {point.My:F2}";
+        string line3 = point.IsDemand ? $"D/C {Math.Max(point.Utilization, Ratio):F3}" : $"Phi {point.Phi:F3}";
+
+        var titleText = CreateText(title, 10.5, new SolidColorBrush(Color.FromRgb(15, 23, 42)), FontWeights.SemiBold);
+        var line1Text = CreateText(line1, 9.5, new SolidColorBrush(Color.FromRgb(71, 85, 105)), FontWeights.Normal);
+        var line2Text = CreateText(line2, 9.5, new SolidColorBrush(Color.FromRgb(71, 85, 105)), FontWeights.Normal);
+        var line3Text = CreateText(line3, 9.5, new SolidColorBrush(Color.FromRgb(47, 127, 208)), FontWeights.SemiBold);
+        double width = Math.Max(138, new[] { titleText.Width, line1Text.Width, line2Text.Width, line3Text.Width }.Max() + 22);
+        double height = 78;
+        double left = screen.X + 14;
+        double top = screen.Y - height - 12;
+        if (left + width > plot.Right - 8) left = screen.X - width - 14;
+        if (top < plot.Top + 8) top = screen.Y + 14;
+        if (top + height > plot.Bottom - 8) top = plot.Bottom - height - 8;
+
+        var rect = new Rect(left, top, width, height);
+        dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(246, 255, 255, 255)),
+            new Pen(new SolidColorBrush(Color.FromRgb(203, 213, 225)), 0.8), rect, 7, 7);
+        dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(47, 127, 208)), null, new Rect(rect.Left, rect.Top, 4, rect.Height));
+        dc.DrawText(titleText, new Point(rect.Left + 12, rect.Top + 8));
+        dc.DrawText(line1Text, new Point(rect.Left + 12, rect.Top + 28));
+        dc.DrawText(line2Text, new Point(rect.Left + 12, rect.Top + 44));
+        dc.DrawText(line3Text, new Point(rect.Left + 12, rect.Top + 60));
+    }
+
+    private static string PointTypeLabel(ControlPointDto point)
+    {
+        if (point.IsDemand) return "Demand";
+        if (point.IsReference) return "Reference";
+        return point.IsNominal ? "Nominal capacity" : "Design capacity";
+    }
+
     private void DrawInsetFigure(DrawingContext dc, Rect plot)
     {
         var inset = InsetFigure;
@@ -802,19 +934,99 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        Focus();
+        if (e.ClickCount >= 2)
+        {
+            ResetView();
+            e.Handled = true;
+            return;
+        }
+
         var position = e.GetPosition(this);
         var hitResult = HitTestPoint(position);
-        SelectedPoint = hitResult;
+        if (hitResult is not null)
+        {
+            SelectedPoint = hitResult;
+            hoverPoint = hitResult;
+            hoverPosition = position;
+            InvalidateVisual();
+            return;
+        }
+
+        BeginPan(position);
+    }
+
+    private void OnPanMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        Focus();
+        BeginPan(e.GetPosition(this));
+        e.Handled = true;
+    }
+
+    private void OnAnyMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            Focus();
+            BeginPan(e.GetPosition(this));
+            e.Handled = true;
+        }
+    }
+
+    private void OnAnyMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (isPanning && (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right || e.ChangedButton == MouseButton.Middle))
+        {
+            EndPan();
+            e.Handled = true;
+        }
+    }
+
+    private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var position = e.GetPosition(this);
+        var plot = GetPlotRect();
+        if (!plot.Contains(position)) return;
+
+        var oldTransform = BuildCurrentTransform();
+        var dataBefore = oldTransform.ToData(position);
+        viewCenter ??= new Point((oldTransform.MinX + oldTransform.MaxX) * 0.5, (oldTransform.MinY + oldTransform.MaxY) * 0.5);
+        viewZoom = Math.Clamp(viewZoom * (e.Delta > 0 ? 1.16 : 0.86), MinZoom, MaxZoom);
+        var newTransform = BuildCurrentTransform();
+        var dataAfter = newTransform.ToData(position);
+        viewCenter = new Point(viewCenter.Value.X + dataBefore.X - dataAfter.X, viewCenter.Value.Y + dataBefore.Y - dataAfter.Y);
+        hoverPosition = position;
+        hoverPoint = FindNearestPoint(position);
         InvalidateVisual();
+        e.Handled = true;
+    }
+
+    private void BeginPan(Point position)
+    {
+        var transform = BuildCurrentTransform();
+        viewCenter ??= new Point((transform.MinX + transform.MaxX) * 0.5, (transform.MinY + transform.MaxY) * 0.5);
+        panStartCenter = viewCenter.Value;
+        panStartScreen = position;
+        isPanning = true;
+        Cursor = Cursors.SizeAll;
+        CaptureMouse();
+    }
+
+    private void EndPan()
+    {
+        isPanning = false;
+        Cursor = Cursors.Arrow;
+        ReleaseMouseCapture();
     }
 
     private ControlPointDto? HitTestPoint(Point position)
     {
+        if (!GetPlotRect().Contains(position)) return null;
+
         var points = HitTestablePoints().ToList();
         if (points.Count == 0) return null;
 
-        var plot = new Rect(76, 62, Math.Max(10, ActualWidth - 116), Math.Max(10, ActualHeight - 126));
-        var transform = ChartTransformHelper.AutoFit2D(VisiblePoints(Points ?? []).Where(IsFinite), plot, BoundsOverride, UseEqualAspect);
+        var transform = BuildCurrentTransform();
 
         var nearest = points
             .Select(p => new { Point = p, Screen = transform.ToScreen(p.X, p.Y) })
@@ -833,20 +1045,45 @@ public class DiagramCanvas2D : FrameworkElement
             (p.IsDemand || (!p.IsDemand && !p.IsGoverning)));
     }
 
-    private void OnMouseMove(object sender, MouseEventArgs e) => UpdateTooltip(e.GetPosition(this));
-
-    private void UpdateTooltip(Point position)
+    private void OnMouseMove(object sender, MouseEventArgs e)
     {
-        var points = VisiblePoints(Points ?? []).Where(p => p.IsDemand || ((!p.IsReference || p.GroupKey == "LabeledPoint") && !p.IsDemand && !p.IsGoverning)).ToList();
-        if (points.Count == 0) return;
-        var plot = new Rect(76, 62, Math.Max(10, ActualWidth - 116), Math.Max(10, ActualHeight - 126));
-        var transform = ChartTransformHelper.AutoFit2D(points, plot, BoundsOverride, UseEqualAspect);
-        var nearest = points.Select(p => new { Point = p, Screen = transform.ToScreen(p.X, p.Y) })
+        var position = e.GetPosition(this);
+        if (isPanning && viewCenter is not null)
+        {
+            var transform = BuildCurrentTransform();
+            var delta = position - panStartScreen;
+            double dataDx = -delta.X / Math.Max(1.0, transform.Plot.Width) * (transform.MaxX - transform.MinX);
+            double dataDy = delta.Y / Math.Max(1.0, transform.Plot.Height) * (transform.MaxY - transform.MinY);
+            viewCenter = new Point(panStartCenter.X + dataDx, panStartCenter.Y + dataDy);
+            hoverPoint = null;
+            hoverPosition = null;
+            InvalidateVisual();
+            return;
+        }
+
+        hoverPosition = position;
+        hoverPoint = FindNearestPoint(position);
+        Cursor = GetPlotRect().Contains(position) ? Cursors.Cross : Cursors.Arrow;
+        InvalidateVisual();
+    }
+
+    private ControlPointDto? FindNearestPoint(Point position)
+    {
+        var points = HitTestablePoints().ToList();
+        if (points.Count == 0) return null;
+
+        var plot = GetPlotRect();
+        if (!plot.Contains(position)) return null;
+
+        var transform = BuildCurrentTransform();
+        var nearest = points
+            .Select(p => new { Point = p, Screen = transform.ToScreen(p.X, p.Y) })
             .Select(x => new { x.Point, Distance = (x.Screen - position).Length })
             .Where(x => x.Distance < HitTolerance)
             .OrderBy(x => x.Distance)
             .FirstOrDefault();
-        ToolTip = nearest is null ? null : TooltipRenderer.Build(nearest.Point, Ratio);
+
+        return nearest?.Point;
     }
 
     private static bool IsFinite(ControlPointDto p) => !double.IsNaN(p.X) && !double.IsInfinity(p.X) && !double.IsNaN(p.Y) && !double.IsInfinity(p.Y);
@@ -860,11 +1097,27 @@ public class DiagramCanvas2D : FrameworkElement
             !p.IsGoverning &&
             (!p.IsNominal || ShowNominalCurve));
 
+    private void DrawInteractionHint(DrawingContext dc)
+    {
+        if (ActualWidth < 420) return;
+
+        string zoomText = viewZoom > 1.01 ? $"  {viewZoom * 100:0}%" : "";
+        string text = $"Wheel zoom  |  Drag pan  |  Double-click reset{zoomText}";
+        var ft = CreateText(text, 9.0, new SolidColorBrush(Color.FromRgb(82, 97, 111)), FontWeights.Normal);
+        var rect = new Rect(ActualWidth - ft.Width - 28, 12, ft.Width + 16, 22);
+        dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(232, 248, 251, 254)),
+            new Pen(new SolidColorBrush(Color.FromRgb(226, 233, 240)), 0.8), rect, 11, 11);
+        dc.DrawText(ft, new Point(rect.Left + 8, rect.Top + 3.2));
+    }
+
     private static void DrawText(DrawingContext dc, string text, double size, Brush brush, Point point, FontWeight weight)
     {
-        var ft = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal), size + 1, brush, 1.25);
+        var ft = CreateText(text, size, brush, weight);
         dc.DrawText(ft, point);
     }
+
+    private static FormattedText CreateText(string text, double size, Brush brush, FontWeight weight)
+        => new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal), size + 1, brush, 1.25);
 
     private static void OnResetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {

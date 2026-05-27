@@ -5,7 +5,7 @@ namespace MBColumn.Presentation.Wpf.Controls;
 
 public sealed class ChartTransformHelper
 {
-    public ChartTransformHelper(IEnumerable<ControlPointDto> points, Rect plot, Rect? boundsOverride = null, bool useEqualAspect = false)
+    public ChartTransformHelper(IEnumerable<ControlPointDto> points, Rect plot, Rect? boundsOverride = null, bool useEqualAspect = false, bool exactBounds = false)
     {
         Plot = plot;
         if (boundsOverride.HasValue)
@@ -23,10 +23,16 @@ public sealed class ChartTransformHelper
             MinY = list.Count == 0 ? -1 : list.Min(p => p.Y);
             MaxY = list.Count == 0 ? 1 : list.Max(p => p.Y);
         }
-        IncludeZero();
-        Pad();
-        SnapToBounds();
-        if (useEqualAspect)
+
+        EnsureNonZeroSpan();
+        if (!exactBounds)
+        {
+            IncludeZero();
+            Pad();
+            SnapToBounds();
+        }
+
+        if (useEqualAspect && !exactBounds)
         {
             ApplyEqualAspect();
         }
@@ -38,8 +44,8 @@ public sealed class ChartTransformHelper
     public double MaxY { get; private set; }
     public Rect Plot { get; }
 
-    public static ChartTransformHelper AutoFit2D(IEnumerable<ControlPointDto> points, Rect plot, Rect? boundsOverride = null, bool useEqualAspect = false)
-        => new(points, plot, boundsOverride, useEqualAspect);
+    public static ChartTransformHelper AutoFit2D(IEnumerable<ControlPointDto> points, Rect plot, Rect? boundsOverride = null, bool useEqualAspect = false, bool exactBounds = false)
+        => new(points, plot, boundsOverride, useEqualAspect, exactBounds);
 
     public Point ToScreen(double x, double y)
     {
@@ -66,6 +72,11 @@ public sealed class ChartTransformHelper
     {
         MinX = Math.Min(MinX, 0); MaxX = Math.Max(MaxX, 0);
         MinY = Math.Min(MinY, 0); MaxY = Math.Max(MaxY, 0);
+        EnsureNonZeroSpan();
+    }
+
+    private void EnsureNonZeroSpan()
+    {
         if (Math.Abs(MaxX - MinX) < 1e-9) { MinX -= 1; MaxX += 1; }
         if (Math.Abs(MaxY - MinY) < 1e-9) { MinY -= 1; MaxY += 1; }
     }

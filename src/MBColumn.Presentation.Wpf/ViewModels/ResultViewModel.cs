@@ -573,9 +573,9 @@ public sealed class ResultViewModel : ViewModelBase
         MM.ShowGrid = ShowGrid;
         MM.ShowLabels = ShowLabels;
         PM3D.ShowSurface = ShowSurface3D;
-        PM3D.ShowWireframe = ShowSurface3D;
+        PM3D.ShowWireframe = ShowWireframe3D;
         MM3D.ShowSurface = ShowSurface3D;
-        MM3D.ShowWireframe = ShowSurface3D;
+        MM3D.ShowWireframe = ShowWireframe3D;
     }
 
     private static double CalculateNiceStep(double range)
