@@ -240,7 +240,7 @@
                                                     <MenuItem Header="Add New Section" Command="{Binding AddSectionCommand}" />
                                                     <MenuItem Header="Add Existing Sections..." Command="{Binding AddExistingSectionsCommand}" />
                                                     <Separator />
-                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="Red" />
+                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
                                                 </ContextMenu>
                                             </StackPanel.ContextMenu>
                                         </StackPanel>
@@ -272,7 +272,7 @@
                                                         </MenuItem.ItemContainerStyle>
                                                     </MenuItem>
                                                     <Separator />
-                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="Red" />
+                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
                                                 </ContextMenu>
                                             </StackPanel.ContextMenu>
                                         </StackPanel>

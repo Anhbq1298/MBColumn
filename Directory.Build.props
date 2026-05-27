@@ -1,12 +1,12 @@
 <Project>
   <PropertyGroup>
-    <!-- Flattened output directly to built/bin -->
+    <!-- Custom output paths break the Visual Studio WPF XAML Designer (XDesProc). 
+         Commenting these out so the designer can resolve local and referenced types.
     <OutputPath>$(MSBuildThisFileDirectory)built\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    
-    <!-- Intermediate files still need to be separate to avoid build conflicts -->
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)built\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    -->
   </PropertyGroup>
 
   <ItemGroup>

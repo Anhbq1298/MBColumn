@@ -2,19 +2,19 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Add Existing Sections" Height="400" Width="300"
-        Style="{StaticResource DialogWindowStyle}">
-    <Grid Style="{StaticResource DialogRootGridStyle}">
+        Style="{DynamicResource DialogWindowStyle}">
+    <Grid Style="{DynamicResource DialogRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorderStyle}">
+        <Border Grid.Row="0" Style="{DynamicResource DialogHeaderBorderStyle}">
             <StackPanel>
-                <TextBlock Text="Add Existing Sections" Style="{StaticResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="Add Existing Sections" Style="{DynamicResource DialogHeaderTitleTextStyle}" />
                 <TextBlock Text="Choose sections to include in the selected group."
-                           Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}" />
             </StackPanel>
         </Border>
 
@@ -33,13 +33,13 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
-        <Border Grid.Row="2" Style="{StaticResource DialogFooterBarStyle}">
-            <StackPanel Style="{StaticResource DialogActionPanelStyle}">
+        <Border Grid.Row="2" Style="{DynamicResource DialogFooterBarStyle}">
+            <StackPanel Style="{DynamicResource DialogActionPanelStyle}">
                 <Button Content="Cancel"
                         IsCancel="True"
                         Width="88"
                         Margin="0,0,8,0"
-                        Style="{StaticResource DialogActionButtonStyle}" />
+                        Style="{DynamicResource DialogActionButtonStyle}" />
                 <Button Content="Add"
                         IsDefault="True"
                         Click="OkButton_Click"

@@ -65,6 +65,28 @@
             <Setter Property="Margin"
                     Value="0,0,0,12" />
         </Style>
+        <Style x:Key="PreviewPropertyLabelTextStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource HelperTextStyle}">
+            <Setter Property="Margin"
+                    Value="0,0,0,4" />
+        </Style>
+        <Style x:Key="PreviewPropertyValueTextStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource MutedValueTextStyle}">
+            <Setter Property="Margin"
+                    Value="0,0,0,4" />
+            <Setter Property="TextWrapping"
+                    Value="Wrap" />
+        </Style>
+        <Style x:Key="InputSubsectionTitleTextStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource GroupTitleTextStyle}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeHelper}" />
+            <Setter Property="Margin"
+                    Value="0,0,0,8" />
+        </Style>
         <Style x:Key="SectionShapeRadioStyle"
                TargetType="RadioButton">
             <Setter Property="Foreground"
@@ -507,18 +529,13 @@
                         <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,0">
                             <StackPanel>
                                 <TextBlock Text="Section Preview"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Style="{StaticResource SectionTitleTextStyle}"
                                            Margin="0,0,0,6" />
                                 <TextBlock Text="SECTION PREVIEW"
-                                           FontSize="9"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Style="{StaticResource OverlineTextStyle}"
                                            Margin="0,0,0,2" />
                                 <TextBlock Text="2D VIEW · GRID"
-                                           FontSize="9"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Style="{StaticResource CaptionTextStyle}"
                                            Margin="0,0,0,4" />
                                 <controls:SectionPreviewCanvas Height="240"
                                                                MinHeight="160"
@@ -542,31 +559,31 @@
                                             HorizontalAlignment="Left"
                                             Margin="0,8,0,10">
                                     <Button Click="OpenCadEditor_Click"
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Width="70"
-                                            Height="54"
-                                            Padding="4"
+                                            Style="{StaticResource CompactButtonStyle}"
+                                            MinWidth="78"
+                                            MinHeight="32"
+                                            Padding="10,5"
                                             Margin="0,0,8,0"
                                             ToolTip="Open CAD Lite editor">
-                                        <StackPanel HorizontalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xE70F;"
                                                        FontFamily="Segoe MDL2 Assets"
-                                                       FontSize="20"
-                                                       HorizontalAlignment="Center" />
+                                                       FontSize="{StaticResource FontSizeSection}"
+                                                       Margin="0,0,6,0"
+                                                       VerticalAlignment="Center" />
                                             <TextBlock Text="Edit"
-                                                       FontSize="11"
                                                        FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center" />
+                                                       VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                     <Button Command="{Binding ImportDxfCommand}"
                                             Style="{StaticResource SecondaryButtonStyle}"
-                                            Width="58"
-                                            Height="54"
-                                            Padding="4"
+                                            MinWidth="96"
+                                            MinHeight="32"
+                                            Padding="10,5"
                                             ToolTip="Import .DXF">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <Viewbox Width="22" Height="22" Margin="0,1,0,2">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Viewbox Width="16" Height="16" Margin="0,0,6,0">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Data="M 6,3 L 15,3 L 20,8 L 20,21 L 6,21 Z M 15,3 L 15,8 L 20,8"
                                                           Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -576,7 +593,7 @@
                                                           StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
                                                 </Canvas>
                                             </Viewbox>
-                                            <TextBlock Text=".dxf" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                            <TextBlock Text="Import .dxf" FontWeight="SemiBold" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -584,9 +601,7 @@
                                 <!-- Section properties (compact) -->
                                 <Separator Background="{DynamicResource BorderGreyBrush}" Margin="0,0,0,8" />
                                 <TextBlock Text="SECTION PROPERTIES"
-                                           FontSize="9"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Style="{StaticResource OverlineTextStyle}"
                                            Margin="0,0,0,6" />
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -605,24 +620,24 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Section" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewShapeSummaryText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Layout" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewRebarLayoutText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Section" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewShapeSummaryText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Layout" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewRebarLayoutText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <Separator Grid.Row="2" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Cover" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CoverPreviewLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="A" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PreviewAreaText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Ixx" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding PreviewIxxText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Iyy" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewIyyText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Cover" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CoverPreviewLabel}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="A" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PreviewAreaText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Ixx" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding PreviewIxxText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Iyy" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewIyyText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <Separator Grid.Row="7" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Rebars" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarPreviewLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="ρ" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding PreviewRebarPercentageText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Rebars" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarPreviewLabel}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="ρ" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding PreviewRebarPercentageText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -767,10 +782,7 @@
 
                             <Separator Margin="0,12,0,10" />
                             <TextBlock Text="Boundary Points (Clockwise)"
-                                       FontSize="11"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource InputSubsectionTitleTextStyle}" />
                             <!-- Editing UI only for Irregular Section -->
                             <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <WrapPanel Margin="0,0,0,8">
@@ -814,8 +826,8 @@
                                 </WrapPanel>
                                 <TextBlock Text="{Binding IrregularInput.BoundaryValidationMessage}"
                                            Visibility="{Binding IrregularInput.HasBoundaryValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
-                                           Foreground="Red"
-                                           FontSize="11"
+                                           Foreground="{DynamicResource AccentRedBrush}"
+                                           Style="{StaticResource HelperTextStyle}"
                                            Margin="0,0,0,8"
                                            TextWrapping="Wrap" />
                                 <DataGrid ItemsSource="{Binding IrregularInput.BoundaryPoints}"
@@ -864,10 +876,7 @@
                               Margin="7,0,0,14">
                         <StackPanel>
                             <TextBlock Text="1 — Longitudinal Reinforcement"
-                                       FontSize="11"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryNavyBrush}"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource InputSubsectionTitleTextStyle}" />
                             <!-- 1. Algorithmic / Shape-Specific Top Panel (Visible for Rectangular/Circular) -->
                             <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                 <Grid Margin="0,0,0,10">
@@ -1130,8 +1139,8 @@
                                     <TextBlock Grid.Row="2"
                                                Text="{Binding RebarValidationMessage}"
                                                Visibility="{Binding HasRebarValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
-                                               Foreground="Red"
-                                               FontSize="11"
+                                               Foreground="{DynamicResource AccentRedBrush}"
+                                               Style="{StaticResource HelperTextStyle}"
                                                Margin="0,0,0,8"
                                                TextWrapping="Wrap" />
                                 </Grid>
@@ -1139,10 +1148,7 @@
 
                             <Separator Margin="0,12,0,10" />
                             <TextBlock Text="Rebar Coordinates"
-                                       FontSize="11"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource InputSubsectionTitleTextStyle}" />
                             <!-- Editing UI only for Irregular Section with custom rebar coordinates -->
                             <StackPanel Visibility="{Binding IsRebarCoordinatesEditable, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <WrapPanel Margin="0,0,0,8">
@@ -1227,10 +1233,7 @@
                             <!-- ── Section 2: Stirrups and Shear Links ── -->
                             <Separator Margin="0,12,0,10" />
                             <TextBlock Text="2 — Stirrups and Shear Links"
-                                       FontSize="11"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryNavyBrush}"
-                                       Margin="0,0,0,8" />
+                                       Style="{StaticResource InputSubsectionTitleTextStyle}" />
 
                             <!-- Stirrup Ø + Link spacing side by side — rectangular only -->
                             <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -1322,30 +1325,24 @@
                                             Orientation="Horizontal"
                                             Margin="0,2,0,0">
                                     <TextBlock Text="Total: "
-                                               FontSize="10.5"
-                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                               Style="{StaticResource CaptionTextStyle}" />
                                     <TextBlock Text="{Binding TotalLegsX}"
-                                               FontSize="10.5"
                                                FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextDarkBrush}" />
+                                               Style="{StaticResource CaptionTextStyle}" />
                                     <TextBlock Text=" legs"
-                                               FontSize="10.5"
-                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                               Style="{StaticResource CaptionTextStyle}" />
                                 </StackPanel>
                                 <StackPanel Grid.Row="2"
                                             Grid.Column="2"
                                             Orientation="Horizontal"
                                             Margin="0,2,0,0">
                                     <TextBlock Text="Total: "
-                                               FontSize="10.5"
-                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                               Style="{StaticResource CaptionTextStyle}" />
                                     <TextBlock Text="{Binding TotalLegsY}"
-                                               FontSize="10.5"
                                                FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextDarkBrush}" />
+                                               Style="{StaticResource CaptionTextStyle}" />
                                     <TextBlock Text=" legs"
-                                               FontSize="10.5"
-                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                               Style="{StaticResource CaptionTextStyle}" />
                                 </StackPanel>
                             </Grid>
 
@@ -1353,9 +1350,7 @@
                             <StackPanel Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Margin="0,2,0,0">
                                 <TextBlock Text="EC2 §9.5.3 Link Checks"
-                                           FontSize="10.5"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Style="{StaticResource InputSubsectionTitleTextStyle}"
                                            Margin="0,0,0,4" />
                                 <StackPanel Orientation="Horizontal"
                                             Margin="0,0,0,2">

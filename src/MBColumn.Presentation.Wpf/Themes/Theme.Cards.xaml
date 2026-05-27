@@ -43,9 +43,10 @@
                         <DockPanel LastChildFill="True">
                             <ContentPresenter DockPanel.Dock="Top"
                                               ContentSource="Header"
-                                              TextElement.Foreground="{DynamicResource DarkNavyBrush}"
+                                              TextElement.FontFamily="{StaticResource AppFontFamily}"
+                                              TextElement.Foreground="{DynamicResource PrimaryNavyBrush}"
                                               TextElement.FontWeight="SemiBold"
-                                              TextElement.FontSize="14"
+                                              TextElement.FontSize="{StaticResource FontSizeSection}"
                                               Margin="0,0,0,12" />
                             <ContentPresenter ContentSource="Content" />
                         </DockPanel>
