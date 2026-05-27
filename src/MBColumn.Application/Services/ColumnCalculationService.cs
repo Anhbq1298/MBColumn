@@ -191,7 +191,7 @@ public sealed class ColumnCalculationService(
                 r.Ratio.Ratio,
                 r.Ratio.Status,
                 govPt.Phi,
-                govPt.ThetaDegrees,
+                r.Ratio.CriticalThetaDegrees,
                 govPt.NeutralAxisDepthMm)
             {
                 CapacityPDisplay = units.ForceFromN(r.Ratio.CapacityPn, input.ForceUnit),
@@ -230,7 +230,7 @@ public sealed class ColumnCalculationService(
             units.MomentFromNmm(govDemand.MuxNmm, input.MomentUnit),
             units.MomentFromNmm(govDemand.MuyNmm, input.MomentUnit),
             govPoint.Phi,
-            govPoint.ThetaDegrees,
+            govRatio.CriticalThetaDegrees,
             govPoint.NeutralAxisDepthMm,
             units.ForceFromN(govPoint.Pn, input.ForceUnit),
             units.ForceFromN(govPoint.PhiPn, input.ForceUnit),

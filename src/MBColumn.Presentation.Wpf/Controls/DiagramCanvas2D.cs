@@ -525,7 +525,8 @@ public class DiagramCanvas2D : FrameworkElement
                     t = cap.Value / p.Y;
                 }
                 
-                var capacityPt = transform.ToScreen(p.X * t, p.Y * t);
+                double tDisplay = Math.Max(1.0, t);
+                var capacityPt = transform.ToScreen(p.X * tDisplay, p.Y * tDisplay);
                 
                 var rayPen = new Pen(new SolidColorBrush(Color.FromArgb(180, 227, 27, 35)), 1.2) { DashStyle = DashStyles.Dash };
                 rayPen.Freeze();
