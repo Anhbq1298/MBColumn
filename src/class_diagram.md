@@ -40,7 +40,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **PmValidationReportDto** | Data transfer object carrying PmValidationReport data. | `PmValidationReportDto.cs` |
 | `record` | **PmmSurfaceDto** | Data transfer object carrying PmmSurface data. Key properties: SpecialCapacityPoints, XAxisLabel, YAxisLabel, ZAxisLabel. | `PmmSurfaceDto.cs` |
 | `record` | **RebarCoordinateDto** | Data transfer object carrying RebarCoordinate data. | `RebarCoordinateDto.cs` |
-| `record` | **RebarLayoutInputDto** | Data transfer object carrying RebarLayoutInput data. | `RebarLayoutInputDto.cs` |
+| `record` | **RebarLayoutInputDto** | Data transfer object carrying RebarLayoutInput data. Key properties: StirrupDiameterMm. | `RebarLayoutInputDto.cs` |
 | `enum` | **RebarLayoutType** | Enumeration defining states/types for RebarLayoutType. | `RebarLayoutType.cs` |
 | `record` | **RebarSideInputDto** | Data transfer object carrying RebarSideInput data. | `RebarSideInputDto.cs` |
 | `record` | **ReportFormulaBlock** | Represents the ReportFormulaBlock record. | `ReportFormulaBlock.cs` |

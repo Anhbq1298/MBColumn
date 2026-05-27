@@ -36,7 +36,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid Style="{StaticResource DialogRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -45,17 +45,12 @@
 
         <!-- Header -->
         <Border Grid.Row="0"
-                Background="{DynamicResource PrimaryNavyBrush}"
-                Padding="16,12">
+                Style="{StaticResource DialogHeaderBorderStyle}">
             <StackPanel>
                 <TextBlock Text="Refresh Forces from ETABS"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Foreground="White" />
+                           Style="{StaticResource DialogHeaderTitleTextStyle}" />
                 <TextBlock Text="Pull latest forces from ETABS into MBColumn. ETABS model geometry and loads are never modified."
-                           FontSize="11"
-                           Foreground="#BBCCE0"
-                           Margin="0,3,0,0"
+                           Style="{StaticResource DialogHeaderSubtitleTextStyle}"
                            TextWrapping="Wrap" />
             </StackPanel>
         </Border>
@@ -263,9 +258,7 @@
 
         <!-- Footer buttons -->
         <Border Grid.Row="2"
-                BorderBrush="{DynamicResource BorderGreyBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="12,8">
+                Style="{StaticResource DialogFooterBarStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

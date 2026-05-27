@@ -24,6 +24,9 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public static readonly DependencyProperty IsValidProperty = DependencyProperty.Register(nameof(IsValid), typeof(bool), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ErrorMessageProperty = DependencyProperty.Register(nameof(ErrorMessage), typeof(string), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata("Invalid section input", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty BoundaryPointsProperty = DependencyProperty.Register(nameof(BoundaryPoints), typeof(IEnumerable), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnPreviewCollectionPropertyChanged));
+    public static readonly DependencyProperty StirrupDiameterMmProperty = DependencyProperty.Register(nameof(StirrupDiameterMm), typeof(double), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty InnerLegsXProperty = DependencyProperty.Register(nameof(InnerLegsX), typeof(int), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty InnerLegsYProperty = DependencyProperty.Register(nameof(InnerLegsY), typeof(int), typeof(SectionPreviewCanvas), new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public double SectionWidth { get => (double)GetValue(SectionWidthProperty); set => SetValue(SectionWidthProperty, value); }
     public double SectionHeight { get => (double)GetValue(SectionHeightProperty); set => SetValue(SectionHeightProperty, value); }
@@ -37,6 +40,9 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public bool IsValid { get => (bool)GetValue(IsValidProperty); set => SetValue(IsValidProperty, value); }
     public string ErrorMessage { get => (string)GetValue(ErrorMessageProperty); set => SetValue(ErrorMessageProperty, value); }
     public IEnumerable? BoundaryPoints { get => (IEnumerable?)GetValue(BoundaryPointsProperty); set => SetValue(BoundaryPointsProperty, value); }
+    public double StirrupDiameterMm { get => (double)GetValue(StirrupDiameterMmProperty); set => SetValue(StirrupDiameterMmProperty, value); }
+    public int InnerLegsX { get => (int)GetValue(InnerLegsXProperty); set => SetValue(InnerLegsXProperty, value); }
+    public int InnerLegsY { get => (int)GetValue(InnerLegsYProperty); set => SetValue(InnerLegsYProperty, value); }
 
     private static readonly SolidColorBrush NavyBrush = new(Color.FromRgb(0, 75, 133));
     private static readonly SolidColorBrush DarkNavyBrush = new(Color.FromRgb(0, 58, 102));
@@ -48,6 +54,7 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     private static readonly Pen GridPen = new(new SolidColorBrush(Color.FromArgb(70, 170, 180, 195)), 0.4);
     private static readonly Pen BoundaryPen = new(NavyBrush, 1.0);
     private static readonly Pen CoverDashPen = new(GreyBrush, 0.7) { DashStyle = DashStyles.Dash };
+    private static readonly Pen StirrupPen = new(new SolidColorBrush(Color.FromRgb(220, 30, 30)), 1.1);
     private static readonly Pen AxisXPen = new(RedBrush, 0.8);
     private static readonly Pen AxisYPen = new(NavyBrush, 0.8);
     private static readonly Pen CrossPen = new(TextBrush, 0.8);
@@ -123,6 +130,57 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             var coverRect = new Rect(section.Left + c * scale, section.Top + c * scale,
                 Math.Max(0, section.Width - 2 * c * scale), Math.Max(0, section.Height - 2 * c * scale));
             dc.DrawRectangle(null, CoverDashPen, coverRect);
+
+            // Stirrup: centerline at cover + stirrupRadius from each face
+            double stirrupInset = (c + StirrupDiameterMm / 2.0) * scale;
+            double stirrupW = section.Width - 2 * stirrupInset;
+            double stirrupH = section.Height - 2 * stirrupInset;
+            if (stirrupW > 0 && stirrupH > 0)
+            {
+                var stirrupRect = new Rect(section.Left + stirrupInset, section.Top + stirrupInset, stirrupW, stirrupH);
+                var activePen = GetStirrupPen();
+                dc.DrawRoundedRectangle(null, activePen, stirrupRect, 2.5, 2.5);
+
+                double sLeft = section.Left + stirrupInset;
+                double sTop = section.Top + stirrupInset;
+
+                // Collect bar positions (mm, centroid-origin) with radius
+                var barData = new List<(double X, double Y, double R)>();
+                if (Rebars != null)
+                {
+                    foreach (var item in Rebars)
+                    {
+                        if (item is PreviewRebarPoint pr)
+                            barData.Add((pr.X, pr.Y, pr.Diameter / 2.0));
+                        else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc)
+                            barData.Add((rc.X, rc.Y, rc.Diameter / 2.0));
+                    }
+                }
+
+                // Inner legs X: vertical lines snapped to top-face intermediate bar positions
+                int nIX = InnerLegsX;
+                if (nIX > 0)
+                {
+                    var positions = GetInnerLegPositions(barData, nIX, isX: true, center, scale, sLeft, stirrupW, sTop, stirrupH);
+                    foreach (var (pos, barR) in positions)
+                    {
+                        double lx = pos + barR * scale;
+                        dc.DrawLine(activePen, new Point(lx, sTop), new Point(lx, sTop + stirrupH));
+                    }
+                }
+
+                // Inner legs Y: horizontal lines snapped to left-face intermediate bar positions
+                int nIY = InnerLegsY;
+                if (nIY > 0)
+                {
+                    var positions = GetInnerLegPositions(barData, nIY, isX: false, center, scale, sLeft, stirrupW, sTop, stirrupH);
+                    foreach (var (pos, barR) in positions)
+                    {
+                        double ly = pos + barR * scale;
+                        dc.DrawLine(activePen, new Point(sLeft, ly), new Point(sLeft + stirrupW, ly));
+                    }
+                }
+            }
         }
 
         DrawAxes(dc, center, Math.Min(32, sw / 4), Math.Min(32, sh / 4));
@@ -343,5 +401,80 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal),
             size, brush, 1.25);
         dc.DrawText(ft, point);
+    }
+
+    private Pen? _cachedStirrupPen;
+    private double _cachedStirrupDiamMm = -1;
+
+    private Pen GetStirrupPen()
+    {
+        if (_cachedStirrupPen is null || _cachedStirrupDiamMm != StirrupDiameterMm)
+        {
+            double thick = Math.Max(0.7, Math.Min(3.0, StirrupDiameterMm * 0.11));
+            _cachedStirrupPen = new Pen(new SolidColorBrush(Color.FromRgb(220, 30, 30)), thick);
+            _cachedStirrupPen.Freeze();
+            _cachedStirrupDiamMm = StirrupDiameterMm;
+        }
+        return _cachedStirrupPen;
+    }
+
+    // Returns (screenPos, barRadiusMm) for nCount inner legs.
+    // isX=true: vertical legs snapped to top-face intermediate bar X screen coords.
+    // isX=false: horizontal legs snapped to left-face intermediate bar Y screen coords.
+    private static List<(double Pos, double BarR)> GetInnerLegPositions(
+        List<(double X, double Y, double R)> bars,
+        int count,
+        bool isX,
+        Point center,
+        double scale,
+        double sLeft,
+        double stirrupW,
+        double sTop,
+        double stirrupH)
+    {
+        const double faceTolMm = 8.0;
+        if (bars.Count >= 3)
+        {
+            List<(double Pos, double R)> faceBars;
+            if (isX)
+            {
+                double maxY = bars.Max(b => b.Y);
+                faceBars = bars.Where(b => Math.Abs(b.Y - maxY) < faceTolMm)
+                               .OrderBy(b => b.X)
+                               .Select(b => (Pos: center.X + b.X * scale, R: b.R))
+                               .ToList();
+            }
+            else
+            {
+                double minX = bars.Min(b => b.X);
+                faceBars = bars.Where(b => Math.Abs(b.X - minX) < faceTolMm)
+                               .OrderByDescending(b => b.Y)
+                               .Select(b => (Pos: center.Y - b.Y * scale, R: b.R))
+                               .ToList();
+            }
+            if (faceBars.Count > 2)
+                return PickEvenly(faceBars.Skip(1).Take(faceBars.Count - 2).ToList(), count);
+        }
+        // Fallback: equal spacing within stirrup bounds, no bar offset
+        double extent = isX ? stirrupW : stirrupH;
+        double start = isX ? sLeft : sTop;
+        return Enumerable.Range(1, count)
+                         .Select(i => (start + (double)i / (count + 1) * extent, 0.0))
+                         .ToList();
+    }
+
+    private static List<(double Pos, double R)> PickEvenly(List<(double Pos, double R)> source, int count)
+    {
+        if (source.Count == 0 || count <= 0) return [];
+        if (count >= source.Count) return [.. source];
+        var result = new List<(double, double)>(count);
+        for (int i = 0; i < count; i++)
+        {
+            int idx = count == 1
+                ? source.Count / 2
+                : (int)Math.Round((double)i * (source.Count - 1) / (count - 1));
+            result.Add(source[Math.Min(idx, source.Count - 1)]);
+        }
+        return result;
     }
 }

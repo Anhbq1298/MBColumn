@@ -22,12 +22,13 @@
         <Setter Property="Background" Value="White" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="GridLinesVisibility" Value="Horizontal" />
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Setter Property="RowHeaderWidth" Value="0" />
         <Setter Property="HeadersVisibility" Value="Column" />
-        <Setter Property="FontSize" Value="11.5" />
         <Setter Property="ColumnHeaderHeight" Value="32" />
         <Setter Property="RowHeight" Value="30" />
         <Setter Property="CanUserResizeRows" Value="False" />
@@ -38,6 +39,8 @@
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DarkNavyBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
@@ -49,6 +52,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="VerticalContentAlignment" Value="Center" />

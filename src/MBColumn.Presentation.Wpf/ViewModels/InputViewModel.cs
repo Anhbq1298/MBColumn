@@ -21,7 +21,7 @@ namespace MBColumn.Presentation.Wpf.ViewModels;
 public sealed class InputViewModel : ViewModelBase
 {
     private UnitSystem unitSystem = UnitSystem.Metric;
-    private DesignCodeType selectedDesignCode = DesignCodeType.Aci318Style;
+    private DesignCodeType selectedDesignCode = DesignCodeType.Ec2;
     private Ec2SolverType selectedEc2Solver = Ec2SolverType.Fiber;
     private SectionIntegrationMethod selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
     private readonly IRebarDatabase metricBars;
@@ -38,7 +38,7 @@ public sealed class InputViewModel : ViewModelBase
     private string layoutPreset = "Perimeter bars";
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
-    private MaterialLibraryType selectedMaterialLibrary = MaterialLibraryType.America;
+    private MaterialLibraryType selectedMaterialLibrary = MaterialLibraryType.Europe;
     private MaterialGradeOption? selectedConcreteGrade;
     private MaterialGradeOption? selectedSteelGrade;
     private double fc;
@@ -56,6 +56,20 @@ public sealed class InputViewModel : ViewModelBase
     private string sectionPreviewErrorMessage = "";
     private string rebarLayoutWarning = "";
     private double alphaCc = 0.85;
+    private double stirrupDiameterMm = 10.0;
+    private RebarDefinition? selectedStirrupBar;
+    private double linkSpacingMm = 200.0;
+    private int innerLegsX = 0;
+    private int innerLegsY = 0;
+    // EC2 link check results (updated in UpdateEc2LinkChecks)
+    private string ec2Check1Text = "—";
+    private bool ec2Check1Pass = true;
+    private string ec2Check2Text = "—";
+    private bool ec2Check2Pass = true;
+    private string ec2Check3Text = "—";
+    private bool ec2Check3Pass = true;
+    private string ec2AswsXText = "—";
+    private string ec2AswsYText = "—";
     private bool _isUpdatingPreview = false;
     private string previewAreaText = "—";
     private string previewIxxText = "—";
@@ -260,6 +274,92 @@ public sealed class InputViewModel : ViewModelBase
 
     public double AlphaCc { get => alphaCc; set => Set(ref alphaCc, value); }
     public bool ShowAlphaCcOption => selectedDesignCode == DesignCodeType.Ec2;
+
+    public IReadOnlyList<RebarDefinition> AvailableStirrupBars => AvailableBars;
+
+    public RebarDefinition SelectedStirrupBar
+    {
+        get => selectedStirrupBar
+            ?? AvailableBars.FirstOrDefault(b => Math.Abs(b.DiameterMm - 10.0) < 0.1)
+            ?? AvailableBars.First();
+        set
+        {
+            if (Equals(selectedStirrupBar, value)) return;
+            selectedStirrupBar = value;
+            stirrupDiameterMm = value?.DiameterMm ?? 10.0;
+            Raise();
+            Raise(nameof(StirrupDiameterMm));
+            UpdateSectionPreview();
+        }
+    }
+
+    public double StirrupDiameterMm => stirrupDiameterMm;
+
+    public double LinkSpacingMm
+    {
+        get => linkSpacingMm;
+        set
+        {
+            if (linkSpacingMm == value) return;
+            Set(ref linkSpacingMm, value);
+            UpdateEc2LinkChecks();
+        }
+    }
+
+    // Maximum inner legs X = intermediate bars on top face = Top.BarCount - 2 (strip corners)
+    // For AllSidesEqual/EqualSpacing: Left.BarCount is seeded as perSide (n+2), so subtract 2 to get intermediate
+    // For SidesDifferent: Left.BarCount is already the user-entered intermediate count
+    public int MaxInnerLegsX => IsRectangularSection ? Math.Max(0, RebarLayout.Top.BarCount - 2) : 0;
+    public int MaxInnerLegsY => IsRectangularSection
+        ? (selectedRebarLayoutType == RebarLayoutType.SidesDifferent
+            ? Math.Max(0, RebarLayout.Left.BarCount)
+            : Math.Max(0, RebarLayout.Left.BarCount - 2))
+        : 0;
+
+    public int InnerLegsX
+    {
+        get => innerLegsX;
+        set
+        {
+            if (value < 0) value = 0;
+            value = Math.Min(value, MaxInnerLegsX);
+            if (innerLegsX == value) return;
+            innerLegsX = value;
+            Raise();
+            Raise(nameof(TotalLegsX));
+            UpdateEc2LinkChecks();
+            UpdateSectionPreview();
+        }
+    }
+
+    public int InnerLegsY
+    {
+        get => innerLegsY;
+        set
+        {
+            if (value < 0) value = 0;
+            value = Math.Min(value, MaxInnerLegsY);
+            if (innerLegsY == value) return;
+            innerLegsY = value;
+            Raise();
+            Raise(nameof(TotalLegsY));
+            UpdateEc2LinkChecks();
+            UpdateSectionPreview();
+        }
+    }
+
+    public int TotalLegsX => 2 + innerLegsX;
+    public int TotalLegsY => 2 + innerLegsY;
+
+    public string Ec2Check1Text { get => ec2Check1Text; private set => Set(ref ec2Check1Text, value); }
+    public bool Ec2Check1Pass { get => ec2Check1Pass; private set => Set(ref ec2Check1Pass, value); }
+    public string Ec2Check2Text { get => ec2Check2Text; private set => Set(ref ec2Check2Text, value); }
+    public bool Ec2Check2Pass { get => ec2Check2Pass; private set => Set(ref ec2Check2Pass, value); }
+    public string Ec2Check3Text { get => ec2Check3Text; private set => Set(ref ec2Check3Text, value); }
+    public bool Ec2Check3Pass { get => ec2Check3Pass; private set => Set(ref ec2Check3Pass, value); }
+    public string Ec2AswsXText { get => ec2AswsXText; private set => Set(ref ec2AswsXText, value); }
+    public string Ec2AswsYText { get => ec2AswsYText; private set => Set(ref ec2AswsYText, value); }
+
     public IReadOnlyList<SectionIntegrationMethodOption> SectionIntegrationMethodOptions { get; } =
     [
         new(SectionIntegrationMethod.Fiber, "Fiber Integration"),
@@ -302,6 +402,8 @@ public sealed class InputViewModel : ViewModelBase
             if (unitSystem == UnitSystem.Metric) ApplyMetricDefaults(); else ApplyImperialDefaults();
             Raise(nameof(UnitSystem));
             Raise(nameof(AvailableBars));
+            Raise(nameof(AvailableStirrupBars));
+            Raise(nameof(SelectedStirrupBar));
             Raise(nameof(LengthLabel));
             Raise(nameof(ForceLabel));
             Raise(nameof(MomentLabel));
@@ -608,7 +710,7 @@ public sealed class InputViewModel : ViewModelBase
             {
                 circularCoords = IsCustomRebarCoordinates
                     ? BuildCustomRebarCoordinates()
-                    : rebarCoordinateBuilder.BuildCircular(Diameter, Cover, finalBarCount, BarSize, layoutLengthUnit, UnitSystem);
+                    : rebarCoordinateBuilder.BuildCircular(Diameter, Cover, finalBarCount, BarSize, layoutLengthUnit, UnitSystem, stirrupDiameterMm);
             }
             catch
             {
@@ -663,11 +765,13 @@ public sealed class InputViewModel : ViewModelBase
 
     public void UpdateSectionPreview()
     {
+        ReClampInnerLegs();
         if (_isUpdatingPreview) return;
         _isUpdatingPreview = true;
         try
         {
             UpdateSectionPreviewInternal();
+            UpdateEc2LinkChecks();
         }
         finally
         {
@@ -936,7 +1040,7 @@ public sealed class InputViewModel : ViewModelBase
         double diameterMm = Diameter * factor;
         double coverMm = Cover * factor;
         double barDiameterMm = bar.DiameterMm;
-        double radiusMm = diameterMm / 2.0 - coverMm - barDiameterMm / 2.0;
+        double radiusMm = diameterMm / 2.0 - coverMm - stirrupDiameterMm - barDiameterMm / 2.0;
         if (radiusMm <= 0)
         {
             IsSectionPreviewValid = false;
@@ -1005,7 +1109,8 @@ public sealed class InputViewModel : ViewModelBase
             RebarLayout.Top.ToDto(BarSize, Cover),
             RebarLayout.Bottom.ToDto(BarSize, Cover),
             RebarLayout.Left.ToDto(BarSize, Cover),
-            RebarLayout.Right.ToDto(BarSize, Cover));
+            RebarLayout.Right.ToDto(BarSize, Cover))
+        { StirrupDiameterMm = stirrupDiameterMm };
 
     private void SyncRebarLayoutTypeFromIrregularMode()
     {
@@ -1067,6 +1172,19 @@ public sealed class InputViewModel : ViewModelBase
         RebarLayout.Bottom.SetBarCountSilently(perSide);
         RebarLayout.Left.SetBarCountSilently(perSide);
         RebarLayout.Right.SetBarCountSilently(perSide);
+        ReClampInnerLegs();
+    }
+
+    private void ReClampInnerLegs()
+    {
+        Raise(nameof(MaxInnerLegsX));
+        Raise(nameof(MaxInnerLegsY));
+        int cx = Math.Max(0, Math.Min(innerLegsX, MaxInnerLegsX));
+        int cy = Math.Max(0, Math.Min(innerLegsY, MaxInnerLegsY));
+        bool changed = false;
+        if (cx != innerLegsX) { innerLegsX = cx; Raise(nameof(InnerLegsX)); Raise(nameof(TotalLegsX)); changed = true; }
+        if (cy != innerLegsY) { innerLegsY = cy; Raise(nameof(InnerLegsY)); Raise(nameof(TotalLegsY)); changed = true; }
+        if (changed) UpdateEc2LinkChecks();
     }
 
     private void ClearSideWarnings()
@@ -1339,9 +1457,11 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
-        selectedMaterialLibrary = MaterialLibraryType.America;
-        selectedConcreteGrade = AmericanConcreteGrades[1];
-        selectedSteelGrade = AmericanSteelGrades[1];
+        stirrupDiameterMm = 10.0; metricBars.TryGet("T10", out var _t10); selectedStirrupBar = _t10;
+        linkSpacingMm = 200.0; innerLegsX = 0; innerLegsY = 0;
+        selectedMaterialLibrary = MaterialLibraryType.Europe;
+        selectedConcreteGrade = EuropeanConcreteGrades[2]; // C30/37
+        selectedSteelGrade = EuropeanSteelGrades[2]; // B500B
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
         fc = selectedConcreteGrade.StressValue(UnitSystem.Metric);
@@ -1360,6 +1480,8 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
+        stirrupDiameterMm = 9.525; selectedStirrupBar = imperialBars.GetBars().FirstOrDefault();
+        linkSpacingMm = 200.0; innerLegsX = 0; innerLegsY = 0;
         selectedMaterialLibrary = MaterialLibraryType.America;
         selectedConcreteGrade = AmericanConcreteGrades[1];
         selectedSteelGrade = AmericanSteelGrades[1];
@@ -1397,12 +1519,20 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
+        Raise(nameof(SelectedStirrupBar)); Raise(nameof(AvailableStirrupBars)); Raise(nameof(StirrupDiameterMm));
+        Raise(nameof(LinkSpacingMm)); Raise(nameof(InnerLegsX)); Raise(nameof(InnerLegsY));
+        Raise(nameof(MaxInnerLegsX)); Raise(nameof(MaxInnerLegsY));
+        Raise(nameof(TotalLegsX)); Raise(nameof(TotalLegsY));
+        Raise(nameof(Ec2Check1Text)); Raise(nameof(Ec2Check1Pass));
+        Raise(nameof(Ec2Check2Text)); Raise(nameof(Ec2Check2Pass));
+        Raise(nameof(Ec2Check3Text)); Raise(nameof(Ec2Check3Pass));
+        Raise(nameof(Ec2AswsXText)); Raise(nameof(Ec2AswsYText));
     }
 
     public void ResetToDefaults()
     {
-        SelectedDesignCode = DesignCodeType.Aci318Style;
-        SelectedMaterialLibrary = MaterialLibraryType.America;
+        SelectedDesignCode = DesignCodeType.Ec2;
+        SelectedMaterialLibrary = unitSystem == UnitSystem.Metric ? MaterialLibraryType.Europe : MaterialLibraryType.America;
 
         if (unitSystem == UnitSystem.Metric) ApplyMetricDefaults(); else ApplyImperialDefaults();
         
@@ -1640,6 +1770,59 @@ public sealed class InputViewModel : ViewModelBase
         UpdateSectionPreview();
     }
 
+    private void UpdateEc2LinkChecks()
+    {
+        if (!IsRectangularSection)
+        {
+            Ec2Check1Text = "—"; Ec2Check1Pass = true;
+            Ec2Check2Text = "—"; Ec2Check2Pass = true;
+            Ec2Check3Text = "—"; Ec2Check3Pass = true;
+            Ec2AswsXText = "—"; Ec2AswsYText = "—";
+            return;
+        }
+
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double widthMm = Width * factor;
+        double heightMm = Height * factor;
+        double coverMm = Cover * factor;
+        double dSw = stirrupDiameterMm;
+        var barDef = AvailableBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase));
+        double dMain = barDef?.DiameterMm ?? 20.0;
+
+        // Check 1: d_sw ≥ max(6, 0.25 × d_main)  EC2 §9.5.3(1)
+        double minDiam = Math.Max(6.0, 0.25 * dMain);
+        bool c1 = dSw >= minDiam - 1e-6;
+        Ec2Check1Text = $"Ø{dSw:0} ≥ max(6, 0.25·Ø{dMain:0.#}) = {minDiam:0.#} mm  {(c1 ? "✓" : "✗")}";
+        Ec2Check1Pass = c1;
+
+        // Check 2: s ≤ min(20×d_main, b_min, 400)  EC2 §9.5.3(3)
+        double bMin = Math.Min(widthMm, heightMm);
+        double sMax = Math.Min(Math.Min(20.0 * dMain, bMin), 400.0);
+        bool c2 = linkSpacingMm <= sMax + 1e-6;
+        Ec2Check2Text = $"s = {linkSpacingMm:0} ≤ min(20·{dMain:0.#}, {bMin:0}, 400) = {sMax:0} mm  {(c2 ? "✓" : "✗")}";
+        Ec2Check2Pass = c2;
+
+        // Check 3: gap between restrained positions ≤ 150 mm  EC2 §9.5.3(6)
+        int totX = 2 + innerLegsX;
+        int totY = 2 + innerLegsY;
+        double xClear = widthMm - 2.0 * (coverMm + dSw);
+        double yClear = heightMm - 2.0 * (coverMm + dSw);
+        double gX = totX > 1 && xClear > 0 ? xClear / (totX - 1) : double.PositiveInfinity;
+        double gY = totY > 1 && yClear > 0 ? yClear / (totY - 1) : double.PositiveInfinity;
+        bool c3 = gX <= 150.0 + 1e-6 && gY <= 150.0 + 1e-6;
+        string gXStr = double.IsInfinity(gX) ? "∞" : $"{gX:0}";
+        string gYStr = double.IsInfinity(gY) ? "∞" : $"{gY:0}";
+        Ec2Check3Text = $"ΔX = {gXStr} mm,  ΔY = {gYStr} mm  (≤ 150 mm)  {(c3 ? "✓" : "✗")}";
+        Ec2Check3Pass = c3;
+
+        // Check 4 (info): Asw/s in X and Y directions  EC2 §9.5.3
+        double aSwMm2 = Math.PI * dSw * dSw / 4.0;
+        double aswX = linkSpacingMm > 0 ? totX * aSwMm2 / linkSpacingMm : 0;
+        double aswY = linkSpacingMm > 0 ? totY * aSwMm2 / linkSpacingMm : 0;
+        Ec2AswsXText = $"Asw/s (X) = {totX}×{aSwMm2:0.##}/{linkSpacingMm:0} = {aswX:0.###} mm²/mm";
+        Ec2AswsYText = $"Asw/s (Y) = {totY}×{aSwMm2:0.##}/{linkSpacingMm:0} = {aswY:0.###} mm²/mm";
+    }
+
     private void UpdateSectionPropertiesPanel()
     {
         double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
@@ -1743,6 +1926,11 @@ public sealed class InputViewModel : ViewModelBase
         AlphaCc = alphaCc,
         SectionShape = selectedSectionShape.ToString(),
         Width = width, Height = height, Diameter = diameter, Cover = cover,
+        StirrupDiameterMm = stirrupDiameterMm,
+        StirrupBarSize = selectedStirrupBar?.Name ?? "",
+        LinkSpacingMm = linkSpacingMm,
+        InnerLegsX = innerLegsX,
+        InnerLegsY = innerLegsY,
         Fc = fc, Fy = fy, Es = es,
         MaterialLibrary = selectedMaterialLibrary.ToString(),
         BarSize = barSize, BarCount = barCount, Spacing = spacing,
@@ -1813,6 +2001,24 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         barSize = s.BarSize; barCount = s.BarCount; spacing = s.Spacing;
+        var stirrupDb = unitSystem == UnitSystem.Metric ? metricBars : imperialBars;
+        if (!string.IsNullOrEmpty(s.StirrupBarSize) && stirrupDb.TryGet(s.StirrupBarSize, out var loadedStirrup))
+        {
+            selectedStirrupBar = loadedStirrup;
+        }
+        else if (s.StirrupDiameterMm > 0)
+        {
+            selectedStirrupBar = stirrupDb.GetBars().OrderBy(b => Math.Abs(b.DiameterMm - s.StirrupDiameterMm)).First();
+        }
+        else
+        {
+            stirrupDb.TryGet("T10", out var fallback);
+            selectedStirrupBar = fallback ?? stirrupDb.GetBars().First();
+        }
+        stirrupDiameterMm = selectedStirrupBar?.DiameterMm ?? 10.0;
+        linkSpacingMm = s.LinkSpacingMm > 0 ? s.LinkSpacingMm : 200.0;
+        innerLegsX = Math.Max(0, s.InnerLegsX);
+        innerLegsY = Math.Max(0, s.InnerLegsY);
         selectedRebarLayoutType = Enum.TryParse<RebarLayoutType>(s.RebarLayoutType, out var rlt) ? rlt : RebarLayoutType.AllSidesEqual;
         pu = s.Pu; mux = s.Mux; muy = s.Muy;
         selectedPmAngleDegrees = s.PmAngleDegrees;
@@ -2016,7 +2222,7 @@ public sealed class InputViewModel : ViewModelBase
             if (IsCircularSection)
             {
                 double diameterMm = Diameter * factor;
-                double radiusMm = diameterMm / 2.0 - coverMm - barDiameter / 2.0;
+                double radiusMm = diameterMm / 2.0 - coverMm - stirrupDiameterMm - barDiameter / 2.0;
                 if (radiusMm <= 0) return;
 
                 double perimeterMm = 2.0 * Math.PI * radiusMm;
@@ -2053,7 +2259,7 @@ public sealed class InputViewModel : ViewModelBase
                 };
 
                 var boundaryMm = boundary.Select(p => new Point2D(p.X * factor, p.Y * factor)).ToList();
-                double offsetMm = coverMm + barDiameter / 2.0;
+                double offsetMm = coverMm + stirrupDiameterMm + barDiameter / 2.0;
 
                 System.Collections.Generic.IReadOnlyList<Point2D> insetPolygon;
                 try

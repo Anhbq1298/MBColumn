@@ -18,5 +18,6 @@ public interface IRebarCoordinateBuilderService
         int barCount,
         string barSize,
         LengthUnit lengthUnit,
-        UnitSystem unitSystem);
+        UnitSystem unitSystem,
+        double stirrupDiameterMm = 0.0);
 }

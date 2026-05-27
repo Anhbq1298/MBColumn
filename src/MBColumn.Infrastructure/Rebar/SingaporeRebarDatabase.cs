@@ -5,7 +5,7 @@ namespace MBColumn.Infrastructure.Rebar;
 
 public sealed class SingaporeRebarDatabase : IRebarDatabase
 {
-    private static readonly int[] Diameters = [10, 13, 16, 20, 25, 32, 40];
+    private static readonly int[] Diameters = [6, 8, 10, 13, 16, 20, 25, 32, 40];
     private readonly IReadOnlyList<RebarDefinition> bars = Diameters
         .Select(d => new RebarDefinition($"T{d}", $"T{d} - {d} mm", d, d == 25 ? 491.0 : (d == 20 ? 314.0 : System.Math.PI * d * d / 4.0), RebarUnitType.SingaporeMetric))
         .ToList();

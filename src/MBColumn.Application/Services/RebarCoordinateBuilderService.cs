@@ -27,14 +27,15 @@ public sealed class RebarCoordinateBuilderService(
         double widthMm = units.LengthToMm(width, lengthUnit);
         double heightMm = units.LengthToMm(height, lengthUnit);
         double coverMm = units.LengthToMm(layout.Cover, lengthUnit);
-        double x = widthMm / 2.0 - coverMm - bar.DiameterMm / 2.0;
-        double y = heightMm / 2.0 - coverMm - bar.DiameterMm / 2.0;
+        double stirrupMm = layout.StirrupDiameterMm;
+        double x = widthMm / 2.0 - coverMm - stirrupMm - bar.DiameterMm / 2.0;
+        double y = heightMm / 2.0 - coverMm - stirrupMm - bar.DiameterMm / 2.0;
         if (x <= 0 || y <= 0)
         {
             throw new InvalidOperationException("Rebar centroid is outside the concrete section.");
         }
 
-        var sideCounts = GetSideCounts(layout, widthMm, heightMm, coverMm, bar.DiameterMm, units.LengthToMm(layout.Spacing, lengthUnit));
+        var sideCounts = GetSideCounts(layout, widthMm, heightMm, coverMm, stirrupMm, bar.DiameterMm, units.LengthToMm(layout.Spacing, lengthUnit));
         ValidateSideCounts(sideCounts, layout.LayoutType);
         ValidateSpacing(sideCounts.Top, 2.0 * x, bar.DiameterMm, "Top");
         ValidateSpacing(sideCounts.Bottom, 2.0 * x, bar.DiameterMm, "Bottom");
@@ -60,6 +61,7 @@ public sealed class RebarCoordinateBuilderService(
         double widthMm,
         double heightMm,
         double coverMm,
+        double stirrupMm,
         double barDiameterMm,
         double spacingMm)
     {
@@ -92,8 +94,8 @@ public sealed class RebarCoordinateBuilderService(
                 throw new InvalidOperationException("For Equal Spacing layout, total bars must be an even number.");
             }
 
-            double sX = widthMm - 2.0 * coverMm - barDiameterMm;
-            double sY = heightMm - 2.0 * coverMm - barDiameterMm;
+            double sX = widthMm - 2.0 * coverMm - 2.0 * stirrupMm - barDiameterMm;
+            double sY = heightMm - 2.0 * coverMm - 2.0 * stirrupMm - barDiameterMm;
             if (sX <= 0 || sY <= 0)
             {
                 throw new InvalidOperationException("Rebar centroid is outside the concrete section.");
@@ -219,7 +221,8 @@ public sealed class RebarCoordinateBuilderService(
         int barCount,
         string barSize,
         LengthUnit lengthUnit,
-        UnitSystem unitSystem)
+        UnitSystem unitSystem,
+        double stirrupDiameterMm = 0.0)
     {
         var barDb = unitSystem == UnitSystem.Metric ? metricBars : imperialBars;
         if (!barDb.TryGet(barSize, out var bar))
@@ -229,8 +232,8 @@ public sealed class RebarCoordinateBuilderService(
 
         double diameterMm = units.LengthToMm(diameter, lengthUnit);
         double coverMm = units.LengthToMm(cover, lengthUnit);
-        // Bar centroid radius: from centre of section to centroid of bar
-        double radiusMm = diameterMm / 2.0 - coverMm - bar.DiameterMm / 2.0;
+        // Bar centroid radius: from section centre to bar centroid
+        double radiusMm = diameterMm / 2.0 - coverMm - stirrupDiameterMm - bar.DiameterMm / 2.0;
         if (radiusMm <= 0)
         {
             throw new InvalidOperationException("Cover places rebar centroids outside the circular section boundary.");

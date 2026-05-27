@@ -1,13 +1,18 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Color x:Key="PrimaryNavyColor">#1565C0</Color>
-    <Color x:Key="DarkNavyColor">#0D47A1</Color>
-    <Color x:Key="AccentBlueColor">#1E88E5</Color>
-    <Color x:Key="AccentBlueSoftColor">#EAF4FF</Color>
+    <Color x:Key="PrimaryNavyColor">#2F7FD0</Color>
+    <Color x:Key="DarkNavyColor">#235F9C</Color>
+    <Color x:Key="AccentBlueColor">#3B95E8</Color>
+    <Color x:Key="AccentBlueSoftColor">#EAF5FF</Color>
+    <Color x:Key="PrimaryBlueHoverColor">#2772BC</Color>
+    <Color x:Key="DialogHeaderSubtitleColor">#D9ECFF</Color>
     <Color x:Key="AccentRedColor">#EF4444</Color>
+    <Color x:Key="AccentGreenColor">#10B981</Color>
     <Color x:Key="SuccessGreenColor">#10B981</Color>
     <Color x:Key="SuccessGreenSoftColor">#E8F8F2</Color>
     <Color x:Key="DangerRedSoftColor">#FDECEC</Color>
+    <Color x:Key="WarningAmberColor">#D97706</Color>
+    <Color x:Key="WarningAmberSoftColor">#FFF7E6</Color>
     <Color x:Key="LightBackgroundColor">#F5F7FA</Color>
     <Color x:Key="CardBackgroundColor">#FFFFFF</Color>
     <Color x:Key="PanelBackgroundColor">#FFFFFF</Color>
@@ -20,10 +25,15 @@
     <SolidColorBrush x:Key="DarkNavyBrush" Color="{DynamicResource DarkNavyColor}" />
     <SolidColorBrush x:Key="AccentBlueBrush" Color="{DynamicResource AccentBlueColor}" />
     <SolidColorBrush x:Key="AccentBlueSoftBrush" Color="{DynamicResource AccentBlueSoftColor}" />
+    <SolidColorBrush x:Key="PrimaryBlueHoverBrush" Color="{DynamicResource PrimaryBlueHoverColor}" />
+    <SolidColorBrush x:Key="DialogHeaderSubtitleBrush" Color="{DynamicResource DialogHeaderSubtitleColor}" />
     <SolidColorBrush x:Key="AccentRedBrush" Color="{DynamicResource AccentRedColor}" />
+    <SolidColorBrush x:Key="AccentGreenBrush" Color="{DynamicResource AccentGreenColor}" />
     <SolidColorBrush x:Key="SuccessGreenBrush" Color="{DynamicResource SuccessGreenColor}" />
     <SolidColorBrush x:Key="SuccessGreenSoftBrush" Color="{DynamicResource SuccessGreenSoftColor}" />
     <SolidColorBrush x:Key="DangerRedSoftBrush" Color="{DynamicResource DangerRedSoftColor}" />
+    <SolidColorBrush x:Key="WarningAmberBrush" Color="{DynamicResource WarningAmberColor}" />
+    <SolidColorBrush x:Key="WarningAmberSoftBrush" Color="{DynamicResource WarningAmberSoftColor}" />
     <SolidColorBrush x:Key="LightBackgroundBrush" Color="{DynamicResource LightBackgroundColor}" />
     <SolidColorBrush x:Key="CardBackgroundBrush" Color="{DynamicResource CardBackgroundColor}" />
     <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{DynamicResource PanelBackgroundColor}" />

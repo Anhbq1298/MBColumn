@@ -5,17 +5,24 @@
         Title="Import DXF"
         Width="640"
         SizeToContent="Height"
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
-    <Border Padding="18">
-        <StackPanel>
-            <!-- Title -->
-            <TextBlock Text="DXF Import"
-                       FontSize="18"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryNavyBrush}"
-                       Margin="0,0,0,14" />
+        Style="{StaticResource DialogWindowStyle}">
+    <Grid Style="{StaticResource DialogRootGridStyle}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
+        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorderStyle}">
+            <StackPanel>
+                <TextBlock Text="DXF Import" Style="{StaticResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="Map DXF layers, preview geometry, then import the section."
+                           Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource DialogBodyBorderStyle}">
+        <StackPanel>
             <!-- File path row -->
             <TextBlock Text="DXF file"
                        Style="{StaticResource FieldLabelTextStyle}" />
@@ -196,18 +203,21 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
+        </StackPanel>
+        </Border>
 
-            <!-- Buttons -->
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right">
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterBarStyle}">
+            <StackPanel Style="{StaticResource DialogActionPanelStyle}">
                 <Button Content="Cancel"
                         IsCancel="True"
-                        Style="{StaticResource SecondaryButtonStyle}"
+                        Style="{StaticResource DialogActionButtonStyle}"
                         Margin="0,0,8,0" />
                 <Button Content="Import"
                         Command="{Binding ImportCommand}"
-                        IsDefault="True" />
+                        IsDefault="True"
+                        MinWidth="88"
+                        Style="{StaticResource PrimaryButtonStyle}" />
             </StackPanel>
-        </StackPanel>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

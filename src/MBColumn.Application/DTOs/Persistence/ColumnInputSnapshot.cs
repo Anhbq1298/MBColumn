@@ -24,6 +24,11 @@ public sealed class ColumnInputSnapshot
     public string BarSize { get; set; } = "T25";
     public int BarCount { get; set; } = 28;
     public double Spacing { get; set; } = 150;
+    public double StirrupDiameterMm { get; set; } = 10.0;
+    public string StirrupBarSize { get; set; } = "";
+    public double LinkSpacingMm { get; set; } = 200.0;
+    public int InnerLegsX { get; set; } = 0;
+    public int InnerLegsY { get; set; } = 0;
     public string RebarLayoutType { get; set; } = "AllSidesEqual";
     public int TopBarCount { get; set; } = 8;
     public int BottomBarCount { get; set; } = 8;

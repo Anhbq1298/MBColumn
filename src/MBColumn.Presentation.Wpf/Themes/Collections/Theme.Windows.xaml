@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style x:Key="DialogWindowStyle"
+           TargetType="Window"
+           BasedOn="{StaticResource {x:Type Window}}">
+        <Setter Property="WindowStartupLocation" Value="CenterOwner" />
+        <Setter Property="ResizeMode" Value="NoResize" />
+        <Setter Property="ShowInTaskbar" Value="False" />
+        <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
+    </Style>
+
+    <Style x:Key="DialogRootGridStyle" TargetType="Grid">
+        <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
+    </Style>
+
+    <Style x:Key="DialogHeaderBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+        <Setter Property="Padding" Value="18,12" />
+    </Style>
+
+    <Style x:Key="DialogHeaderTitleTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource DialogTitleTextStyle}" />
+
+    <Style x:Key="DialogHeaderSubtitleTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource DialogSubtitleTextStyle}">
+        <Setter Property="Margin" Value="0,3,0,0" />
+    </Style>
+
+    <Style x:Key="DialogBodyBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
+        <Setter Property="Padding" Value="18" />
+    </Style>
+
+    <Style x:Key="DialogFooterBarStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="Padding" Value="12,8" />
+    </Style>
+
+    <Style x:Key="DialogPanelBorderStyle"
+           TargetType="Border"
+           BasedOn="{StaticResource CardBorderStyle}">
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <Style x:Key="DialogActionPanelStyle" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+</ResourceDictionary>

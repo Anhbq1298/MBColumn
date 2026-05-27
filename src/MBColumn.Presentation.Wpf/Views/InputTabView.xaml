@@ -497,67 +497,36 @@
             </Grid>
         </TabItem>
         <TabItem Header="Section + Rebar">
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Margin="4,6,4,4">
-            <StackPanel>
-                <Border Style="{StaticResource CardBorderStyle}"
-                        Padding="18"
-                        MinHeight="260"
-                        Margin="0,0,0,14">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
+            <Grid Margin="4,6,4,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" MinWidth="200" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="7*" />
+                </Grid.ColumnDefinitions>
 
-                        <!-- Header row -->
-                        <TextBlock Text="Section Preview"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   Margin="0,0,0,10" />
-
-                        <!-- Two-column content -->
-                        <Grid Grid.Row="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="10" />
-                                <ColumnDefinition Width="220" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Row="0"
-                                        Grid.Column="0"
-                                        Margin="0,0,0,4">
+                <!-- ── Left: Section Preview (≈30%) ── -->
+                <ScrollViewer Grid.Column="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <!-- Preview card -->
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Section Preview"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,6" />
                                 <TextBlock Text="SECTION PREVIEW"
                                            FontSize="9"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="0,0,0,2"
-                                           />
+                                           Margin="0,0,0,2" />
                                 <TextBlock Text="2D VIEW · GRID"
                                            FontSize="9"
                                            Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="0,0,0,4"
-                                           />
-                            </StackPanel>
-                            <TextBlock Grid.Row="0"
-                                       Grid.Column="2"
-                                       Text="SECTION PROPERTIES"
-                                       FontSize="9"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       Margin="12,0,0,4"
-                                       VerticalAlignment="Bottom" />
-
-                            <!-- Left: CAD-style 2D preview + actions -->
-                            <StackPanel Grid.Row="1"
-                                        Grid.Column="0">
-                                <controls:SectionPreviewCanvas Height="200"
+                                           Margin="0,0,0,4" />
+                                <controls:SectionPreviewCanvas Height="240"
                                                                MinHeight="160"
                                                                HorizontalAlignment="Stretch"
                                                                SectionWidth="{Binding SectionWidth}"
@@ -571,10 +540,13 @@
                                                                CoverLabel="{Binding CoverPreviewLabel}"
                                                                IsValid="{Binding IsSectionPreviewValid}"
                                                                ErrorMessage="{Binding SectionPreviewErrorMessage}"
-                                                               BoundaryPoints="{Binding PreviewBoundaryPoints}" />
+                                                               BoundaryPoints="{Binding PreviewBoundaryPoints}"
+                                                               StirrupDiameterMm="{Binding StirrupDiameterMm}"
+                                                               InnerLegsX="{Binding InnerLegsX}"
+                                                               InnerLegsY="{Binding InnerLegsY}" />
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Left"
-                                            Margin="0,8,0,0">
+                                            Margin="0,8,0,10">
                                     <Button Click="OpenCadEditor_Click"
                                             Style="{StaticResource PrimaryButtonStyle}"
                                             Width="70"
@@ -600,209 +572,94 @@
                                             Padding="4"
                                             ToolTip="Import .DXF">
                                         <StackPanel HorizontalAlignment="Center">
-                                            <Viewbox Width="22"
-                                                     Height="22"
-                                                     Margin="0,1,0,2">
-                                                <Canvas Width="24"
-                                                        Height="24">
+                                            <Viewbox Width="22" Height="22" Margin="0,1,0,2">
+                                                <Canvas Width="24" Height="24">
                                                     <Path Data="M 6,3 L 15,3 L 20,8 L 20,21 L 6,21 Z M 15,3 L 15,8 L 20,8"
                                                           Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                          StrokeThickness="1.7"
-                                                          StrokeStartLineCap="Round"
-                                                          StrokeEndLineCap="Round"
-                                                          StrokeLineJoin="Round"
-                                                          Fill="Transparent" />
+                                                          StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
                                                     <Path Data="M 12,9 L 12,16 M 8.8,13 L 12,16.2 L 15.2,13"
                                                           Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                          StrokeThickness="1.9"
-                                                          StrokeStartLineCap="Round"
-                                                          StrokeEndLineCap="Round"
-                                                          StrokeLineJoin="Round"
-                                                          Fill="Transparent" />
+                                                          StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
                                                 </Canvas>
                                             </Viewbox>
-                                            <TextBlock Text=".dxf"
-                                                       FontSize="11"
-                                                       FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center" />
+                                            <TextBlock Text=".dxf" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
+
+                                <!-- Section properties (compact) -->
+                                <Separator Background="{DynamicResource BorderGreyBrush}" Margin="0,0,0,8" />
+                                <TextBlock Text="SECTION PROPERTIES"
+                                           FontSize="9"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="0,0,0,6" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="70" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Section" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewShapeSummaryText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Layout" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewRebarLayoutText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <Separator Grid.Row="2" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Cover" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CoverPreviewLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="A" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PreviewAreaText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Ixx" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding PreviewIxxText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Iyy" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewIyyText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <Separator Grid.Row="7" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Rebars" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarPreviewLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="ρ" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding PreviewRebarPercentageText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}"/>
+                                </Grid>
                             </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
 
-                            <!-- Right: Section properties panel -->
-                            <Border Grid.Row="1"
-                                    Grid.Column="2"
-                                    Background="{DynamicResource PanelBackgroundBrush}"
-                                    BorderBrush="{DynamicResource BorderGreyBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="12,10">
-                                <StackPanel>
-                                    <!-- Shape type -->
-                                    <Grid Margin="0,0,0,5">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Section"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding PreviewShapeSummaryText}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-
-                                    <!-- Rebar layout -->
-                                    <Grid Margin="0,0,0,5">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Layout"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding PreviewRebarLayoutText}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-
-                                    <Separator Margin="0,4,0,8"
-                                               Background="{DynamicResource BorderGreyBrush}" />
-
-                                    <!-- Cover -->
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Cover"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding CoverPreviewLabel}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}" />
-                                    </Grid>
-
-                                    <!-- Area -->
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="A"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding PreviewAreaText}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}" />
-                                    </Grid>
-
-                                    <!-- Ixx -->
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Ixx"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding PreviewIxxText}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-
-                                    <!-- Iyy -->
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Iyy"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding PreviewIyyText}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-
-                                    <Separator Margin="0,4,0,8"
-                                               Background="{DynamicResource BorderGreyBrush}" />
-
-                                    <!-- Rebar count -->
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Rebars"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding RebarPreviewLabel}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
-
-                                    <!-- Rebar percentage -->
-                                    <Grid Margin="0,0,0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="ρ"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMutedBrush}" />
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding PreviewRebarPercentageText}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextDarkBrush}" />
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </Grid>
-                </Border>
-                <StackPanel HorizontalAlignment="Center"
-                            Margin="0,0,0,12">
-                    <TextBlock Text="Changes made, recalculation required."
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource AccentRedBrush}"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"
-                               Margin="0,6,0,0"
-                               Visibility="{Binding DataContext.IsCalculationOutdated, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBlock Text="{Binding DataContext.ValidationMessage, RelativeSource={RelativeSource AncestorType=Window}}"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource AccentRedBrush}"
-                               HorizontalAlignment="Center"
-                               Margin="0,8,0,0" />
-                </StackPanel>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <!-- ── Right: Section Geometry + Rebar Configuration (≈70%) ── -->
+                <ScrollViewer Grid.Column="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <!-- Validation banners — only visible when there is something to show -->
+                        <StackPanel Margin="0,0,0,8"
+                                    Visibility="{Binding DataContext.IsCalculationOutdated, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Changes made, recalculation required."
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AccentRedBrush}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
+                            <TextBlock Text="{Binding DataContext.ValidationMessage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource AccentRedBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                     <GroupBox Grid.Column="0"
                               Header="Section Geometry"
                               Background="White"
@@ -811,7 +668,8 @@
                               Padding="14"
                               Margin="0,0,7,14">
                         <StackPanel>
-                            <DockPanel Margin="0,0,0,14">
+                            <!-- Section Shape -->
+                            <DockPanel Margin="0,0,0,8">
                                 <TextBlock Text="Section Shape"
                                            Style="{StaticResource FieldLabelTextStyle}"
                                            VerticalAlignment="Center"
@@ -828,10 +686,12 @@
                                                   Tag="{x:Static enums:SectionShapeType.Irregular}" />
                                 </ComboBox>
                             </DockPanel>
-                            <Grid Margin="0,0,0,14">
+
+                            <!-- Clear cover -->
+                            <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="44" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -839,7 +699,7 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="0"
-                                           Text="{Binding LengthLabel, StringFormat=Clear cover ({0})}"
+                                           Text="Clear cover"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
@@ -850,6 +710,7 @@
                                          Grid.ColumnSpan="2"
                                          Text="{Binding Cover}" />
                             </Grid>
+
                             <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -909,6 +770,95 @@
                                          Grid.ColumnSpan="2"
                                          Text="{Binding Diameter}" />
                             </Grid>
+
+                            <Separator Margin="0,12,0,10" />
+                            <TextBlock Text="Boundary Points (Clockwise)"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Margin="0,0,0,8" />
+                            <!-- Editing UI only for Irregular Section -->
+                            <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <WrapPanel Margin="0,0,0,8">
+                                    <Button ToolTip="Import..."
+                                            Click="ImportBoundary_Click"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Foreground="{DynamicResource PrimaryNavyBrush}"
+                                            Width="26"
+                                            Height="26"
+                                            Padding="0"
+                                            Margin="0,0,8,0">
+                                        <Viewbox Width="14"
+                                                 Height="14">
+                                            <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,2 L 10,13 M 6,9 L 10,13 L 14,9"
+                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Fill="Transparent" />
+                                        </Viewbox>
+                                    </Button>
+                                    <Button ToolTip="Export..."
+                                            Click="ExportBoundary_Click"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Foreground="{DynamicResource PrimaryNavyBrush}"
+                                            Width="26"
+                                            Height="26"
+                                            Padding="0">
+                                        <Viewbox Width="14"
+                                                 Height="14">
+                                            <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,14 L 10,3 M 6,7 L 10,3 L 14,7"
+                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                  StrokeThickness="2"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  StrokeLineJoin="Round"
+                                                  Fill="Transparent" />
+                                        </Viewbox>
+                                    </Button>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding IrregularInput.BoundaryValidationMessage}"
+                                           Visibility="{Binding IrregularInput.HasBoundaryValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           Foreground="Red"
+                                           FontSize="11"
+                                           Margin="0,0,0,8"
+                                           TextWrapping="Wrap" />
+                                <DataGrid ItemsSource="{Binding IrregularInput.BoundaryPoints}"
+                                          AutoGenerateColumns="False"
+                                          MaxHeight="200">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Add Point"
+                                                      Command="{Binding Path=PlacementTarget.DataContext.IrregularInput.AddBoundaryRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="Remove Selected Point(s)"
+                                                      Command="{Binding Path=PlacementTarget.DataContext.IrregularInput.DeleteBoundaryRowsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Pt"
+                                                            Binding="{Binding PtIndex, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                        <DataGridTextColumn Header="X"
+                                                            Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                        <DataGridTextColumn Header="Y"
+                                                            Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                            <!-- Preview for Rectangular/Circular — locked, greyed out -->
+                            <DataGrid ItemsSource="{Binding PreviewBoundaryPoints}"
+                                      Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      IsEnabled="False"
+                                      MaxHeight="200">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Pt" Binding="{Binding Index}" Width="*" />
+                                    <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
+                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </StackPanel>
                     </GroupBox>
                     <GroupBox Grid.Column="1"
@@ -919,6 +869,11 @@
                               Padding="14"
                               Margin="7,0,0,14">
                         <StackPanel>
+                            <TextBlock Text="1 — Longitudinal Reinforcement"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       Margin="0,0,0,8" />
                             <!-- 1. Algorithmic / Shape-Specific Top Panel (Visible for Rectangular/Circular) -->
                             <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                 <Grid Margin="0,0,0,10">
@@ -1187,116 +1142,13 @@
                                                TextWrapping="Wrap" />
                                 </Grid>
                             </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-                </Grid>
-                <Grid Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <GroupBox Grid.Column="0"
-                              Header="Boundary Points (Clockwise)"
-                              Background="White"
-                              Foreground="{DynamicResource DarkNavyBrush}"
-                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                              Padding="14"
-                              Margin="0,0,7,0">
-                        <!-- GroupBox style removed so it is always enabled -->
-                        <StackPanel>
-                            <!-- Editing UI only for Irregular Section -->
-                            <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <WrapPanel Margin="0,0,0,8">
-                                    <Button ToolTip="Import..."
-                                            Click="ImportBoundary_Click"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Foreground="{DynamicResource PrimaryNavyBrush}"
-                                            Width="26"
-                                            Height="26"
-                                            Padding="0"
-                                            Margin="0,0,8,0">
-                                        <Viewbox Width="14"
-                                                 Height="14">
-                                            <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,2 L 10,13 M 6,9 L 10,13 L 14,9"
-                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="2"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Fill="Transparent" />
-                                        </Viewbox>
-                                    </Button>
-                                    <Button ToolTip="Export..."
-                                            Click="ExportBoundary_Click"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Foreground="{DynamicResource PrimaryNavyBrush}"
-                                            Width="26"
-                                            Height="26"
-                                            Padding="0">
-                                        <Viewbox Width="14"
-                                                 Height="14">
-                                            <Path Data="M 2,12 L 2,16 C 2,17 3,18 4,18 L 16,18 C 17,18 18,17 18,16 L 18,12 M 10,14 L 10,3 M 6,7 L 10,3 L 14,7"
-                                                  Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                                  StrokeThickness="2"
-                                                  StrokeStartLineCap="Round"
-                                                  StrokeEndLineCap="Round"
-                                                  StrokeLineJoin="Round"
-                                                  Fill="Transparent" />
-                                        </Viewbox>
-                                    </Button>
-                                </WrapPanel>
-                                <TextBlock Text="{Binding IrregularInput.BoundaryValidationMessage}"
-                                           Visibility="{Binding IrregularInput.HasBoundaryValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
-                                           Foreground="Red"
-                                           FontSize="11"
-                                           Margin="0,0,0,8"
-                                           TextWrapping="Wrap" />
-                                <DataGrid ItemsSource="{Binding IrregularInput.BoundaryPoints}"
-                                          AutoGenerateColumns="False"
-                                          MaxHeight="200">
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Add Point"
-                                                      Command="{Binding Path=PlacementTarget.DataContext.IrregularInput.AddBoundaryRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                            <MenuItem Header="Remove Selected Point(s)"
-                                                      Command="{Binding Path=PlacementTarget.DataContext.IrregularInput.DeleteBoundaryRowsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                      CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Pt"
-                                                            Binding="{Binding PtIndex, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="X"
-                                                            Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="Y"
-                                                            Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </StackPanel>
 
-                            <!-- Preview UI for Rectangular/Circular Sections -->
-                            <DataGrid ItemsSource="{Binding PreviewBoundaryPoints}"
-                                      Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="True"
-                                      MaxHeight="200">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Pt" Binding="{Binding Index}" Width="*" />
-                                    <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
-                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </StackPanel>
-                    </GroupBox>
-                    <GroupBox Grid.Column="1"
-                              Header="Rebar Coordinates"
-                              Background="White"
-                              Foreground="{DynamicResource DarkNavyBrush}"
-                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                              Padding="14"
-                              Margin="7,0,0,0">
-                        <!-- GroupBox style removed so it is always enabled -->
-                        <StackPanel>
+                            <Separator Margin="0,12,0,10" />
+                            <TextBlock Text="Rebar Coordinates"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Margin="0,0,0,8" />
                             <!-- Editing UI only for Irregular Section with custom rebar coordinates -->
                             <StackPanel Visibility="{Binding IsRebarCoordinatesEditable, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <WrapPanel Margin="0,0,0,8">
@@ -1364,7 +1216,6 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
-
                             <!-- Preview UI for auto-generated rebars -->
                             <DataGrid ItemsSource="{Binding PreviewRebars}"
                                       Visibility="{Binding IsRebarCoordinatesEditable, Converter={StaticResource InverseBoolToVisibilityConverter}}"
@@ -1378,11 +1229,236 @@
                                     <DataGridTextColumn Header="Size" Binding="{Binding Label}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
+
+                            <!-- ── Section 2: Stirrups and Shear Links ── -->
+                            <Separator Margin="0,12,0,10" />
+                            <TextBlock Text="2 — Stirrups and Shear Links"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       Margin="0,0,0,8" />
+
+                            <!-- Stirrup Ø + Link spacing side by side — rectangular only -->
+                            <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <!-- Stirrup diameter -->
+                                <Grid Grid.Column="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Stirrup Ø"
+                                               Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="mm"
+                                               Style="{StaticResource UnitTextStyle}" />
+                                    <ComboBox Grid.Row="1"
+                                              Grid.Column="0"
+                                              Grid.ColumnSpan="2"
+                                              ItemsSource="{Binding AvailableStirrupBars}"
+                                              DisplayMemberPath="DisplayLabel"
+                                              SelectedItem="{Binding SelectedStirrupBar}" />
+                                </Grid>
+                                <!-- Link spacing s -->
+                                <Grid Grid.Column="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="Link spacing s"
+                                               Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               Text="mm"
+                                               Style="{StaticResource UnitTextStyle}" />
+                                    <TextBox Grid.Row="1"
+                                             Grid.Column="0"
+                                             Grid.ColumnSpan="2"
+                                             Text="{Binding LinkSpacingMm, UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+                            </Grid>
+
+                            <!-- Inner legs X / Y — rectangular only -->
+                            <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Text="Inner legs X (‖ h)"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="2"
+                                           Text="Inner legs Y (‖ b)"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBox Grid.Row="1"
+                                         Grid.Column="0"
+                                         Text="{Binding InnerLegsX, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Row="1"
+                                         Grid.Column="2"
+                                         Text="{Binding InnerLegsY, UpdateSourceTrigger=PropertyChanged}" />
+                                <StackPanel Grid.Row="2"
+                                            Grid.Column="0"
+                                            Orientation="Horizontal"
+                                            Margin="0,2,0,0">
+                                    <TextBlock Text="Total: "
+                                               FontSize="10.5"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                    <TextBlock Text="{Binding TotalLegsX}"
+                                               FontSize="10.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextDarkBrush}" />
+                                    <TextBlock Text=" legs"
+                                               FontSize="10.5"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2"
+                                            Grid.Column="2"
+                                            Orientation="Horizontal"
+                                            Margin="0,2,0,0">
+                                    <TextBlock Text="Total: "
+                                               FontSize="10.5"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                    <TextBlock Text="{Binding TotalLegsY}"
+                                               FontSize="10.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextDarkBrush}" />
+                                    <TextBlock Text=" legs"
+                                               FontSize="10.5"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- EC2 §9.5.3 checks — rectangular only -->
+                            <StackPanel Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        Margin="0,2,0,0">
+                                <TextBlock Text="EC2 §9.5.3 Link Checks"
+                                           FontSize="10.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,4" />
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,0,0,2">
+                                    <Border Width="7" Height="7" CornerRadius="3.5" VerticalAlignment="Center" Margin="0,0,5,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check1Pass}" Value="False">
+                                                        <Setter Property="Background" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <TextBlock Text="{Binding Ec2Check1Text}" FontSize="10" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check1Pass}" Value="False">
+                                                        <Setter Property="Foreground" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,0,0,2">
+                                    <Border Width="7" Height="7" CornerRadius="3.5" VerticalAlignment="Center" Margin="0,0,5,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check2Pass}" Value="False">
+                                                        <Setter Property="Background" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <TextBlock Text="{Binding Ec2Check2Text}" FontSize="10" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check2Pass}" Value="False">
+                                                        <Setter Property="Foreground" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal"
+                                            Margin="0,0,0,2">
+                                    <Border Width="7" Height="7" CornerRadius="3.5" VerticalAlignment="Center" Margin="0,0,5,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check3Pass}" Value="False">
+                                                        <Setter Property="Background" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <TextBlock Text="{Binding Ec2Check3Text}" FontSize="10" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check3Pass}" Value="False">
+                                                        <Setter Property="Foreground" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Ec2AswsXText}"
+                                           FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="12,0,0,1" />
+                                <TextBlock Text="{Binding Ec2AswsYText}"
+                                           FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="12,0,0,0" />
+                            </StackPanel>
                         </StackPanel>
                     </GroupBox>
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>
+                    </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </TabItem>
     </TabControl>
 </UserControl>

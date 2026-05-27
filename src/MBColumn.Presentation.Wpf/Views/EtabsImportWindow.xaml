@@ -106,7 +106,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="{DynamicResource LightBackgroundBrush}">
+    <Grid Style="{StaticResource DialogRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -116,8 +116,7 @@
 
         <!-- ─── Header ─── -->
         <Border Grid.Row="0"
-                Background="{DynamicResource PrimaryNavyBrush}"
-                Padding="16,12">
+                Style="{StaticResource DialogHeaderBorderStyle}">
             <DockPanel>
                 <Button DockPanel.Dock="Right"
                         Content="✕"
@@ -128,13 +127,9 @@
                         Style="{StaticResource SecondaryButtonStyle}" />
                 <StackPanel>
                     <TextBlock Text="Import from ETABS"
-                               Foreground="White"
-                               FontSize="18"
-                               FontWeight="SemiBold" />
+                               Style="{StaticResource DialogHeaderTitleTextStyle}" />
                     <TextBlock Text="{Binding ConnectionStatus}"
-                               Foreground="#DCEBFF"
-                               FontSize="12"
-                               Margin="0,3,0,0" />
+                               Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -1200,10 +1195,7 @@
 
         <!-- ─── Bottom Navigation Bar ─── -->
         <Border Grid.Row="3"
-                Background="{DynamicResource PanelBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderGreyBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="12,8">
+                Style="{StaticResource DialogFooterBarStyle}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"

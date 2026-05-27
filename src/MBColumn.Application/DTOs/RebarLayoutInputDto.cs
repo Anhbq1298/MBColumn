@@ -9,5 +9,8 @@ public sealed record RebarLayoutInputDto(
     RebarSideInputDto Bottom,
     RebarSideInputDto Left,
     RebarSideInputDto Right,
-    double Spacing = 150.0);
+    double Spacing = 150.0)
+{
+    public double StirrupDiameterMm { get; init; } = 0.0;
+}
 

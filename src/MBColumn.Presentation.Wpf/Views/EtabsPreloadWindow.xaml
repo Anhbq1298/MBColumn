@@ -10,6 +10,7 @@
         MaxHeight="680"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
+        Style="{StaticResource DialogWindowStyle}"
         Loaded="OnWindowLoaded"
         Closing="OnWindowClosing">
 
@@ -22,22 +23,15 @@
 
         <!-- Header -->
         <Border Grid.Row="0"
-                Background="{DynamicResource PrimaryNavyBrush}"
-                Padding="20,14">
+                Style="{StaticResource DialogHeaderBorderStyle}">
             <StackPanel>
                 <TextBlock Text="Import from ETABS"
-                           Foreground="White"
-                           FontSize="17"
-                           FontWeight="SemiBold" />
+                           Style="{StaticResource DialogHeaderTitleTextStyle}" />
                 <TextBlock Text="Loading ETABS data — please wait…"
-                           Foreground="#DCEBFF"
-                           FontSize="11"
-                           Margin="0,3,0,0"
+                           Style="{StaticResource DialogHeaderSubtitleTextStyle}"
                            Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                 <TextBlock Text="Select the load combinations you want to import."
-                           Foreground="#DCEBFF"
-                           FontSize="11"
-                           Margin="0,3,0,0"
+                           Style="{StaticResource DialogHeaderSubtitleTextStyle}"
                            Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </Border>
@@ -231,9 +225,7 @@
 
         <!-- Bottom bar -->
         <Grid Grid.Row="2">
-            <Border BorderBrush="{DynamicResource BorderGreyBrush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="16,8">
+            <Border Style="{StaticResource DialogFooterBarStyle}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right"
                             Content="Cancel"
