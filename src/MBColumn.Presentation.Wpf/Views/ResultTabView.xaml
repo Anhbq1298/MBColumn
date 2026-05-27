@@ -28,7 +28,7 @@
         <Style x:Key="ChartConfigCheckBoxStyle" TargetType="CheckBox">
             <Setter Property="Margin" Value="0,0,12,4" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
         </Style>
 
         <Style x:Key="ChartConfigLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
@@ -39,7 +39,7 @@
         <Style x:Key="ChartConfigInputStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Width" Value="76" />
             <Setter Property="MinHeight" Value="26" />
-            <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
             <Setter Property="Padding" Value="6,2" />
             <Setter Property="HorizontalContentAlignment" Value="Right" />
             <Setter Property="Margin" Value="0,0,14,4" />
@@ -74,7 +74,7 @@
 
         <Style x:Key="ChartConfigTabItemStyle" TargetType="TabItem">
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-            <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Padding" Value="10,4" />
             <Setter Property="Margin" Value="0,0,6,0" />

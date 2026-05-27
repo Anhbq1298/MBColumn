@@ -6,45 +6,41 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="AppBodyTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-        <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
     </Style>
 
     <Style TargetType="TextBlock" BasedOn="{StaticResource AppBodyTextStyle}" />
 
     <Style x:Key="AppTitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeWindowTitle}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeWindowTitle}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="White" />
     </Style>
 
     <Style x:Key="AppSubtitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="Foreground" Value="{DynamicResource DialogHeaderSubtitleBrush}" />
     </Style>
 
     <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSection}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSection}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
     </Style>
 
     <Style x:Key="GroupTitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSection}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSection}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
     </Style>
 
-
-
     <Style x:Key="HelperTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="TextTrimming" Value="None" />
@@ -56,15 +52,15 @@
     </Style>
 
     <Style x:Key="FieldLabelTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="Margin" Value="0,0,0,4" />
     </Style>
 
     <Style x:Key="CaptionTextStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
     </Style>
 
     <Style x:Key="OverlineTextStyle" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextStyle}">
@@ -73,30 +69,30 @@
     </Style>
 
     <Style x:Key="UnitTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalAlignment" Value="Right" />
     </Style>
 
     <Style x:Key="DialogTitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeDialogTitle}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeDialogTitle}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="White" />
     </Style>
 
     <Style x:Key="DialogSubtitleTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
         <Setter Property="Foreground" Value="{DynamicResource DialogHeaderSubtitleBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <Style x:Key="MetricValueTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeSection}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSection}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource DarkNavyBrush}" />
     </Style>

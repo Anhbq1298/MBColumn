@@ -6,12 +6,15 @@ namespace MBColumn.Presentation.Wpf.Views;
 
 public partial class EtabsPreloadWindow : Window
 {
+    private bool _closingFromEvent;
+
     public EtabsPreloadWindow(EtabsPreloadViewModel viewModel)
     {
         InitializeComponent();
         DataContext = viewModel;
         viewModel.RequestClose += (_, accepted) =>
         {
+            if (_closingFromEvent) return; // already in Closing — let WPF finish
             DialogResult = accepted;
             Close();
         };
@@ -25,6 +28,7 @@ public partial class EtabsPreloadWindow : Window
 
     private void OnWindowClosing(object sender, CancelEventArgs e)
     {
+        _closingFromEvent = true;
         if (DataContext is EtabsPreloadViewModel vm && !vm.IsComplete)
             vm.Cancel();
     }

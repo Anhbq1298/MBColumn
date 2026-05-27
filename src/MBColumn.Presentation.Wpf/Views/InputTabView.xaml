@@ -83,7 +83,7 @@
                TargetType="TextBlock"
                BasedOn="{StaticResource GroupTitleTextStyle}">
             <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeHelper}" />
+                    Value="{DynamicResource FontSizeHelper}" />
             <Setter Property="Margin"
                     Value="0,0,0,8" />
         </Style>

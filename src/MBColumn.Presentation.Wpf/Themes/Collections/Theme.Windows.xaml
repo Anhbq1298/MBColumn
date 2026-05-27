@@ -21,13 +21,20 @@
         <Setter Property="Padding" Value="18,12" />
     </Style>
 
-    <Style x:Key="DialogHeaderTitleTextStyle"
-           TargetType="TextBlock"
-           BasedOn="{StaticResource DialogTitleTextStyle}" />
+    <!-- Inlined from DialogTitleTextStyle to avoid cross-dictionary StaticResource -->
+    <Style x:Key="DialogHeaderTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeDialogTitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
 
-    <Style x:Key="DialogHeaderSubtitleTextStyle"
-           TargetType="TextBlock"
-           BasedOn="{StaticResource DialogSubtitleTextStyle}">
+    <!-- Inlined from DialogSubtitleTextStyle to avoid cross-dictionary StaticResource -->
+    <Style x:Key="DialogHeaderSubtitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
+        <Setter Property="Foreground" Value="{DynamicResource DialogHeaderSubtitleBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="Margin" Value="0,3,0,0" />
     </Style>
 
@@ -43,9 +50,11 @@
         <Setter Property="Padding" Value="12,8" />
     </Style>
 
-    <Style x:Key="DialogPanelBorderStyle"
-           TargetType="Border"
-           BasedOn="{StaticResource CardBorderStyle}">
+    <!-- Inlined from CardBorderStyle to avoid cross-dictionary StaticResource -->
+    <Style x:Key="DialogPanelBorderStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="6" />
         <Setter Property="Padding" Value="12" />
     </Style>

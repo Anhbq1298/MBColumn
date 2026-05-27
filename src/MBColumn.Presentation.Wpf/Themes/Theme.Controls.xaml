@@ -5,8 +5,8 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style TargetType="Window">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="UseLayoutRounding" Value="True" />
@@ -14,16 +14,16 @@
     </Style>
 
     <Style TargetType="UserControl">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
     <Style TargetType="TextBox">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="Background" Value="White" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
@@ -34,8 +34,8 @@
     </Style>
 
     <Style TargetType="ComboBox">
-        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="Background" Value="White" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
