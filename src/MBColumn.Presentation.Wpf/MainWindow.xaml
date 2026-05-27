@@ -47,9 +47,9 @@
         <!-- Header -->
         <Border Background="{DynamicResource PrimaryNavyBrush}" Padding="16,10">
             <DockPanel>
-                <TextBlock Text="MBColumn" Style="{StaticResource AppTitleTextStyle}" VerticalAlignment="Center" />
+                <TextBlock Text="MBColumn" Style="{DynamicResource AppTitleTextStyle}" VerticalAlignment="Center" />
                 <TextBlock Text="Reinforced concrete column design"
-                           Style="{StaticResource AppSubtitleTextStyle}"
+                           Style="{DynamicResource AppSubtitleTextStyle}"
                            VerticalAlignment="Center"
                            Margin="14,4,0,0" />
             </DockPanel>

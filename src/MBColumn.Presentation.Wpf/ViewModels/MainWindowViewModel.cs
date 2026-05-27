@@ -548,6 +548,8 @@ public sealed class MainWindowViewModel : ViewModelBase
     private async Task RefreshEtabsForcesAsync()
     {
         if (etabsForceRefreshDialogService is null) return;
+        await Task.Yield();
+
         SaveCurrentColumnInput();
 
         var allColumns = projectService.GetColumns();

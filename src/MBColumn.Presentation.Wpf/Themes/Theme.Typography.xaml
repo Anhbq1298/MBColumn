@@ -48,6 +48,14 @@
 
 
 
+    <Style x:Key="HelperTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextTrimming" Value="None" />
+    </Style>
+
     <Style x:Key="MutedValueTextStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
@@ -59,14 +67,6 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="Margin" Value="0,0,0,4" />
-    </Style>
-
-    <Style x:Key="HelperTextStyle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="{StaticResource FontSizeHelper}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-        <Setter Property="TextWrapping" Value="Wrap" />
-        <Setter Property="TextTrimming" Value="None" />
     </Style>
 
     <Style x:Key="CaptionTextStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
