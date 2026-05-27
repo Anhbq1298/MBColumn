@@ -5,6 +5,7 @@
         Title="Import DXF"
         Width="640"
         SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
         Style="{DynamicResource DialogWindowStyle}">
     <Grid Style="{DynamicResource DialogRootGridStyle}">
         <Grid.RowDefinitions>

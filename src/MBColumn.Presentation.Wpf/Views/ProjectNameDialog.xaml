@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="New Project"
         Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
         Style="{DynamicResource DialogWindowStyle}">
     <Grid Style="{DynamicResource DialogRootGridStyle}">
         <Grid.RowDefinitions>
