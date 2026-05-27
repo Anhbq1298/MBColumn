@@ -3,40 +3,40 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="New Project"
         Width="360" SizeToContent="Height"
-        Style="{StaticResource DialogWindowStyle}">
-    <Grid Style="{StaticResource DialogRootGridStyle}">
+        Style="{DynamicResource DialogWindowStyle}">
+    <Grid Style="{DynamicResource DialogRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorderStyle}">
+        <Border Grid.Row="0" Style="{DynamicResource DialogHeaderBorderStyle}">
             <StackPanel>
-                <TextBlock Text="New Project" Style="{StaticResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="New Project" Style="{DynamicResource DialogHeaderTitleTextStyle}" />
                 <TextBlock Text="Name the project file before creating sections."
-                           Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}" />
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource DialogBodyBorderStyle}">
+        <Border Grid.Row="1" Style="{DynamicResource DialogBodyBorderStyle}">
             <StackPanel>
                 <TextBlock x:Name="NameLabel"
                            Text="Project name"
-                           Style="{StaticResource FieldLabelTextStyle}" />
+                           Style="{DynamicResource FieldLabelTextStyle}" />
                 <TextBox x:Name="NameBox"
                          MinWidth="280"
                          KeyDown="NameBox_KeyDown" />
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource DialogFooterBarStyle}">
-            <StackPanel Style="{StaticResource DialogActionPanelStyle}">
+        <Border Grid.Row="2" Style="{DynamicResource DialogFooterBarStyle}">
+            <StackPanel Style="{DynamicResource DialogActionPanelStyle}">
                 <Button Content="Cancel"
                         Width="88"
                         IsCancel="True"
                         Click="Cancel_Click"
-                        Style="{StaticResource DialogActionButtonStyle}"
+                        Style="{DynamicResource DialogActionButtonStyle}"
                         Margin="0,0,8,0" />
                 <Button Content="OK"
                         Width="88"

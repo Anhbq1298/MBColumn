@@ -509,6 +509,8 @@ public sealed class ProjectService : IProjectService, IDisposable
 
         if (connectionString is null)
         {
+            // New project, nothing in memory yet — wipe target file so old data can't survive
+            DeleteFileAndCompanion(filePath);
             using var conn = new SqliteConnection(newCs);
             DatabaseSchema.EnsureCreated(conn, ProjectName);
             using var rConn = new SqliteConnection(newResultCs);
@@ -518,6 +520,8 @@ public sealed class ProjectService : IProjectService, IDisposable
         }
         else if (_keepAliveConnection is not null && CurrentFilePath is null)
         {
+            // New project with in-memory data — wipe target file before backup so no stale pages remain
+            DeleteFileAndCompanion(filePath);
             using var conn = new SqliteConnection(newCs);
             conn.Open();
             _keepAliveConnection.BackupDatabase(conn);
@@ -534,12 +538,13 @@ public sealed class ProjectService : IProjectService, IDisposable
             {
                 System.IO.File.Copy(CurrentFilePath, filePath, overwrite: true);
                 if (System.IO.File.Exists(CurrentFilePath + "r"))
-                {
                     System.IO.File.Copy(CurrentFilePath + "r", filePath + "r", overwrite: true);
-                }
+                else if (System.IO.File.Exists(filePath + "r"))
+                    System.IO.File.Delete(filePath + "r");
             }
             else
             {
+                DeleteFileAndCompanion(filePath);
                 using var conn = new SqliteConnection(newCs);
                 DatabaseSchema.EnsureCreated(conn, ProjectName);
                 using var rConn = new SqliteConnection(newResultCs);
@@ -567,6 +572,12 @@ public sealed class ProjectService : IProjectService, IDisposable
         _keepAliveConnection = new SqliteConnection(connectionString);
         _keepAliveConnection.Open();
         DatabaseSchema.EnsureCreated(_keepAliveConnection, ProjectName);
+    }
+
+    private static void DeleteFileAndCompanion(string filePath)
+    {
+        if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+        if (System.IO.File.Exists(filePath + "r")) System.IO.File.Delete(filePath + "r");
     }
 
     private static string BuildConnectionString(string filePath)

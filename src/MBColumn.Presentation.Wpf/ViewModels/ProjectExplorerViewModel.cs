@@ -257,13 +257,12 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         if (!messageService.ConfirmWarning($"Delete section '{item.Name}'?", "Delete Section"))
             return;
 
+        // Select replacement first so any pending save flushes before the row is deleted
+        if (selectedNode == item)
+            SelectNode(Nodes.FirstOrDefault(n => n != item));
+
         projectService.DeleteColumn(item.Id);
         sectionStatuses.Remove(item.Id);
-        
-        if (selectedNode == item)
-        {
-            SelectNode(Nodes.FirstOrDefault());
-        }
     }
 
     private void DeleteGroup(GroupItemViewModel group)
@@ -271,15 +270,14 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         if (!messageService.ConfirmWarning($"Delete group '{group.Name}' and all its sections?", "Delete Group"))
             return;
 
+        // Select replacement first so any pending save flushes before rows are deleted
+        if (selectedNode == group || (selectedColumn != null && selectedColumn.GroupId == group.Id))
+            SelectNode(Nodes.FirstOrDefault(n => n != group && (n is not ColumnItemViewModel c || c.GroupId != group.Id)));
+
         foreach (var col in group.Columns)
             sectionStatuses.Remove(col.Id);
-            
+
         projectService.DeleteGroup(group.Id);
-        
-        if (selectedNode == group || (selectedColumn != null && selectedColumn.GroupId == group.Id))
-        {
-            SelectNode(Nodes.FirstOrDefault());
-        }
     }
 
     private void RefreshColumns()

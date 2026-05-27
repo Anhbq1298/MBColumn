@@ -1,6 +1,5 @@
 <Project>
   <PropertyGroup>
-    <RollForward>LatestMajor</RollForward>
     <OutputPath>$(MSBuildThisFileDirectory)built\bin\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>

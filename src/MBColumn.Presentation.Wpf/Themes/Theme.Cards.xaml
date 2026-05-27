@@ -1,6 +1,10 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- Shared elevation & animation resources -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Theme.Tokens.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Shared elevation &amp; animation resources -->
     <DropShadowEffect x:Key="CardElevationEffect"
                       BlurRadius="16" ShadowDepth="4" Direction="270"
                       Color="#000000" Opacity="0.18" />
@@ -43,10 +47,10 @@
                         <DockPanel LastChildFill="True">
                             <ContentPresenter DockPanel.Dock="Top"
                                               ContentSource="Header"
-                                              TextElement.FontFamily="{StaticResource AppFontFamily}"
+                                              TextElement.FontFamily="{DynamicResource AppFontFamily}"
                                               TextElement.Foreground="{DynamicResource PrimaryNavyBrush}"
                                               TextElement.FontWeight="SemiBold"
-                                              TextElement.FontSize="{StaticResource FontSizeSection}"
+                                              TextElement.FontSize="{DynamicResource FontSizeSection}"
                                               Margin="0,0,0,12" />
                             <ContentPresenter ContentSource="Content" />
                         </DockPanel>

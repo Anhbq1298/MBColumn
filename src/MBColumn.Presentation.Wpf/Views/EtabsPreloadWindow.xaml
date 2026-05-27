@@ -10,7 +10,7 @@
         MaxHeight="680"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Style="{StaticResource DialogWindowStyle}"
+        Style="{DynamicResource DialogWindowStyle}"
         Loaded="OnWindowLoaded"
         Closing="OnWindowClosing">
 
@@ -23,15 +23,15 @@
 
         <!-- Header -->
         <Border Grid.Row="0"
-                Style="{StaticResource DialogHeaderBorderStyle}">
+                Style="{DynamicResource DialogHeaderBorderStyle}">
             <StackPanel>
                 <TextBlock Text="Import from ETABS"
-                           Style="{StaticResource DialogHeaderTitleTextStyle}" />
+                           Style="{DynamicResource DialogHeaderTitleTextStyle}" />
                 <TextBlock Text="Loading ETABS data — please wait…"
-                           Style="{StaticResource DialogHeaderSubtitleTextStyle}"
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}"
                            Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                 <TextBlock Text="Select the load combinations you want to import."
-                           Style="{StaticResource DialogHeaderSubtitleTextStyle}"
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}"
                            Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </Border>
@@ -225,7 +225,7 @@
 
         <!-- Bottom bar -->
         <Grid Grid.Row="2">
-            <Border Style="{StaticResource DialogFooterBarStyle}">
+            <Border Style="{DynamicResource DialogFooterBarStyle}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right"
                             Content="Cancel"

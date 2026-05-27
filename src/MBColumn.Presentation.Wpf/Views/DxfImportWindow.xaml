@@ -5,23 +5,23 @@
         Title="Import DXF"
         Width="640"
         SizeToContent="Height"
-        Style="{StaticResource DialogWindowStyle}">
-    <Grid Style="{StaticResource DialogRootGridStyle}">
+        Style="{DynamicResource DialogWindowStyle}">
+    <Grid Style="{DynamicResource DialogRootGridStyle}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorderStyle}">
+        <Border Grid.Row="0" Style="{DynamicResource DialogHeaderBorderStyle}">
             <StackPanel>
-                <TextBlock Text="DXF Import" Style="{StaticResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="DXF Import" Style="{DynamicResource DialogHeaderTitleTextStyle}" />
                 <TextBlock Text="Map DXF layers, preview geometry, then import the section."
-                           Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}" />
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource DialogBodyBorderStyle}">
+        <Border Grid.Row="1" Style="{DynamicResource DialogBodyBorderStyle}">
         <StackPanel>
             <!-- File path row -->
             <TextBlock Text="DXF file"
@@ -206,11 +206,11 @@
         </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource DialogFooterBarStyle}">
-            <StackPanel Style="{StaticResource DialogActionPanelStyle}">
+        <Border Grid.Row="2" Style="{DynamicResource DialogFooterBarStyle}">
+            <StackPanel Style="{DynamicResource DialogActionPanelStyle}">
                 <Button Content="Cancel"
                         IsCancel="True"
-                        Style="{StaticResource DialogActionButtonStyle}"
+                        Style="{DynamicResource DialogActionButtonStyle}"
                         Margin="0,0,8,0" />
                 <Button Content="Import"
                         Command="{Binding ImportCommand}"

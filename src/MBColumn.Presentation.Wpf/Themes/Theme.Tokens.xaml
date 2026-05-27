@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!-- Font families used across all theme dictionaries -->
+    <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text, Segoe UI, Aptos, Arial</FontFamily>
+    <FontFamily x:Key="TechnicalMonoFontFamily">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+    <!-- Font size tokens used across all theme dictionaries -->
+    <sys:Double x:Key="FontSizeCaption">10.5</sys:Double>
+    <sys:Double x:Key="FontSizeHelper">11</sys:Double>
+    <sys:Double x:Key="FontSizeBody">12.5</sys:Double>
+    <sys:Double x:Key="FontSizeSection">14</sys:Double>
+    <sys:Double x:Key="FontSizeDialogTitle">16</sys:Double>
+    <sys:Double x:Key="FontSizeWindowTitle">22</sys:Double>
+</ResourceDictionary>
