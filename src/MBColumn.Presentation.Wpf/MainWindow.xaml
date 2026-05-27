@@ -107,9 +107,12 @@
                         Style="{StaticResource PrimaryButtonStyle}"
                         MinHeight="30" Padding="14,4">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Calculate This Section" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12" />
-                        <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="8,1,0,0" VerticalAlignment="Center" />
+                        <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock Text="Calculate This Section" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="8,1,0,0" VerticalAlignment="Center"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                     <Button.ContextMenu>
                         <ContextMenu>
