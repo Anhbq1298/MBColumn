@@ -52,6 +52,7 @@ public sealed class ReportTabViewModel : ViewModelBase
     private string momentUnit = "";
     private bool isExportBusy;
     private bool isGeneratingReport;
+    private bool isReportPreviewVisible;
     private GoverningChartPreviewViewModel? governingChart;
 
     private double sectionWidth;
@@ -72,20 +73,76 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     public ReportTabViewModel()
     {
-        GeneratePreviewCommand = new RelayCommand(GeneratePreview);
+        GeneratePreviewCommand = new RelayCommand(RevealReportPreview, CanRevealReportPreview);
+        RevealReportPreviewCommand = GeneratePreviewCommand;
+        HideReportPreviewCommand = new RelayCommand(HideReportPreview, () => IsReportPreviewVisible);
         PreviewPdfCommand = new RelayCommand(PreviewPdf, CanExport);
         SaveAsPdfCommand = new RelayCommand(SaveAsPdf, CanExport);
         SaveAsHtmlCommand = new RelayCommand(SaveAsHtml, CanExport);
     }
 
     public ICommand GeneratePreviewCommand { get; }
+    public ICommand RevealReportPreviewCommand { get; }
+    public ICommand HideReportPreviewCommand { get; }
     public ICommand PreviewPdfCommand { get; }
     public ICommand SaveAsPdfCommand { get; }
     public ICommand SaveAsHtmlCommand { get; }
 
     public ObservableCollection<ReportSection> ReportSections { get; } = new();
-    public bool IsGeneratingReport { get => isGeneratingReport; private set { Set(ref isGeneratingReport, value); Raise(nameof(HasReportSections)); } }
+    public bool IsGeneratingReport
+    {
+        get => isGeneratingReport;
+        private set
+        {
+            if (isGeneratingReport == value) return;
+            isGeneratingReport = value;
+            Raise();
+            RaiseReportPreviewState();
+        }
+    }
+
     public bool HasReportSections  => ReportSections.Count > 0 && !isGeneratingReport;
+    public bool IsReportPreviewVisible => isReportPreviewVisible;
+    public bool ShowReportContent => IsReportPreviewVisible && HasReportSections;
+    public bool ShowReportPreviewPlaceholder => !ShowReportContent;
+    public bool ShowRevealReportPreviewButton => HasResult && !IsReportPreviewVisible && !IsGeneratingReport;
+    public bool ShowHideReportPreviewButton => IsReportPreviewVisible;
+    public IEnumerable<ReportSection> VisibleReportSections => ShowReportContent
+        ? ReportSections
+        : Enumerable.Empty<ReportSection>();
+
+    public string ReportPreviewStatusText
+    {
+        get
+        {
+            if (!HasResult) return "No report result available.";
+            if (IsGeneratingReport) return "Rendering preview...";
+            if (!IsReportPreviewVisible) return "Preview hidden";
+            return HasReportSections ? $"{ReportSections.Count} sections visible" : "Preview not rendered";
+        }
+    }
+
+    public string ReportPreviewPlaceholderTitle
+    {
+        get
+        {
+            if (!HasResult) return "MB Column - Engineering Calculation Report";
+            if (IsGeneratingReport) return "Rendering report preview";
+            if (!IsReportPreviewVisible) return "Report preview hidden";
+            return "Report preview";
+        }
+    }
+
+    public string ReportPreviewPlaceholderText
+    {
+        get
+        {
+            if (!HasResult) return "Run a calculation to generate the full report.";
+            if (IsGeneratingReport) return "Preparing sections...";
+            if (!IsReportPreviewVisible) return "Open the preview when you want to render the full report.";
+            return ResultStatusText;
+        }
+    }
 
     public ObservableCollection<ReportDemandCaseRowViewModel> DemandCases { get; } = [];
     public ObservableCollection<ReportPm7RowViewModel> Pm7Rows { get; } = [];
@@ -150,6 +207,56 @@ public sealed class ReportTabViewModel : ViewModelBase
     public bool HasPm7Data => Pm7Rows.Count > 0;
     public bool HasResult  => _cachedResult is not null;
 
+    private bool CanRevealReportPreview() => HasResult && !IsGeneratingReport;
+
+    private void SetReportPreviewVisible(bool value)
+    {
+        if (isReportPreviewVisible == value) return;
+        isReportPreviewVisible = value;
+        RaiseReportPreviewState();
+    }
+
+    private void RaiseReportPreviewState()
+    {
+        Raise(nameof(HasReportSections));
+        Raise(nameof(IsReportPreviewVisible));
+        Raise(nameof(ShowReportContent));
+        Raise(nameof(ShowReportPreviewPlaceholder));
+        Raise(nameof(ShowRevealReportPreviewButton));
+        Raise(nameof(ShowHideReportPreviewButton));
+        Raise(nameof(VisibleReportSections));
+        Raise(nameof(ReportPreviewStatusText));
+        Raise(nameof(ReportPreviewPlaceholderTitle));
+        Raise(nameof(ReportPreviewPlaceholderText));
+        (GeneratePreviewCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (HideReportPreviewCommand as RelayCommand)?.RaiseCanExecuteChanged();
+    }
+
+    private void RevealReportPreview()
+    {
+        if (_cachedResult is null) return;
+
+        SetReportPreviewVisible(true);
+
+        if (ReportSections.Count == 0 && !IsGeneratingReport)
+            _ = RefreshReportSectionsAsync();
+        else
+            RaiseReportPreviewState();
+    }
+
+    private void HideReportPreview()
+    {
+        if (IsGeneratingReport)
+        {
+            _reportCts?.Cancel();
+            ReportSections.Clear();
+            IsGeneratingReport = false;
+        }
+
+        SetReportPreviewVisible(false);
+        RaiseReportPreviewState();
+    }
+
     public void Clear()
     {
         ProjectName = GroupName = DesignTierName = SectionShape = DesignCode =
@@ -160,8 +267,11 @@ public sealed class ReportTabViewModel : ViewModelBase
         IsOutdated = false;
         _cachedResult = null;
         _reportCts?.Cancel();
+        IsGeneratingReport = false;
+        SetReportPreviewVisible(false);
         ReportSections.Clear();
-        Raise(nameof(HasReportSections));
+        Raise(nameof(HasResult));
+        RaiseReportPreviewState();
         DemandCases.Clear();
         Pm7Rows.Clear();
         GoverningChart = null;
@@ -180,6 +290,11 @@ public sealed class ReportTabViewModel : ViewModelBase
             return;
         IsOutdated = true;
         ResultStatusText = "Outdated";
+        _reportCts?.Cancel();
+        SetReportPreviewVisible(false);
+        ReportSections.Clear();
+        IsGeneratingReport = false;
+        RaiseReportPreviewState();
     }
 
     public void LoadFromCurrentWorkspace(
@@ -212,6 +327,12 @@ public sealed class ReportTabViewModel : ViewModelBase
         ResultStatusText = result.HasResult ? (IsOutdated ? "Outdated" : "Current") : "No result";
 
         _cachedResult = result.Result;
+        _reportCts?.Cancel();
+        IsGeneratingReport = false;
+        ReportSections.Clear();
+        SetReportPreviewVisible(false);
+        Raise(nameof(HasResult));
+        RaiseReportPreviewState();
         if (_cachedResult is not null) BuildChartData(_cachedResult);
 
         bool isMetric = input.UnitSystem == Domain.Enums.UnitSystem.Metric;
@@ -244,9 +365,8 @@ public sealed class ReportTabViewModel : ViewModelBase
                 lcResult?.CapacityMyDisplay ?? 0));
         }
 
-        GeneratePreview();
+        RefreshReportSummaryPreview();
         RaiseExportCanExecute();
-        _ = RefreshReportSectionsAsync();
     }
 
     // ── Interaction diagram chart data ────────────────────────────────────────
@@ -293,7 +413,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         if (_cachedResult is null)
         {
             ReportSections.Clear();
-            Raise(nameof(HasReportSections));
+            RaiseReportPreviewState();
             return;
         }
 
@@ -301,7 +421,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         {
             IsGeneratingReport = true;
             ReportSections.Clear();
-            Raise(nameof(HasReportSections));
+            RaiseReportPreviewState();
 
             var result    = _cachedResult;
             var projName  = _cachedProjectName;
@@ -361,7 +481,7 @@ public sealed class ReportTabViewModel : ViewModelBase
 
             foreach (var section in sections)
                 ReportSections.Add(section);
-            Raise(nameof(HasReportSections));
+            RaiseReportPreviewState();
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
@@ -370,7 +490,7 @@ public sealed class ReportTabViewModel : ViewModelBase
             {
                 ReportSections.Add(new ReportSection("!", "Report Generation Error",
                     [new NoteBlock($"Failed to generate report: {ex.Message}")]));
-                Raise(nameof(HasReportSections));
+                RaiseReportPreviewState();
             }
         }
         finally
@@ -514,12 +634,11 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     // ── Preview helpers ───────────────────────────────────────────────────────
 
-    private void GeneratePreview()
+    private void RefreshReportSummaryPreview()
     {
         BuildPm7Rows();
         BuildGoverningChart();
         Raise(nameof(HasPm7Data));
-        _ = RefreshReportSectionsAsync();
     }
 
     private void BuildPm7Rows()

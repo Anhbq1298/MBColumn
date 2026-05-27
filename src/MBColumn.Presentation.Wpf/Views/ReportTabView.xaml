@@ -322,16 +322,9 @@
                         <TextBlock Text="{Binding ResultStatusText}"
                                    FontSize="11" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextMutedBrush}"/>
-                        <TextBlock Text="Generating report…" FontSize="10" Foreground="#888"
-                                   Margin="0,3,0,0"
-                                   Visibility="{Binding IsGeneratingReport,
-                                       Converter={StaticResource BoolToVisibilityConverter}}"/>
-                        <TextBlock FontSize="10" Foreground="#555" Margin="0,3,0,0"
-                                   Visibility="{Binding HasReportSections,
-                                       Converter={StaticResource BoolToVisibilityConverter}}">
-                            <Run Text="{Binding ReportSections.Count, Mode=OneWay}"/>
-                            <Run Text=" sections ready"/>
-                        </TextBlock>
+                        <TextBlock Text="{Binding ReportPreviewStatusText}"
+                                   FontSize="10" Foreground="#555"
+                                   Margin="0,3,0,0"/>
                     </StackPanel>
                 </Border>
 
@@ -343,6 +336,20 @@
                     <TextBlock TextWrapping="Wrap" FontSize="10"
                                Text="Result outdated — recalculate before exporting."/>
                 </Border>
+
+                <Button Content="Show Preview"
+                        Command="{Binding RevealReportPreviewCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Margin="0,14,0,0"
+                        Visibility="{Binding ShowRevealReportPreviewButton,
+                            Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <Button Content="Hide Preview"
+                        Command="{Binding HideReportPreviewCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,14,0,0"
+                        Visibility="{Binding ShowHideReportPreviewButton,
+                            Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                 <Button Content="Save as PDF"
                         Command="{Binding SaveAsPdfCommand}"
@@ -367,11 +374,11 @@
             <ScrollViewer
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Auto"
-                          Visibility="{Binding HasReportSections,
-                              Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                          Visibility="{Binding ShowReportPreviewPlaceholder,
+                              Converter={StaticResource BoolToVisibilityConverter}}">
                 <Border Style="{StaticResource A4PageStyle}" Margin="24,24,24,40" HorizontalAlignment="Left">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,60">
-                        <TextBlock Text="MB Column – Engineering Calculation Report"
+                        <TextBlock Text="{Binding ReportPreviewPlaceholderTitle}"
                                    FontSize="18" FontWeight="Bold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                    HorizontalAlignment="Center"/>
@@ -380,14 +387,13 @@
                                    Text="{Binding ResultStatusText, StringFormat='Status: {0}'}"/>
                         <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#888"
                                    HorizontalAlignment="Center"
-                                   Visibility="{Binding IsGeneratingReport,
-                                       Converter={StaticResource BoolToVisibilityConverter}}"
-                                   Text="Generating report, please wait…"/>
-                        <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#888"
-                                   HorizontalAlignment="Center"
-                                   Visibility="{Binding IsGeneratingReport,
-                                       Converter={StaticResource InverseBoolToVisibilityConverter}}"
-                                   Text="Run a calculation to generate the full report."/>
+                                   Text="{Binding ReportPreviewPlaceholderText}"/>
+                        <Button Content="Show Preview"
+                                Command="{Binding RevealReportPreviewCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Margin="0,18,0,0"
+                                Visibility="{Binding ShowRevealReportPreviewButton,
+                                    Converter={StaticResource BoolToVisibilityConverter}}"/>
                     </StackPanel>
                 </Border>
             </ScrollViewer>
@@ -396,10 +402,10 @@
                  VirtualizingStackPanel can skip off-screen sections entirely. -->
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Auto"
-                          Visibility="{Binding HasReportSections,
+                          Visibility="{Binding ShowReportContent,
                               Converter={StaticResource BoolToVisibilityConverter}}">
                 <ItemsControl x:Name="ReportContent"
-                              ItemsSource="{Binding ReportSections}"
+                              ItemsSource="{Binding VisibleReportSections}"
                               Margin="24,24,24,40"
                               HorizontalAlignment="Left"
                               VirtualizingPanel.IsVirtualizing="True"
