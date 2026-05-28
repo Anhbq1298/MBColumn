@@ -20,8 +20,13 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
         this.source = source;
         source.UpdateSectionPreview();
 
-        foreach (var p in source.IrregularInput.BoundaryPoints)
-            BoundaryPoints.Add(new CadPointViewModel(p.X, p.Y));
+        bool isIrregular = source.SelectedSectionShape == SectionShapeType.Irregular;
+
+        if (isIrregular)
+        {
+            foreach (var p in source.IrregularInput.BoundaryPoints)
+                BoundaryPoints.Add(new CadPointViewModel(p.X, p.Y));
+        }
 
         if (BoundaryPoints.Count < 3)
         {
@@ -29,8 +34,11 @@ public sealed class SectionCadEditorViewModel : ViewModelBase
                 BoundaryPoints.Add(new CadPointViewModel(p.X, p.Y));
         }
 
-        foreach (var r in source.IrregularInput.Rebars)
-            Rebars.Add(new CadRebarViewModel(r.X, r.Y, string.IsNullOrWhiteSpace(r.BarSize) ? source.BarSize : r.BarSize, r.AreaMm2));
+        if (isIrregular)
+        {
+            foreach (var r in source.IrregularInput.Rebars)
+                Rebars.Add(new CadRebarViewModel(r.X, r.Y, string.IsNullOrWhiteSpace(r.BarSize) ? source.BarSize : r.BarSize, r.AreaMm2));
+        }
 
         if (Rebars.Count == 0)
         {

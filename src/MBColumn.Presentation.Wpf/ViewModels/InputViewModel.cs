@@ -177,12 +177,14 @@ public sealed class InputViewModel : ViewModelBase
         GenerateIrregularRebarsCommand = new RelayCommand(GenerateIrregularRebars);
         GenerateEqualSpacingRebarsCommand = new RelayCommand(GenerateEqualSpacingRebars);
         ImportDxfCommand = new RelayCommand(ImportDxf, () => this.dxfImportDialogService is not null);
+        ExportDxfCommand = new RelayCommand(ExportDxf, () => IsIrregularSection && IrregularInput.BoundaryPoints.Count >= 3);
     }
 
     public IReadOnlyList<UnitSystem> UnitSystems { get; } = [UnitSystem.Metric, UnitSystem.Imperial];
     public ICommand GenerateIrregularRebarsCommand { get; }
     public ICommand GenerateEqualSpacingRebarsCommand { get; }
     public ICommand ImportDxfCommand { get; }
+    public ICommand ExportDxfCommand { get; }
     public IReadOnlyList<DesignCodeOption> DesignCodes { get; } =
     [
         new(DesignCodeType.Aci318Style, "ACI 318"),
@@ -1813,6 +1815,46 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         ApplyDxfImportResult(result);
+    }
+
+    private void ExportDxf()
+    {
+        if (IrregularInput.BoundaryPoints.Count < 3) return;
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Export as DXF",
+            Filter = "DXF Files (*.dxf)|*.dxf|All Files (*.*)|*.*",
+            FileName = "section.dxf"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            var boundary = IrregularInput.BoundaryPoints
+                .Select(p => (p.X, p.Y))
+                .ToList();
+
+            var rebars = IrregularInput.Rebars
+                .Select(r => (r.X, r.Y, r.AreaMm2 ?? 0.0))
+                .ToList();
+
+            new DxfExportService().Export(dialog.FileName, boundary, rebars);
+
+            System.Windows.MessageBox.Show(
+                $"DXF exported to:\n{dialog.FileName}",
+                "Export Complete",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"DXF export failed:\n{ex.Message}",
+                "Export Error",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
     }
 
     public bool ApplyDxfImportResult(DxfSectionImportResult result)

@@ -79,6 +79,8 @@ public sealed class ReportTabViewModel : ViewModelBase
         PreviewPdfCommand = new RelayCommand(PreviewPdf, CanExport);
         SaveAsPdfCommand = new RelayCommand(SaveAsPdf, CanExport);
         SaveAsHtmlCommand = new RelayCommand(SaveAsHtml, CanExport);
+        SelectAllSectionsCommand = new RelayCommand(() => SetAllToggles(true));
+        DeselectAllSectionsCommand = new RelayCommand(() => SetAllToggles(false));
     }
 
     public ICommand GeneratePreviewCommand { get; }
@@ -87,8 +89,14 @@ public sealed class ReportTabViewModel : ViewModelBase
     public ICommand PreviewPdfCommand { get; }
     public ICommand SaveAsPdfCommand { get; }
     public ICommand SaveAsHtmlCommand { get; }
+    public ICommand SelectAllSectionsCommand { get; }
+    public ICommand DeselectAllSectionsCommand { get; }
 
-    public ObservableCollection<ReportSection> ReportSections { get; } = new();
+    public ObservableCollection<ReportSection> ReportSections { get; } = [];
+    public ObservableCollection<ReportSectionToggleViewModel> SectionToggles { get; } = [];
+    public bool HasSectionToggles => SectionToggles.Count > 0;
+    public int VisibleSectionCount => SectionToggles.Count(t => t.IsVisible);
+
     public bool IsGeneratingReport
     {
         get => isGeneratingReport;
@@ -108,7 +116,9 @@ public sealed class ReportTabViewModel : ViewModelBase
     public bool ShowRevealReportPreviewButton => HasResult && !IsReportPreviewVisible && !IsGeneratingReport;
     public bool ShowHideReportPreviewButton => IsReportPreviewVisible;
     public IEnumerable<ReportSection> VisibleReportSections => ShowReportContent
-        ? ReportSections
+        ? (HasSectionToggles
+            ? SectionToggles.Where(t => t.IsVisible).Select(t => t.Section)
+            : ReportSections)
         : Enumerable.Empty<ReportSection>();
 
     public string ReportPreviewStatusText
@@ -118,7 +128,11 @@ public sealed class ReportTabViewModel : ViewModelBase
             if (!HasResult) return "No report result available.";
             if (IsGeneratingReport) return "Rendering preview...";
             if (!IsReportPreviewVisible) return "Preview hidden";
-            return HasReportSections ? $"{ReportSections.Count} sections visible" : "Preview not rendered";
+            if (!HasReportSections) return "Preview not rendered";
+            int visible = VisibleSectionCount;
+            return visible == ReportSections.Count
+                ? $"{ReportSections.Count} sections visible"
+                : $"{visible} of {ReportSections.Count} sections visible";
         }
     }
 
@@ -209,6 +223,19 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     private bool CanRevealReportPreview() => HasResult && !IsGeneratingReport;
 
+    private void SetAllToggles(bool visible)
+    {
+        foreach (var t in SectionToggles)
+            t.IsVisible = visible;
+    }
+
+    private void OnToggleVisibilityChanged()
+    {
+        Raise(nameof(VisibleReportSections));
+        Raise(nameof(VisibleSectionCount));
+        Raise(nameof(ReportPreviewStatusText));
+    }
+
     private void SetReportPreviewVisible(bool value)
     {
         if (isReportPreviewVisible == value) return;
@@ -270,7 +297,9 @@ public sealed class ReportTabViewModel : ViewModelBase
         IsGeneratingReport = false;
         SetReportPreviewVisible(false);
         ReportSections.Clear();
+        SectionToggles.Clear();
         Raise(nameof(HasResult));
+        Raise(nameof(HasSectionToggles));
         RaiseReportPreviewState();
         DemandCases.Clear();
         Pm7Rows.Clear();
@@ -293,7 +322,9 @@ public sealed class ReportTabViewModel : ViewModelBase
         _reportCts?.Cancel();
         SetReportPreviewVisible(false);
         ReportSections.Clear();
+        SectionToggles.Clear();
         IsGeneratingReport = false;
+        Raise(nameof(HasSectionToggles));
         RaiseReportPreviewState();
     }
 
@@ -481,6 +512,17 @@ public sealed class ReportTabViewModel : ViewModelBase
 
             foreach (var section in sections)
                 ReportSections.Add(section);
+
+            SectionToggles.Clear();
+            foreach (var section in sections)
+            {
+                var toggle = new ReportSectionToggleViewModel(section);
+                toggle.PropertyChanged += (_, _) => OnToggleVisibilityChanged();
+                SectionToggles.Add(toggle);
+            }
+            Raise(nameof(HasSectionToggles));
+            Raise(nameof(VisibleSectionCount));
+
             RaiseReportPreviewState();
         }
         catch (OperationCanceledException) { }
@@ -760,6 +802,23 @@ public sealed class ReportTabViewModel : ViewModelBase
         => input.SelectedSectionShape == SectionShapeType.Irregular
             ? $"{input.IrregularInput.Rebars.Count} bars, {input.IrregularInput.BarSize}, {input.SelectedRebarLayoutType}"
             : $"{input.BarCount} bars, {input.BarSize}, {input.SelectedRebarLayoutType}";
+}
+
+public sealed class ReportSectionToggleViewModel : ViewModelBase
+{
+    private bool _isVisible = true;
+
+    public ReportSectionToggleViewModel(MBColumn.Application.Reports.Models.ReportSection section)
+        => Section = section;
+
+    public MBColumn.Application.Reports.Models.ReportSection Section { get; }
+    public string Title => $"{Section.Number}.  {Section.Title}";
+
+    public bool IsVisible
+    {
+        get => _isVisible;
+        set => Set(ref _isVisible, value);
+    }
 }
 
 public sealed record ReportDemandCaseRowViewModel(

@@ -8,28 +8,26 @@ namespace MBColumn.Application.Services;
 /// <summary>
 /// Orchestrates the shear capacity check (EC2 §6.2 or ACI §22.5/22.6) for a rectangular
 /// column section against one or more load cases.
+///
+/// Capacity is always computed, even when VEd = 0, so that the report can show the section's
+/// shear capacity for reference regardless of whether a shear demand was entered.
 /// </summary>
 public sealed class ShearCheckService(IUnitConversionService units)
 {
-    /// <summary>
-    /// Runs the shear check for every load case and returns per-case results plus the
-    /// governing (maximum utilisation) result. Returns null when the design code does not
-    /// support shear yet (ACI) or when no shear forces are present.
-    /// </summary>
     public (IReadOnlyList<ShearResultDto?> PerCase, ShearResultDto? Governing) Check(
         ColumnInputDto input,
         IReadOnlyList<LoadCaseDto> activeCases,
         IReadOnlyList<RebarCoordinateDto> rebarCoordinates,
         IShearDesignService? shearService)
     {
-        // Shear service null → not yet implemented for this code (ACI stub).
+        // Shear service null → code not yet implemented (ACI stub); return empty.
         if (shearService is null)
             return (activeCases.Select(_ => (ShearResultDto?)null).ToList(), null);
 
         double bMm, hMm;
         if (input.SectionShape == SectionShapeType.Circular)
         {
-            // TODO: EC2 §6.2 for circular cross-sections uses bw ≈ D·sin(α); use D as conservative fallback.
+            // TODO: EC2 §6.2 for circular sections uses bw ≈ D·sin(α); D is conservative.
             bMm = hMm = units.LengthToMm(input.Diameter, input.LengthUnit);
         }
         else
@@ -38,11 +36,9 @@ public sealed class ShearCheckService(IUnitConversionService units)
             hMm = units.LengthToMm(input.Height, input.LengthUnit);
         }
 
-        // Use the link yield strength from input; fall back to longitudinal Fy.
         double fywkMpa = input.FywkMpa > 0
             ? input.FywkMpa
             : units.StressToMpa(input.Fy, input.StressUnit);
-
         double fckMpa = units.StressToMpa(input.Fc, input.StressUnit);
 
         ShearLinkReinforcement? links = null;
@@ -56,7 +52,6 @@ public sealed class ShearCheckService(IUnitConversionService units)
                 fywkMpa);
         }
 
-        // Total longitudinal reinforcement area (all bars) in mm².
         double totalAslMm2 = rebarCoordinates.Sum(r => r.Area);
 
         var perCase = new List<ShearResultDto?>();
@@ -64,13 +59,7 @@ public sealed class ShearCheckService(IUnitConversionService units)
 
         foreach (var lc in activeCases)
         {
-            // Skip load cases with no shear demand.
-            if (lc.Vux == 0.0 && lc.Vuy == 0.0)
-            {
-                perCase.Add(null);
-                continue;
-            }
-
+            // Always compute — VEd = 0 is valid (shows capacity for reference).
             double vEdXN = units.ForceToN(lc.Vux, lc.ForceUnit);
             double vEdYN = units.ForceToN(lc.Vuy, lc.ForceUnit);
             double nedN  = units.ForceToN(lc.Pu,  lc.ForceUnit);
@@ -89,7 +78,13 @@ public sealed class ShearCheckService(IUnitConversionService units)
             var dto = ToDto(result, input);
             perCase.Add(dto);
 
-            if (governing is null || dto.GoverningUtilisation > governing.GoverningUtilisation)
+            // Governing = highest utilisation; prefer cases with actual demand over zero-demand.
+            bool betterThanCurrent =
+                governing is null ||
+                dto.GoverningUtilisation > governing.GoverningUtilisation ||
+                (dto.HasDemand && !governing.HasDemand);
+
+            if (betterThanCurrent)
                 governing = dto;
         }
 
@@ -99,7 +94,6 @@ public sealed class ShearCheckService(IUnitConversionService units)
     private ShearResultDto ToDto(ShearCheckResult r, ColumnInputDto input)
     {
         string forceUnitLabel = input.UnitSystem == UnitSystem.Metric ? "kN" : "kip";
-
         double ToForce(double n) => units.ForceFromN(n, input.ForceUnit);
 
         double utilX = double.IsInfinity(r.UtilisationX) ? 999.0 : r.UtilisationX;
@@ -122,10 +116,22 @@ public sealed class ShearCheckService(IUnitConversionService units)
             UtilisationY:   utilY,
             StatusY:        r.StatusY,
             LinksRequiredY: r.LinksRequiredY,
-            DEffXMm:        r.DEffXMm,
-            DEffYMm:        r.DEffYMm,
-            CotThetaX:      r.CotThetaX,
-            CotThetaY:      r.CotThetaY,
-            ForceUnit:      forceUnitLabel);
+            BwXMm:    r.BwXMm,
+            DEffXMm:  r.DEffXMm,
+            KFactorX: r.KFactorX,
+            RhoLX:    r.RhoLX,
+            SigCpMpa: r.SigCpMpa,
+            BwYMm:    r.BwYMm,
+            DEffYMm:  r.DEffYMm,
+            KFactorY: r.KFactorY,
+            RhoLY:    r.RhoLY,
+            AswSX:    r.AswSX,
+            AswSY:    r.AswSY,
+            FywdMpa:  r.FywdMpa,
+            ZXMm:     r.ZXMm,
+            ZYMm:     r.ZYMm,
+            CotThetaX: r.CotThetaX,
+            CotThetaY: r.CotThetaY,
+            ForceUnit: forceUnitLabel);
     }
 }

@@ -592,7 +592,8 @@
                                             MinHeight="32"
                                             Padding="10,5"
                                             Margin="0,0,8,0"
-                                            ToolTip="Open CAD Lite editor">
+                                            ToolTip="Open CAD Lite editor"
+                                            Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xE70F;"
                                                        FontFamily="Segoe MDL2 Assets"
@@ -609,6 +610,7 @@
                                             MinWidth="96"
                                             MinHeight="32"
                                             Padding="10,5"
+                                            Margin="0,0,8,0"
                                             ToolTip="Import .DXF">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <Viewbox Width="16" Height="16" Margin="0,0,6,0">
@@ -622,6 +624,26 @@
                                                 </Canvas>
                                             </Viewbox>
                                             <TextBlock Text="Import .dxf" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding ExportDxfCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            MinWidth="96"
+                                            MinHeight="32"
+                                            Padding="10,5"
+                                            ToolTip="Export current section as .DXF">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Viewbox Width="16" Height="16" Margin="0,0,6,0">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M 6,3 L 15,3 L 20,8 L 20,21 L 6,21 Z M 15,3 L 15,8 L 20,8"
+                                                          Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                          StrokeThickness="1.7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
+                                                    <Path Data="M 12,14 L 12,7 M 8.8,10 L 12,6.8 L 15.2,10"
+                                                          Stroke="{Binding Path=Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                          StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Fill="Transparent" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="Export .dxf" FontWeight="SemiBold" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>

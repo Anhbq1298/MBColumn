@@ -309,60 +309,99 @@
         <!-- ═══════════════════════════════════════════════════════════
              Left: settings + export panel
              ═══════════════════════════════════════════════════════ -->
-        <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="16">
-            <StackPanel>
-                <TextBlock Text="Calculation Report"
-                           Style="{StaticResource SectionTitleTextStyle}"
-                           FontSize="14"/>
+        <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="16">
+                    <TextBlock Text="Calculation Report"
+                               Style="{StaticResource SectionTitleTextStyle}"
+                               FontSize="14"/>
 
-                <!-- Status -->
-                <Border Background="#F0F4F8" BorderBrush="#CCD6E0" BorderThickness="1"
-                        CornerRadius="2" Padding="8,6" Margin="0,12,0,0">
-                    <StackPanel>
-                        <TextBlock Text="{Binding ResultStatusText}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextMutedBrush}"/>
-                        <TextBlock Text="{Binding ReportPreviewStatusText}"
-                                   FontSize="10" Foreground="#555"
-                                   Margin="0,3,0,0"/>
+                    <!-- Status -->
+                    <Border Background="#F0F4F8" BorderBrush="#CCD6E0" BorderThickness="1"
+                            CornerRadius="2" Padding="8,6" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{Binding ResultStatusText}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                            <TextBlock Text="{Binding ReportPreviewStatusText}"
+                                       FontSize="10" Foreground="#555"
+                                       Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Outdated warning -->
+                    <Border Background="#FFF7E6" BorderBrush="#C98600" BorderThickness="1"
+                            CornerRadius="2" Padding="8,6" Margin="0,8,0,0"
+                            Visibility="{Binding IsOutdated,
+                                Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock TextWrapping="Wrap" FontSize="10"
+                                   Text="Result outdated — recalculate before exporting."/>
+                    </Border>
+
+                    <Button Content="Show Preview"
+                            Command="{Binding RevealReportPreviewCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Margin="0,14,0,0"
+                            Visibility="{Binding ShowRevealReportPreviewButton,
+                                Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Button Content="Hide Preview"
+                            Command="{Binding HideReportPreviewCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,14,0,0"
+                            Visibility="{Binding ShowHideReportPreviewButton,
+                                Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Button Content="Save as PDF"
+                            Command="{Binding SaveAsPdfCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Margin="0,14,0,0"
+                            ToolTip="Save the full calculation report as PDF"/>
+
+                    <Button Content="Save as HTML"
+                            Command="{Binding SaveAsHtmlCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,6,0,0"
+                            ToolTip="Save as a self-contained HTML file"/>
+
+                    <!-- ── Section visibility ─────────────────────────── -->
+                    <StackPanel Margin="0,16,0,0"
+                                Visibility="{Binding HasSectionToggles,
+                                    Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="Sections"
+                                   Style="{StaticResource FieldLabelTextStyle}"
+                                   Margin="0,0,0,6"/>
+                        <DockPanel Margin="0,0,0,6">
+                            <Button Content="All"
+                                    Command="{Binding SelectAllSectionsCommand}"
+                                    Style="{StaticResource CompactButtonStyle}"
+                                    Padding="8,2" FontSize="10"
+                                    Margin="0,0,4,0"/>
+                            <Button Content="None"
+                                    Command="{Binding DeselectAllSectionsCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Padding="8,2" FontSize="10"/>
+                        </DockPanel>
+                        <Border BorderBrush="{DynamicResource BorderGreyBrush}"
+                                BorderThickness="1" CornerRadius="3">
+                            <ItemsControl ItemsSource="{Binding SectionToggles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                                  Padding="4,3"
+                                                  FontSize="11">
+                                            <TextBlock Text="{Binding Title}"
+                                                       TextWrapping="Wrap"
+                                                       FontSize="11"/>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
                     </StackPanel>
-                </Border>
 
-                <!-- Outdated warning -->
-                <Border Background="#FFF7E6" BorderBrush="#C98600" BorderThickness="1"
-                        CornerRadius="2" Padding="8,6" Margin="0,8,0,0"
-                        Visibility="{Binding IsOutdated,
-                            Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock TextWrapping="Wrap" FontSize="10"
-                               Text="Result outdated — recalculate before exporting."/>
-                </Border>
-
-                <Button Content="Show Preview"
-                        Command="{Binding RevealReportPreviewCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,14,0,0"
-                        Visibility="{Binding ShowRevealReportPreviewButton,
-                            Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                <Button Content="Hide Preview"
-                        Command="{Binding HideReportPreviewCommand}"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,14,0,0"
-                        Visibility="{Binding ShowHideReportPreviewButton,
-                            Converter={StaticResource BoolToVisibilityConverter}}"/>
-
-                <Button Content="Save as PDF"
-                        Command="{Binding SaveAsPdfCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Margin="0,14,0,0"
-                        ToolTip="Save the full calculation report as PDF"/>
-
-                <Button Content="Save as HTML"
-                        Command="{Binding SaveAsHtmlCommand}"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Margin="0,6,0,0"
-                        ToolTip="Save as a self-contained HTML file"/>
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- ═══════════════════════════════════════════════════════════

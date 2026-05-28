@@ -4,9 +4,10 @@ namespace MBColumn.Application.DTOs;
 
 /// <summary>
 /// Display-ready shear check result for one load case, values converted to the user's unit system.
+/// Force values are in the user's ForceUnit; lengths and stresses remain in mm / MPa.
 /// </summary>
 public sealed record ShearResultDto(
-    // ── X direction ──────────────────────────────────────────────────────────
+    // ── X direction — capacity ────────────────────────────────────────────────
     double VEdXDisplay,
     double VRdcXDisplay,
     double VRdsXDisplay,
@@ -16,7 +17,7 @@ public sealed record ShearResultDto(
     CapacityStatus StatusX,
     bool LinksRequiredX,
 
-    // ── Y direction ──────────────────────────────────────────────────────────
+    // ── Y direction — capacity ────────────────────────────────────────────────
     double VEdYDisplay,
     double VRdcYDisplay,
     double VRdsYDisplay,
@@ -26,9 +27,25 @@ public sealed record ShearResultDto(
     CapacityStatus StatusY,
     bool LinksRequiredY,
 
-    // ── Meta ─────────────────────────────────────────────────────────────────
+    // ── Intermediate values — X direction (mm / MPa) ──────────────────────────
+    double BwXMm,
     double DEffXMm,
+    double KFactorX,
+    double RhoLX,
+    double SigCpMpa,    // shared for both directions
+
+    // ── Intermediate values — Y direction ─────────────────────────────────────
+    double BwYMm,
     double DEffYMm,
+    double KFactorY,
+    double RhoLY,
+
+    // ── Link intermediate values ───────────────────────────────────────────────
+    double AswSX,       // Asw/s X  [mm²/mm]
+    double AswSY,       // Asw/s Y  [mm²/mm]
+    double FywdMpa,     // fywd [MPa]
+    double ZXMm,        // lever arm z X [mm]
+    double ZYMm,        // lever arm z Y [mm]
     double CotThetaX,
     double CotThetaY,
     string ForceUnit)
@@ -39,4 +56,7 @@ public sealed record ShearResultDto(
             : CapacityStatus.Pass;
 
     public double GoverningUtilisation => Math.Max(UtilisationX, UtilisationY);
+
+    public bool HasDemand => VEdXDisplay != 0.0 || VEdYDisplay != 0.0;
+    public bool HasLinks  => AswSX > 0 || AswSY > 0;
 }
