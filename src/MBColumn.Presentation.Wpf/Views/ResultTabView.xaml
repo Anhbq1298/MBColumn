@@ -16,98 +16,42 @@
             <Setter Property="Margin" Value="8,0,0,5" />
         </Style>
 
-        <Style x:Key="ChartConfigShellStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
+        <Style x:Key="ResultChartCardStyle" TargetType="Border" BasedOn="{StaticResource ChartCardStyle}">
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="MinHeight" Value="220" />
+        </Style>
+
+        <Style x:Key="ChartInlineSettingsStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Padding" Value="8" />
-            <Setter Property="Margin" Value="6,0,6,6" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="5,2" />
+            <Setter Property="Margin" Value="0,0,0,5" />
         </Style>
 
         <Style x:Key="ChartConfigCheckBoxStyle" TargetType="CheckBox">
-            <Setter Property="Margin" Value="0,0,12,4" />
+            <Setter Property="Margin" Value="0,0,7,0" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
+            <Setter Property="FontSize" Value="10" />
         </Style>
 
         <Style x:Key="ChartConfigLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,6,4" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Margin" Value="0,0,4,0" />
         </Style>
 
         <Style x:Key="ChartConfigInputStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Width" Value="76" />
-            <Setter Property="MinHeight" Value="26" />
-            <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
-            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="Width" Value="54" />
+            <Setter Property="MinHeight" Value="20" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Padding" Value="5,1" />
             <Setter Property="HorizontalContentAlignment" Value="Right" />
-            <Setter Property="Margin" Value="0,0,14,4" />
+            <Setter Property="Margin" Value="0,0,7,0" />
         </Style>
 
-        <Style x:Key="ChartConfigTabControlStyle" TargetType="TabControl">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TabControl">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TabPanel x:Name="HeaderPanel"
-                                      IsItemsHost="True"
-                                      KeyboardNavigation.TabIndex="1"
-                                      Panel.ZIndex="1"
-                                      Margin="0,0,0,6" />
-                            <ContentPresenter x:Name="PART_SelectedContentHost"
-                                              Grid.Row="1"
-                                              ContentSource="SelectedContent"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="ChartConfigTabItemStyle" TargetType="TabItem">
-            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-            <Setter Property="FontSize" Value="{DynamicResource FontSizeHelper}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="10,4" />
-            <Setter Property="Margin" Value="0,0,6,0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Root"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter ContentSource="Header"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"
-                                              TextElement.Foreground="{TemplateBinding Foreground}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BorderSoftBrush}" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource PrimaryNavyBrush}" />
-                                <Setter Property="Foreground" Value="White" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
@@ -128,83 +72,6 @@
             <ColumnDefinition Width="10" />
             <ColumnDefinition Width="*" MinWidth="560" />
         </Grid.ColumnDefinitions>
-
-        <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource ChartConfigShellStyle}">
-            <TabControl Style="{StaticResource ChartConfigTabControlStyle}"
-                        ItemContainerStyle="{StaticResource ChartConfigTabItemStyle}">
-                <TabItem Header="2D Chart">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <WrapPanel>
-                            <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Labels" IsChecked="{Binding ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Demand points" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="P max/min" IsChecked="{Binding ShowPmaxPmin}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Nominal curve" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Equal Mx-My aspect" IsChecked="{Binding UseEqualAspectForMM}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                        </WrapPanel>
-
-                        <WrapPanel Grid.Row="1" Margin="0,2,0,0">
-                            <TextBlock Text="PM P step" Style="{StaticResource ChartConfigLabelStyle}" />
-                            <TextBox Text="{Binding PStep, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
-                            <TextBlock Text="PM M step" Style="{StaticResource ChartConfigLabelStyle}" />
-                            <TextBox Text="{Binding MStep, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
-                            <TextBlock Text="Mx-My X step" Style="{StaticResource ChartConfigLabelStyle}" />
-                            <TextBox Text="{Binding MStepX, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
-                            <TextBlock Text="Mx-My Y step" Style="{StaticResource ChartConfigLabelStyle}" />
-                            <TextBox Text="{Binding MStepY, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
-                        </WrapPanel>
-
-                        <WrapPanel Grid.Row="2"
-                                   Visibility="{Binding ShowLegend, Converter={StaticResource BoolToVisibilityConverter}}"
-                                   Margin="0,2,0,0">
-                            <Border Width="16" Height="3" Background="{DynamicResource PrimaryNavyBrush}" VerticalAlignment="Center" Margin="0,0,6,6" />
-                            <TextBlock Text="Design curves" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,18,6" />
-                            <Border Width="16" Height="3" Background="{DynamicResource AccentRedBrush}" VerticalAlignment="Center" Margin="0,0,6,6"
-                                    Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                            <TextBlock Text="ACI nominal curves"
-                                       Style="{StaticResource ChartConfigLabelStyle}"
-                                       Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                        </WrapPanel>
-                    </Grid>
-                </TabItem>
-
-                <TabItem Header="3D Chart">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <WrapPanel>
-                            <CheckBox Content="Surface" IsChecked="{Binding ShowSurface3D}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Wireframe" IsChecked="{Binding ShowWireframe3D}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Demand points" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Grid" IsChecked="{Binding PM3D.ShowGrid}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Labels" IsChecked="{Binding PM3D.ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Theta slice" IsChecked="{Binding PM3D.ShowSlicePlane}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                            <CheckBox Content="Axial slice" IsChecked="{Binding PM3D.ShowAxialLoadSlice}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                        </WrapPanel>
-
-                        <WrapPanel Grid.Row="1" Margin="0,2,0,0">
-                            <TextBlock Text="{Binding PM3D.SelectedPmAngleLabel}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,20,6" />
-                            <TextBlock Text="{Binding PM3D.SelectedAxialLoadLabel}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,20,6" />
-                            <Button Content="Reset Camera"
-                                    Command="{Binding PM3D.ResetCameraCommand}"
-                                    Style="{StaticResource CompactButtonStyle}"
-                                    MinHeight="28"
-                                    Padding="10,4" />
-                        </WrapPanel>
-                    </Grid>
-                </TabItem>
-            </TabControl>
-        </Border>
 
         <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
@@ -356,7 +223,7 @@
                       Background="{DynamicResource LightBackgroundBrush}" />
 
         <!-- Chart area: 65% 2D charts | 35% 3D chart -->
-        <Grid Grid.Row="1" Grid.Column="2" Margin="8,0,0,8">
+        <Grid Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Margin="8,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="65*" />
                 <ColumnDefinition Width="8" />
@@ -372,10 +239,11 @@
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0"
-                        Style="{StaticResource ChartCardStyle}"
+                        Style="{StaticResource ResultChartCardStyle}"
                         Visibility="{Binding ShowPM, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
@@ -391,7 +259,31 @@
                                        VerticalAlignment="Center"
                                        ToolTip="{Binding PM.DiagramTitle}" />
                         </DockPanel>
-                        <controls:DiagramCanvas2D Grid.Row="1"
+                        <Border Grid.Row="1" Style="{StaticResource ChartInlineSettingsStyle}">
+                            <WrapPanel>
+                                <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Labels" IsChecked="{Binding ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Demand" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="P max/min" IsChecked="{Binding ShowPmaxPmin}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Nominal" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <TextBlock Text="P step" Style="{StaticResource ChartConfigLabelStyle}" />
+                                <TextBox Text="{Binding PStep, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
+                                <TextBlock Text="M step" Style="{StaticResource ChartConfigLabelStyle}" />
+                                <TextBox Text="{Binding MStep, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
+                                <StackPanel Orientation="Horizontal"
+                                            Visibility="{Binding ShowLegend, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Border Width="14" Height="3" Background="{DynamicResource PrimaryNavyBrush}" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="Design" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Border Width="14" Height="3" Background="{DynamicResource AccentRedBrush}" VerticalAlignment="Center" Margin="0,0,4,2"
+                                            Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="Nominal"
+                                               Style="{StaticResource ChartConfigLabelStyle}"
+                                               Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </WrapPanel>
+                        </Border>
+                        <controls:DiagramCanvas2D Grid.Row="2"
                                                   MinHeight="220"
                                                   Points="{Binding PmAnglePoints}"
                                                   ReferenceLines="{Binding PmReferenceLines}"
@@ -419,10 +311,11 @@
                         Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                 <Border Grid.Row="2"
-                        Style="{StaticResource ChartCardStyle}"
+                        Style="{StaticResource ResultChartCardStyle}"
                         Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
@@ -437,7 +330,31 @@
                                        Style="{StaticResource SectionTitleTextStyle}"
                                        VerticalAlignment="Center" />
                         </DockPanel>
-                        <controls:DiagramCanvas2D Grid.Row="1"
+                        <Border Grid.Row="1" Style="{StaticResource ChartInlineSettingsStyle}">
+                            <WrapPanel>
+                                <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Labels" IsChecked="{Binding ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Demand" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Nominal" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Equal aspect" IsChecked="{Binding UseEqualAspectForMM}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <TextBlock Text="X step" Style="{StaticResource ChartConfigLabelStyle}" />
+                                <TextBox Text="{Binding MStepX, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
+                                <TextBlock Text="Y step" Style="{StaticResource ChartConfigLabelStyle}" />
+                                <TextBox Text="{Binding MStepY, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
+                                <StackPanel Orientation="Horizontal"
+                                            Visibility="{Binding ShowLegend, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Border Width="14" Height="3" Background="{DynamicResource PrimaryNavyBrush}" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="Design" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Border Width="14" Height="3" Background="{DynamicResource AccentRedBrush}" VerticalAlignment="Center" Margin="0,0,4,2"
+                                            Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="Nominal"
+                                               Style="{StaticResource ChartConfigLabelStyle}"
+                                               Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </WrapPanel>
+                        </Border>
+                        <controls:DiagramCanvas2D Grid.Row="2"
                                                   MinHeight="220"
                                                   Points="{Binding MxMyPoints}"
                                                   XAxisLabel="{Binding MM.XAxisLabel}"
@@ -460,10 +377,11 @@
 
             <!-- Right column (35%): 3D PMM chart -->
             <Border Grid.Column="2"
-                    Style="{StaticResource ChartCardStyle}"
+                    Style="{StaticResource ResultChartCardStyle}"
                     Visibility="{Binding ShowPmm3D, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
@@ -478,7 +396,26 @@
                                    Style="{StaticResource SectionTitleTextStyle}"
                                    VerticalAlignment="Center" />
                     </DockPanel>
-                    <controls:InteractionViewport3D Grid.Row="1"
+                    <Border Grid.Row="1" Style="{StaticResource ChartInlineSettingsStyle}">
+                        <WrapPanel>
+                            <CheckBox Content="Surface" IsChecked="{Binding ShowSurface3D}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <CheckBox Content="Wire" IsChecked="{Binding ShowWireframe3D}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <CheckBox Content="Demand" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <CheckBox Content="Grid" IsChecked="{Binding PM3D.ShowGrid}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <CheckBox Content="Labels" IsChecked="{Binding PM3D.ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <CheckBox Content="Theta slice" IsChecked="{Binding PM3D.ShowSlicePlane}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <CheckBox Content="P slice" IsChecked="{Binding PM3D.ShowAxialLoadSlice}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                            <Button Content="Reset"
+                                    Command="{Binding PM3D.ResetCameraCommand}"
+                                    Style="{StaticResource CompactButtonStyle}"
+                                    MinHeight="24"
+                                    Padding="8,2"
+                                    Margin="0,0,8,2" />
+                            <TextBlock Text="{Binding PM3D.SelectedPmAngleLabel}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                            <TextBlock Text="{Binding PM3D.SelectedAxialLoadLabel}" Style="{StaticResource ChartConfigLabelStyle}" />
+                        </WrapPanel>
+                    </Border>
+                    <controls:InteractionViewport3D Grid.Row="2"
                                                    MinHeight="220"
                                                    Points="{Binding PM3D.SurfacePoints}"
                                                    DemandPoint="{Binding PM3D.DemandPoint}"

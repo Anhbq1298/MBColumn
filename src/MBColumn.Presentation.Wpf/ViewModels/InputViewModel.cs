@@ -39,6 +39,7 @@ public sealed class InputViewModel : ViewModelBase
     private SectionShapeType selectedSectionShape = SectionShapeType.Rectangular;
     private RebarLayoutType selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
     private MaterialLibraryType selectedMaterialLibrary = MaterialLibraryType.Europe;
+    private RebarSetLibraryType selectedRebarSetLibrary = RebarSetLibraryType.SingaporeMetric;
     private MaterialGradeOption? selectedConcreteGrade;
     private MaterialGradeOption? selectedSteelGrade;
     private double fc;
@@ -194,6 +195,12 @@ public sealed class InputViewModel : ViewModelBase
         new(MaterialLibraryType.Custom, "Custom")
     ];
 
+    public IReadOnlyList<RebarSetLibraryOption> RebarSetLibraries { get; } =
+    [
+        new(RebarSetLibraryType.SingaporeMetric, "Metric / Singapore T bars"),
+        new(RebarSetLibraryType.UnitedStatesImperial, "US / Imperial # bars")
+    ];
+
     public MaterialLibraryType SelectedMaterialLibrary
     {
         get => selectedMaterialLibrary;
@@ -205,6 +212,10 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(AreMaterialGradesEnabled));
             Raise(nameof(AreMaterialInputsEnabled));
             SelectDefaultMaterialGrades(applyValues: true);
+            if (value != MaterialLibraryType.Custom)
+            {
+                SetRebarSetLibrary(RebarSetLibraryFor(value), resetSelections: true);
+            }
         }
     }
 
@@ -212,6 +223,12 @@ public sealed class InputViewModel : ViewModelBase
     public IReadOnlyList<MaterialGradeOption> AvailableSteelGrades => SteelGradesFor(selectedMaterialLibrary);
     public bool AreMaterialGradesEnabled => selectedMaterialLibrary != MaterialLibraryType.Custom;
     public bool AreMaterialInputsEnabled => selectedMaterialLibrary == MaterialLibraryType.Custom;
+
+    public RebarSetLibraryType SelectedRebarSetLibrary
+    {
+        get => selectedRebarSetLibrary;
+        set => SetRebarSetLibrary(value, resetSelections: true);
+    }
 
     public MaterialGradeOption? SelectedConcreteGrade
     {
@@ -302,6 +319,21 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (linkSpacingMm == value) return;
             Set(ref linkSpacingMm, value);
+            Raise(nameof(LinkSpacing));
+            UpdateEc2LinkChecks();
+        }
+    }
+
+    public double LinkSpacing
+    {
+        get => UnitSystem == UnitSystem.Metric ? linkSpacingMm : linkSpacingMm / 25.4;
+        set
+        {
+            double valueMm = UnitSystem == UnitSystem.Metric ? value : value * 25.4;
+            if (Math.Abs(linkSpacingMm - valueMm) <= 1e-9) return;
+            linkSpacingMm = valueMm;
+            Raise();
+            Raise(nameof(LinkSpacingMm));
             UpdateEc2LinkChecks();
         }
     }
@@ -386,11 +418,16 @@ public sealed class InputViewModel : ViewModelBase
     public IReadOnlyList<string> LayoutPresets { get; } = ["4 corner bars", "Perimeter bars"];
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
-    public IReadOnlyList<RebarDefinition> AvailableBars => UnitSystem == UnitSystem.Metric ? metricBars.GetBars() : imperialBars.GetBars();
+    public IReadOnlyList<RebarDefinition> AvailableBars => ActiveRebarDatabase.GetBars();
     public string LengthLabel => UnitSystem == UnitSystem.Metric ? "mm" : "in";
     public string ForceLabel => UnitSystem == UnitSystem.Metric ? "kN" : "kip";
     public string MomentLabel => UnitSystem == UnitSystem.Metric ? "kN-m" : "kip-ft";
     public string StressLabel => UnitSystem == UnitSystem.Metric ? "MPa" : "ksi";
+    public string DemandForceHeader => $"P ({ForceLabel})";
+    public string DemandMomentXHeader => $"Mx ({MomentLabel})";
+    public string DemandMomentYHeader => $"My ({MomentLabel})";
+    public string RebarDiameterUnitLabel => selectedRebarSetLibrary == RebarSetLibraryType.SingaporeMetric ? "mm" : "in";
+    public string LinkSpacingUnitLabel => LengthLabel;
 
     public UnitSystem UnitSystem
     {
@@ -401,6 +438,7 @@ public sealed class InputViewModel : ViewModelBase
             unitSystem = value;
             if (unitSystem == UnitSystem.Metric) ApplyMetricDefaults(); else ApplyImperialDefaults();
             Raise(nameof(UnitSystem));
+            Raise(nameof(SelectedRebarSetLibrary));
             Raise(nameof(AvailableBars));
             Raise(nameof(AvailableStirrupBars));
             Raise(nameof(SelectedStirrupBar));
@@ -408,6 +446,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(ForceLabel));
             Raise(nameof(MomentLabel));
             Raise(nameof(StressLabel));
+            RaiseUnitDependentLabels();
             Raise(nameof(SelectedUnitSystem));
             UpdateSectionPreview();
         }
@@ -461,7 +500,7 @@ public sealed class InputViewModel : ViewModelBase
             if (width <= 0) width = isMetric ? 700 : 28;
             if (height <= 0) height = isMetric ? 700 : 28;
             if (cover <= 0) cover = isMetric ? 55 : 2.2;
-            if (string.IsNullOrEmpty(barSize)) barSize = isMetric ? "T25" : "#8";
+            if (string.IsNullOrEmpty(barSize)) barSize = DefaultMainBarName(selectedRebarSetLibrary);
             if (barCount <= 0) barCount = 28;
 
             selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
@@ -473,7 +512,7 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (diameter <= 0) diameter = isMetric ? 700 : 28;
             if (cover <= 0) cover = isMetric ? 55 : 2.2;
-            if (string.IsNullOrEmpty(barSize)) barSize = isMetric ? "T25" : "#8";
+            if (string.IsNullOrEmpty(barSize)) barSize = DefaultMainBarName(selectedRebarSetLibrary);
             if (barCount <= 0) barCount = 28;
             if (spacing <= 0) spacing = isMetric ? 150 : 6;
 
@@ -484,7 +523,7 @@ public sealed class InputViewModel : ViewModelBase
         else if (shape == SectionShapeType.Irregular)
         {
             if (cover <= 0) cover = isMetric ? 55 : 2.2;
-            if (string.IsNullOrEmpty(IrregularInput.BarSize)) IrregularInput.BarSize = isMetric ? "T25" : "#8";
+            if (string.IsNullOrEmpty(IrregularInput.BarSize)) IrregularInput.BarSize = DefaultMainBarName(selectedRebarSetLibrary);
             if (IrregularInput.Spacing <= 0) IrregularInput.Spacing = isMetric ? 150 : 6;
 
             selectedRebarLayoutType = RebarLayoutType.EqualSpacing;
@@ -681,6 +720,7 @@ public sealed class InputViewModel : ViewModelBase
                 Ec2Solver = SelectedEc2Solver,
                 IntegrationMethod = SectionIntegrationMethod.Polygon,
                 AlphaCc = AlphaCc,
+                RebarSetLibrary = selectedRebarSetLibrary,
                 Irregular = irregularDto
             };
         }
@@ -710,7 +750,7 @@ public sealed class InputViewModel : ViewModelBase
             {
                 circularCoords = IsCustomRebarCoordinates
                     ? BuildCustomRebarCoordinates()
-                    : rebarCoordinateBuilder.BuildCircular(Diameter, Cover, finalBarCount, BarSize, layoutLengthUnit, UnitSystem, stirrupDiameterMm);
+                    : rebarCoordinateBuilder.BuildCircular(Diameter, Cover, finalBarCount, BarSize, layoutLengthUnit, UnitSystem, stirrupDiameterMm, selectedRebarSetLibrary);
             }
             catch
             {
@@ -727,7 +767,8 @@ public sealed class InputViewModel : ViewModelBase
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
                 IntegrationMethod = SelectedIntegrationMethod,
-                AlphaCc = AlphaCc
+                AlphaCc = AlphaCc,
+                RebarSetLibrary = selectedRebarSetLibrary
             };
         }
 
@@ -737,7 +778,7 @@ public sealed class InputViewModel : ViewModelBase
         {
             generatedCoordinates = IsCustomRebarCoordinates
                 ? BuildCustomRebarCoordinates()
-                : rebarCoordinateBuilder.Build(layout, Width, Height, layoutLengthUnit, UnitSystem);
+                : rebarCoordinateBuilder.Build(layout, Width, Height, layoutLengthUnit, UnitSystem, selectedRebarSetLibrary);
         }
         catch
         {
@@ -759,7 +800,8 @@ public sealed class InputViewModel : ViewModelBase
             DesignCode = SelectedDesignCode,
             Ec2Solver = SelectedEc2Solver,
             IntegrationMethod = SelectedIntegrationMethod,
-            AlphaCc = AlphaCc
+            AlphaCc = AlphaCc,
+            RebarSetLibrary = selectedRebarSetLibrary
         };
     }
 
@@ -933,7 +975,7 @@ public sealed class InputViewModel : ViewModelBase
         IReadOnlyList<RebarCoordinateDto> bars;
         try
         {
-            bars = rebarCoordinateBuilder.Build(CreateRebarLayoutInput(), Width, Height, UnitSystem == UnitSystem.Metric ? LengthUnit.Millimeter : LengthUnit.Inch, UnitSystem);
+            bars = rebarCoordinateBuilder.Build(CreateRebarLayoutInput(), Width, Height, UnitSystem == UnitSystem.Metric ? LengthUnit.Millimeter : LengthUnit.Inch, UnitSystem, selectedRebarSetLibrary);
         }
         catch (Exception ex)
         {
@@ -1450,9 +1492,119 @@ public sealed class InputViewModel : ViewModelBase
 
     private static double RoundMaterialValue(double value) => Math.Round(value, 3);
 
+    private IRebarDatabase ActiveRebarDatabase => RebarDatabaseFor(selectedRebarSetLibrary);
+
+    private IRebarDatabase RebarDatabaseFor(RebarSetLibraryType library)
+        => library == RebarSetLibraryType.SingaporeMetric ? metricBars : imperialBars;
+
+    private static RebarSetLibraryType RebarSetLibraryFor(MaterialLibraryType library)
+        => library == MaterialLibraryType.America
+            ? RebarSetLibraryType.UnitedStatesImperial
+            : RebarSetLibraryType.SingaporeMetric;
+
+    private void SetRebarSetLibrary(RebarSetLibraryType library, bool resetSelections, bool updatePreview = true)
+    {
+        if (selectedRebarSetLibrary == library && !resetSelections) return;
+
+        var oldDb = ActiveRebarDatabase;
+        oldDb.TryGet(barSize, out var oldPrimaryBar);
+        oldDb.TryGet(IrregularInput.BarSize, out var oldIrregularBar);
+        var oldStirrupBar = selectedStirrupBar;
+
+        selectedRebarSetLibrary = library;
+
+        if (resetSelections)
+        {
+            barSize = SelectReplacementBarName(oldPrimaryBar, DefaultMainBarName(library));
+            if (!string.IsNullOrWhiteSpace(IrregularInput.BarSize))
+            {
+                IrregularInput.BarSize = SelectReplacementBarName(oldIrregularBar ?? oldPrimaryBar, DefaultMainBarName(library));
+            }
+
+            selectedStirrupBar = SelectReplacementBar(oldStirrupBar, DefaultStirrupBarName(library));
+            stirrupDiameterMm = selectedStirrupBar?.DiameterMm ?? DefaultStirrupDiameterMm(library);
+            SyncSideGlobalInputs();
+        }
+
+        Raise(nameof(SelectedRebarSetLibrary));
+        Raise(nameof(AvailableBars));
+        Raise(nameof(AvailableStirrupBars));
+        Raise(nameof(SelectedStirrupBar));
+        Raise(nameof(StirrupDiameterMm));
+        Raise(nameof(BarSize));
+        Raise(nameof(SelectedRebarSize));
+        RaiseUnitDependentLabels();
+
+        if (updatePreview)
+        {
+            UpdateSectionPreview();
+        }
+    }
+
+    private string SelectReplacementBarName(RebarDefinition? previous, string fallbackName)
+        => SelectReplacementBar(previous, fallbackName)?.Name
+           ?? ActiveRebarDatabase.GetBars().FirstOrDefault()?.Name
+           ?? fallbackName;
+
+    private RebarDefinition? SelectReplacementBar(RebarDefinition? previous, string fallbackName)
+    {
+        var bars = ActiveRebarDatabase.GetBars();
+        if (previous is not null && bars.Count > 0)
+        {
+            return bars.OrderBy(b => Math.Abs(b.DiameterMm - previous.DiameterMm)).First();
+        }
+
+        return ActiveRebarDatabase.TryGet(fallbackName, out var fallback)
+            ? fallback
+            : bars.FirstOrDefault();
+    }
+
+    private RebarSetLibraryType InferRebarSetLibrary(string? primaryBarSize, string? stirrupBarSize)
+    {
+        if (BelongsToDatabase(metricBars, primaryBarSize) || BelongsToDatabase(metricBars, stirrupBarSize))
+        {
+            return RebarSetLibraryType.SingaporeMetric;
+        }
+
+        if (BelongsToDatabase(imperialBars, primaryBarSize) || BelongsToDatabase(imperialBars, stirrupBarSize))
+        {
+            return RebarSetLibraryType.UnitedStatesImperial;
+        }
+
+        return unitSystem == UnitSystem.Metric
+            ? RebarSetLibraryType.SingaporeMetric
+            : RebarSetLibraryType.UnitedStatesImperial;
+    }
+
+    private static bool BelongsToDatabase(IRebarDatabase database, string? barSize)
+        => !string.IsNullOrWhiteSpace(barSize) && database.TryGet(barSize, out _);
+
+    private static string DefaultMainBarName(RebarSetLibraryType library)
+        => library == RebarSetLibraryType.SingaporeMetric ? "T25" : "#8";
+
+    private static string DefaultStirrupBarName(RebarSetLibraryType library)
+        => library == RebarSetLibraryType.SingaporeMetric ? "T10" : "#3";
+
+    private static double DefaultStirrupDiameterMm(RebarSetLibraryType library)
+        => library == RebarSetLibraryType.SingaporeMetric ? 10.0 : 9.525;
+
+    private void RaiseUnitDependentLabels()
+    {
+        Raise(nameof(DemandForceHeader));
+        Raise(nameof(DemandMomentXHeader));
+        Raise(nameof(DemandMomentYHeader));
+        Raise(nameof(RebarDiameterUnitLabel));
+        Raise(nameof(LinkSpacingUnitLabel));
+        Raise(nameof(LinkSpacing));
+        Raise(nameof(CurrentForceUnit));
+        Raise(nameof(CurrentMomentUnit));
+    }
+
     private void ApplyMetricDefaults()
     {
+        selectedRebarSetLibrary = RebarSetLibraryType.SingaporeMetric;
         width = 700; height = 700; diameter = 700; cover = 55; barSize = "T25"; barCount = 28;
+        IrregularInput.BarSize = "T25";
         layoutPreset = "All Sides Equal";
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
@@ -1475,13 +1627,15 @@ public sealed class InputViewModel : ViewModelBase
 
     private void ApplyImperialDefaults()
     {
+        selectedRebarSetLibrary = RebarSetLibraryType.UnitedStatesImperial;
         width = 28; height = 28; diameter = 28; cover = 2.2; barSize = "#8"; barCount = 28;
+        IrregularInput.BarSize = "#8";
         layoutPreset = "All Sides Equal";
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
         stirrupDiameterMm = 9.525; selectedStirrupBar = imperialBars.GetBars().FirstOrDefault();
-        linkSpacingMm = 200.0; innerLegsX = 0; innerLegsY = 0;
+        linkSpacingMm = 8.0 * 25.4; innerLegsX = 0; innerLegsY = 0;
         selectedMaterialLibrary = MaterialLibraryType.America;
         selectedConcreteGrade = AmericanConcreteGrades[1];
         selectedSteelGrade = AmericanSteelGrades[1];
@@ -1515,6 +1669,8 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SelectedMaterialLibrary)); Raise(nameof(AvailableConcreteGrades)); Raise(nameof(AvailableSteelGrades));
         Raise(nameof(SelectedConcreteGrade)); Raise(nameof(SelectedSteelGrade));
         Raise(nameof(AreMaterialGradesEnabled)); Raise(nameof(AreMaterialInputsEnabled));
+        Raise(nameof(SelectedRebarSetLibrary)); Raise(nameof(AvailableBars));
+        RaiseUnitDependentLabels();
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
         Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
@@ -1933,7 +2089,9 @@ public sealed class InputViewModel : ViewModelBase
         InnerLegsY = innerLegsY,
         Fc = fc, Fy = fy, Es = es,
         MaterialLibrary = selectedMaterialLibrary.ToString(),
-        BarSize = barSize, BarCount = barCount, Spacing = spacing,
+        BarSize = barSize,
+        RebarSetLibrary = selectedRebarSetLibrary.ToString(),
+        BarCount = barCount, Spacing = spacing,
         RebarLayoutType = selectedRebarLayoutType.ToString(),
         TopBarCount = RebarLayout.Top.BarCount,
         BottomBarCount = RebarLayout.Bottom.BarCount,
@@ -2000,8 +2158,11 @@ public sealed class InputViewModel : ViewModelBase
             SyncMaterialLibraryFromValues();
         }
 
+        selectedRebarSetLibrary = Enum.TryParse<RebarSetLibraryType>(s.RebarSetLibrary, out var rebarSetLibrary)
+            ? rebarSetLibrary
+            : InferRebarSetLibrary(s.BarSize, s.StirrupBarSize);
         barSize = s.BarSize; barCount = s.BarCount; spacing = s.Spacing;
-        var stirrupDb = unitSystem == UnitSystem.Metric ? metricBars : imperialBars;
+        var stirrupDb = ActiveRebarDatabase;
         if (!string.IsNullOrEmpty(s.StirrupBarSize) && stirrupDb.TryGet(s.StirrupBarSize, out var loadedStirrup))
         {
             selectedStirrupBar = loadedStirrup;
@@ -2322,6 +2483,7 @@ public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
 public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
 public sealed record SectionIntegrationMethodOption(SectionIntegrationMethod Method, string DisplayName);
 public sealed record MaterialLibraryOption(MaterialLibraryType Library, string DisplayName);
+public sealed record RebarSetLibraryOption(RebarSetLibraryType Library, string DisplayName);
 
 public enum MaterialLibraryType
 {

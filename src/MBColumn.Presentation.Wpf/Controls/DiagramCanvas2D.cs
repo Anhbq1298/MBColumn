@@ -120,7 +120,21 @@ public class DiagramCanvas2D : FrameworkElement
     }
 
     private Rect GetPlotRect()
-        => new(76, 62, Math.Max(10, ActualWidth - 116), Math.Max(10, ActualHeight - 126));
+    {
+        const double leftMargin = 76;
+        const double topMargin = 52;
+        const double bottomMargin = 56;
+        var xAxisLabelWidth = string.IsNullOrWhiteSpace(XAxisLabel)
+            ? 0
+            : CreateText(XAxisLabel, 12, Brushes.Black, FontWeights.SemiBold).Width;
+        var rightMargin = Math.Max(74, xAxisLabelWidth + 18);
+
+        return new Rect(
+            leftMargin,
+            topMargin,
+            Math.Max(10, ActualWidth - leftMargin - rightMargin),
+            Math.Max(10, ActualHeight - topMargin - bottomMargin));
+    }
 
     private ChartTransformHelper BuildTransform(IReadOnlyList<ControlPointDto> visiblePoints, Rect plot)
     {

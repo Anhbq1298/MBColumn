@@ -297,6 +297,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **ForceUnit** | Enumeration defining states/types for ForceUnit. | `ForceUnit.cs` |
 | `enum` | **LengthUnit** | Enumeration defining states/types for LengthUnit. | `LengthUnit.cs` |
 | `enum` | **MomentUnit** | Enumeration defining states/types for MomentUnit. | `MomentUnit.cs` |
+| `enum` | **RebarSetLibraryType** | Enumeration defining states/types for RebarSetLibraryType. | `RebarSetLibraryType.cs` |
 | `enum` | **RebarUnitType** | Enumeration defining states/types for RebarUnitType. | `RebarUnitType.cs` |
 | `enum` | **SectionIntegrationMethod** | Enumeration defining states/types for SectionIntegrationMethod. | `SectionIntegrationMethod.cs` |
 | `enum` | **SectionShapeType** | Enumeration defining states/types for SectionShapeType. | `SectionShapeType.cs` |
@@ -641,6 +642,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ProjectGroupOptionViewModel** | Represents the ProjectGroupOptionViewModel class. Key properties: GroupId, GroupName, CreateGroup, DisplayName. | `EtabsImportViewModel.cs` |
 | `record` | **RebarLayoutTypeOption** | Represents the RebarLayoutTypeOption record. | `RebarLayoutTypeOption.cs` |
 | `class` | **RebarLayoutViewModel** | Represents the RebarLayoutViewModel class. Key properties: Top, Bottom, Left, Right. | `RebarLayoutViewModel.cs` |
+| `record` | **RebarSetLibraryOption** | Represents the RebarSetLibraryOption record. | `InputViewModel.cs` |
 | `class` | **RebarSideInputViewModel** | Represents the RebarSideInputViewModel class. Key methods: ToDto, SetGlobalInputs, SetBarCountSilently, SetWarning. Key properties: Name, IsBarSizeEditable, IsCoverEditable, BarCount. | `RebarSideInputViewModel.cs` |
 | `class` | **ReportBlockViewModel** | Represents the ReportBlockViewModel class. Key properties: BlockType, Title, EstimatedHeightMm, KeepTogether. | `A4ReportModels.cs` |
 | `record` | **ReportDemandCaseRowViewModel** | Represents the ReportDemandCaseRowViewModel record. Key properties: IsFailing. | `ReportTabViewModel.cs` |

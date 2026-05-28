@@ -477,24 +477,33 @@
                                                             Width="110"
                                                             MinWidth="80"
                                                             ElementStyle="{StaticResource LeftAlignText}" />
-                                        <DataGridTextColumn Header="P"
-                                                            Binding="{Binding Pu, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                        <DataGridTextColumn Binding="{Binding Pu, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             MinWidth="64"
                                                             ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                        <DataGridTextColumn Header="Mx"
-                                                            Binding="{Binding Mux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Mux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             MinWidth="64"
                                                             ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
-                                        <DataGridTextColumn Header="My"
-                                                            Binding="{Binding Muy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Muy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             MinWidth="64"
                                                             ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}" />
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Header="Source"
                                                             Binding="{Binding Source, UpdateSourceTrigger=LostFocus}"
                                                             Width="75"
@@ -877,6 +886,21 @@
                         <StackPanel>
                             <TextBlock Text="1 — Longitudinal Reinforcement"
                                        Style="{StaticResource InputSubsectionTitleTextStyle}" />
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"
+                                            Margin="0,0,8,0">
+                                    <TextBlock Text="Rebar set library"
+                                               Style="{StaticResource FieldLabelTextStyle}" />
+                                    <ComboBox ItemsSource="{Binding RebarSetLibraries}"
+                                              DisplayMemberPath="DisplayName"
+                                              SelectedValuePath="Library"
+                                              SelectedValue="{Binding SelectedRebarSetLibrary}" />
+                                </StackPanel>
+                            </Grid>
                             <!-- 1. Algorithmic / Shape-Specific Top Panel (Visible for Rectangular/Circular) -->
                             <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                 <Grid Margin="0,0,0,10">
@@ -1259,7 +1283,7 @@
                                                Style="{StaticResource FieldLabelTextStyle}" />
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
-                                               Text="mm"
+                                               Text="{Binding RebarDiameterUnitLabel}"
                                                Style="{StaticResource UnitTextStyle}" />
                                     <ComboBox Grid.Row="1"
                                               Grid.Column="0"
@@ -1284,12 +1308,12 @@
                                                Style="{StaticResource FieldLabelTextStyle}" />
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
-                                               Text="mm"
+                                               Text="{Binding LinkSpacingUnitLabel}"
                                                Style="{StaticResource UnitTextStyle}" />
                                     <TextBox Grid.Row="1"
                                              Grid.Column="0"
                                              Grid.ColumnSpan="2"
-                                             Text="{Binding LinkSpacingMm, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding LinkSpacing, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
                             </Grid>
 

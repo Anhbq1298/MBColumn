@@ -10,7 +10,8 @@ public interface IRebarCoordinateBuilderService
         double width,
         double height,
         LengthUnit lengthUnit,
-        UnitSystem unitSystem);
+        UnitSystem unitSystem,
+        RebarSetLibraryType? rebarSetLibrary = null);
 
     IReadOnlyList<RebarCoordinateDto> BuildCircular(
         double diameter,
@@ -19,5 +20,6 @@ public interface IRebarCoordinateBuilderService
         string barSize,
         LengthUnit lengthUnit,
         UnitSystem unitSystem,
-        double stirrupDiameterMm = 0.0);
+        double stirrupDiameterMm = 0.0,
+        RebarSetLibraryType? rebarSetLibrary = null);
 }

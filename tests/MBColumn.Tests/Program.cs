@@ -55,9 +55,12 @@ var tests = new List<(string Name, Action Test)>
     ("Section preview perimeter bars", TestSectionPreviewPerimeterBars),
     ("Section preview invalid geometry", TestSectionPreviewInvalidGeometry),
     ("Section preview unit labels", TestSectionPreviewUnitLabels),
+    ("Unit system dependent labels update", TestUnitSystemDependentLabelsUpdate),
     ("Material library metric presets", TestMaterialLibraryMetricPresets),
     ("Material library imperial presets", TestMaterialLibraryImperialPresets),
     ("Material library custom unlocks inputs", TestMaterialLibraryCustomUnlocksInputs),
+    ("Material library updates rebar set", TestMaterialLibraryUpdatesRebarSet),
+    ("Rebar set library can change independently", TestRebarSetLibraryCanChangeIndependently),
     ("PM angle 0 deg axis mapping", TestPmAngleZeroAxisMapping),
     ("PM angle 90 deg axis mapping", TestPmAngleNinetyAxisMapping),
     ("Mx-My diagram axis mapping", TestMxMyDiagramAxisMapping),
@@ -481,6 +484,35 @@ static void TestSectionPreviewUnitLabels()
     IsTrue(vm.RebarPreviewLabel.Contains("8-#6"));
 }
 
+static void TestUnitSystemDependentLabelsUpdate()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase());
+
+    IsTrue(vm.LengthLabel == "mm");
+    IsTrue(vm.ForceLabel == "kN");
+    IsTrue(vm.MomentLabel == "kN-m");
+    IsTrue(vm.StressLabel == "MPa");
+    IsTrue(vm.DemandForceHeader == "P (kN)");
+    IsTrue(vm.DemandMomentXHeader == "Mx (kN-m)");
+    IsTrue(vm.DemandMomentYHeader == "My (kN-m)");
+    IsTrue(vm.RebarDiameterUnitLabel == "mm");
+    IsTrue(vm.LinkSpacingUnitLabel == "mm");
+    AreClose(200.0, vm.LinkSpacing, 1e-12);
+
+    vm.UnitSystem = UnitSystem.Imperial;
+
+    IsTrue(vm.LengthLabel == "in");
+    IsTrue(vm.ForceLabel == "kip");
+    IsTrue(vm.MomentLabel == "kip-ft");
+    IsTrue(vm.StressLabel == "ksi");
+    IsTrue(vm.DemandForceHeader == "P (kip)");
+    IsTrue(vm.DemandMomentXHeader == "Mx (kip-ft)");
+    IsTrue(vm.DemandMomentYHeader == "My (kip-ft)");
+    IsTrue(vm.RebarDiameterUnitLabel == "in");
+    IsTrue(vm.LinkSpacingUnitLabel == "in");
+    AreClose(8.0, vm.LinkSpacing, 1e-12);
+}
+
 static void TestMaterialLibraryMetricPresets()
 {
     var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
@@ -562,6 +594,49 @@ static void TestMaterialLibraryCustomUnlocksInputs()
     AreClose(30.0, vm.Fc, 1e-12);
     AreClose(500.0, vm.Fy, 1e-12);
     AreClose(200000.0, vm.Es, 1e-12);
+}
+
+static void TestMaterialLibraryUpdatesRebarSet()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
+    {
+        UnitSystem = UnitSystem.Metric
+    };
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.America;
+
+    IsTrue(vm.SelectedRebarSetLibrary == RebarSetLibraryType.UnitedStatesImperial);
+    IsTrue(vm.AvailableBars.Any(b => b.Name == "#8"));
+    IsTrue(vm.BarSize.StartsWith("#", StringComparison.Ordinal));
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.Europe;
+
+    IsTrue(vm.SelectedRebarSetLibrary == RebarSetLibraryType.SingaporeMetric);
+    IsTrue(vm.AvailableBars.Any(b => b.Name == "T25"));
+    IsTrue(vm.BarSize.StartsWith("T", StringComparison.Ordinal));
+}
+
+static void TestRebarSetLibraryCanChangeIndependently()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
+    {
+        UnitSystem = UnitSystem.Metric
+    };
+
+    vm.SelectedMaterialLibrary = MaterialLibraryType.Europe;
+    vm.SelectedRebarSetLibrary = RebarSetLibraryType.UnitedStatesImperial;
+
+    IsTrue(vm.SelectedMaterialLibrary == MaterialLibraryType.Europe);
+    IsTrue(vm.SelectedRebarSetLibrary == RebarSetLibraryType.UnitedStatesImperial);
+    IsTrue(vm.BarSize.StartsWith("#", StringComparison.Ordinal));
+    AreClose(30.0, vm.Fc, 1e-12);
+    AreClose(500.0, vm.Fy, 1e-12);
+
+    var dto = vm.ToDto();
+    var coords = dto.RebarCoordinates ?? [];
+    IsTrue(dto.RebarSetLibrary == RebarSetLibraryType.UnitedStatesImperial);
+    IsTrue(coords.Count == 28);
+    IsTrue(coords.All(r => r.BarSizeLabel.StartsWith("#", StringComparison.Ordinal)));
 }
 
 static void TestPmAngleZeroAxisMapping()
@@ -3329,7 +3404,7 @@ sealed class StubEtabsColumnImportService : MBColumn.Application.Services.Etabs.
 {
     public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> GetCandidateColumns(MBColumn.Domain.Enums.UnitSystem _)
         => [new("pier:P1:Story1", "P1", "Story1", "P1", "P1|Story1", "CIRC800", "C40",
-                MBColumn.Domain.Enums.SectionShapeType.Irregular, 800, 800, 0, "", "Ready")];
+                MBColumn.Domain.Enums.SectionShapeType.Irregular, 800, 800, 0, 0, "", "Ready")];
     public IReadOnlyList<string> GetLoadCombinations() => ["1.2D+1.6L"];
 }
 

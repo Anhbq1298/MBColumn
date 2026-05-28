@@ -16,9 +16,10 @@ public sealed class RebarCoordinateBuilderService(
         double width,
         double height,
         LengthUnit lengthUnit,
-        UnitSystem unitSystem)
+        UnitSystem unitSystem,
+        RebarSetLibraryType? rebarSetLibrary = null)
     {
-        var barDb = unitSystem == UnitSystem.Metric ? metricBars : imperialBars;
+        var barDb = ResolveBarDatabase(unitSystem, rebarSetLibrary);
         if (!barDb.TryGet(layout.BarSize, out var bar))
         {
             throw new InvalidOperationException($"Unknown bar size '{layout.BarSize}'.");
@@ -222,9 +223,10 @@ public sealed class RebarCoordinateBuilderService(
         string barSize,
         LengthUnit lengthUnit,
         UnitSystem unitSystem,
-        double stirrupDiameterMm = 0.0)
+        double stirrupDiameterMm = 0.0,
+        RebarSetLibraryType? rebarSetLibrary = null)
     {
-        var barDb = unitSystem == UnitSystem.Metric ? metricBars : imperialBars;
+        var barDb = ResolveBarDatabase(unitSystem, rebarSetLibrary);
         if (!barDb.TryGet(barSize, out var bar))
         {
             throw new InvalidOperationException($"Unknown bar size '{barSize}'.");
@@ -263,4 +265,12 @@ public sealed class RebarCoordinateBuilderService(
 
         return bars;
     }
+
+    private IRebarDatabase ResolveBarDatabase(UnitSystem unitSystem, RebarSetLibraryType? rebarSetLibrary)
+        => rebarSetLibrary switch
+        {
+            RebarSetLibraryType.SingaporeMetric => metricBars,
+            RebarSetLibraryType.UnitedStatesImperial => imperialBars,
+            _ => unitSystem == UnitSystem.Metric ? metricBars : imperialBars
+        };
 }

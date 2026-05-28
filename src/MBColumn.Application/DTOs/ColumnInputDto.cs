@@ -37,5 +37,6 @@ public sealed record ColumnInputDto(
     public SectionIntegrationMethod IntegrationMethod { get; init; } = SectionIntegrationMethod.Fiber;
     public double AlphaCc { get; init; } = 0.85;
     public IrregularSectionInputDto? Irregular { get; init; }
+    public RebarSetLibraryType? RebarSetLibrary { get; init; }
 }
 

@@ -22,6 +22,7 @@ public sealed class ColumnInputSnapshot
     public string MaterialLibrary { get; set; } = "";
 
     public string BarSize { get; set; } = "T25";
+    public string RebarSetLibrary { get; set; } = "";
     public int BarCount { get; set; } = 28;
     public double Spacing { get; set; } = 150;
     public double StirrupDiameterMm { get; set; } = 10.0;

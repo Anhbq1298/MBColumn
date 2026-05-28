@@ -418,6 +418,24 @@ public sealed class MainWindowViewModel : ViewModelBase
             ClearResults();
             Report.Clear();
             Explorer.ClearSectionStatuses();
+
+            // Load statuses in background thread to keep UI perfectly smooth
+            var columns = projectService.GetColumns();
+            await Task.Run(() =>
+            {
+                foreach (var col in columns)
+                {
+                    var persisted = projectService.LoadColumnResult(col.Id);
+                    if (persisted is not null)
+                    {
+                        System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+                        {
+                            Explorer.SetSectionStatus(col.Id, SectionStatus.Calculated);
+                        });
+                    }
+                }
+            });
+
             IsCalculationOutdated = false;
             SelectedMainTabIndex = 0;
             RaiseResultStateProperties();

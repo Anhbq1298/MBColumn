@@ -44,6 +44,8 @@ public static class AxisRenderer2D
             }
         }
 
+        var lastXLabel = double.NegativeInfinity;
+        const double minXLabelSpacing = 54;
         foreach (double x in xTicks.MajorTicks)
         {
             var p0 = transform.ToScreen(x, transform.MinY);
@@ -53,7 +55,11 @@ public static class AxisRenderer2D
             // Major tick and label
             var pTick = transform.ToScreen(x, transform.AxisXValue);
             dc.DrawLine(tickPen, new Point(pTick.X, axis.Y - 5), new Point(pTick.X, axis.Y + 5));
-            DrawText(dc, AxisTickService.Format(x), 10, new Point(pTick.X - 14, axis.Y + 8));
+            if (pTick.X - lastXLabel >= minXLabelSpacing || Math.Abs(x) < 1e-9)
+            {
+                DrawText(dc, AxisTickService.Format(x), 10, new Point(pTick.X - 14, axis.Y + 8));
+                lastXLabel = pTick.X;
+            }
         }
 
         foreach (double x in xTicks.MinorTicks)
@@ -62,6 +68,8 @@ public static class AxisRenderer2D
             dc.DrawLine(minorTickPen, new Point(p.X, axis.Y - 2), new Point(p.X, axis.Y + 2));
         }
 
+        var lastYLabel = double.PositiveInfinity;
+        const double minYLabelSpacing = 18;
         foreach (double y in yTicks.MajorTicks)
         {
             var p0 = transform.ToScreen(transform.MinX, y);
@@ -71,7 +79,11 @@ public static class AxisRenderer2D
             // Major tick and label
             var pTick = transform.ToScreen(transform.AxisYValue, y);
             dc.DrawLine(tickPen, new Point(axis.X - 5, pTick.Y), new Point(axis.X + 5, pTick.Y));
-            DrawText(dc, AxisTickService.Format(y), 10, new Point(axis.X + 8, pTick.Y - 8));
+            if (lastYLabel - pTick.Y >= minYLabelSpacing || Math.Abs(y) < 1e-9)
+            {
+                DrawText(dc, AxisTickService.Format(y), 10, new Point(axis.X + 8, pTick.Y - 8));
+                lastYLabel = pTick.Y;
+            }
         }
 
         foreach (double y in yTicks.MinorTicks)

@@ -478,9 +478,10 @@ public sealed class DiagramDataService
 
     private static IReadOnlyList<ControlPointDto> BuildMxMyBoundaryAtDisplayP(IReadOnlyList<ControlPoint> points, double selectedPDisplay, bool nominal)
     {
-        if (points.Count == 0) return [];
+        var filtered = points.Where(p => IsNominal(p) == nominal).ToList();
+        if (filtered.Count == 0) return [];
 
-        var boundary = points
+        var boundary = filtered
             .GroupBy(p => p.GroupKey)
             .Select(g => InterpolateDisplayBoundaryPoint(g.OrderBy(p => nominal ? p.NominalDisplayP : p.DisplayP).ToList(), selectedPDisplay, nominal))
             .Where(p => p is not null)

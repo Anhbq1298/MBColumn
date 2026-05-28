@@ -107,7 +107,7 @@ public sealed class ColumnCalculationService(
         {
             double diameterMm = units.LengthToMm(input.Diameter, input.LengthUnit);
             var coordinateList = input.RebarCoordinates
-                ?? rebarCoordinates.BuildCircular(input.Diameter, input.Cover, input.BarCount, input.BarSize, input.LengthUnit, input.UnitSystem);
+                ?? rebarCoordinates.BuildCircular(input.Diameter, input.Cover, input.BarCount, input.BarSize, input.LengthUnit, input.UnitSystem, rebarSetLibrary: input.RebarSetLibrary);
             var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
             var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
             section = new CircularSection(diameterMm, layout);
@@ -121,7 +121,7 @@ public sealed class ColumnCalculationService(
             double widthMm = units.LengthToMm(input.Width, input.LengthUnit);
             double heightMm = units.LengthToMm(input.Height, input.LengthUnit);
             var coordinateList = input.RebarCoordinates
-                ?? rebarCoordinates.Build(CreateLayoutInput(input), input.Width, input.Height, input.LengthUnit, input.UnitSystem);
+                ?? rebarCoordinates.Build(CreateLayoutInput(input), input.Width, input.Height, input.LengthUnit, input.UnitSystem, input.RebarSetLibrary);
             var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
             var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
             section = new RectangularSection(widthMm, heightMm, layout);
