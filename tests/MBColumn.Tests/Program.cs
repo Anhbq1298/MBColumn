@@ -56,6 +56,7 @@ var tests = new List<(string Name, Action Test)>
     ("Section preview invalid geometry", TestSectionPreviewInvalidGeometry),
     ("Section preview unit labels", TestSectionPreviewUnitLabels),
     ("Unit system dependent labels update", TestUnitSystemDependentLabelsUpdate),
+    ("Circular section excludes side layouts", TestCircularSectionExcludesSideLayouts),
     ("Material library metric presets", TestMaterialLibraryMetricPresets),
     ("Material library imperial presets", TestMaterialLibraryImperialPresets),
     ("Material library custom unlocks inputs", TestMaterialLibraryCustomUnlocksInputs),
@@ -511,6 +512,33 @@ static void TestUnitSystemDependentLabelsUpdate()
     IsTrue(vm.RebarDiameterUnitLabel == "in");
     IsTrue(vm.LinkSpacingUnitLabel == "in");
     AreClose(8.0, vm.LinkSpacing, 1e-12);
+}
+
+static void TestCircularSectionExcludesSideLayouts()
+{
+    var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase())
+    {
+        SelectedRebarLayoutType = RebarLayoutType.SidesDifferent
+    };
+
+    vm.SelectedSectionShape = SectionShapeType.Circular;
+
+    IsTrue(vm.SelectedRebarLayoutType == RebarLayoutType.EqualSpacing);
+    IsTrue(vm.RebarLayoutTypes.Any(o => o.LayoutType == RebarLayoutType.EqualSpacing));
+    IsTrue(vm.RebarLayoutTypes.Any(o => o.LayoutType == RebarLayoutType.CustomCoordinates));
+    IsFalse(vm.RebarLayoutTypes.Any(o => o.LayoutType == RebarLayoutType.SidesDifferent));
+    IsFalse(vm.RebarLayoutTypes.Any(o => o.LayoutType == RebarLayoutType.AllSidesEqual));
+
+    var stale = vm.ToSnapshot();
+    stale.SectionShape = SectionShapeType.Circular.ToString();
+    stale.RebarLayoutType = RebarLayoutType.SidesDifferent.ToString();
+
+    var loaded = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase());
+    loaded.LoadFromSnapshot(stale);
+
+    IsTrue(loaded.SelectedSectionShape == SectionShapeType.Circular);
+    IsTrue(loaded.SelectedRebarLayoutType == RebarLayoutType.EqualSpacing);
+    IsFalse(loaded.RebarLayoutTypes.Any(o => o.LayoutType == RebarLayoutType.SidesDifferent));
 }
 
 static void TestMaterialLibraryMetricPresets()

@@ -545,6 +545,35 @@ public sealed class InputViewModel : ViewModelBase
             GenerateIrregularRebars();
         }
     }
+
+    private static RebarLayoutType CoerceRebarLayoutForShape(RebarLayoutType layoutType, SectionShapeType shape)
+    {
+        if (shape == SectionShapeType.Circular)
+        {
+            return layoutType == RebarLayoutType.CustomCoordinates
+                ? RebarLayoutType.CustomCoordinates
+                : RebarLayoutType.EqualSpacing;
+        }
+
+        if (shape == SectionShapeType.Irregular)
+        {
+            return layoutType == RebarLayoutType.CustomCoordinates
+                ? RebarLayoutType.CustomCoordinates
+                : RebarLayoutType.EqualSpacing;
+        }
+
+        return layoutType;
+    }
+
+    private static string RebarLayoutDisplayName(RebarLayoutType layoutType)
+        => layoutType switch
+        {
+            RebarLayoutType.AllSidesEqual => "All Sides Equal",
+            RebarLayoutType.EqualSpacing => "Equal Spacing",
+            RebarLayoutType.CustomCoordinates => "Custom Coordinates",
+            _ => "Sides Different"
+        };
+
     public bool IsRectangularSection
     {
         get => SelectedSectionShape == SectionShapeType.Rectangular;
@@ -567,16 +596,11 @@ public sealed class InputViewModel : ViewModelBase
         get => selectedRebarLayoutType;
         set
         {
+            value = CoerceRebarLayoutForShape(value, SelectedSectionShape);
             if (selectedRebarLayoutType == value) return;
             selectedRebarLayoutType = value;
-            layoutPreset = value switch
-            {
-                RebarLayoutType.AllSidesEqual => "All Sides Equal",
-                RebarLayoutType.EqualSpacing => "Equal Spacing",
-                RebarLayoutType.CustomCoordinates => "Custom Coordinates",
-                _ => "Sides Different"
-            };
-            if (selectedRebarLayoutType == RebarLayoutType.SidesDifferent)
+            layoutPreset = RebarLayoutDisplayName(value);
+            if (selectedRebarLayoutType == RebarLayoutType.SidesDifferent && IsRectangularSection)
             {
                 SeedSideCountsFromTotalBars();
             }
@@ -601,6 +625,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(IsAlgorithmicRebarCoordinates));
             Raise(nameof(IsRebarCoordinatesEditable));
             Raise(nameof(ShowTotalBarsInput));
+            Raise(nameof(IsRectangularEqualSpacingLayout));
             UpdateSectionPreview();
         }
     }
@@ -1672,7 +1697,9 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(SelectedRebarSetLibrary)); Raise(nameof(AvailableBars));
         RaiseUnitDependentLabels();
         Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(SelectedRebarSize)); Raise(nameof(NumberOfBars)); Raise(nameof(SelectedRebarLayout));
-        Raise(nameof(SelectedRebarLayoutType)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout));
+        Raise(nameof(RebarLayoutTypes)); Raise(nameof(SelectedRebarLayoutType));
+        Raise(nameof(IsEqualSpacingLayout)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(IsRectangularEqualSpacingLayout));
+        Raise(nameof(ShowTotalBarsInput)); Raise(nameof(IsCustomRebarCoordinates)); Raise(nameof(IsRebarCoordinatesEditable));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
         Raise(nameof(SelectedStirrupBar)); Raise(nameof(AvailableStirrupBars)); Raise(nameof(StirrupDiameterMm));
@@ -2180,7 +2207,10 @@ public sealed class InputViewModel : ViewModelBase
         linkSpacingMm = s.LinkSpacingMm > 0 ? s.LinkSpacingMm : 200.0;
         innerLegsX = Math.Max(0, s.InnerLegsX);
         innerLegsY = Math.Max(0, s.InnerLegsY);
-        selectedRebarLayoutType = Enum.TryParse<RebarLayoutType>(s.RebarLayoutType, out var rlt) ? rlt : RebarLayoutType.AllSidesEqual;
+        selectedRebarLayoutType = CoerceRebarLayoutForShape(
+            Enum.TryParse<RebarLayoutType>(s.RebarLayoutType, out var rlt) ? rlt : RebarLayoutType.AllSidesEqual,
+            selectedSectionShape);
+        layoutPreset = RebarLayoutDisplayName(selectedRebarLayoutType);
         pu = s.Pu; mux = s.Mux; muy = s.Muy;
         selectedPmAngleDegrees = s.PmAngleDegrees;
         selectedAxialLoad = s.AxialLoad;
