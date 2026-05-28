@@ -221,11 +221,11 @@
                     <StackPanel>
                         <TextBlock Text="Shear Check (EC2 §6.2)"
                                    Style="{StaticResource SectionTitleTextStyle}"
-                                   Margin="0,0,0,6" />
+                                   Margin="0,0,0,4" />
 
-                        <!-- Governing status badge -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <TextBlock Text="Governing: " Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" />
+                        <!-- Overall status badge (only when demand is non-zero) -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
+                                    Visibility="{Binding HasDemand, Converter={StaticResource BoolToVisibilityConverter}}">
                             <Border Padding="10,2" CornerRadius="6">
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -250,17 +250,90 @@
                                     </TextBlock.Style>
                                 </TextBlock>
                             </Border>
-                            <TextBlock Text="{Binding GoverningUtilText, StringFormat='  Util = {0}'}"
+                            <TextBlock Text="{Binding GoverningUtilText, StringFormat='  UR = {0}'}"
                                        Style="{StaticResource MetricValueStyle}" VerticalAlignment="Center" />
                         </StackPanel>
 
-                        <!-- Per-direction table -->
+                        <!-- Helper text when no demand -->
+                        <TextBlock FontSize="10" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="0,0,0,6"
+                                   Visibility="{Binding HasDemand, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            No shear demand entered — capacity shown for reference.
+                            Enter Vux / Vuy in the load case table.
+                        </TextBlock>
+
+                        <!-- Shared helper for 2-col row -->
+                        <!-- Step 1 — Concrete capacity without links -->
+                        <TextBlock Text="Step 1 — Without Reinforcement (VRd,c)"
+                                   FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="0,4,0,4" />
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="Auto" MinWidth="64" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="X dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Y dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="d (mm)" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DEffXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding DEffYText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="k" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding KFactorXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding KFactorYText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="VRd,c" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding VRdcXText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding VRdcYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Links?" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LinksReqXText}" FontSize="10">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLinksReqX}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentOrangeBrush}" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding LinksReqYText}" FontSize="10">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLinksReqY}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentOrangeBrush}" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <!-- Step 2 — Capacity with links -->
+                        <TextBlock Text="Step 2 — With Reinforcement (VRd,s / VRd,max)"
+                                   FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryNavyBrush}"
+                                   Margin="0,8,0,4" />
+                        <TextBlock Text="No link data provided."
+                                   FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                                   Visibility="{Binding HasLinks, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                        <Grid Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="64" />
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
@@ -270,49 +343,54 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-
-                            <!-- Column headers -->
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="" />
-                            <TextBlock Grid.Row="0" Grid.Column="2" Text="X direction" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" />
-                            <TextBlock Grid.Row="0" Grid.Column="4" Text="Y direction" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" />
-
-                            <!-- VEd -->
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="VEd" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding VEdXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding VEdYText}" Style="{StaticResource MetricValueStyle}" />
-
-                            <!-- VRd,c -->
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="VRd,c" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding VRdcXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="4" Text="{Binding VRdcYText}" Style="{StaticResource MetricValueStyle}" />
-
-                            <!-- VRd,s -->
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="X dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Y dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Asw/s" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AswSXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AswSYText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="cot θ" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CotThetaXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CotThetaYText}" Style="{StaticResource MetricValueStyle}" />
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="VRd,s" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding VRdsXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="3" Grid.Column="4" Text="{Binding VRdsYText}" Style="{StaticResource MetricValueStyle}" />
-
-                            <!-- VRd,max -->
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding VRdsXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding VRdsYText}" Style="{StaticResource MetricValueStyle}" />
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="VRd,max" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding VRdMaxXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="4" Grid.Column="4" Text="{Binding VRdMaxYText}" Style="{StaticResource MetricValueStyle}" />
-
-                            <!-- VRd (governing) -->
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding VRdMaxXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding VRdMaxYText}" Style="{StaticResource MetricValueStyle}" />
                             <TextBlock Grid.Row="5" Grid.Column="0" Text="VRd" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding VRdXText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Row="5" Grid.Column="4" Text="{Binding VRdYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding VRdXText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding VRdYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                        </Grid>
 
-                            <!-- Utilisation -->
-                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Util." Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="6" Grid.Column="2" Text="{Binding UtilXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="6" Grid.Column="4" Text="{Binding UtilYText}" Style="{StaticResource MetricValueStyle}" />
-
-                            <!-- Status + cot θ -->
-                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Status" Style="{StaticResource MetricLabelStyle}" />
-                            <StackPanel Grid.Row="7" Grid.Column="2" Orientation="Vertical">
-                                <TextBlock Text="{Binding StatusXText}" FontWeight="Bold">
+                        <!-- Utilisation (only when demand is non-zero) -->
+                        <StackPanel Visibility="{Binding HasDemand, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Utilisation"
+                                       FontSize="10.5" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       Margin="0,8,0,4" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="64" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="X dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Y dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="VEd" Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VEdXText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding VEdYText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="UR" Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding UtilXText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding UtilYText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Status" Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding StatusXText}" FontWeight="Bold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
@@ -324,11 +402,7 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock Text="{Binding CotThetaXText}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10" />
-                                <TextBlock Text="{Binding LinksReqXText}" Foreground="{DynamicResource AccentOrangeBrush}" FontSize="10" />
-                            </StackPanel>
-                            <StackPanel Grid.Row="7" Grid.Column="4" Orientation="Vertical">
-                                <TextBlock Text="{Binding StatusYText}" FontWeight="Bold">
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding StatusYText}" FontWeight="Bold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
@@ -340,15 +414,13 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock Text="{Binding CotThetaYText}" Foreground="{DynamicResource TextMutedBrush}" FontSize="10" />
-                                <TextBlock Text="{Binding LinksReqYText}" Foreground="{DynamicResource AccentOrangeBrush}" FontSize="10" />
-                            </StackPanel>
-                        </Grid>
+                            </Grid>
+                        </StackPanel>
 
-                        <TextBlock Text="{Binding ForceUnit, StringFormat='All forces in {0}. (EC2 §6.2, γc = 1.5, γs = 1.15)'}"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   Margin="0,8,0,0" />
+                        <TextBlock FontSize="9.5" Foreground="{DynamicResource TextMutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap">
+                            <Run Text="Forces in " /><Run Text="{Binding ForceUnit}" FontWeight="SemiBold" />
+                            <Run Text=" · EC2 EN 1992-1-1:2004 §6.2 · γc = 1.50, γs = 1.15 · cover = 60 mm" />
+                        </TextBlock>
                     </StackPanel>
                 </Border>
 

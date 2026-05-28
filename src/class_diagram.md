@@ -12,6 +12,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **CapacityDebugPointDto** | Data transfer object carrying CapacityDebugPoint data. | `CapacityDebugPointDto.cs` |
 | `record` | **ChartReferenceLineDto** | Data transfer object carrying ChartReferenceLine data. | `ChartReferenceLineDto.cs` |
 | `record` | **ColumnInputDto** | Data transfer object carrying ColumnInput data. Key properties: LoadCases, RebarLayoutType, SectionShape, Diameter. | `ColumnInputDto.cs` |
+| `record` | **ComplianceCheck** | /// A single pass/fail code-compliance check item. /// | `RebarComplianceResult.cs` |
 | `record` | **ControlPointDto** | Data transfer object carrying ControlPoint data. Key properties: IsSpecialPoint. | `ControlPointDto.cs` |
 | `record` | **ControlPointExportRow** | Data structure representing a row for ControlPointExport. Key properties: ThetaDeg, PointIndex, P, MxPositive. | `ControlPointExportRow.cs` |
 | `record` | **ControlPointPreviewResult** | Encapsulates the result of ControlPointPreview operations. | `ControlPointExportRow.cs` |
@@ -39,6 +40,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **PmDiagramDto** | Data transfer object carrying PmDiagram data. | `PmDiagramDto.cs` |
 | `record` | **PmValidationReportDto** | Data transfer object carrying PmValidationReport data. | `PmValidationReportDto.cs` |
 | `record` | **PmmSurfaceDto** | Data transfer object carrying PmmSurface data. Key properties: SpecialCapacityPoints, XAxisLabel, YAxisLabel, ZAxisLabel. | `PmmSurfaceDto.cs` |
+| `record` | **RebarComplianceResult** | /// Collected reinforcement code-compliance check results for one column section. /// Covers longitudinal reinforcement (§9.5.1-9.5.2) and transverse links (§9.5.3). ///. Key properties: AllPass, FailCount. | `RebarComplianceResult.cs` |
 | `record` | **RebarCoordinateDto** | Data transfer object carrying RebarCoordinate data. | `RebarCoordinateDto.cs` |
 | `record` | **RebarLayoutInputDto** | Data transfer object carrying RebarLayoutInput data. Key properties: StirrupDiameterMm. | `RebarLayoutInputDto.cs` |
 | `enum` | **RebarLayoutType** | Enumeration defining states/types for RebarLayoutType. | `RebarLayoutType.cs` |
@@ -197,6 +199,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **PmDebugMomentAxis** | Enumeration defining states/types for PmDebugMomentAxis. | `PmCurveBuilderService.cs` |
 | `class` | **PmSevenPointReportMapper** | Maps data structures for PmSevenPointReport. Key methods: Map, FormatOrNa, FormatPctOrNa. | `PmSevenPointReportMapper.cs` |
 | `class` | **RatioCheckService** | Provides service logic and operations for RatioCheck. Key methods: Check, CheckBatch. | `RatioCheckService.cs` |
+| `class` | **RebarComplianceCheckService** | /// Transverse links (§9.5.3): dsw ≥ max(6, 0.25 dsmax) — §9.5.3(1) minimum link diameter s ≤ min(20 dsmin, bmin, 400) — §9.5.3(3) maximum link spacing gap ≤ 150 mm between restrained bars — §9.5.3(6) /// ACI 318-19 checks (stubs — TODO): 0.01 Ag ≤ Ast ≤ 0.08 Ag — §10.6.1.1 nBars ≥ 4 (ties) / ≥ 6 (spirals) — §10.7.3.1 Tie diameter and spacing — §25.7.2. Key methods: Check. | `RebarComplianceCheckService.cs` |
 | `class` | **RebarCoordinateBuilderService** | Provides service logic and operations for RebarCoordinateBuilder. Key methods: Build, BuildCircular. | `RebarCoordinateBuilderService.cs` |
 | `class` | **ReportHandCalcService** | /// Independently calculates selected PMM control points using transparent hand-calculation /// formulas and compares results against the solver surface. /// Supports ACI 318 (Whitney rectangular stress block) and EC2 (simplified rectangular block, λ/η). /// Only rectangular sections are supported. ///. Key methods: Build. | `ReportHandCalcService.cs` |
 | `class` | **ShearCheckService** | /// Orchestrates the shear capacity check (EC2 §6.2 or ACI §22.5/22.6) for a rectangular /// column section against one or more load cases. /// /// Capacity is always computed, even when VEd = 0, so that the report can show the section's /// shear capacity for reference regardless of whether a shear demand was entered. /// | `ShearCheckService.cs` |

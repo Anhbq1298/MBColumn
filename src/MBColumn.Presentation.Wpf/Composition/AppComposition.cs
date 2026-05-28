@@ -76,6 +76,7 @@ public sealed class AppComposition : IDisposable
         IShearDesignService ec2Shear = new Ec2ShearDesignService();
         IShearDesignServiceFactory shearFactory = new ShearDesignServiceFactory(ec2Shear);
         var shearCheck = new ShearCheckService(units);
+        var complianceCheck = new RebarComplianceCheckService(units);
 
         calculationService = new ColumnCalculationService(
             solverFactory,
@@ -88,7 +89,8 @@ public sealed class AppComposition : IDisposable
             rebarCoordinates,
             new PmValidationReportService(codeFactory),
             shearCheck,
-            shearFactory);
+            shearFactory,
+            complianceCheck);
     }
 
     public static AppComposition Create()

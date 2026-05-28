@@ -18,7 +18,8 @@ public sealed class ColumnCalculationService(
     IRebarCoordinateBuilderService rebarCoordinates,
     IPmValidationReportService validationReportService,
     ShearCheckService? shearCheckService = null,
-    IShearDesignServiceFactory? shearCodeFactory = null)
+    IShearDesignServiceFactory? shearCodeFactory = null,
+    RebarComplianceCheckService? complianceCheckService = null)
 {
     public ColumnCalculationService(
         IInteractionSolverFactory solverFactory,
@@ -190,6 +191,13 @@ public sealed class ColumnCalculationService(
                 shearCheckService.Check(input, activeCases, coordinateList, shearService);
         }
 
+        // ── Rebar code-compliance check ───────────────────────────────────────
+        double maxCompNedN = activeCases.Count > 0
+            ? activeCases.Select(lc => units.ForceToN(lc.Pu, lc.ForceUnit)).DefaultIfEmpty(0).Max()
+            : 0;
+        maxCompNedN = Math.Max(maxCompNedN, 0); // only compression is relevant for As,min
+        var rebarCompliance = complianceCheckService?.Check(input, coordinateList, maxCompNedN);
+
         // Build per-case result DTOs
         var lcResultDtos = caseResults.Select((r, i) =>
         {
@@ -290,7 +298,8 @@ public sealed class ColumnCalculationService(
             DiameterMm = sectionWidthMm == sectionHeightMm && section.Shape == SectionShapeType.Circular
                 ? sectionWidthMm
                 : 0,
-            GoverningShearResult = governingShear
+            GoverningShearResult = governingShear,
+            RebarCompliance = rebarCompliance
         };
     }
 

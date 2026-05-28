@@ -59,5 +59,11 @@ public sealed record CalculationResultDto(
     /// Null when no shear forces were supplied or the design code does not support shear yet.
     /// </summary>
     public ShearResultDto? GoverningShearResult { get; init; }
+
+    /// <summary>
+    /// Reinforcement code-compliance checks (EC2 §9.5 / ACI §10.6, §25.7.2).
+    /// Always populated when a calculation completes successfully.
+    /// </summary>
+    public RebarComplianceResult? RebarCompliance { get; init; }
 }
 
