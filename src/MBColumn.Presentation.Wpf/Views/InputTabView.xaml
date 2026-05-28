@@ -152,7 +152,7 @@
         </Style>
     </UserControl.Resources>
     <TabControl>
-        <TabItem Header="Section Inputs">
+        <TabItem Header="Section &amp; Rebar">
             <Grid Margin="4,6,4,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.5*" MinWidth="200" />
@@ -198,13 +198,36 @@
                                                    Text="Fiber Integration: General numerical integration method recommended for circular sections and future arbitrary sections. Polygon Integration: Faster compression-zone clipping method useful for stress-block comparison." />
                                     </ComboBox.ToolTip>
                                 </ComboBox>
-                                <StackPanel Visibility="{Binding ShowAlphaCcOption, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <TextBlock Text="Alpha cc"
-                                               Style="{StaticResource FieldLabelTextStyle}"
-                                               Margin="0,10,0,0" />
-                                    <TextBox Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
                             </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Member Geometry"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="52" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Text="Column clear height / member length, L"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="1"
+                                           Text="{Binding LengthLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="1"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Text="{Binding MemberLengthL, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                            </Grid>
                         </GroupBox>
                         <GroupBox Header="Material"
                                   Background="White"
@@ -218,6 +241,16 @@
                                     <ColumnDefinition Width="76" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -288,26 +321,83 @@
                                          Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Grid.Row="8"
                                            Grid.Column="0"
-                                           Text="{Binding FyLabel}"
+                                           Text="γc"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="8"
                                            Grid.Column="1"
-                                           Text="{Binding StressLabel}"
+                                           Text=""
                                            Style="{StaticResource UnitTextStyle}" />
                                 <TextBox Grid.Row="9"
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
-                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
-                                         Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding GammaC, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Grid.Row="10"
                                            Grid.Column="0"
-                                           Text="Es"
+                                           Text="αcc"
                                            Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Grid.Row="10"
+                                <TextBox Grid.Row="11"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Row="12"
+                                           Grid.Column="0"
+                                           Text="fcd = αcc fck / γc"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="12"
+                                           Grid.Column="1"
+                                           Text="MPa"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="13"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsReadOnly="True"
+                                         Text="{Binding FcdDisplayText}" />
+                                <TextBlock Grid.Row="14"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Ecm calculation: Auto from EC2"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="15"
+                                           Grid.Column="0"
+                                           Text="Ecm"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="15"
+                                           Grid.Column="1"
+                                           Text="MPa"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="16"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsReadOnly="True"
+                                         Text="{Binding EcmDisplayText}" />
+                                <CheckBox Grid.Row="17"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          IsEnabled="False"
+                                          Content="Override Ecm manually"
+                                          Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="18"
+                                           Grid.Column="0"
+                                           Text="{Binding FyLabel}"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="18"
                                            Grid.Column="1"
                                            Text="{Binding StressLabel}"
                                            Style="{StaticResource UnitTextStyle}" />
-                                <TextBox Grid.Row="11"
+                                <TextBox Grid.Row="19"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Row="20"
+                                           Grid.Column="0"
+                                           Text="Es"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="20"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="21"
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
                                          IsEnabled="{Binding AreMaterialInputsEnabled}"
@@ -1287,7 +1377,7 @@
             </Grid>
         </TabItem>
 
-        <TabItem Header="Load Inputs">
+        <TabItem Header="Loads">
             <Grid Margin="4,6,4,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="6.2*" MinWidth="600" />
@@ -1405,6 +1495,17 @@
                             </Grid.RowDefinitions>
 
                             <WrapPanel Grid.Row="0" Margin="0,0,0,10">
+                                <CheckBox Content="Include EC2 slenderness amplification"
+                                          IsChecked="{Binding IncludeEc2Slenderness, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          FontWeight="SemiBold"
+                                          Margin="0,0,12,6" />
+                                <TextBlock Text="Method: EC2 Nominal Curvature"
+                                           Style="{StaticResource HelperTextStyle}"
+                                           Margin="0,2,12,6"
+                                           Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                <TextBlock Text="{Binding DemandInputModeText}"
+                                           Style="{StaticResource HelperTextStyle}"
+                                           Margin="0,2,16,6" />
                                 <Button Content="+ Add case"
                                         Command="{Binding AddLoadCaseCommand}"
                                         Style="{StaticResource CompactButtonStyle}"
@@ -1429,111 +1530,175 @@
                                         FontSize="11.5"
                                         Margin="0,0,8,6" />
                             </WrapPanel>
-                            <DataGrid x:Name="LoadCasesGrid"
-                                      Grid.Row="1"
-                                      ItemsSource="{Binding LoadCases}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      CanUserResizeColumns="True"
-                                      CanUserResizeRows="True"
-                                      HeadersVisibility="Column"
-                                      SelectionMode="Extended"
-                                      SelectionUnit="FullRow"
-                                      EnableRowVirtualization="True"
-                                      EnableColumnVirtualization="True"
-                                      VirtualizingPanel.IsVirtualizing="True"
-                                      VirtualizingPanel.VirtualizationMode="Recycling"
-                                      ScrollViewer.CanContentScroll="True"
-                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                <DataGrid.ContextMenu>
-                                    <ContextMenu>
-                                        <MenuItem Header="Add Demand Case"
-                                                  Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                        <MenuItem Header="Remove Selected Demand Case(s)"
-                                                  Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    </ContextMenu>
-                                </DataGrid.ContextMenu>
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Case Name"
-                                                        Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
-                                                        Width="100"
-                                                        MinWidth="70"
-                                                        ElementStyle="{StaticResource LeftAlignText}" />
-                                    <DataGridTextColumn Binding="{Binding Pu, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                        Width="*"
-                                                        MinWidth="54"
-                                                        ElementStyle="{StaticResource RightAlignText}"
-                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                        <DataGridTextColumn.Header>
-                                            <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                        </DataGridTextColumn.Header>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Binding="{Binding Mux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                        Width="*"
-                                                        MinWidth="54"
-                                                        ElementStyle="{StaticResource RightAlignText}"
-                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                        <DataGridTextColumn.Header>
-                                            <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                        </DataGridTextColumn.Header>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Binding="{Binding Muy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                        Width="*"
-                                                        MinWidth="54"
-                                                        ElementStyle="{StaticResource RightAlignText}"
-                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                        <DataGridTextColumn.Header>
-                                            <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                        </DataGridTextColumn.Header>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Binding="{Binding Vux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                        Width="*"
-                                                        MinWidth="50"
-                                                        ElementStyle="{StaticResource RightAlignText}"
-                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                        <DataGridTextColumn.Header>
-                                            <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                        </DataGridTextColumn.Header>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Binding="{Binding Vuy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                        Width="*"
-                                                        MinWidth="50"
-                                                        ElementStyle="{StaticResource RightAlignText}"
-                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                        <DataGridTextColumn.Header>
-                                            <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                        </DataGridTextColumn.Header>
-                                    </DataGridTextColumn>
-                                    
-                                    <!-- New Slenderness Status Column -->
-                                    <DataGridTextColumn Header="Slenderness"
-                                                        Binding="{Binding SlendernessStatusText, FallbackValue='On - Slender'}"
-                                                        Width="90"
-                                                        MinWidth="70"
-                                                        IsReadOnly="True"
-                                                        ElementStyle="{StaticResource LeftAlignText}" />
-                                    
-                                    <!-- New Overall Calculation Status Column -->
-                                    <DataGridTextColumn Header="Status"
-                                                        Binding="{Binding CalculationStatusText, FallbackValue='Ready'}"
-                                                        Width="75"
-                                                        MinWidth="55"
-                                                        IsReadOnly="True"
-                                                        ElementStyle="{StaticResource LeftAlignText}" />
+                            <Grid Grid.Row="1">
+                                <DataGrid x:Name="LoadCasesGrid"
+                                          ItemsSource="{Binding LoadCases}"
+                                          SelectedItem="{Binding SelectedLoadCase, Mode=TwoWay}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserResizeColumns="True"
+                                          HeadersVisibility="Column"
+                                          SelectionMode="Extended"
+                                          SelectionUnit="FullRow"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="Include"
+                                                                Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                Width="70" />
+                                        <DataGridTextColumn Header="Case Name"
+                                                            Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                            Width="110"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Binding="{Binding NEd, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Vx, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Vy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Mx, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding My, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Status"
+                                                            Binding="{Binding Status}"
+                                                            Width="90"
+                                                            IsReadOnly="True"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                                    <DataGridTextColumn Header="Source"
-                                                        Binding="{Binding Source, UpdateSourceTrigger=LostFocus}"
-                                                        Width="70"
-                                                        MinWidth="55"
-                                                        ElementStyle="{StaticResource LeftAlignText}" />
-                                    <DataGridCheckBoxColumn Header="Include"
-                                                            Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                            Width="56"
-                                                            MinWidth="45" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                                <DataGrid x:Name="SlenderLoadCasesGrid"
+                                          ItemsSource="{Binding LoadCases}"
+                                          SelectedItem="{Binding SelectedLoadCase, Mode=TwoWay}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserResizeColumns="True"
+                                          HeadersVisibility="Column"
+                                          SelectionMode="Extended"
+                                          SelectionUnit="FullRow"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="Include"
+                                                                Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                Width="70" />
+                                        <DataGridTextColumn Header="Case Name"
+                                                            Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                            Width="110"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Binding="{Binding NEd, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Vx, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Vy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MxTop, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.MxTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MxBottom, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.MxBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MyTop, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.MyTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MyBottom, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.MyBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MxUsed, TargetNullValue=auto, StringFormat=F2}"
+                                                            Width="*"
+                                                            IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.MxUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MyUsed, TargetNullValue=auto, StringFormat=F2}"
+                                                            Width="*"
+                                                            IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="{Binding DataContext.MyUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Status"
+                                                            Binding="{Binding Status}"
+                                                            Width="100"
+                                                            IsReadOnly="True"
+                                                            ElementStyle="{StaticResource LeftAlignText}" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
                         </Grid>
                     </Grid>
                 </GroupBox>
@@ -1547,7 +1712,7 @@
                         <!-- 1. Selected Load Case Editor -->
                         <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12">
                             <StackPanel>
-                                <TextBlock Text="Selected Load Case: LC1"
+                                <TextBlock Text="{Binding SelectedLoadCase.Name, StringFormat=Selected Load Case: {0}, TargetNullValue=Selected Load Case}"
                                            Style="{StaticResource GroupTitleTextStyle}"
                                            Margin="0,0,0,10" />
                                 
@@ -1566,62 +1731,100 @@
                                     <!-- Pu / NEd -->
                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,8">
                                         <DockPanel>
-                                            <TextBlock Text="NEd (Axial Load)" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="kN" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                            <TextBlock Text="NEd" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding ForceLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
                                         </DockPanel>
-                                        <TextBox Text="1200.00" />
+                                        <TextBox Text="{Binding SelectedLoadCase.NEd, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" />
                                     </StackPanel>
 
-                                    <!-- MEd Major / Mux -->
-                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,8">
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,8"
+                                                Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                         <DockPanel>
-                                            <TextBlock Text="MEd Major (Mx)" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="kNm" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                            <TextBlock Text="Mx" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
                                         </DockPanel>
-                                        <TextBox Text="85.00" />
+                                        <TextBox Text="{Binding SelectedLoadCase.Mx, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" />
                                     </StackPanel>
 
-                                    <!-- MEd Minor / Muy -->
-                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,8">
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,8"
+                                                Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                         <DockPanel>
-                                            <TextBlock Text="MEd Minor (My)" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="kNm" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                            <TextBlock Text="My" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
                                         </DockPanel>
-                                        <TextBox Text="35.00" />
+                                        <TextBox Text="{Binding SelectedLoadCase.My, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" />
                                     </StackPanel>
 
-                                    <!-- VEd Major / Vux -->
                                     <StackPanel Grid.Row="2" Grid.Column="0">
                                         <DockPanel>
-                                            <TextBlock Text="VEd Major (Vux)" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="kN" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                            <TextBlock Text="Vx" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding ForceLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
                                         </DockPanel>
-                                        <TextBox Text="15.00" />
+                                        <TextBox Text="{Binding SelectedLoadCase.Vx, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" />
                                     </StackPanel>
 
-                                    <!-- VEd Minor / Vuy -->
                                     <StackPanel Grid.Row="2" Grid.Column="2">
                                         <DockPanel>
-                                            <TextBlock Text="VEd Minor (Vuy)" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="kN" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                            <TextBlock Text="Vy" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding ForceLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
                                         </DockPanel>
-                                        <TextBox Text="10.00" />
+                                        <TextBox Text="{Binding SelectedLoadCase.Vy, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" />
                                     </StackPanel>
+                                </Grid>
+                                <Grid Margin="0,10,0,0"
+                                      Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                                               Text="Member End Moments"
+                                               Style="{StaticResource InputSubsectionTitleTextStyle}" />
+                                    <TextBox Grid.Row="1" Grid.Column="0"
+                                             Text="{Binding SelectedLoadCase.MxTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                             ToolTip="Mx Top" />
+                                    <TextBox Grid.Row="1" Grid.Column="2"
+                                             Text="{Binding SelectedLoadCase.MxBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                             ToolTip="Mx Bottom" />
+                                    <TextBox Grid.Row="2" Grid.Column="0"
+                                             Text="{Binding SelectedLoadCase.MyTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                             ToolTip="My Top"
+                                             Margin="0,8,0,0" />
+                                    <TextBox Grid.Row="2" Grid.Column="2"
+                                             Text="{Binding SelectedLoadCase.MyBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
+                                             ToolTip="My Bottom"
+                                             Margin="0,8,0,0" />
+                                    <TextBlock Grid.Row="3" Grid.Column="0"
+                                               Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue='Mx Used auto', StringFormat='Mx Used {0:F2}'}"
+                                               Style="{StaticResource HelperTextStyle}"
+                                               Margin="0,8,0,0" />
+                                    <TextBlock Grid.Row="3" Grid.Column="2"
+                                               Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue='My Used auto', StringFormat='My Used {0:F2}'}"
+                                               Style="{StaticResource HelperTextStyle}"
+                                               Margin="0,8,0,0" />
                                 </Grid>
                             </StackPanel>
                         </Border>
 
-                        <!-- 2. EC2 Slenderness Amplification -->
-                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12">
+                        <!-- 2. EC2 Slenderness Settings -->
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12"
+                                Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel>
-                                <TextBlock Text="EC2 Slenderness Amplification"
+                                <TextBlock Text="EC2 Slenderness Settings"
                                            Style="{StaticResource GroupTitleTextStyle}"
                                            Margin="0,0,0,8" />
                                 
                                 <CheckBox x:Name="EnableSlendernessCheck"
-                                          Content="Enable slenderness check for this load case"
+                                          Content="Include EC2 slenderness amplification"
                                           FontWeight="SemiBold"
-                                          IsChecked="True"
+                                          IsChecked="{Binding IncludeEc2Slenderness, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Margin="0,0,0,10" />
 
                                 <!-- Panel when Slenderness Check is Disabled -->
@@ -1661,13 +1864,14 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0"
-                                                   Text="Column clear height, l"
+                                                   Text="Member length L"
                                                    Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBlock Grid.Row="0" Grid.Column="1"
-                                                   Text="mm"
+                                                   Text="{Binding LengthLabel}"
                                                    Style="{StaticResource UnitTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                 Text="3500" />
+                                                 IsReadOnly="True"
+                                                 Text="{Binding MemberLengthL, TargetNullValue=''}" />
                                     </Grid>
 
                                     <!-- Effective Length Mode & Coefficients -->
@@ -1695,11 +1899,28 @@
                                         </ComboBox>
 
                                         <!-- Factor inputs -->
-                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="k-major" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Grid.Row="3" Grid.Column="0" Text="1.00" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="kx" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="3" Grid.Column="0" Text="{Binding Kx, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
 
-                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="k-minor" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Grid.Row="3" Grid.Column="2" Text="1.00" />
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="ky" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding Ky, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                    </Grid>
+
+                                    <!-- Moment Shape Settings -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="l0x = kx × L" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="True" Text="{Binding L0xText}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="l0y = ky × L" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="2" IsReadOnly="True" Text="{Binding L0yText}" />
                                     </Grid>
 
                                     <!-- Moment Shape Settings -->
@@ -1740,10 +1961,10 @@
                                             </ComboBox>
 
                                             <!-- rm input value -->
-                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="rm (Major)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="rm (Mx)" Style="{StaticResource FieldLabelTextStyle}" />
                                             <TextBox Grid.Row="3" Grid.Column="0" Text="1.00" />
 
-                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="rm (Minor)" Style="{StaticResource FieldLabelTextStyle}" 
+                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="rm (My)" Style="{StaticResource FieldLabelTextStyle}" 
                                                        Visibility="{Binding IsChecked, ElementName=ApplySameRm, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                                             <TextBox Grid.Row="3" Grid.Column="2" Text="1.00" 
                                                      Visibility="{Binding IsChecked, ElementName=ApplySameRm, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
@@ -1771,21 +1992,19 @@
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
                                                     
-                                                    <!-- Major Axis -->
-                                                    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Text="Major Axis End Moments" Style="{StaticResource FieldLabelTextStyle}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}"/>
-                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Mtop-major (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
-                                                    <TextBox Grid.Row="2" Grid.Column="0" Text="85.00" />
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Text="Mx End Moments" Style="{StaticResource FieldLabelTextStyle}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Mx Top" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="2" Grid.Column="0" Text="{Binding SelectedLoadCase.MxTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                                                     
-                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Mbottom-major (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
-                                                    <TextBox Grid.Row="2" Grid.Column="2" Text="85.00" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Mx Bottom" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding SelectedLoadCase.MxBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                                                     
-                                                    <!-- Minor Axis -->
-                                                    <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Text="Minor Axis End Moments" Style="{StaticResource FieldLabelTextStyle}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="0,6,0,0"/>
-                                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Mtop-minor (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
-                                                    <TextBox Grid.Row="5" Grid.Column="0" Text="35.00" />
+                                                    <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Text="My End Moments" Style="{StaticResource FieldLabelTextStyle}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="0,6,0,0"/>
+                                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="My Top" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="5" Grid.Column="0" Text="{Binding SelectedLoadCase.MyTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                                                     
-                                                    <TextBlock Grid.Row="4" Grid.Column="2" Text="Mbottom-minor (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
-                                                    <TextBox Grid.Row="5" Grid.Column="2" Text="35.00" />
+                                                    <TextBlock Grid.Row="4" Grid.Column="2" Text="My Bottom" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding SelectedLoadCase.MyBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                                                 </Grid>
                                             </StackPanel>
                                         </Border>
@@ -1805,26 +2024,64 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Effective creep ratio, φeff" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Grid.Row="1" Grid.Column="0" Text="1.50" />
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Effective creep ratio φeff" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding PhiEff, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                                         
                                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Reinforcement factor B" Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="2" IsEnabled="False" Text="Auto (from As)" />
                                     </Grid>
 
-                                    <CheckBox Content="Use default A = 0.7 if unknown"
-                                              IsChecked="True"
+                                    <CheckBox Content="Use default A = 0.7 if φeff is unknown"
+                                              IsChecked="{Binding UseDefaultAWhenPhiEffUnknown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               Margin="0,0,0,10" />
 
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
+                        <Expander Header="Values Used from Current Section &amp; Rebar"
+                                  IsExpanded="False"
+                                  Margin="0,0,0,12"
+                                  Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Border Style="{StaticResource CardBorderStyle}" Padding="12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding PreviewAreaText, StringFormat='Ac: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewAsTotalText, StringFormat='As,total: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding PreviewIxxText, StringFormat='Ixx: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PreviewIyyText, StringFormat='Iyy: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding PreviewIxText, StringFormat='ix: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PreviewIyText, StringFormat='iy: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding PreviewFcdText, StringFormat='fcd: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PreviewFydText, StringFormat='fyd: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding Es, StringFormat='Es: {0:F0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PreviewEcmText, StringFormat='Ecm: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding PreviewDxText, StringFormat='d_x for Mx curvature: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding PreviewDyText, StringFormat='d_y for My curvature: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding PreviewOmegaText, StringFormat='ω: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewNRatioText, StringFormat='n: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                </Grid>
+                            </Border>
+                        </Expander>
+
                         <!-- 3. Amplified Moment Preview -->
                         <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12"
                                 Visibility="{Binding IsChecked, ElementName=EnableSlendernessCheck, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel>
-                                <TextBlock Text="Amplified Moment Preview"
+                                <TextBlock Text="EC2 Slenderness Preview"
                                            Style="{StaticResource GroupTitleTextStyle}"
                                            Margin="0,0,0,8" />
                                 
@@ -1864,59 +2121,59 @@
                                         <TextBlock Text="M2 (kNm)" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1">
-                                        <TextBlock Text="MEd used" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBlock Text="Moment Used" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
 
-                                    <!-- Row 1: Major -->
+                                    <!-- Row 1: Mx -->
                                     <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="Major" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="Mx" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="3500" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding L0xText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="42.3" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="34.2" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="+1.00" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="19.50" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
-                                        <TextBlock Text="104.50" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
 
-                                    <!-- Row 2: Minor -->
+                                    <!-- Row 2: My -->
                                     <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="Minor" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="My" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="3500" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding L0yText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="24.5" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="34.2" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="+1.00" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="0.00" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
-                                        <TextBlock Text="35.00" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                 </Grid>
                                 
                                 <TextBlock Text="PMM demand source:" FontWeight="Bold" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4"/>
-                                <TextBlock Text="• Major: Original MEd = 85.00 kNm → Slenderness MEd = 104.50 kNm" FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,2"/>
-                                <TextBlock Text="• Minor: Original MEd = 35.00 kNm → Slenderness MEd = 35.00 kNm (Non-slender)" FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,8"/>
+                                <TextBlock Text="Mx Used and My Used are passed to PMM when slenderness is enabled." FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,2"/>
+                                <TextBlock Text="Vx and Vy are not modified by slenderness amplification." FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,8"/>
                                 
                                 <Separator Margin="0,4,0,8" />
                                 
@@ -1924,6 +2181,17 @@
                                         Style="{StaticResource CompactButtonStyle}"
                                         HorizontalAlignment="Stretch"
                                         Height="32" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Warnings"
+                                           Style="{StaticResource GroupTitleTextStyle}"
+                                           Margin="0,0,0,8" />
+                                <TextBlock Text="{Binding SlendernessWarningText}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
                             </StackPanel>
                         </Border>
 

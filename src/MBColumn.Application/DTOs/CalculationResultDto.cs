@@ -52,7 +52,16 @@ public sealed record CalculationResultDto(
     public double FyMpa { get; init; }
     public double EsMpa { get; init; }
     public double AlphaCc { get; init; } = 0.85;
+    public double GammaC { get; init; } = 1.50;
     public double DiameterMm { get; init; }
+    public bool IncludeEc2Slenderness { get; init; }
+    public string DemandSourceSummary => IncludeEc2Slenderness
+        ? "EC2 Slenderness: Enabled"
+        : "EC2 Slenderness: Disabled";
+    public string DemandSourceDetail => IncludeEc2Slenderness
+        ? "Method: Nominal Curvature"
+        : "PMM uses direct section moments Mx and My.";
+    public Ec2SlendernessBatchResultDto Ec2Slenderness { get; init; } = Ec2SlendernessBatchResultDto.Empty;
 
     /// <summary>
     /// Governing (worst-utilisation) shear result across all active load cases.

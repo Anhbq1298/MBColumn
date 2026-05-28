@@ -140,6 +140,8 @@ var tests = new List<(string Name, Action Test)>
     ("Multi-load case inactive excluded", TestMultiLoadCaseInactiveExcluded),
     ("Multi-load case fallback to single", TestMultiLoadCaseFallbackToSingle),
     ("Multi-load case governing id in result", TestMultiLoadCaseGoverningIdInResult),
+    ("EC2 slenderness off preserves direct PMM moments", TestEc2SlendernessOffPreservesDirectMoments),
+    ("EC2 slenderness on maps used PMM moments", TestEc2SlendernessOnMapsUsedMoments),
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
     ("Control points allowable comp is 80pct of max", TestControlPointsAllowableComp),
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
@@ -494,9 +496,11 @@ static void TestUnitSystemDependentLabelsUpdate()
     IsTrue(vm.ForceLabel == "kN");
     IsTrue(vm.MomentLabel == "kN-m");
     IsTrue(vm.StressLabel == "MPa");
-    IsTrue(vm.DemandForceHeader == "P (kN)");
+    IsTrue(vm.DemandForceHeader == "NEd (kN)");
     IsTrue(vm.DemandMomentXHeader == "Mx (kN-m)");
     IsTrue(vm.DemandMomentYHeader == "My (kN-m)");
+    IsTrue(vm.ShearVuxHeader == "Vx (kN)");
+    IsTrue(vm.ShearVuyHeader == "Vy (kN)");
     IsTrue(vm.RebarDiameterUnitLabel == "mm");
     IsTrue(vm.LinkSpacingUnitLabel == "mm");
     AreClose(200.0, vm.LinkSpacing, 1e-12);
@@ -507,9 +511,11 @@ static void TestUnitSystemDependentLabelsUpdate()
     IsTrue(vm.ForceLabel == "kip");
     IsTrue(vm.MomentLabel == "kip-ft");
     IsTrue(vm.StressLabel == "ksi");
-    IsTrue(vm.DemandForceHeader == "P (kip)");
+    IsTrue(vm.DemandForceHeader == "NEd (kip)");
     IsTrue(vm.DemandMomentXHeader == "Mx (kip-ft)");
     IsTrue(vm.DemandMomentYHeader == "My (kip-ft)");
+    IsTrue(vm.ShearVuxHeader == "Vx (kip)");
+    IsTrue(vm.ShearVuyHeader == "Vy (kip)");
     IsTrue(vm.RebarDiameterUnitLabel == "in");
     IsTrue(vm.LinkSpacingUnitLabel == "in");
     AreClose(8.0, vm.LinkSpacing, 1e-12);
@@ -1821,6 +1827,64 @@ static void TestMultiLoadCaseGoverningIdInResult()
     // It must match the case with the highest ratio
     var govCase = result.LoadCaseResults.MaxBy(r => r.PmmRatio)!;
     IsTrue(result.GoverningLoadCaseId == govCase.LoadCaseId);
+}
+
+static void TestEc2SlendernessOffPreservesDirectMoments()
+{
+    var loadCase = new LoadCaseDto("lc1", "LC1", 1200, 85, 35, true, ForceUnit.kN, MomentUnit.kNm)
+    {
+        MxTop = 500,
+        MxBottom = -400,
+        MyTop = 300,
+        MyBottom = -250
+    };
+
+    var result = Service().Calculate(MetricInput() with
+    {
+        IncludeEc2Slenderness = false,
+        MemberLengthL = 30000,
+        LoadCases = [loadCase]
+    });
+
+    var row = result.LoadCaseResults.Single();
+    AreClose(85, row.MuxDisplay, 1e-9);
+    AreClose(35, row.MuyDisplay, 1e-9);
+    IsFalse(result.IncludeEc2Slenderness);
+    IsTrue(result.Ec2Slenderness.LoadCases.Count == 0);
+}
+
+static void TestEc2SlendernessOnMapsUsedMoments()
+{
+    var loadCase = new LoadCaseDto("lc1", "LC1", 1200, 10, 10, true, ForceUnit.kN, MomentUnit.kNm)
+    {
+        Vux = 15,
+        Vuy = 10,
+        MxTop = 85,
+        MxBottom = -60,
+        MyTop = 35,
+        MyBottom = -20
+    };
+
+    var result = Service().Calculate(MetricInput() with
+    {
+        IncludeEc2Slenderness = true,
+        MemberLengthL = 30000,
+        Kx = 1.0,
+        Ky = 1.0,
+        PhiEff = 1.5,
+        LoadCases = [loadCase]
+    });
+
+    var slenderness = result.Ec2Slenderness.LoadCases.Single();
+    var row = result.LoadCaseResults.Single();
+    IsTrue(result.IncludeEc2Slenderness);
+    IsTrue(slenderness.X is not null);
+    IsTrue(slenderness.Y is not null);
+    IsTrue(slenderness.X!.IsSlender || slenderness.Y!.IsSlender);
+    AreClose(slenderness.MxUsedNmm!.Value / 1_000_000.0, row.MuxDisplay, 1e-6);
+    AreClose(slenderness.MyUsedNmm!.Value / 1_000_000.0, row.MuyDisplay, 1e-6);
+    IsTrue(Math.Abs(row.MuxDisplay - 10) > 1e-6 || Math.Abs(row.MuyDisplay - 10) > 1e-6);
+    IsTrue(row.SlendernessStatus.Contains("Slender") || row.SlendernessStatus == "Stocky");
 }
 
 // ----- ACI Trim Segment Straight-Line Tests (Task 13 Addendum) -----

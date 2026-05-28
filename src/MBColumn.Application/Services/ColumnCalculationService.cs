@@ -157,6 +157,50 @@ public sealed class ColumnCalculationService(
             activeCases = [new LoadCaseDto("default", "LC1", input.Pu, input.Mux, input.Muy, true, input.ForceUnit, input.MomentUnit)];
         }
 
+        var slendernessResult = Ec2SlendernessBatchResultDto.Empty;
+        if (input.IncludeEc2Slenderness)
+        {
+            var concreteEc2 = new Ec2ConcreteMaterialDto(fcMpa, input.GammaC, input.AlphaCc);
+            double? memberLengthMm = input.MemberLengthL.HasValue
+                ? units.LengthToMm(input.MemberLengthL.Value, input.LengthUnit)
+                : null;
+            slendernessResult = new Ec2NominalCurvatureService(units).Calculate(
+                section,
+                concreteEc2,
+                steel,
+                new MemberGeometryInputDto(memberLengthMm),
+                new Ec2SlendernessSettingsDto(
+                    true,
+                    input.Kx,
+                    input.Ky,
+                    input.PhiEff,
+                    input.UseDefaultAWhenPhiEffUnknown),
+                activeCases);
+
+            var slendernessById = slendernessResult.LoadCases.ToDictionary(r => r.LoadCaseId);
+            activeCases = activeCases.Select(lc =>
+            {
+                if (!slendernessById.TryGetValue(lc.Id, out var slenderness))
+                {
+                    return lc;
+                }
+
+                double mxUsed = slenderness.MxUsedNmm.HasValue
+                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, lc.MomentUnit)
+                    : lc.Mux;
+                double myUsed = slenderness.MyUsedNmm.HasValue
+                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, lc.MomentUnit)
+                    : lc.Muy;
+                return lc with
+                {
+                    Mux = mxUsed,
+                    Muy = myUsed,
+                    MxUsed = mxUsed,
+                    MyUsed = myUsed
+                };
+            }).ToList();
+        }
+
         // Check every load case against the surface using batch processing
         var demands = activeCases.Select(lc => new LoadDemand(
             units.ForceToN(lc.Pu, lc.ForceUnit),
@@ -217,7 +261,18 @@ public sealed class ColumnCalculationService(
                 CapacityPDisplay = units.ForceFromN(r.Ratio.CapacityPn, input.ForceUnit),
                 CapacityMxDisplay = units.MomentFromNmm(r.Ratio.CapacityMnx, input.MomentUnit),
                 CapacityMyDisplay = units.MomentFromNmm(r.Ratio.CapacityMny, input.MomentUnit),
-                ShearResult = i < shearPerCase.Count ? shearPerCase[i] : null
+                ShearResult = i < shearPerCase.Count ? shearPerCase[i] : null,
+                SlendernessStatus = TryGetSlenderness(slendernessResult, r.Case.Id)?.Status ?? "",
+                LambdaX = TryGetSlenderness(slendernessResult, r.Case.Id)?.X?.Lambda,
+                LambdaLimitX = TryGetSlenderness(slendernessResult, r.Case.Id)?.X?.LambdaLimit,
+                LambdaY = TryGetSlenderness(slendernessResult, r.Case.Id)?.Y?.Lambda,
+                LambdaLimitY = TryGetSlenderness(slendernessResult, r.Case.Id)?.Y?.LambdaLimit,
+                M2xDisplay = TryGetSlenderness(slendernessResult, r.Case.Id)?.X is { } x
+                    ? units.MomentFromNmm(x.M2Nmm, input.MomentUnit)
+                    : null,
+                M2yDisplay = TryGetSlenderness(slendernessResult, r.Case.Id)?.Y is { } y
+                    ? units.MomentFromNmm(y.M2Nmm, input.MomentUnit)
+                    : null
             };
         }).ToList();
 
@@ -295,13 +350,19 @@ public sealed class ColumnCalculationService(
             FyMpa = fyMpa,
             EsMpa = esMpa,
             AlphaCc = input.AlphaCc,
+            GammaC = input.GammaC,
             DiameterMm = sectionWidthMm == sectionHeightMm && section.Shape == SectionShapeType.Circular
                 ? sectionWidthMm
                 : 0,
+            IncludeEc2Slenderness = input.IncludeEc2Slenderness,
+            Ec2Slenderness = slendernessResult,
             GoverningShearResult = governingShear,
             RebarCompliance = rebarCompliance
         };
     }
+
+    private static Ec2SlendernessLoadCaseResultDto? TryGetSlenderness(Ec2SlendernessBatchResultDto batch, string loadCaseId)
+        => batch.LoadCases.FirstOrDefault(r => r.LoadCaseId == loadCaseId);
 
     private ControlPoint SpecialEntryToControlPoint(SpecialCapacityEntry entry, UnitSystem unitSystem)
     {

@@ -21,6 +21,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **ControlPointThetaSelectionMode** | Enumeration defining states/types for ControlPointThetaSelectionMode. | `ControlPointExportRow.cs` |
 | `record` | **ControlPointValidationRow** | Data structure representing a row for ControlPointValidation. | `ControlPointValidationRow.cs` |
 | `record` | **DiagramDataDto** | Data transfer object carrying DiagramData data. | `DiagramDataDto.cs` |
+| `record` | **Ec2ConcreteMaterialDto** | Data transfer object carrying Ec2ConcreteMaterial data. Key properties: Fcd, Fcm, Ecm. | `Ec2SlendernessDtos.cs` |
+| `record` | **Ec2SlendernessAxisResultDto** | Data transfer object carrying Ec2SlendernessAxisResult data. | `Ec2SlendernessDtos.cs` |
+| `record` | **Ec2SlendernessBatchResultDto** | Data transfer object carrying Ec2SlendernessBatchResult data. Key properties: Empty. | `Ec2SlendernessDtos.cs` |
+| `record` | **Ec2SlendernessLoadCaseResultDto** | Data transfer object carrying Ec2SlendernessLoadCaseResult data. Key properties: MxUsedNmm, MyUsedNmm. | `Ec2SlendernessDtos.cs` |
+| `record` | **Ec2SlendernessSectionValuesDto** | Data transfer object carrying Ec2SlendernessSectionValues data. | `Ec2SlendernessDtos.cs` |
+| `record` | **Ec2SlendernessSettingsDto** | Data transfer object carrying Ec2SlendernessSettings data. | `Ec2SlendernessDtos.cs` |
 | `record` | **HandCalcValidationReport** | Represents the HandCalcValidationReport record. Key methods: NotSupported. Key properties: ComparisonNote. | `HandCalcValidationReport.cs` |
 | `record` | **InsetLineDto** | Data transfer object carrying InsetLine data. | `PmChartInsetFigureDto.cs` |
 | `record` | **InsetPointDto** | Data transfer object carrying InsetPoint data. | `PmChartInsetFigureDto.cs` |
@@ -30,8 +36,9 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **IrregularRebarModeType** | Enumeration defining states/types for IrregularRebarModeType. | `IrregularRebarModeType.cs` |
 | `record` | **IrregularSectionInputDto** | Data transfer object carrying IrregularSectionInput data. | `IrregularSectionInputDto.cs` |
 | `record` | **IrregularSectionValidationResult** | Encapsulates the result of IrregularSectionValidation operations. Key methods: Errors. | `IrregularSectionValidationResult.cs` |
-| `record` | **LoadCaseDto** | Data transfer object carrying LoadCase data. Key properties: Vux, Vuy. | `LoadCaseDto.cs` |
-| `record` | **LoadCaseResultDto** | Data transfer object carrying LoadCaseResult data. Key properties: CapacityPDisplay, CapacityMxDisplay, CapacityMyDisplay, ShearResult. | `LoadCaseResultDto.cs` |
+| `record` | **LoadCaseDto** | Data transfer object carrying LoadCase data. Key properties: Vux, Vuy, MxTop, MxBottom. | `LoadCaseDto.cs` |
+| `record` | **LoadCaseResultDto** | Data transfer object carrying LoadCaseResult data. Key properties: CapacityPDisplay, CapacityMxDisplay, CapacityMyDisplay, SlendernessStatus. | `LoadCaseResultDto.cs` |
+| `record` | **MemberGeometryInputDto** | Data transfer object carrying MemberGeometryInput data. | `Ec2SlendernessDtos.cs` |
 | `record` | **MmDiagramDto** | Data transfer object carrying MmDiagram data. | `MmDiagramDto.cs` |
 | `record` | **MxMyDiagramDto** | Data transfer object carrying MxMyDiagram data. | `MxMyDiagramDto.cs` |
 | `record` | **PmAngleDiagramDto** | Data transfer object carrying PmAngleDiagram data. Key properties: ReferenceLines, NominalCapacityPoints, ReducedCapacityPoints, SpecialCapacityPoints. | `PmAngleDiagramDto.cs` |
@@ -184,9 +191,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ControlPointTableBuilderService** | /// Builds the design-code control-point table /// for each of the four principal bending axes: X, Y, -X, -Y. ///. Key methods: Build. | `ControlPointTableBuilderService.cs` |
 | `enum` | **CurveAxis** | Enumeration defining states/types for CurveAxis. | `PmCurveBuilderService.cs` |
 | `class` | **DiagramDataService** | Provides service logic and operations for DiagramData. Key methods: BuildMm, BuildSurface, BuildPmDiagramRenderData, BuildMmDiagramRenderData. | `DiagramDataService.cs` |
+| `class` | **Ec2NominalCurvatureService** | Provides service logic and operations for Ec2NominalCurvature. Key methods: Calculate. | `Ec2NominalCurvatureService.cs` |
 | `record` | **GroupRecord** | Represents the GroupRecord record. | `IProjectService.cs` |
 | `interface` | **IControlPointCsvExportService** | Provides service logic and operations for IControlPointCsvExport. | `IControlPointCsvExportService.cs` |
 | `interface` | **IControlPointPreviewService** | Provides service logic and operations for IControlPointPreview. | `IControlPointPreviewService.cs` |
+| `interface` | **IEc2NominalCurvatureService** | Provides service logic and operations for IEc2NominalCurvature. | `Ec2NominalCurvatureService.cs` |
 | `interface` | **IIrregularSectionValidationService** | Provides service logic and operations for IIrregularSectionValidation. | `IIrregularSectionValidationService.cs` |
 | `interface` | **IProjectService** | Provides service logic and operations for IProject. | `IProjectService.cs` |
 | `interface` | **IRebarCoordinateBuilderService** | Provides service logic and operations for IRebarCoordinateBuilder. | `IRebarCoordinateBuilderService.cs` |

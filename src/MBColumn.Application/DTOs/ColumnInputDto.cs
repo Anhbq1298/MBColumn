@@ -36,8 +36,15 @@ public sealed record ColumnInputDto(
     public Ec2SolverType Ec2Solver { get; init; } = Ec2SolverType.Boundary;
     public SectionIntegrationMethod IntegrationMethod { get; init; } = SectionIntegrationMethod.Fiber;
     public double AlphaCc { get; init; } = 0.85;
+    public double GammaC { get; init; } = 1.50;
     public IrregularSectionInputDto? Irregular { get; init; }
     public RebarSetLibraryType? RebarSetLibrary { get; init; }
+    public bool IncludeEc2Slenderness { get; init; }
+    public double? MemberLengthL { get; init; }
+    public double? Kx { get; init; } = 1.0;
+    public double? Ky { get; init; } = 1.0;
+    public double? PhiEff { get; init; }
+    public bool UseDefaultAWhenPhiEffUnknown { get; init; } = true;
 
     // ── Shear reinforcement (links / stirrups) ────────────────────────────────
     /// <summary>Link bar diameter in mm. Used for EC2 shear capacity check.</summary>

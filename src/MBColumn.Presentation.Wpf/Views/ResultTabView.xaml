@@ -399,6 +399,10 @@
 
                         <Separator Margin="0,0,0,10" Background="{DynamicResource BorderSoftBrush}" />
 
+                        <TextBlock Text="Demand Source" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding DemandSourceSummary}" Style="{StaticResource HelperTextStyle}" />
+                        <TextBlock Text="{Binding DemandSourceDetail}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,10" />
+
                         <!-- Load Case Demands & PMM Utilization -->
                         <TextBlock Text="Load Case PMM Utilization" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,6" />
                         <DataGrid ItemsSource="{Binding LoadCaseRows}"
@@ -433,6 +437,11 @@
                                 <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="λx" Binding="{Binding LambdaXDisplay}" Width="52" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="λlim,x" Binding="{Binding LambdaLimitXDisplay}" Width="64" MinWidth="55" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="λy" Binding="{Binding LambdaYDisplay}" Width="52" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="λlim,y" Binding="{Binding LambdaLimitYDisplay}" Width="64" MinWidth="55" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="Slenderness" Binding="{Binding SlendernessStatus}" Width="105" MinWidth="90" ElementStyle="{StaticResource WrapLeftAlignText}" />
                                 <DataGridTextColumn Header="Angle" Binding="{Binding AngleDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Util." Binding="{Binding UtilizationDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="75" MinWidth="65" ElementStyle="{StaticResource WrapLeftAlignText}" />
@@ -943,4 +952,3 @@
         </Grid>
     </Grid>
 </UserControl>
-

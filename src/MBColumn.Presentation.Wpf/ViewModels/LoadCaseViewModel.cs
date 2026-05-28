@@ -12,8 +12,15 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private double muy;
     private double vux;
     private double vuy;
+    private double? mxTop;
+    private double? mxBottom;
+    private double? myTop;
+    private double? myBottom;
+    private double? mxUsed;
+    private double? myUsed;
     private bool isActive;
     private bool hasValidationError;
+    private string status = "Ready";
     private string originalLoadCaseName = "";
     private string sourceObjectName = "";
     private string sourceObjectLabel = "";
@@ -28,20 +35,87 @@ public sealed class LoadCaseViewModel : ViewModelBase
         this.pu = pu;
         this.mux = mux;
         this.muy = muy;
+        this.mxTop = mux;
+        this.mxBottom = mux;
+        this.myTop = muy;
+        this.myBottom = muy;
         this.isActive = isActive;
     }
 
     public string Id { get => id; set => Set(ref id, value); }
     public string Name { get => name; set => Set(ref name, value); }
-    public double Pu { get => pu; set => Set(ref pu, value); }
-    public double Mux { get => mux; set => Set(ref mux, value); }
-    public double Muy { get => muy; set => Set(ref muy, value); }
+    public double Pu
+    {
+        get => pu;
+        set
+        {
+            Set(ref pu, value);
+            Raise(nameof(NEd));
+        }
+    }
+    public double Mux
+    {
+        get => mux;
+        set
+        {
+            Set(ref mux, value);
+            Raise(nameof(Mx));
+        }
+    }
+    public double Muy
+    {
+        get => muy;
+        set
+        {
+            Set(ref muy, value);
+            Raise(nameof(My));
+        }
+    }
     /// <summary>Shear force in X direction in the current display force unit.</summary>
-    public double Vux { get => vux; set => Set(ref vux, value); }
+    public double Vux
+    {
+        get => vux;
+        set
+        {
+            Set(ref vux, value);
+            Raise(nameof(Vx));
+        }
+    }
     /// <summary>Shear force in Y direction in the current display force unit.</summary>
-    public double Vuy { get => vuy; set => Set(ref vuy, value); }
+    public double Vuy
+    {
+        get => vuy;
+        set
+        {
+            Set(ref vuy, value);
+            Raise(nameof(Vy));
+        }
+    }
+    public double NEd { get => Pu; set => Pu = value; }
+    public double Vx { get => Vux; set => Vux = value; }
+    public double Vy { get => Vuy; set => Vuy = value; }
+    public double Mx { get => Mux; set => Mux = value; }
+    public double My { get => Muy; set => Muy = value; }
+    public double? MxTop { get => mxTop; set => Set(ref mxTop, value); }
+    public double? MxBottom { get => mxBottom; set => Set(ref mxBottom, value); }
+    public double? MyTop { get => myTop; set => Set(ref myTop, value); }
+    public double? MyBottom { get => myBottom; set => Set(ref myBottom, value); }
+    public double? MxUsed { get => mxUsed; set => Set(ref mxUsed, value); }
+    public double? MyUsed { get => myUsed; set => Set(ref myUsed, value); }
     public bool IsActive { get => isActive; set => Set(ref isActive, value); }
     public bool HasValidationError { get => hasValidationError; set => Set(ref hasValidationError, value); }
+    public string Status
+    {
+        get => status;
+        set
+        {
+            Set(ref status, value);
+            Raise(nameof(SlendernessStatusText));
+            Raise(nameof(CalculationStatusText));
+        }
+    }
+    public string SlendernessStatusText => Status;
+    public string CalculationStatusText => Status;
     public string OriginalLoadCaseName { get => originalLoadCaseName; set => Set(ref originalLoadCaseName, value); }
     public string SourceObjectName { get => sourceObjectName; set => Set(ref sourceObjectName, value); }
     public string SourceObjectLabel { get => sourceObjectLabel; set => Set(ref sourceObjectLabel, value); }
@@ -53,7 +127,13 @@ public sealed class LoadCaseViewModel : ViewModelBase
         => new(Id, Name, Pu, Mux, Muy, IsActive, forceUnit, momentUnit)
         {
             Vux = Vux,
-            Vuy = Vuy
+            Vuy = Vuy,
+            MxTop = MxTop,
+            MxBottom = MxBottom,
+            MyTop = MyTop,
+            MyBottom = MyBottom,
+            MxUsed = MxUsed,
+            MyUsed = MyUsed
         };
 }
 

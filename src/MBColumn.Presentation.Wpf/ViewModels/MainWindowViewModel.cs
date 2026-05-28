@@ -260,6 +260,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             ValidationMessage = "";
             var result = calculationService.Calculate(Input.ToDto());
+            Input.ApplySlendernessResults(result);
             projectSession.StoreCurrentColumnResult(result);
             Result.Result = result;
             IsCalculationOutdated = false;

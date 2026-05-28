@@ -40,7 +40,12 @@ public sealed record LoadCaseResultRowViewModel(
     bool IsPass,
     bool IsCritical,
     string ForceUnit,
-    string MomentUnit)
+    string MomentUnit,
+    string SlendernessStatus,
+    double? LambdaX,
+    double? LambdaLimitX,
+    double? LambdaY,
+    double? LambdaLimitY)
 {
     public string PDisplay => $"{Pu:F1}";
     public string MxDisplay => $"{Mux:F1}";
@@ -49,6 +54,10 @@ public sealed record LoadCaseResultRowViewModel(
     public string UtilizationDisplay => $"{Utilization:F3}";
     public string StatusDisplay => IsPass ? "PASS" : "FAIL";
     public bool IsFailing => !IsPass;
+    public string LambdaXDisplay => LambdaX.HasValue ? $"{LambdaX.Value:F1}" : "-";
+    public string LambdaLimitXDisplay => LambdaLimitX.HasValue ? $"{LambdaLimitX.Value:F1}" : "-";
+    public string LambdaYDisplay => LambdaY.HasValue ? $"{LambdaY.Value:F1}" : "-";
+    public string LambdaLimitYDisplay => LambdaLimitY.HasValue ? $"{LambdaLimitY.Value:F1}" : "-";
 }
 
 public sealed class ResultViewModel : ViewModelBase
@@ -182,7 +191,12 @@ public sealed class ResultViewModel : ViewModelBase
                     r.PuDisplay, r.MuxDisplay, r.MuyDisplay,
                     DemandVectorAngle(r.MuxDisplay, r.MuyDisplay),
                     r.PmmRatio, r.Status == CapacityStatus.Pass,
-                    r.LoadCaseId == govId, fUnit, mUnit)).ToList()
+                    r.LoadCaseId == govId, fUnit, mUnit,
+                    string.IsNullOrWhiteSpace(r.SlendernessStatus) ? "-" : r.SlendernessStatus,
+                    r.LambdaX,
+                    r.LambdaLimitX,
+                    r.LambdaY,
+                    r.LambdaLimitY)).ToList()
                 : [];
             
             SevenPointValidationRows = value?.SevenPointValidationRows?.Select(r => new SevenPointValidationRowViewModel(
@@ -214,6 +228,8 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(ForceUnitLabel));
             Raise(nameof(MomentUnitLabel));
             Raise(nameof(LengthUnitLabel));
+            Raise(nameof(DemandSourceSummary));
+            Raise(nameof(DemandSourceDetail));
             Raise(nameof(SelectedPmAngleText));
             Raise(nameof(SelectedPuLevelText));
             RaiseNavigationLabels();
@@ -269,6 +285,8 @@ public sealed class ResultViewModel : ViewModelBase
     public string ForceUnitLabel => Result?.ControlPointTable?.ForceUnitLabel ?? Result?.MxMyDiagram?.PUnit ?? "";
     public string MomentUnitLabel => Result?.ControlPointTable?.MomentUnitLabel ?? Result?.MxMyDiagram?.MUnit ?? "";
     public string LengthUnitLabel => Result is null ? "" : Result.UnitSystem == UnitSystem.Imperial ? "in" : "mm";
+    public string DemandSourceSummary => Result?.DemandSourceSummary ?? "EC2 Slenderness: Disabled";
+    public string DemandSourceDetail => Result?.DemandSourceDetail ?? "PMM uses direct section moments Mx and My.";
     public string GoverningLoadCaseName => Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == (Result?.GoverningLoadCaseId ?? ""))?.LoadCaseName ?? "";
     public string CriticalLoadCaseName => string.IsNullOrWhiteSpace(GoverningLoadCaseName) ? "-" : GoverningLoadCaseName;
     public string SelectedPmAngleText => $"{SelectedSliceAngleDegrees:F1} deg";

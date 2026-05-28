@@ -70,8 +70,47 @@ public sealed class ColumnInputValidator
         if (input.Fc <= 0) errors.Add("Concrete strength must be positive.");
         if (input.Fy <= 0) errors.Add("Steel yield strength must be positive.");
         if (input.Es <= 0) errors.Add("Steel modulus must be positive.");
+        if (input.GammaC <= 0) errors.Add("γc must be positive.");
+
+        ValidateLoadCases(input, errors);
 
         return errors.Count == 0 ? ValidationResultDto.Valid : new ValidationResultDto(false, errors);
+    }
+
+    private static void ValidateLoadCases(ColumnInputDto input, List<string> errors)
+    {
+        var activeCases = (input.LoadCases?.Where(lc => lc.IsActive).ToList()) ?? [];
+        if (activeCases.Count == 0)
+        {
+            activeCases = [new LoadCaseDto("default", "LC1", input.Pu, input.Mux, input.Muy, true, input.ForceUnit, input.MomentUnit)];
+        }
+
+        if (input.IncludeEc2Slenderness)
+        {
+            if (input.MemberLengthL is not > 0) errors.Add("Column length L is required when EC2 slenderness amplification is enabled.");
+            if (input.Kx is not > 0) errors.Add("kx must be greater than zero.");
+            if (input.Ky is not > 0) errors.Add("ky must be greater than zero.");
+            if (input.PhiEff is < 0) errors.Add("Effective creep ratio phiEff must be zero or greater.");
+
+            foreach (var lc in activeCases)
+            {
+                if (!double.IsFinite(lc.Pu)) errors.Add($"{lc.Name}: NEd is required.");
+                if (lc.Pu <= 0) errors.Add($"{lc.Name}: NEd must be compression for EC2 column slenderness.");
+                if (lc.MxTop is null) errors.Add($"{lc.Name}: Mx Top is required when EC2 slenderness amplification is enabled.");
+                if (lc.MxBottom is null) errors.Add($"{lc.Name}: Mx Bottom is required when EC2 slenderness amplification is enabled.");
+                if (lc.MyTop is null) errors.Add($"{lc.Name}: My Top is required when EC2 slenderness amplification is enabled.");
+                if (lc.MyBottom is null) errors.Add($"{lc.Name}: My Bottom is required when EC2 slenderness amplification is enabled.");
+            }
+
+            return;
+        }
+
+        foreach (var lc in activeCases)
+        {
+            if (!double.IsFinite(lc.Pu)) errors.Add($"{lc.Name}: NEd is required.");
+            if (!double.IsFinite(lc.Mux)) errors.Add($"{lc.Name}: Mx is required.");
+            if (!double.IsFinite(lc.Muy)) errors.Add($"{lc.Name}: My is required.");
+        }
     }
 
     private static void ValidateCustomRebarCoordinates(IReadOnlyList<RebarCoordinateDto> coordinates, List<string> errors)

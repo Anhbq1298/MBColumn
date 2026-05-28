@@ -57,6 +57,13 @@ public sealed class InputViewModel : ViewModelBase
     private string sectionPreviewErrorMessage = "";
     private string rebarLayoutWarning = "";
     private double alphaCc = 0.85;
+    private double gammaC = 1.50;
+    private double? memberLengthL;
+    private bool includeEc2Slenderness;
+    private double? kx = 1.0;
+    private double? ky = 1.0;
+    private double? phiEff;
+    private bool useDefaultAWhenPhiEffUnknown = true;
     private double stirrupDiameterMm = 10.0;
     private RebarDefinition? selectedStirrupBar;
     private double linkSpacingMm = 200.0;
@@ -75,6 +82,16 @@ public sealed class InputViewModel : ViewModelBase
     private string previewAreaText = "—";
     private string previewIxxText = "—";
     private string previewIyyText = "—";
+    private string previewIxText = "—";
+    private string previewIyText = "—";
+    private string previewAsTotalText = "—";
+    private string previewFcdText = "—";
+    private string previewFydText = "—";
+    private string previewEcmText = "—";
+    private string previewDxText = "—";
+    private string previewDyText = "—";
+    private string previewOmegaText = "—";
+    private string previewNRatioText = "—";
     private string previewRebarPercentageText = "—";
     private string previewShapeSummaryText = "";
     private string previewRebarLayoutText = "";
@@ -87,6 +104,8 @@ public sealed class InputViewModel : ViewModelBase
     private string designTierSource = "";
     private EtabsTierImportMetadataDto? etabsTierMetadata;
     private EtabsImportMetadataDto? etabsMetadata;
+    private LoadCaseViewModel? selectedLoadCase;
+    private bool isRefreshingSlendernessState;
 
     private static readonly IReadOnlyList<MaterialGradeOption> AmericanConcreteGrades =
     [
@@ -166,7 +185,10 @@ public sealed class InputViewModel : ViewModelBase
             }
         };
         WireRebarsCollectionChanged();
+        LoadCases.CollectionChanged += LoadCases_CollectionChanged;
         ApplyMetricDefaults();
+        SelectedLoadCase = LoadCases.FirstOrDefault();
+        RefreshSlendernessUiState();
         UpdateSectionPreview();
         AddLoadCaseCommand = new RelayCommand(AddLoadCase);
         DeleteLoadCaseCommand = new RelayCommand<LoadCaseViewModel>(DeleteLoadCase);
@@ -291,8 +313,93 @@ public sealed class InputViewModel : ViewModelBase
 
     public bool ShowEc2SolverOption => selectedDesignCode == DesignCodeType.Ec2;
 
-    public double AlphaCc { get => alphaCc; set => Set(ref alphaCc, value); }
+    public double AlphaCc
+    {
+        get => alphaCc;
+        set
+        {
+            Set(ref alphaCc, value);
+            RaiseMaterialDerivedProperties();
+            RefreshSlendernessUiState();
+        }
+    }
+    public double GammaC
+    {
+        get => gammaC;
+        set
+        {
+            Set(ref gammaC, value);
+            RaiseMaterialDerivedProperties();
+            RefreshSlendernessUiState();
+        }
+    }
     public bool ShowAlphaCcOption => selectedDesignCode == DesignCodeType.Ec2;
+    public double? MemberLengthL
+    {
+        get => memberLengthL;
+        set
+        {
+            Set(ref memberLengthL, value);
+            Raise(nameof(L0xText));
+            Raise(nameof(L0yText));
+            RefreshSlendernessUiState();
+        }
+    }
+    public bool IncludeEc2Slenderness
+    {
+        get => includeEc2Slenderness;
+        set
+        {
+            Set(ref includeEc2Slenderness, value);
+            Raise(nameof(DemandInputModeText));
+            Raise(nameof(SlendernessSettingsVisibility));
+            RefreshSlendernessUiState();
+        }
+    }
+    public double? Kx
+    {
+        get => kx;
+        set
+        {
+            Set(ref kx, value);
+            Raise(nameof(L0xText));
+            RefreshSlendernessUiState();
+        }
+    }
+    public double? Ky
+    {
+        get => ky;
+        set
+        {
+            Set(ref ky, value);
+            Raise(nameof(L0yText));
+            RefreshSlendernessUiState();
+        }
+    }
+    public double? PhiEff
+    {
+        get => phiEff;
+        set
+        {
+            Set(ref phiEff, value);
+            RefreshSlendernessUiState();
+        }
+    }
+    public bool UseDefaultAWhenPhiEffUnknown
+    {
+        get => useDefaultAWhenPhiEffUnknown;
+        set
+        {
+            Set(ref useDefaultAWhenPhiEffUnknown, value);
+            RefreshSlendernessUiState();
+        }
+    }
+    public string DemandInputModeText => IncludeEc2Slenderness
+        ? "Demand input mode: Member end forces"
+        : "Demand input mode: Direct section forces";
+    public bool SlendernessSettingsVisibility => IncludeEc2Slenderness;
+    public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{Kx.Value * MemberLengthL.Value:F2}" : "auto";
+    public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{Ky.Value * MemberLengthL.Value:F2}" : "auto";
 
     public IReadOnlyList<RebarDefinition> AvailableStirrupBars => AvailableBars;
 
@@ -425,11 +532,17 @@ public sealed class InputViewModel : ViewModelBase
     public string ForceLabel => UnitSystem == UnitSystem.Metric ? "kN" : "kip";
     public string MomentLabel => UnitSystem == UnitSystem.Metric ? "kN-m" : "kip-ft";
     public string StressLabel => UnitSystem == UnitSystem.Metric ? "MPa" : "ksi";
-    public string DemandForceHeader => $"P ({ForceLabel})";
+    public string DemandForceHeader => $"NEd ({ForceLabel})";
     public string DemandMomentXHeader => $"Mx ({MomentLabel})";
     public string DemandMomentYHeader => $"My ({MomentLabel})";
-    public string ShearVuxHeader => $"Vux ({ForceLabel})";
-    public string ShearVuyHeader => $"Vuy ({ForceLabel})";
+    public string ShearVuxHeader => $"Vx ({ForceLabel})";
+    public string ShearVuyHeader => $"Vy ({ForceLabel})";
+    public string MxTopHeader => $"Mx Top ({MomentLabel})";
+    public string MxBottomHeader => $"Mx Bottom ({MomentLabel})";
+    public string MyTopHeader => $"My Top ({MomentLabel})";
+    public string MyBottomHeader => $"My Bottom ({MomentLabel})";
+    public string MxUsedHeader => $"Mx Used ({MomentLabel})";
+    public string MyUsedHeader => $"My Used ({MomentLabel})";
     public string RebarDiameterUnitLabel => selectedRebarSetLibrary == RebarSetLibraryType.SingaporeMetric ? "mm" : "in";
     public string LinkSpacingUnitLabel => LengthLabel;
 
@@ -643,6 +756,8 @@ public sealed class InputViewModel : ViewModelBase
             {
                 SyncSelectedConcreteGradeToValue();
             }
+            RaiseMaterialDerivedProperties();
+            RefreshSlendernessUiState();
         }
     }
 
@@ -656,10 +771,21 @@ public sealed class InputViewModel : ViewModelBase
             {
                 SyncSelectedSteelGradeToValue();
             }
+            RaiseMaterialDerivedProperties();
+            RefreshSlendernessUiState();
         }
     }
 
-    public double Es { get => es; set => Set(ref es, value); }
+    public double Es
+    {
+        get => es;
+        set
+        {
+            Set(ref es, value);
+            RaiseMaterialDerivedProperties();
+            RefreshSlendernessUiState();
+        }
+    }
     public double Pu { get => pu; set => Set(ref pu, value); }
     public double Mux { get => mux; set => Set(ref mux, value); }
     public double Muy { get => muy; set => Set(ref muy, value); }
@@ -709,9 +835,33 @@ public sealed class InputViewModel : ViewModelBase
     public string PreviewAreaText { get => previewAreaText; private set => Set(ref previewAreaText, value); }
     public string PreviewIxxText { get => previewIxxText; private set => Set(ref previewIxxText, value); }
     public string PreviewIyyText { get => previewIyyText; private set => Set(ref previewIyyText, value); }
+    public string PreviewIxText { get => previewIxText; private set => Set(ref previewIxText, value); }
+    public string PreviewIyText { get => previewIyText; private set => Set(ref previewIyText, value); }
+    public string PreviewAsTotalText { get => previewAsTotalText; private set => Set(ref previewAsTotalText, value); }
+    public string PreviewFcdText { get => previewFcdText; private set => Set(ref previewFcdText, value); }
+    public string PreviewFydText { get => previewFydText; private set => Set(ref previewFydText, value); }
+    public string PreviewEcmText { get => previewEcmText; private set => Set(ref previewEcmText, value); }
+    public string PreviewDxText { get => previewDxText; private set => Set(ref previewDxText, value); }
+    public string PreviewDyText { get => previewDyText; private set => Set(ref previewDyText, value); }
+    public string PreviewOmegaText { get => previewOmegaText; private set => Set(ref previewOmegaText, value); }
+    public string PreviewNRatioText { get => previewNRatioText; private set => Set(ref previewNRatioText, value); }
     public string PreviewRebarPercentageText { get => previewRebarPercentageText; private set => Set(ref previewRebarPercentageText, value); }
     public string PreviewShapeSummaryText { get => previewShapeSummaryText; private set => Set(ref previewShapeSummaryText, value); }
     public string PreviewRebarLayoutText { get => previewRebarLayoutText; private set => Set(ref previewRebarLayoutText, value); }
+    public LoadCaseViewModel? SelectedLoadCase
+    {
+        get => selectedLoadCase;
+        set
+        {
+            Set(ref selectedLoadCase, value);
+            UpdateSectionPropertiesPanel();
+        }
+    }
+    public string SlendernessWarningText => BuildSlendernessWarningText();
+    public bool HasSlendernessWarnings => !string.IsNullOrWhiteSpace(SlendernessWarningText);
+    public string FcdDisplayText => Fc > 0 && GammaC > 0 ? $"{AlphaCc * StressInputToMpa(Fc) / GammaC:F2}" : "auto";
+    public string FcmDisplayText => Fc > 0 ? $"{StressInputToMpa(Fc) + 8.0:F2}" : "auto";
+    public string EcmDisplayText => Fc > 0 ? $"{22000.0 * Math.Pow((StressInputToMpa(Fc) + 8.0) / 10.0, 0.3):F0}" : "auto";
 
     public ForceUnit CurrentForceUnit => UnitSystem == UnitSystem.Metric ? ForceUnit.kN : ForceUnit.Kip;
     public MomentUnit CurrentMomentUnit => UnitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt;
@@ -749,6 +899,13 @@ public sealed class InputViewModel : ViewModelBase
                 Ec2Solver = SelectedEc2Solver,
                 IntegrationMethod = SectionIntegrationMethod.Polygon,
                 AlphaCc = AlphaCc,
+                GammaC = GammaC,
+                IncludeEc2Slenderness = IncludeEc2Slenderness,
+                MemberLengthL = MemberLengthL,
+                Kx = Kx,
+                Ky = Ky,
+                PhiEff = PhiEff,
+                UseDefaultAWhenPhiEffUnknown = UseDefaultAWhenPhiEffUnknown,
                 RebarSetLibrary = selectedRebarSetLibrary,
                 Irregular = irregularDto,
                 LinkDiameterMm = stirrupDiameterMm,
@@ -801,6 +958,13 @@ public sealed class InputViewModel : ViewModelBase
                 Ec2Solver = SelectedEc2Solver,
                 IntegrationMethod = SelectedIntegrationMethod,
                 AlphaCc = AlphaCc,
+                GammaC = GammaC,
+                IncludeEc2Slenderness = IncludeEc2Slenderness,
+                MemberLengthL = MemberLengthL,
+                Kx = Kx,
+                Ky = Ky,
+                PhiEff = PhiEff,
+                UseDefaultAWhenPhiEffUnknown = UseDefaultAWhenPhiEffUnknown,
                 RebarSetLibrary = selectedRebarSetLibrary,
                 LinkDiameterMm = stirrupDiameterMm,
                 LinkSpacingMm = linkSpacingMm,
@@ -838,6 +1002,13 @@ public sealed class InputViewModel : ViewModelBase
             Ec2Solver = SelectedEc2Solver,
             IntegrationMethod = SelectedIntegrationMethod,
             AlphaCc = AlphaCc,
+            GammaC = GammaC,
+            IncludeEc2Slenderness = IncludeEc2Slenderness,
+            MemberLengthL = MemberLengthL,
+            Kx = Kx,
+            Ky = Ky,
+            PhiEff = PhiEff,
+            UseDefaultAWhenPhiEffUnknown = UseDefaultAWhenPhiEffUnknown,
             RebarSetLibrary = selectedRebarSetLibrary,
             LinkDiameterMm = stirrupDiameterMm,
             LinkSpacingMm = linkSpacingMm,
@@ -1310,12 +1481,16 @@ public sealed class InputViewModel : ViewModelBase
             source?.Mux ?? Mux,
             source?.Muy ?? Muy);
         LoadCases.Add(lc);
+        SelectedLoadCase = lc;
+        RefreshSlendernessUiState();
     }
 
     private void DeleteLoadCase(LoadCaseViewModel lc)
     {
         LoadCases.Remove(lc);
         EnsureAtLeastOneLoadCase();
+        if (SelectedLoadCase == lc) SelectedLoadCase = LoadCases.FirstOrDefault();
+        RefreshSlendernessUiState();
     }
 
     private void DeleteSelectedLoadCases(object selectedItems)
@@ -1328,6 +1503,9 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         EnsureAtLeastOneLoadCase();
+        if (SelectedLoadCase is null || !LoadCases.Contains(SelectedLoadCase))
+            SelectedLoadCase = LoadCases.FirstOrDefault();
+        RefreshSlendernessUiState();
     }
 
     private void RemoveDuplicateLoadCases()
@@ -1403,6 +1581,8 @@ public sealed class InputViewModel : ViewModelBase
                 {
                     LoadCases.Clear();
                     foreach (var lc in imported) LoadCases.Add(lc);
+                    SelectedLoadCase = LoadCases.FirstOrDefault();
+                    RefreshSlendernessUiState();
                 }
             }
             catch (Exception ex)
@@ -1636,6 +1816,12 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(DemandMomentYHeader));
         Raise(nameof(ShearVuxHeader));
         Raise(nameof(ShearVuyHeader));
+        Raise(nameof(MxTopHeader));
+        Raise(nameof(MxBottomHeader));
+        Raise(nameof(MyTopHeader));
+        Raise(nameof(MyBottomHeader));
+        Raise(nameof(MxUsedHeader));
+        Raise(nameof(MyUsedHeader));
         Raise(nameof(RebarDiameterUnitLabel));
         Raise(nameof(LinkSpacingUnitLabel));
         Raise(nameof(LinkSpacing));
@@ -1652,11 +1838,15 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
+        memberLengthL = 3500.0;
+        includeEc2Slenderness = false;
+        kx = 1.0; ky = 1.0; phiEff = null; useDefaultAWhenPhiEffUnknown = true;
         stirrupDiameterMm = 10.0; metricBars.TryGet("T10", out var _t10); selectedStirrupBar = _t10;
         linkSpacingMm = 200.0; innerLegsX = 0; innerLegsY = 0;
         selectedMaterialLibrary = MaterialLibraryType.Europe;
         selectedConcreteGrade = EuropeanConcreteGrades[2]; // C30/37
         selectedSteelGrade = EuropeanSteelGrades[2]; // B500B
+        gammaC = 1.50;
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
         fc = selectedConcreteGrade.StressValue(UnitSystem.Metric);
@@ -1677,11 +1867,15 @@ public sealed class InputViewModel : ViewModelBase
         selectedSectionShape = SectionShapeType.Rectangular;
         selectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
+        memberLengthL = 140.0;
+        includeEc2Slenderness = false;
+        kx = 1.0; ky = 1.0; phiEff = null; useDefaultAWhenPhiEffUnknown = true;
         stirrupDiameterMm = 9.525; selectedStirrupBar = imperialBars.GetBars().FirstOrDefault();
         linkSpacingMm = 8.0 * 25.4; innerLegsX = 0; innerLegsY = 0;
         selectedMaterialLibrary = MaterialLibraryType.America;
         selectedConcreteGrade = AmericanConcreteGrades[1];
         selectedSteelGrade = AmericanSteelGrades[1];
+        gammaC = 1.50;
         SyncSideGlobalInputs();
         SeedSideCountsFromTotalBars();
         fc = selectedConcreteGrade.StressValue(UnitSystem.Imperial);
@@ -1719,7 +1913,10 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(IsEqualSpacingLayout)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(IsRectangularEqualSpacingLayout));
         Raise(nameof(ShowTotalBarsInput)); Raise(nameof(IsCustomRebarCoordinates)); Raise(nameof(IsRebarCoordinatesEditable));
         Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
-        Raise(nameof(AlphaCc)); Raise(nameof(ShowAlphaCcOption));
+        Raise(nameof(AlphaCc)); Raise(nameof(GammaC)); Raise(nameof(ShowAlphaCcOption));
+        Raise(nameof(MemberLengthL)); Raise(nameof(IncludeEc2Slenderness)); Raise(nameof(Kx)); Raise(nameof(Ky)); Raise(nameof(PhiEff));
+        Raise(nameof(UseDefaultAWhenPhiEffUnknown)); Raise(nameof(DemandInputModeText)); Raise(nameof(L0xText)); Raise(nameof(L0yText));
+        RaiseMaterialDerivedProperties();
         Raise(nameof(SelectedStirrupBar)); Raise(nameof(AvailableStirrupBars)); Raise(nameof(StirrupDiameterMm));
         Raise(nameof(LinkSpacingMm)); Raise(nameof(InnerLegsX)); Raise(nameof(InnerLegsY));
         Raise(nameof(MaxInnerLegsX)); Raise(nameof(MaxInnerLegsY));
@@ -2106,17 +2303,45 @@ public sealed class InputViewModel : ViewModelBase
             PreviewAreaText = $"{agMm2:N0} mm²";
             PreviewIxxText = FormatInertia(ixxMm4);
             PreviewIyyText = FormatInertia(iyyMm4);
+            PreviewIxText = ixxMm4 > 0 ? $"{Math.Sqrt(ixxMm4 / agMm2):F1} mm" : "—";
+            PreviewIyText = iyyMm4 > 0 ? $"{Math.Sqrt(iyyMm4 / agMm2):F1} mm" : "—";
         }
         else
         {
             PreviewAreaText = "—";
             PreviewIxxText = "—";
             PreviewIyyText = "—";
+            PreviewIxText = "—";
+            PreviewIyText = "—";
         }
 
         // Diameter in PreviewRebarPoint is always in mm
         double totalAsMm2 = PreviewRebars.Sum(r => Math.PI * Math.Pow(r.Diameter / 2.0, 2));
         int rebarCount = PreviewRebars.Count;
+        PreviewAsTotalText = totalAsMm2 > 0 ? $"{totalAsMm2:N0} mm²" : "—";
+
+        double fckMpa = StressInputToMpa(Fc);
+        double fykMpa = StressInputToMpa(Fy);
+        double fcd = GammaC > 0 ? AlphaCc * fckMpa / GammaC : 0.0;
+        double fyd = fykMpa / 1.15;
+        double ecm = fckMpa > 0 ? 22000.0 * Math.Pow((fckMpa + 8.0) / 10.0, 0.3) : 0.0;
+        PreviewFcdText = fcd > 0 ? $"{fcd:F2} MPa" : "—";
+        PreviewFydText = fyd > 0 ? $"{fyd:F2} MPa" : "—";
+        PreviewEcmText = ecm > 0 ? $"{ecm:F0} MPa" : "—";
+
+        double dxMm = RebarSpreadMm(PreviewRebars.Select(r => r.Y), 0.8 * CurrentSectionHeightMm());
+        double dyMm = RebarSpreadMm(PreviewRebars.Select(r => r.X), 0.8 * CurrentSectionWidthMm());
+        PreviewDxText = dxMm > 0 ? $"{dxMm:F1} mm" : "—";
+        PreviewDyText = dyMm > 0 ? $"{dyMm:F1} mm" : "—";
+
+        double omega = agMm2 > 0 && fcd > 0
+            ? totalAsMm2 * fyd / (agMm2 * fcd)
+            : 0.0;
+        PreviewOmegaText = omega > 0 ? $"{omega:F3}" : "—";
+
+        double nEdN = ForceInputToN(SelectedLoadCase?.NEd ?? Pu);
+        double nRatio = agMm2 > 0 && fcd > 0 ? nEdN / (agMm2 * fcd) : 0.0;
+        PreviewNRatioText = nRatio > 0 ? $"{nRatio:F3}" : "—";
 
         PreviewRebarLayoutText = selectedRebarLayoutType switch
         {
@@ -2131,6 +2356,179 @@ public sealed class InputViewModel : ViewModelBase
             PreviewRebarPercentageText = $"{totalAsMm2 / agMm2 * 100.0:F2} %";
         else
             PreviewRebarPercentageText = "—";
+
+        RefreshSlendernessUiState();
+    }
+
+    private void LoadCases_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (LoadCaseViewModel item in e.OldItems)
+            {
+                item.PropertyChanged -= LoadCase_PropertyChanged;
+            }
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (LoadCaseViewModel item in e.NewItems)
+            {
+                item.PropertyChanged += LoadCase_PropertyChanged;
+            }
+        }
+
+        if (SelectedLoadCase is null || !LoadCases.Contains(SelectedLoadCase))
+        {
+            SelectedLoadCase = LoadCases.FirstOrDefault();
+        }
+
+        RefreshSlendernessUiState();
+    }
+
+    private void LoadCase_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (ReferenceEquals(sender, SelectedLoadCase))
+        {
+            UpdateSectionPropertiesPanel();
+        }
+
+        RefreshSlendernessUiState();
+    }
+
+    private void RefreshSlendernessUiState()
+    {
+        if (isRefreshingSlendernessState) return;
+        isRefreshingSlendernessState = true;
+        try
+        {
+            foreach (var loadCase in LoadCases)
+            {
+                if (!loadCase.IsActive)
+                {
+                    loadCase.Status = "Excluded";
+                    loadCase.HasValidationError = false;
+                    continue;
+                }
+
+                if (!IncludeEc2Slenderness)
+                {
+                    loadCase.MxUsed = null;
+                    loadCase.MyUsed = null;
+                    loadCase.Status = "Ready";
+                    loadCase.HasValidationError = false;
+                    continue;
+                }
+
+                loadCase.MxUsed = null;
+                loadCase.MyUsed = null;
+
+                bool globalMissing = MemberLengthL is not > 0 || Kx is not > 0 || Ky is not > 0;
+                bool missingMoments = loadCase.MxTop is null ||
+                    loadCase.MxBottom is null ||
+                    loadCase.MyTop is null ||
+                    loadCase.MyBottom is null;
+
+                if (loadCase.NEd <= 0)
+                {
+                    loadCase.Status = "Invalid NEd";
+                    loadCase.HasValidationError = true;
+                }
+                else if (globalMissing || missingMoments)
+                {
+                    loadCase.Status = "Missing Input";
+                    loadCase.HasValidationError = true;
+                }
+                else
+                {
+                    loadCase.Status = "Ready";
+                    loadCase.HasValidationError = false;
+                }
+            }
+
+            Raise(nameof(SlendernessWarningText));
+            Raise(nameof(HasSlendernessWarnings));
+        }
+        finally
+        {
+            isRefreshingSlendernessState = false;
+        }
+    }
+
+    private string BuildSlendernessWarningText()
+    {
+        var warnings = new List<string>
+        {
+            "Ecm is auto-calculated from fck. Manual override is not active."
+        };
+
+        if (!IncludeEc2Slenderness)
+        {
+            return string.Join(Environment.NewLine, warnings.Select(w => "- " + w));
+        }
+
+        if (MemberLengthL is not > 0)
+            warnings.Add("Column length L is missing in Section & Rebar.");
+        if (Kx is not > 0)
+            warnings.Add("kx must be greater than zero.");
+        if (Ky is not > 0)
+            warnings.Add("ky must be greater than zero.");
+        if (PhiEff is < 0)
+            warnings.Add("Effective creep ratio phiEff must be zero or greater.");
+
+        foreach (var loadCase in LoadCases.Where(lc => lc.IsActive))
+        {
+            if (loadCase.NEd <= 0)
+                warnings.Add($"{loadCase.Name}: NEd is tensile or zero; EC2 column slenderness check is not applicable.");
+            if (loadCase.MxTop is null || loadCase.MxBottom is null)
+                warnings.Add($"{loadCase.Name}: Mx Top and Mx Bottom are required because slenderness is enabled.");
+            if (loadCase.MyTop is null || loadCase.MyBottom is null)
+                warnings.Add($"{loadCase.Name}: My Top and My Bottom are required because slenderness is enabled.");
+        }
+
+        return string.Join(Environment.NewLine, warnings.Distinct().Select(w => "- " + w));
+    }
+
+    private void RaiseMaterialDerivedProperties()
+    {
+        Raise(nameof(FcdDisplayText));
+        Raise(nameof(FcmDisplayText));
+        Raise(nameof(EcmDisplayText));
+        Raise(nameof(PreviewFcdText));
+        Raise(nameof(PreviewFydText));
+        Raise(nameof(PreviewEcmText));
+        Raise(nameof(PreviewOmegaText));
+    }
+
+    private double StressInputToMpa(double value)
+        => UnitSystem == UnitSystem.Metric ? value : value * 6.894757293168;
+
+    private double ForceInputToN(double value)
+        => UnitSystem == UnitSystem.Metric ? value * 1000.0 : value * 4448.2216152605;
+
+    private double CurrentSectionWidthMm()
+    {
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        return (IsCircularSection ? Diameter : Width) * factor;
+    }
+
+    private double CurrentSectionHeightMm()
+    {
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        return (IsCircularSection ? Diameter : Height) * factor;
+    }
+
+    private double RebarSpreadMm(IEnumerable<double> values, double fallbackMm)
+    {
+        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        var list = values.Select(v => v * factor).ToList();
+        if (list.Count < 2)
+        {
+            return fallbackMm;
+        }
+
+        double spread = list.Max() - list.Min();
+        return spread > 0 ? spread : fallbackMm;
     }
 
     private static (double Ixx, double Iyy) ComputePolygonSecondMoments(IReadOnlyList<Point2D> pts)
@@ -2165,8 +2563,10 @@ public sealed class InputViewModel : ViewModelBase
         Ec2Solver = selectedEc2Solver.ToString(),
         IntegrationMethod = selectedIntegrationMethod.ToString(),
         AlphaCc = alphaCc,
+        GammaC = gammaC,
         SectionShape = selectedSectionShape.ToString(),
         Width = width, Height = height, Diameter = diameter, Cover = cover,
+        MemberLengthL = memberLengthL,
         StirrupDiameterMm = stirrupDiameterMm,
         StirrupBarSize = selectedStirrupBar?.Name ?? "",
         LinkSpacingMm = linkSpacingMm,
@@ -2192,6 +2592,11 @@ public sealed class InputViewModel : ViewModelBase
             .Select(r => new SnapshotRebar { RebarIndex = r.RebarIndex, X = r.X, Y = r.Y, BarSize = r.BarSize, AreaMm2 = r.AreaMm2 })
             .ToList(),
         Pu = pu, Mux = mux, Muy = muy,
+        IncludeEc2Slenderness = includeEc2Slenderness,
+        Kx = kx,
+        Ky = ky,
+        PhiEff = phiEff,
+        UseDefaultAWhenPhiEffUnknown = useDefaultAWhenPhiEffUnknown,
         PmAngleDegrees = selectedPmAngleDegrees,
         AxialLoad = selectedAxialLoad,
         DesignTierName = designTierName,
@@ -2212,6 +2617,12 @@ public sealed class InputViewModel : ViewModelBase
                 Pu = lc.Pu,
                 Mux = lc.Mux,
                 Muy = lc.Muy,
+                MxTop = lc.MxTop,
+                MxBottom = lc.MxBottom,
+                MyTop = lc.MyTop,
+                MyBottom = lc.MyBottom,
+                MxUsed = lc.MxUsed,
+                MyUsed = lc.MyUsed,
                 Vux = lc.Vux,
                 Vuy = lc.Vuy,
                 IsActive = lc.IsActive
@@ -2231,8 +2642,10 @@ public sealed class InputViewModel : ViewModelBase
         selectedEc2Solver = Enum.TryParse<Ec2SolverType>(s.Ec2Solver, out var ec2) ? ec2 : Ec2SolverType.Fiber;
         selectedIntegrationMethod = Enum.TryParse<SectionIntegrationMethod>(s.IntegrationMethod, out var im) ? im : SectionIntegrationMethod.Fiber;
         alphaCc = s.AlphaCc;
+        gammaC = s.GammaC > 0 ? s.GammaC : 1.50;
         selectedSectionShape = Enum.TryParse<SectionShapeType>(s.SectionShape, out var ss) ? ss : SectionShapeType.Rectangular;
         width = s.Width; height = s.Height; diameter = s.Diameter; cover = s.Cover;
+        memberLengthL = s.MemberLengthL;
         fc = s.Fc; fy = s.Fy; es = s.Es;
         if (Enum.TryParse<MaterialLibraryType>(s.MaterialLibrary, out var materialLibrary))
         {
@@ -2272,6 +2685,11 @@ public sealed class InputViewModel : ViewModelBase
             selectedSectionShape);
         layoutPreset = RebarLayoutDisplayName(selectedRebarLayoutType);
         pu = s.Pu; mux = s.Mux; muy = s.Muy;
+        includeEc2Slenderness = s.IncludeEc2Slenderness;
+        kx = s.Kx ?? 1.0;
+        ky = s.Ky ?? 1.0;
+        phiEff = s.PhiEff;
+        useDefaultAWhenPhiEffUnknown = s.UseDefaultAWhenPhiEffUnknown;
         selectedPmAngleDegrees = s.PmAngleDegrees;
         selectedAxialLoad = s.AxialLoad;
 
@@ -2289,6 +2707,12 @@ public sealed class InputViewModel : ViewModelBase
             {
                 Vux = lc.Vux,
                 Vuy = lc.Vuy,
+                MxTop = lc.MxTop,
+                MxBottom = lc.MxBottom,
+                MyTop = lc.MyTop,
+                MyBottom = lc.MyBottom,
+                MxUsed = lc.MxUsed,
+                MyUsed = lc.MyUsed,
                 OriginalLoadCaseName = lc.OriginalLoadCaseName,
                 SourceObjectName = lc.SourceObjectName,
                 SourceObjectLabel = lc.SourceObjectLabel,
@@ -2301,6 +2725,7 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         if (LoadCases.Count == 0) AddPrimaryLoadCase();
+        SelectedLoadCase = LoadCases.FirstOrDefault();
         
         _generatingRebarsDepth++;
         try
@@ -2323,6 +2748,51 @@ public sealed class InputViewModel : ViewModelBase
 
         RaiseDefaults();
         UpdateSectionPreview();
+        RefreshSlendernessUiState();
+    }
+
+    public void ApplySlendernessResults(CalculationResultDto result)
+    {
+        isRefreshingSlendernessState = true;
+        try
+        {
+            if (!result.IncludeEc2Slenderness)
+            {
+                foreach (var loadCase in LoadCases)
+                {
+                    loadCase.MxUsed = null;
+                    loadCase.MyUsed = null;
+                    loadCase.Status = loadCase.IsActive ? "Ready" : "Excluded";
+                }
+
+                return;
+            }
+
+            var units = new UnitConversionService();
+            var byId = result.Ec2Slenderness.LoadCases.ToDictionary(r => r.LoadCaseId);
+            foreach (var loadCase in LoadCases)
+            {
+                if (!byId.TryGetValue(loadCase.Id, out var slenderness))
+                {
+                    continue;
+                }
+
+                loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
+                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, CurrentMomentUnit)
+                    : null;
+                loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
+                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, CurrentMomentUnit)
+                    : null;
+                loadCase.Status = slenderness.Status;
+            }
+        }
+        finally
+        {
+            isRefreshingSlendernessState = false;
+        }
+
+        Raise(nameof(SlendernessWarningText));
+        Raise(nameof(HasSlendernessWarnings));
     }
 
 

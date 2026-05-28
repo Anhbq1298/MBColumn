@@ -9,12 +9,14 @@ public sealed class ColumnInputSnapshot
     public string Ec2Solver { get; set; } = "Fiber";
     public string IntegrationMethod { get; set; } = "Fiber";
     public double AlphaCc { get; set; } = 0.85;
+    public double GammaC { get; set; } = 1.50;
 
     public string SectionShape { get; set; } = "Rectangular";
     public double Width { get; set; } = 700;
     public double Height { get; set; } = 700;
     public double Diameter { get; set; } = 700;
     public double Cover { get; set; } = 55;
+    public double? MemberLengthL { get; set; }
 
     public double Fc { get; set; } = 28;
     public double Fy { get; set; } = 420;
@@ -47,6 +49,11 @@ public sealed class ColumnInputSnapshot
     public double Pu { get; set; }
     public double Mux { get; set; }
     public double Muy { get; set; }
+    public bool IncludeEc2Slenderness { get; set; }
+    public double? Kx { get; set; } = 1.0;
+    public double? Ky { get; set; } = 1.0;
+    public double? PhiEff { get; set; }
+    public bool UseDefaultAWhenPhiEffUnknown { get; set; } = true;
     public double PmAngleDegrees { get; set; }
     public double AxialLoad { get; set; }
     public List<SnapshotLoadCase> LoadCases { get; set; } = [];
@@ -91,6 +98,12 @@ public sealed class SnapshotLoadCase
     public double Pu { get; set; }
     public double Mux { get; set; }
     public double Muy { get; set; }
+    public double? MxTop { get; set; }
+    public double? MxBottom { get; set; }
+    public double? MyTop { get; set; }
+    public double? MyBottom { get; set; }
+    public double? MxUsed { get; set; }
+    public double? MyUsed { get; set; }
     /// <summary>Shear force in X direction in the snapshot's force unit. Defaults to 0.</summary>
     public double Vux { get; set; } = 0.0;
     /// <summary>Shear force in Y direction in the snapshot's force unit. Defaults to 0.</summary>
