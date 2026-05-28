@@ -16,5 +16,6 @@
     <conv:NullOrEmptyToCollapsedConverter x:Key="NullOrEmptyToCollapsedConverter" />
     <conv:NonZeroToVisibilityConverter x:Key="NonZeroToVisibilityConverter" />
     <conv:PctOf720Converter x:Key="PctOf720Converter" />
+    <conv:BoolToGridLengthConverter x:Key="BoolToGridLengthConverter" />
 </ResourceDictionary>
 

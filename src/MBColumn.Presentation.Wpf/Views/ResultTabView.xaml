@@ -355,12 +355,25 @@
                       HorizontalAlignment="Stretch"
                       Background="{DynamicResource LightBackgroundBrush}" />
 
+        <!-- Chart area: 65% 2D charts | 35% 3D chart -->
         <Grid Grid.Row="1" Grid.Column="2" Margin="8,0,0,8">
-            <UniformGrid
-                     Columns="{Binding LayoutColumns}"
-                     Rows="{Binding LayoutRows}">
-                <Border Style="{StaticResource ChartCardStyle}"
-                    Visibility="{Binding ShowPM, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="65*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="35*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left column (65%): PM 2D + Mx-My 2D stacked -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="{Binding ShowPM,   Converter={StaticResource BoolToGridLengthConverter}}" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="{Binding ShowMxMy, Converter={StaticResource BoolToGridLengthConverter}}" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Style="{StaticResource ChartCardStyle}"
+                        Visibility="{Binding ShowPM, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -368,40 +381,46 @@
                         </Grid.RowDefinitions>
                         <DockPanel Margin="0,0,0,8" MinHeight="28">
                             <Button DockPanel.Dock="Right"
-                                Content="x"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTip="Close viewport"
-                                Command="{Binding CloseViewportCommand}"
-                                CommandParameter="{x:Static vm:DiagramViewportType.PM2D}" />
+                                    Content="x"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    ToolTip="Close viewport"
+                                    Command="{Binding CloseViewportCommand}"
+                                    CommandParameter="{x:Static vm:DiagramViewportType.PM2D}" />
                             <TextBlock Text="{Binding PM.DiagramTitle}"
-                                   Style="{StaticResource SectionTitleTextStyle}"
-                                   VerticalAlignment="Center"
-                                   ToolTip="{Binding PM.DiagramTitle}" />
+                                       Style="{StaticResource SectionTitleTextStyle}"
+                                       VerticalAlignment="Center"
+                                       ToolTip="{Binding PM.DiagramTitle}" />
                         </DockPanel>
                         <controls:DiagramCanvas2D Grid.Row="1"
-                                              MinHeight="220"
-                                              Points="{Binding PmAnglePoints}"
-                                              ReferenceLines="{Binding PmReferenceLines}"
-                                              XAxisLabel="{Binding PM.XAxisLabel}"
-                                              YAxisLabel="{Binding PM.YAxisLabel}"
-                                              ShowGrid="{Binding ShowGrid}"
-                                              ShowLabels="{Binding ShowLabels}"
-                                              ShowDemandPoint="{Binding ShowDemandPoint}"
-                                              ShowDemandLabel="False"
-                                              ShowReferenceLines="{Binding ShowPmaxPmin}"
-                                              ShowNominalCurve="{Binding ShowNominalCurve}"
-                                              XGridStep="{Binding MStep}"
-                                              YGridStep="{Binding PStep}"
-                                              BoundsOverride="{Binding SharedPmBounds}"
-                                              SelectedPoint="{Binding SelectedChartPoint}"
-                                              HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
-                                              Ratio="{Binding PM.Ratio}"
-                                              ResetVersion="{Binding PM.ResetVersion}" />
+                                                  MinHeight="220"
+                                                  Points="{Binding PmAnglePoints}"
+                                                  ReferenceLines="{Binding PmReferenceLines}"
+                                                  XAxisLabel="{Binding PM.XAxisLabel}"
+                                                  YAxisLabel="{Binding PM.YAxisLabel}"
+                                                  ShowGrid="{Binding ShowGrid}"
+                                                  ShowLabels="{Binding ShowLabels}"
+                                                  ShowDemandPoint="{Binding ShowDemandPoint}"
+                                                  ShowDemandLabel="False"
+                                                  ShowReferenceLines="{Binding ShowPmaxPmin}"
+                                                  ShowNominalCurve="{Binding ShowNominalCurve}"
+                                                  XGridStep="{Binding MStep}"
+                                                  YGridStep="{Binding PStep}"
+                                                  BoundsOverride="{Binding SharedPmBounds}"
+                                                  SelectedPoint="{Binding SelectedChartPoint}"
+                                                  HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
+                                                  Ratio="{Binding PM.Ratio}"
+                                                  ResetVersion="{Binding PM.ResetVersion}" />
                     </Grid>
                 </Border>
 
-                <Border Style="{StaticResource ChartCardStyle}"
-                    Visibility="{Binding ShowPmm3D, Converter={StaticResource BoolToVisibilityConverter}}">
+                <!-- Spacer between PM and Mx-My (only takes space when both are visible) -->
+                <Border Grid.Row="1"
+                        Height="8"
+                        Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <Border Grid.Row="2"
+                        Style="{StaticResource ChartCardStyle}"
+                        Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -409,69 +428,75 @@
                         </Grid.RowDefinitions>
                         <DockPanel Margin="0,0,0,8" MinHeight="28">
                             <Button DockPanel.Dock="Right"
+                                    Content="x"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    ToolTip="Close viewport"
+                                    Command="{Binding CloseViewportCommand}"
+                                    CommandParameter="{x:Static vm:DiagramViewportType.MxMy2D}" />
+                            <TextBlock Text="Mx-My Diagram"
+                                       Style="{StaticResource SectionTitleTextStyle}"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+                        <controls:DiagramCanvas2D Grid.Row="1"
+                                                  MinHeight="220"
+                                                  Points="{Binding MxMyPoints}"
+                                                  XAxisLabel="{Binding MM.XAxisLabel}"
+                                                  YAxisLabel="{Binding MM.YAxisLabel}"
+                                                  ShowGrid="{Binding ShowGrid}"
+                                                  ShowLabels="{Binding ShowLabels}"
+                                                  ShowDemandPoint="{Binding ShowDemandPoint}"
+                                                  ShowDemandLabel="False"
+                                                  ShowNominalCurve="{Binding ShowNominalCurve}"
+                                                  UseEqualAspect="{Binding UseEqualAspectForMM}"
+                                                  XGridStep="{Binding MStepX}"
+                                                  YGridStep="{Binding MStepY}"
+                                                  SelectedPoint="{Binding SelectedChartPoint}"
+                                                  HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
+                                                  Ratio="{Binding MM.Ratio}"
+                                                  ResetVersion="{Binding MM.ResetVersion}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Right column (35%): 3D PMM chart -->
+            <Border Grid.Column="2"
+                    Style="{StaticResource ChartCardStyle}"
+                    Visibility="{Binding ShowPmm3D, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,8" MinHeight="28">
+                        <Button DockPanel.Dock="Right"
                                 Content="x"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="Close viewport"
                                 Command="{Binding CloseViewportCommand}"
                                 CommandParameter="{x:Static vm:DiagramViewportType.Pmm3D}" />
-                            <TextBlock Text="3D PMM View" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                        </DockPanel>
-                        <controls:InteractionViewport3D Grid.Row="1"
-                                                    MinHeight="220"
-                                                    Points="{Binding PM3D.SurfacePoints}"
-                                                    DemandPoint="{Binding PM3D.DemandPoint}"
-                                                    DemandPoints="{Binding PM3D.DemandPoints}"
-                                                    ShowGrid="{Binding PM3D.ShowGrid}"
-                                                    ShowWireframe="{Binding ShowWireframe3D}"
-                                                    ShowSurface="{Binding ShowSurface3D}"
-                                                    ShowLabels="{Binding PM3D.ShowLabels}"
-                                                    ShowDemandPoint="{Binding ShowDemandPoint}"
-                                                    UnitLabels="{Binding PM3D.UnitLabels}"
-                                                    SelectedPmAngle="{Binding PM3D.SelectedPmAngle}"
-                                                    SelectedAxialLoad="{Binding PM3D.SelectedAxialLoad}"
-                                                    ShowSlicePlane="{Binding PM3D.ShowSlicePlane}"
-                                                    ShowAxialLoadSlice="{Binding PM3D.ShowAxialLoadSlice}"
-                                                    SpecialCapacityPoints="{Binding PM3D.SpecialCapacityPoints}"
-                                                    ResetVersion="{Binding PM3D.ResetVersion}" />
-                    </Grid>
-                </Border>
-
-                <Border Style="{StaticResource ChartCardStyle}"
-                    Visibility="{Binding ShowMxMy, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <DockPanel Margin="0,0,0,8" MinHeight="28">
-                            <Button DockPanel.Dock="Right"
-                                Content="x"
-                                Style="{StaticResource IconButtonStyle}"
-                                ToolTip="Close viewport"
-                                Command="{Binding CloseViewportCommand}"
-                                CommandParameter="{x:Static vm:DiagramViewportType.MxMy2D}" />
-                            <TextBlock Text="Mx-My Diagram" Style="{StaticResource SectionTitleTextStyle}" VerticalAlignment="Center" />
-                        </DockPanel>
-                        <controls:DiagramCanvas2D Grid.Row="1"
-                                              MinHeight="220"
-                                              Points="{Binding MxMyPoints}"
-                                              XAxisLabel="{Binding MM.XAxisLabel}"
-                                              YAxisLabel="{Binding MM.YAxisLabel}"
-                                              ShowGrid="{Binding ShowGrid}"
-                                              ShowLabels="{Binding ShowLabels}"
-                                              ShowDemandPoint="{Binding ShowDemandPoint}"
-                                              ShowDemandLabel="False"
-                                              ShowNominalCurve="{Binding ShowNominalCurve}"
-                                              UseEqualAspect="{Binding UseEqualAspectForMM}"
-                                              XGridStep="{Binding MStepX}"
-                                              YGridStep="{Binding MStepY}"
-                                              SelectedPoint="{Binding SelectedChartPoint}"
-                                              HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
-                                              Ratio="{Binding MM.Ratio}"
-                                              ResetVersion="{Binding MM.ResetVersion}" />
-                    </Grid>
-                </Border>
-            </UniformGrid>
+                        <TextBlock Text="3D PMM View"
+                                   Style="{StaticResource SectionTitleTextStyle}"
+                                   VerticalAlignment="Center" />
+                    </DockPanel>
+                    <controls:InteractionViewport3D Grid.Row="1"
+                                                   MinHeight="220"
+                                                   Points="{Binding PM3D.SurfacePoints}"
+                                                   DemandPoint="{Binding PM3D.DemandPoint}"
+                                                   DemandPoints="{Binding PM3D.DemandPoints}"
+                                                   ShowGrid="{Binding PM3D.ShowGrid}"
+                                                   ShowWireframe="{Binding ShowWireframe3D}"
+                                                   ShowSurface="{Binding ShowSurface3D}"
+                                                   ShowLabels="{Binding PM3D.ShowLabels}"
+                                                   ShowDemandPoint="{Binding ShowDemandPoint}"
+                                                   UnitLabels="{Binding PM3D.UnitLabels}"
+                                                   SelectedPmAngle="{Binding PM3D.SelectedPmAngle}"
+                                                   SelectedAxialLoad="{Binding PM3D.SelectedAxialLoad}"
+                                                   ShowSlicePlane="{Binding PM3D.ShowSlicePlane}"
+                                                   ShowAxialLoadSlice="{Binding PM3D.ShowAxialLoadSlice}"
+                                                   SpecialCapacityPoints="{Binding PM3D.SpecialCapacityPoints}"
+                                                   ResetVersion="{Binding PM3D.ResetVersion}" />
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

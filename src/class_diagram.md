@@ -540,6 +540,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **BoolToGridLengthConverter** | Represents the BoolToGridLengthConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
 | `class` | **BoolToVisibilityConverter** | Represents the BoolToVisibilityConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
 | `class` | **InverseBoolToVisibilityConverter** | Represents the InverseBoolToVisibilityConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
 | `class` | **NonZeroToVisibilityConverter** | Represents the NonZeroToVisibilityConverter class. Key methods: Convert, ConvertBack. | `BoolToVisibilityConverter.cs` |
