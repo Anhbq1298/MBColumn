@@ -149,156 +149,184 @@
                                                     Binding="{Binding ThetaDeg, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="34">
-                                            <TextBlock Text="&#x03B8;" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.AngleUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="34">
+                                                <TextBlock Text="&#x03B8;" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.AngleUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding PointIndex}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="34">
-                                            <TextBlock Text="Pt." Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="34">
+                                                <TextBlock Text="Pt." Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding P, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="P" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.ForceUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="P" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.ForceUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding MxPositive, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="Mx+" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="Mx+" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding MyPositive, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="My+" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="My+" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding MThetaPositive, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="M&#x03B8;+" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="M&#x03B8;+" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding MxNegative, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="Mx-" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="Mx-" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding MyNegative, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="My-" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="My-" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding MThetaNegative, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="M&#x03B8;-" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="M&#x03B8;-" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.MomentUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding NeutralAxisDepth, StringFormat=F1}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="76">
-                                            <TextBlock Text="Neutral Axis Depth" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.LengthUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="76">
+                                                <TextBlock Text="Neutral Axis Depth" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.LengthUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding SteelStrainMax, StringFormat=F5}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="&#x03B5;s" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="&#x03B5;s" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding ConcreteStrainMax, StringFormat=F5}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="58">
-                                            <TextBlock Text="&#x03B5;c" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="58">
+                                                <TextBlock Text="&#x03B5;c" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding PhiFactor, StringFormat=F2}"
                                                     Width="Auto"
                                                     ElementStyle="{StaticResource RightAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="56">
-                                            <TextBlock Text="&#x03C6;" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="{Binding DataContext.PhiUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="56">
+                                                <TextBlock Text="&#x03C6;" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="{Binding DataContext.PhiUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                                 <DataGridTextColumn
                                                     Binding="{Binding Remarks}"
                                                     Width="170"
                                                     MinWidth="140"
                                                     ElementStyle="{StaticResource LeftAlignText}">
-                                    <DataGridTextColumn.Header>
-                                        <StackPanel MinWidth="82">
-                                            <TextBlock Text="Remarks" Style="{StaticResource PreviewHeaderTitleText}" />
-                                            <TextBlock Text="" Style="{StaticResource PreviewHeaderUnitText}" />
-                                        </StackPanel>
-                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <StackPanel MinWidth="82">
+                                                <TextBlock Text="Remarks" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="" Style="{StaticResource PreviewHeaderUnitText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>

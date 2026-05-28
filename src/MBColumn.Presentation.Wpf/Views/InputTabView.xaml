@@ -351,7 +351,7 @@
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
                                          IsReadOnly="True"
-                                         Text="{Binding FcdDisplayText}" />
+                                         Text="{Binding FcdDisplayText, Mode=OneWay}" />
                                 <TextBlock Grid.Row="14"
                                            Grid.Column="0"
                                            Grid.ColumnSpan="2"
@@ -369,7 +369,7 @@
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
                                          IsReadOnly="True"
-                                         Text="{Binding EcmDisplayText}" />
+                                         Text="{Binding EcmDisplayText, Mode=OneWay}" />
                                 <CheckBox Grid.Row="17"
                                           Grid.Column="0"
                                           Grid.ColumnSpan="2"
@@ -1380,9 +1380,9 @@
         <TabItem Header="Loads">
             <Grid Margin="4,6,4,4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="6.2*" MinWidth="600" />
+                    <ColumnDefinition Width="7.6*" MinWidth="600" />
                     <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="3.8*" MinWidth="420" />
+                    <ColumnDefinition Width="2.4*" MinWidth="300" />
                 </Grid.ColumnDefinitions>
 
                 <!-- Left Column: Demand Cases Table + Diagram -->
@@ -1395,7 +1395,7 @@
                           Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="180" />
                             <ColumnDefinition Width="10" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
@@ -1407,14 +1407,15 @@
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Padding="6"
-                                VerticalAlignment="Top">
-                            <StackPanel>
+                                VerticalAlignment="Stretch">
+                            <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Moment Sign Convention"
                                            Style="{StaticResource FieldLabelTextStyle}"
-                                           Margin="0,0,0,4" />
+                                           Margin="0,0,0,4"
+                                           HorizontalAlignment="Center" />
                                 <Viewbox Stretch="Uniform"
                                          HorizontalAlignment="Stretch"
-                                         VerticalAlignment="Top">
+                                         VerticalAlignment="Center">
                                     <Canvas Width="900" Height="940">
                                         <Canvas.Resources>
                                             <Style TargetType="TextBlock">
@@ -1529,8 +1530,8 @@
                                         Padding="10,4"
                                         FontSize="11.5"
                                         Margin="0,0,8,6" />
-                            </WrapPanel>
-                            <Grid Grid.Row="1">
+                             </WrapPanel>
+                             <Grid Grid.Row="1">
                                 <DataGrid x:Name="LoadCasesGrid"
                                           ItemsSource="{Binding LoadCases}"
                                           SelectedItem="{Binding SelectedLoadCase, Mode=TwoWay}"
@@ -1543,6 +1544,12 @@
                                           SelectionUnit="FullRow"
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                                           Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <DataGrid.Resources>
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                                        </Style>
+                                    </DataGrid.Resources>
                                     <DataGrid.Columns>
                                         <DataGridCheckBoxColumn Header="Include"
                                                                 Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -1555,41 +1562,66 @@
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding Vx, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding Vy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding Mx, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding My, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Header="Status"
                                                             Binding="{Binding Status}"
@@ -1598,7 +1630,7 @@
                                                             ElementStyle="{StaticResource LeftAlignText}" />
                                     </DataGrid.Columns>
                                 </DataGrid>
-
+ 
                                 <DataGrid x:Name="SlenderLoadCasesGrid"
                                           ItemsSource="{Binding LoadCases}"
                                           SelectedItem="{Binding SelectedLoadCase, Mode=TwoWay}"
@@ -1611,6 +1643,12 @@
                                           SelectionUnit="FullRow"
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                                           Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <DataGrid.Resources>
+                                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                                        </Style>
+                                    </DataGrid.Resources>
                                     <DataGrid.Columns>
                                         <DataGridCheckBoxColumn Header="Include"
                                                                 Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -1623,73 +1661,118 @@
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding Vx, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding Vy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding MxTop, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.MxTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MxTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding MxBottom, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.MxBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MxBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding MyTop, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.MyTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MyTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding MyBottom, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F2}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.MyBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MyBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding MxUsed, TargetNullValue=auto, StringFormat=F2}"
                                                             Width="*"
                                                             IsReadOnly="True"
                                                             ElementStyle="{StaticResource RightAlignText}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.MxUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MxUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding MyUsed, TargetNullValue=auto, StringFormat=F2}"
                                                             Width="*"
                                                             IsReadOnly="True"
                                                             ElementStyle="{StaticResource RightAlignText}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.MyUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MyUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Header="Status"
                                                             Binding="{Binding Status}"
@@ -1702,7 +1785,6 @@
                         </Grid>
                     </Grid>
                 </GroupBox>
-
                 <!-- Right Column: Selected Load Case Editor & Slenderness Amplification -->
                 <ScrollViewer Grid.Column="2"
                               VerticalScrollBarVisibility="Auto"
@@ -1787,20 +1869,41 @@
                                     <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
                                                Text="Member End Moments"
                                                Style="{StaticResource InputSubsectionTitleTextStyle}" />
-                                    <TextBox Grid.Row="1" Grid.Column="0"
-                                             Text="{Binding SelectedLoadCase.MxTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                             ToolTip="Mx Top" />
-                                    <TextBox Grid.Row="1" Grid.Column="2"
-                                             Text="{Binding SelectedLoadCase.MxBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                             ToolTip="Mx Bottom" />
-                                    <TextBox Grid.Row="2" Grid.Column="0"
-                                             Text="{Binding SelectedLoadCase.MyTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                             ToolTip="My Top"
-                                             Margin="0,8,0,0" />
-                                    <TextBox Grid.Row="2" Grid.Column="2"
-                                             Text="{Binding SelectedLoadCase.MyBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"
-                                             ToolTip="My Bottom"
-                                             Margin="0,8,0,0" />
+                                    
+                                    <!-- Row 1: Mx End Moments -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,0,8">
+                                        <DockPanel>
+                                            <TextBlock Text="Mx Top" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="{Binding SelectedLoadCase.MxTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,4,0,8">
+                                        <DockPanel>
+                                            <TextBlock Text="Mx Bottom" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="{Binding SelectedLoadCase.MxBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                    </StackPanel>
+
+                                    <!-- Row 2: My End Moments -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,4">
+                                        <DockPanel>
+                                            <TextBlock Text="My Top" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="{Binding SelectedLoadCase.MyTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,4">
+                                        <DockPanel>
+                                            <TextBlock Text="My Bottom" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="{Binding SelectedLoadCase.MyBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                    </StackPanel>
+
                                     <TextBlock Grid.Row="3" Grid.Column="0"
                                                Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue='Mx Used auto', StringFormat='Mx Used {0:F2}'}"
                                                Style="{StaticResource HelperTextStyle}"
@@ -1918,9 +2021,9 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="l0x = kx × L" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="True" Text="{Binding L0xText}" />
+                                        <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="True" Text="{Binding L0xText, Mode=OneWay}" />
                                         <TextBlock Grid.Row="0" Grid.Column="2" Text="l0y = ky × L" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Grid.Row="1" Grid.Column="2" IsReadOnly="True" Text="{Binding L0yText}" />
+                                        <TextBox Grid.Row="1" Grid.Column="2" IsReadOnly="True" Text="{Binding L0yText, Mode=OneWay}" />
                                     </Grid>
 
                                     <!-- Moment Shape Settings -->
@@ -2096,7 +2199,7 @@
                                         <ColumnDefinition Width="1.4*" />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="26" />
+                                        <RowDefinition Height="Auto" MinHeight="26" />
                                         <RowDefinition Height="26" />
                                         <RowDefinition Height="26" />
                                     </Grid.RowDefinitions>
@@ -2105,8 +2208,8 @@
                                     <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
                                         <TextBlock Text="Axis" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
-                                    <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="l0 (mm)" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="2,0">
+                                        <TextBlock Text="{Binding LengthLabel, StringFormat='l0 ({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
                                         <TextBlock Text="λ" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
@@ -2117,11 +2220,11 @@
                                     <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
                                         <TextBlock Text="rm" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
-                                    <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="M2 (kNm)" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="2,0">
+                                        <TextBlock Text="{Binding MomentLabel, StringFormat='M2&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
-                                    <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1">
-                                        <TextBlock Text="Moment Used" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="2,0">
+                                        <TextBlock Text="{Binding MomentLabel, StringFormat='Moment Used&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
 
                                     <!-- Row 1: Mx -->
@@ -2132,16 +2235,16 @@
                                         <TextBlock Text="{Binding L0xText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=—, StringFormat=F2}" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
                                         <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
@@ -2155,16 +2258,16 @@
                                         <TextBlock Text="{Binding L0yText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=—, StringFormat=F2}" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="calc" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
                                         <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
@@ -2174,13 +2277,6 @@
                                 <TextBlock Text="PMM demand source:" FontWeight="Bold" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4"/>
                                 <TextBlock Text="Mx Used and My Used are passed to PMM when slenderness is enabled." FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,2"/>
                                 <TextBlock Text="Vx and Vy are not modified by slenderness amplification." FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,8"/>
-                                
-                                <Separator Margin="0,4,0,8" />
-                                
-                                <Button Content="Recalculate Slenderness"
-                                        Style="{StaticResource CompactButtonStyle}"
-                                        HorizontalAlignment="Stretch"
-                                        Height="32" />
                             </StackPanel>
                         </Border>
 

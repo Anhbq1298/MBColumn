@@ -4,7 +4,7 @@ namespace MBColumn.Infrastructure.Persistence;
 
 internal static class DatabaseSchema
 {
-    private const int CurrentVersion = 5;
+    private const int CurrentVersion = 6;
     public const string AppVersion = "1.0.0";
 
     public static void EnsureCreated(SqliteConnection connection, string projectName)
@@ -69,7 +69,15 @@ internal static class DatabaseSchema
                 Pu REAL NOT NULL,
                 Mux REAL NOT NULL,
                 Muy REAL NOT NULL,
-                IsActive INTEGER NOT NULL DEFAULT 1
+                IsActive INTEGER NOT NULL DEFAULT 1,
+                MxTop REAL,
+                MxBottom REAL,
+                MyTop REAL,
+                MyBottom REAL,
+                MxUsed REAL,
+                MyUsed REAL,
+                Vux REAL NOT NULL DEFAULT 0.0,
+                Vuy REAL NOT NULL DEFAULT 0.0
             )
             """);
 
@@ -167,6 +175,26 @@ internal static class DatabaseSchema
                 using var vCmd = connection.CreateCommand();
                 vCmd.CommandText = "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (@v, @now)";
                 vCmd.Parameters.AddWithValue("@v", 5);
+                vCmd.Parameters.AddWithValue("@now", now);
+                vCmd.ExecuteNonQuery();
+
+                version = 5;
+            }
+
+            if (version < 6)
+            {
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN MxTop REAL;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN MxBottom REAL;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN MyTop REAL;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN MyBottom REAL;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN MxUsed REAL;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN MyUsed REAL;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN Vux REAL NOT NULL DEFAULT 0.0;"); } catch { }
+                try { Exec(connection, "ALTER TABLE DemandCase ADD COLUMN Vuy REAL NOT NULL DEFAULT 0.0;"); } catch { }
+
+                using var vCmd = connection.CreateCommand();
+                vCmd.CommandText = "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (@v, @now)";
+                vCmd.Parameters.AddWithValue("@v", 6);
                 vCmd.Parameters.AddWithValue("@now", now);
                 vCmd.ExecuteNonQuery();
             }

@@ -33,7 +33,6 @@
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Setter Property="RowHeaderWidth" Value="0" />
         <Setter Property="HeadersVisibility" Value="Column" />
-        <Setter Property="ColumnHeaderHeight" Value="32" />
         <Setter Property="RowHeight" Value="30" />
         <Setter Property="CanUserResizeRows" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
@@ -46,7 +45,7 @@
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="Padding" Value="8,4" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Setter Property="BorderThickness" Value="0,0,1,1" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />

@@ -2408,6 +2408,16 @@ public sealed class InputViewModel : ViewModelBase
                 {
                     loadCase.Status = "Excluded";
                     loadCase.HasValidationError = false;
+                    loadCase.LambdaX = null;
+                    loadCase.LambdaLimitX = null;
+                    loadCase.RmX = null;
+                    loadCase.M2x = null;
+                    loadCase.LambdaY = null;
+                    loadCase.LambdaLimitY = null;
+                    loadCase.RmY = null;
+                    loadCase.M2y = null;
+                    loadCase.MxUsed = null;
+                    loadCase.MyUsed = null;
                     continue;
                 }
 
@@ -2417,11 +2427,27 @@ public sealed class InputViewModel : ViewModelBase
                     loadCase.MyUsed = null;
                     loadCase.Status = "Ready";
                     loadCase.HasValidationError = false;
+                    loadCase.LambdaX = null;
+                    loadCase.LambdaLimitX = null;
+                    loadCase.RmX = null;
+                    loadCase.M2x = null;
+                    loadCase.LambdaY = null;
+                    loadCase.LambdaLimitY = null;
+                    loadCase.RmY = null;
+                    loadCase.M2y = null;
                     continue;
                 }
 
                 loadCase.MxUsed = null;
                 loadCase.MyUsed = null;
+                loadCase.LambdaX = null;
+                loadCase.LambdaLimitX = null;
+                loadCase.RmX = null;
+                loadCase.M2x = null;
+                loadCase.LambdaY = null;
+                loadCase.LambdaLimitY = null;
+                loadCase.RmY = null;
+                loadCase.M2y = null;
 
                 bool globalMissing = MemberLengthL is not > 0 || Kx is not > 0 || Ky is not > 0;
                 bool missingMoments = loadCase.MxTop is null ||
@@ -2443,6 +2469,104 @@ public sealed class InputViewModel : ViewModelBase
                 {
                     loadCase.Status = "Ready";
                     loadCase.HasValidationError = false;
+                }
+            }
+
+            if (IncludeEc2Slenderness && MemberLengthL is > 0 && Kx is > 0 && Ky is > 0)
+            {
+                double fckMpa = StressInputToMpa(Fc);
+                double fykMpa = StressInputToMpa(Fy);
+                double esMpa = StressInputToMpa(Es);
+
+                if (fckMpa > 0 && fykMpa > 0 && esMpa > 0)
+                {
+                    double lengthFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+                    var bars = PreviewRebars.Select(r => new Rebar(
+                        r.Label,
+                        r.Diameter,
+                        Math.PI * Math.Pow(r.Diameter / 2.0, 2),
+                        r.X * lengthFactor,
+                        r.Y * lengthFactor)).ToList();
+                    var rebarLayout = new RebarLayout(LayoutPreset ?? "Custom", BarSize ?? "", Cover * lengthFactor, bars);
+
+                    ColumnSection? section = null;
+                    if (SelectedSectionShape == SectionShapeType.Rectangular && Width > 0 && Height > 0)
+                    {
+                        section = new RectangularSection(Width * lengthFactor, Height * lengthFactor, rebarLayout);
+                    }
+                    else if (SelectedSectionShape == SectionShapeType.Circular && Diameter > 0)
+                    {
+                        section = new CircularSection(Diameter * lengthFactor, rebarLayout);
+                    }
+                    else if (SelectedSectionShape == SectionShapeType.Irregular && IrregularInput != null && IrregularInput.BoundaryPoints.Count >= 3)
+                    {
+                        try
+                        {
+                            var mapper = new MBColumn.Application.Mappers.IrregularSectionMapper(new MBColumn.Application.Services.IrregularSectionValidationService());
+                            var irregularDto = IrregularInput.ToDto(Cover);
+                            var mapResult = mapper.ValidateAndMap(irregularDto, out var irregular, out var _);
+                            if (mapResult.IsValid && irregular != null)
+                            {
+                                section = irregular;
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore mapping errors
+                        }
+                    }
+
+                    if (section != null)
+                    {
+                        var concrete = new Ec2ConcreteMaterialDto(fckMpa, GammaC, AlphaCc);
+                        var steel = new SteelMaterial($"fy {fykMpa:F1}", fykMpa, esMpa);
+                        double? memberLengthMm = MemberLengthL.Value * lengthFactor;
+                        var settings = new Ec2SlendernessSettingsDto(
+                            true,
+                            Kx,
+                            Ky,
+                            PhiEff,
+                            UseDefaultAWhenPhiEffUnknown);
+
+                        var forceUnit = CurrentForceUnit;
+                        var momentUnit = CurrentMomentUnit;
+                        var lcDtos = LoadCases.Where(lc => lc.IsActive).Select(lc => lc.ToDto(forceUnit, momentUnit)).ToList();
+
+                        var units = new UnitConversionService();
+                        var service = new Ec2NominalCurvatureService(units);
+                        var batchResult = service.Calculate(section, concrete, steel, new MemberGeometryInputDto(memberLengthMm), settings, lcDtos);
+
+                        var byId = batchResult.LoadCases.ToDictionary(r => r.LoadCaseId);
+                        foreach (var loadCase in LoadCases)
+                        {
+                            if (!loadCase.IsActive) continue;
+
+                            if (byId.TryGetValue(loadCase.Id, out var slenderness))
+                            {
+                                loadCase.LambdaX = slenderness.X?.Lambda;
+                                loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
+                                loadCase.RmX = slenderness.X?.Rm;
+                                loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
+                                    ? units.MomentFromNmm(m2xVal, momentUnit)
+                                    : null;
+
+                                loadCase.LambdaY = slenderness.Y?.Lambda;
+                                loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
+                                loadCase.RmY = slenderness.Y?.Rm;
+                                loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
+                                    ? units.MomentFromNmm(m2yVal, momentUnit)
+                                    : null;
+
+                                loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
+                                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, momentUnit)
+                                    : null;
+                                loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
+                                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, momentUnit)
+                                    : null;
+                                loadCase.Status = slenderness.Status;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2762,6 +2886,14 @@ public sealed class InputViewModel : ViewModelBase
                 {
                     loadCase.MxUsed = null;
                     loadCase.MyUsed = null;
+                    loadCase.LambdaX = null;
+                    loadCase.LambdaLimitX = null;
+                    loadCase.RmX = null;
+                    loadCase.M2x = null;
+                    loadCase.LambdaY = null;
+                    loadCase.LambdaLimitY = null;
+                    loadCase.RmY = null;
+                    loadCase.M2y = null;
                     loadCase.Status = loadCase.IsActive ? "Ready" : "Excluded";
                 }
 
@@ -2776,6 +2908,20 @@ public sealed class InputViewModel : ViewModelBase
                 {
                     continue;
                 }
+
+                loadCase.LambdaX = slenderness.X?.Lambda;
+                loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
+                loadCase.RmX = slenderness.X?.Rm;
+                loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
+                    ? units.MomentFromNmm(m2xVal, CurrentMomentUnit)
+                    : null;
+
+                loadCase.LambdaY = slenderness.Y?.Lambda;
+                loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
+                loadCase.RmY = slenderness.Y?.Rm;
+                loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
+                    ? units.MomentFromNmm(m2yVal, CurrentMomentUnit)
+                    : null;
 
                 loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
                     ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, CurrentMomentUnit)

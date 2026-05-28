@@ -354,12 +354,14 @@ public sealed class ProjectService : IProjectService, IDisposable
         foreach (var lc in loadCases)
         {
             conn.Execute(@"
-                INSERT INTO DemandCase (ColumnId, IdString, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive)
-                VALUES (@cid, @idstr, @label, @orig, @son, @sol, @story, @station, @source, @pu, @mux, @muy, @active)",
+                INSERT INTO DemandCase (ColumnId, IdString, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive, MxTop, MxBottom, MyTop, MyBottom, MxUsed, MyUsed, Vux, Vuy)
+                VALUES (@cid, @idstr, @label, @orig, @son, @sol, @story, @station, @source, @pu, @mux, @muy, @active, @mxTop, @mxBottom, @myTop, @myBottom, @mxUsed, @myUsed, @vux, @vuy)",
                 new {
                     cid = columnId, idstr = lc.Id, label = lc.Label, orig = lc.OriginalLoadCaseName,
                     son = lc.SourceObjectName, sol = lc.SourceObjectLabel, story = lc.Story,
-                    station = lc.Station, source = lc.Source, pu = lc.Pu, mux = lc.Mux, muy = lc.Muy, active = lc.IsActive ? 1 : 0
+                    station = lc.Station, source = lc.Source, pu = lc.Pu, mux = lc.Mux, muy = lc.Muy, active = lc.IsActive ? 1 : 0,
+                    mxTop = lc.MxTop, mxBottom = lc.MxBottom, myTop = lc.MyTop, myBottom = lc.MyBottom,
+                    mxUsed = lc.MxUsed, myUsed = lc.MyUsed, vux = lc.Vux, vuy = lc.Vuy
                 }, tx);
         }
 
@@ -381,7 +383,7 @@ public sealed class ProjectService : IProjectService, IDisposable
         if (snapshot.LoadCases.Count == 0)
         {
             var cases = conn.Query<SnapshotLoadCase>(@"
-                SELECT IdString as Id, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive
+                SELECT IdString as Id, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive, MxTop, MxBottom, MyTop, MyBottom, MxUsed, MyUsed, Vux, Vuy
                 FROM DemandCase WHERE ColumnId = @id", new { id = columnId });
             snapshot.LoadCases.AddRange(cases);
         }

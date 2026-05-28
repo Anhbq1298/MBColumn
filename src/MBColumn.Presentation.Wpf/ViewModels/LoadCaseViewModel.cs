@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Enums;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -18,6 +18,14 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private double? myBottom;
     private double? mxUsed;
     private double? myUsed;
+    private double? lambdaX;
+    private double? lambdaLimitX;
+    private double? rmX;
+    private double? m2x;
+    private double? lambdaY;
+    private double? lambdaLimitY;
+    private double? rmY;
+    private double? m2y;
     private bool isActive;
     private bool hasValidationError;
     private string status = "Ready";
@@ -102,6 +110,14 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public double? MyBottom { get => myBottom; set => Set(ref myBottom, value); }
     public double? MxUsed { get => mxUsed; set => Set(ref mxUsed, value); }
     public double? MyUsed { get => myUsed; set => Set(ref myUsed, value); }
+    public double? LambdaX { get => lambdaX; set => Set(ref lambdaX, value); }
+    public double? LambdaLimitX { get => lambdaLimitX; set => Set(ref lambdaLimitX, value); }
+    public double? RmX { get => rmX; set => Set(ref rmX, value); }
+    public double? M2x { get => m2x; set => Set(ref m2x, value); }
+    public double? LambdaY { get => lambdaY; set => Set(ref lambdaY, value); }
+    public double? LambdaLimitY { get => lambdaLimitY; set => Set(ref lambdaLimitY, value); }
+    public double? RmY { get => rmY; set => Set(ref rmY, value); }
+    public double? M2y { get => m2y; set => Set(ref m2y, value); }
     public bool IsActive { get => isActive; set => Set(ref isActive, value); }
     public bool HasValidationError { get => hasValidationError; set => Set(ref hasValidationError, value); }
     public string Status
