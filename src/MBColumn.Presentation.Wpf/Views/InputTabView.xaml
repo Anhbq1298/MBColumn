@@ -152,13 +152,17 @@
         </Style>
     </UserControl.Resources>
     <TabControl>
-        <TabItem Header="General Parameters + Load Inputs">
+        <TabItem Header="Section Inputs">
             <Grid Margin="4,6,4,4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="1.5*" MinWidth="200" />
                     <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="1.4*" MinWidth="320" />
+                    <ColumnDefinition Width="3.5*" MinWidth="250" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="5*" MinWidth="400" />
                 </Grid.ColumnDefinitions>
+
+                <!-- Column 0: General & Material -->
                 <ScrollViewer Grid.Column="0"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
@@ -312,244 +316,10 @@
                         </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
-                <Grid Grid.Column="2">
-                    <GroupBox Header="Demand Cases"
-                              Background="White"
-                              Foreground="{DynamicResource DarkNavyBrush}"
-                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                              Padding="14"
-                              Margin="0,0,0,14">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="260" />
-                                <ColumnDefinition Width="10" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
 
-                            <!-- Left: Moment sign convention diagram -->
-                            <Border Grid.Column="0"
-                                    Background="White"
-                                    BorderBrush="{DynamicResource BorderSoftBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="6"
-                                    Padding="6"
-                                    VerticalAlignment="Top">
-                                <StackPanel>
-                                    <TextBlock Text="Moment Sign Convention"
-                                               Style="{StaticResource FieldLabelTextStyle}"
-                                               Margin="0,0,0,4" />
-                                    <Viewbox Stretch="Uniform"
-                                             HorizontalAlignment="Stretch"
-                                             VerticalAlignment="Top">
-                                        <Canvas Width="900" Height="940">
-                                            <Canvas.Resources>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
-                                                    <Setter Property="Foreground" Value="#0046d5"/>
-                                                </Style>
-                                            </Canvas.Resources>
 
-                                            <Rectangle Width="900" Height="940" Fill="White"/>
-
-                                            <!-- Column faces -->
-                                            <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
-                                            <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
-                                            <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
-
-                                            <!-- Main prism outline -->
-                                            <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                            <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                            <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                            <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                            <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                            <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
-
-                                            <!-- Mid section -->
-                                            <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
-                                            <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
-                                            <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
-
-                                            <!-- Centroid marker -->
-                                            <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
-                                            <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
-
-                                            <!-- Axial load P -->
-                                            <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
-                                            <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
-                                            <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="52" />
-
-                                            <!-- MX -->
-                                            <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
-                                            <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                            <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                            <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                            <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="52" />
-
-                                            <!-- MY -->
-                                            <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
-                                            <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                            <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                            <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                            <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="52" />
-
-                                            <!-- Coordinate triad -->
-                                            <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
-                                            <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                            <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
-                                            <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                            <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
-                                            <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                            <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                            <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
-                                            <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                            <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
-                                            <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                            <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
-
-                                            <!-- Title -->
-                                            <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
-                                        </Canvas>
-                                    </Viewbox>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Right: DataGrid + buttons -->
-                            <Grid Grid.Column="2">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                
-                                <WrapPanel Grid.Row="0" Margin="0,0,0,10">
-                                    <Button Content="+ Add case"
-                                            Command="{Binding AddLoadCaseCommand}"
-                                            Style="{StaticResource CompactButtonStyle}"
-                                            Margin="0,0,8,6" />
-                                    <Button Content="Delete demand case"
-                                            Command="{Binding DeleteSelectedLoadCasesCommand}"
-                                            CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Padding="10,4"
-                                            FontSize="11.5"
-                                            Margin="0,0,8,6" />
-                                    <Button Content="Import from CSV"
-                                            Command="{Binding ImportLoadCasesCommand}"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Padding="10,4"
-                                            FontSize="11.5"
-                                            Margin="0,0,8,6" />
-                                    <Button Content="Export to CSV"
-                                            Command="{Binding ExportLoadCasesCommand}"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Padding="10,4"
-                                            FontSize="11.5"
-                                            Margin="0,0,8,6" />
-                                </WrapPanel>
-                                <DataGrid x:Name="LoadCasesGrid"
-                                          Grid.Row="1"
-                                          ItemsSource="{Binding LoadCases}"
-                                          AutoGenerateColumns="False"
-                                          CanUserAddRows="False"
-                                          CanUserDeleteRows="False"
-                                          CanUserResizeColumns="True"
-                                          CanUserResizeRows="True"
-                                          HeadersVisibility="Column"
-                                          SelectionMode="Extended"
-                                          SelectionUnit="FullRow"
-                                          EnableRowVirtualization="True"
-                                          EnableColumnVirtualization="True"
-                                          VirtualizingPanel.IsVirtualizing="True"
-                                          VirtualizingPanel.VirtualizationMode="Recycling"
-                                          ScrollViewer.CanContentScroll="True"
-                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Add Demand Case"
-                                                      Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                            <MenuItem Header="Remove Selected Demand Case(s)"
-                                                      Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                      CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Case Name"
-                                                            Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
-                                                            Width="110"
-                                                            MinWidth="80"
-                                                            ElementStyle="{StaticResource LeftAlignText}" />
-                                        <DataGridTextColumn Binding="{Binding Pu, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                            Width="*"
-                                                            MinWidth="64"
-                                                            ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
-                                        </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding Mux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                            Width="*"
-                                                            MinWidth="64"
-                                                            ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
-                                        </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding Muy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                            Width="*"
-                                                            MinWidth="64"
-                                                            ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
-                                        </DataGridTextColumn>
-                                        <!-- Shear demands — zero by default; only used when shear check is run -->
-                                        <DataGridTextColumn Binding="{Binding Vux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                            Width="*"
-                                                            MinWidth="60"
-                                                            ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
-                                        </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding Vuy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
-                                                            Width="*"
-                                                            MinWidth="60"
-                                                            ElementStyle="{StaticResource RightAlignText}"
-                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
-                                            <DataGridTextColumn.Header>
-                                                <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            </DataGridTextColumn.Header>
-                                        </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Source"
-                                                            Binding="{Binding Source, UpdateSourceTrigger=LostFocus}"
-                                                            Width="75"
-                                                            MinWidth="60"
-                                                            ElementStyle="{StaticResource LeftAlignText}" />
-                                        <DataGridCheckBoxColumn Header="Include"
-                                                                Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                Width="62"
-                                                                MinWidth="50" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </Grid>
-                        </Grid>
-                    </GroupBox>
-                </Grid>
-            </Grid>
-        </TabItem>
-        <TabItem Header="Section + Rebar">
-            <Grid Margin="4,6,4,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*" MinWidth="200" />
-                    <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="7*" />
-                </Grid.ColumnDefinitions>
-
-                <!-- ── Left: Section Preview (≈30%) ── -->
-                <ScrollViewer Grid.Column="0"
+                <!-- Column 2: Section Preview -->
+                <ScrollViewer Grid.Column="2"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
@@ -694,8 +464,9 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- ── Right: Section Geometry + Rebar Configuration (≈70%) ── -->
-                <ScrollViewer Grid.Column="2"
+
+                <!-- Column 4: Section Geometry & Rebar Configuration -->
+                <ScrollViewer Grid.Column="4"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
@@ -1510,6 +1281,652 @@
                         </StackPanel>
                     </GroupBox>
                     </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+
+            </Grid>
+        </TabItem>
+
+        <TabItem Header="Load Inputs">
+            <Grid Margin="4,6,4,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="6.2*" MinWidth="600" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="3.8*" MinWidth="420" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Column: Demand Cases Table + Diagram -->
+                <GroupBox Header="Demand Cases"
+                          Grid.Column="0"
+                          Background="White"
+                          Foreground="{DynamicResource DarkNavyBrush}"
+                          BorderBrush="{DynamicResource BorderGreyBrush}"
+                          Padding="14"
+                          Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Moment sign convention diagram -->
+                        <Border Grid.Column="0"
+                                Background="White"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="6"
+                                VerticalAlignment="Top">
+                            <StackPanel>
+                                <TextBlock Text="Moment Sign Convention"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,0,0,4" />
+                                <Viewbox Stretch="Uniform"
+                                         HorizontalAlignment="Stretch"
+                                         VerticalAlignment="Top">
+                                    <Canvas Width="900" Height="940">
+                                        <Canvas.Resources>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
+                                                <Setter Property="Foreground" Value="#0046d5"/>
+                                            </Style>
+                                        </Canvas.Resources>
+
+                                        <Rectangle Width="900" Height="940" Fill="White"/>
+
+                                        <!-- Column faces -->
+                                        <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
+                                        <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
+                                        <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
+
+                                        <!-- Main prism outline -->
+                                        <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+
+                                        <!-- Mid section -->
+                                        <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
+                                        <Line X1="170" Y1="445" X2="625" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                        <Line X1="480" Y1="445" X2="315" Y2="350" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+
+                                        <!-- Centroid marker -->
+                                        <Ellipse Canvas.Left="381.5" Canvas.Top="381.5" Width="32" Height="32" Fill="White" Stroke="#0046d5" StrokeThickness="2.2"/>
+                                        <Ellipse Canvas.Left="392.5" Canvas.Top="392.5" Width="10" Height="10" Fill="#0046d5"/>
+
+                                        <!-- Axial load P -->
+                                        <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
+                                        <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
+                                        <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="52" />
+
+                                        <!-- MX -->
+                                        <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                        <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                        <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                        <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                        <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="52" />
+
+                                        <!-- MY -->
+                                        <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
+                                        <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                        <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
+                                        <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                        <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="52" />
+
+                                        <!-- Coordinate triad -->
+                                        <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
+                                        <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                        <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
+                                        <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                        <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
+                                        <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
+                                        <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                        <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
+                                        <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                        <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
+                                        <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
+                                        <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
+
+                                        <!-- Title -->
+                                        <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
+                                    </Canvas>
+                                </Viewbox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Right: DataGrid + buttons -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <WrapPanel Grid.Row="0" Margin="0,0,0,10">
+                                <Button Content="+ Add case"
+                                        Command="{Binding AddLoadCaseCommand}"
+                                        Style="{StaticResource CompactButtonStyle}"
+                                        Margin="0,0,8,6" />
+                                <Button Content="Delete demand case"
+                                        Command="{Binding DeleteSelectedLoadCasesCommand}"
+                                        CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,4"
+                                        FontSize="11.5"
+                                        Margin="0,0,8,6" />
+                                <Button Content="Import from CSV"
+                                        Command="{Binding ImportLoadCasesCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,4"
+                                        FontSize="11.5"
+                                        Margin="0,0,8,6" />
+                                <Button Content="Export to CSV"
+                                        Command="{Binding ExportLoadCasesCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="10,4"
+                                        FontSize="11.5"
+                                        Margin="0,0,8,6" />
+                            </WrapPanel>
+                            <DataGrid x:Name="LoadCasesGrid"
+                                      Grid.Row="1"
+                                      ItemsSource="{Binding LoadCases}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      CanUserResizeColumns="True"
+                                      CanUserResizeRows="True"
+                                      HeadersVisibility="Column"
+                                      SelectionMode="Extended"
+                                      SelectionUnit="FullRow"
+                                      EnableRowVirtualization="True"
+                                      EnableColumnVirtualization="True"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling"
+                                      ScrollViewer.CanContentScroll="True"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Add Demand Case"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.AddLoadCaseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <MenuItem Header="Remove Selected Demand Case(s)"
+                                                  Command="{Binding Path=PlacementTarget.DataContext.DeleteSelectedLoadCasesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding Path=PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Case Name"
+                                                        Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                                        Width="100"
+                                                        MinWidth="70"
+                                                        ElementStyle="{StaticResource LeftAlignText}" />
+                                    <DataGridTextColumn Binding="{Binding Pu, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                        Width="*"
+                                                        MinWidth="54"
+                                                        ElementStyle="{StaticResource RightAlignText}"
+                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{Binding DataContext.DemandForceHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Mux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                        Width="*"
+                                                        MinWidth="54"
+                                                        ElementStyle="{StaticResource RightAlignText}"
+                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Muy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                        Width="*"
+                                                        MinWidth="54"
+                                                        ElementStyle="{StaticResource RightAlignText}"
+                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Vux, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                        Width="*"
+                                                        MinWidth="50"
+                                                        ElementStyle="{StaticResource RightAlignText}"
+                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{Binding DataContext.ShearVuxHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Vuy, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
+                                                        Width="*"
+                                                        MinWidth="50"
+                                                        ElementStyle="{StaticResource RightAlignText}"
+                                                        EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{Binding DataContext.ShearVuyHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    
+                                    <!-- New Slenderness Status Column -->
+                                    <DataGridTextColumn Header="Slenderness"
+                                                        Binding="{Binding SlendernessStatusText, FallbackValue='On - Slender'}"
+                                                        Width="90"
+                                                        MinWidth="70"
+                                                        IsReadOnly="True"
+                                                        ElementStyle="{StaticResource LeftAlignText}" />
+                                    
+                                    <!-- New Overall Calculation Status Column -->
+                                    <DataGridTextColumn Header="Status"
+                                                        Binding="{Binding CalculationStatusText, FallbackValue='Ready'}"
+                                                        Width="75"
+                                                        MinWidth="55"
+                                                        IsReadOnly="True"
+                                                        ElementStyle="{StaticResource LeftAlignText}" />
+
+                                    <DataGridTextColumn Header="Source"
+                                                        Binding="{Binding Source, UpdateSourceTrigger=LostFocus}"
+                                                        Width="70"
+                                                        MinWidth="55"
+                                                        ElementStyle="{StaticResource LeftAlignText}" />
+                                    <DataGridCheckBoxColumn Header="Include"
+                                                            Binding="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            Width="56"
+                                                            MinWidth="45" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Right Column: Selected Load Case Editor & Slenderness Amplification -->
+                <ScrollViewer Grid.Column="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="0,0,0,14">
+                        
+                        <!-- 1. Selected Load Case Editor -->
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Selected Load Case: LC1"
+                                           Style="{StaticResource GroupTitleTextStyle}"
+                                           Margin="0,0,0,10" />
+                                
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Pu / NEd -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <TextBlock Text="NEd (Axial Load)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="kN" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="1200.00" />
+                                    </StackPanel>
+
+                                    <!-- MEd Major / Mux -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <TextBlock Text="MEd Major (Mx)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="kNm" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="85.00" />
+                                    </StackPanel>
+
+                                    <!-- MEd Minor / Muy -->
+                                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,8">
+                                        <DockPanel>
+                                            <TextBlock Text="MEd Minor (My)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="kNm" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="35.00" />
+                                    </StackPanel>
+
+                                    <!-- VEd Major / Vux -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0">
+                                        <DockPanel>
+                                            <TextBlock Text="VEd Major (Vux)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="kN" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="15.00" />
+                                    </StackPanel>
+
+                                    <!-- VEd Minor / Vuy -->
+                                    <StackPanel Grid.Row="2" Grid.Column="2">
+                                        <DockPanel>
+                                            <TextBlock Text="VEd Minor (Vuy)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="kN" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <TextBox Text="10.00" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 2. EC2 Slenderness Amplification -->
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="EC2 Slenderness Amplification"
+                                           Style="{StaticResource GroupTitleTextStyle}"
+                                           Margin="0,0,0,8" />
+                                
+                                <CheckBox x:Name="EnableSlendernessCheck"
+                                          Content="Enable slenderness check for this load case"
+                                          FontWeight="SemiBold"
+                                          IsChecked="True"
+                                          Margin="0,0,0,10" />
+
+                                <!-- Panel when Slenderness Check is Disabled -->
+                                <StackPanel Visibility="{Binding IsChecked, ElementName=EnableSlendernessCheck, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <Border CornerRadius="4" Padding="10,8" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE946;"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="15"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       Margin="0,0,8,0"
+                                                       VerticalAlignment="Center" />
+                                            <TextBlock Text="Status: Disabled — PMM uses original input moments"
+                                                       FontSize="11.5"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Panel when Slenderness Check is Enabled -->
+                                <StackPanel Visibility="{Binding IsChecked, ElementName=EnableSlendernessCheck, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <DockPanel Margin="0,0,0,10">
+                                        <TextBlock Text="Method" Style="{StaticResource FieldLabelTextStyle}" VerticalAlignment="Center" />
+                                        <TextBlock Text="EC2 Nominal Curvature" FontWeight="Bold" Foreground="{DynamicResource PrimaryNavyBrush}" HorizontalAlignment="Right" DockPanel.Dock="Right" VerticalAlignment="Center" />
+                                    </DockPanel>
+
+                                    <!-- Geometry Column Clear Height -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="40" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                                   Text="Column clear height, l"
+                                                   Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                                   Text="mm"
+                                                   Style="{StaticResource UnitTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                 Text="3500" />
+                                    </Grid>
+
+                                    <!-- Effective Length Mode & Coefficients -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        
+                                        <!-- Mode selection -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                                                   Text="Effective length mode"
+                                                   Style="{StaticResource FieldLabelTextStyle}"
+                                                   Margin="0,0,0,2" />
+                                        <ComboBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" SelectedIndex="0" Margin="0,0,0,6">
+                                            <ComboBoxItem Content="k × l (Manual factor)" />
+                                            <ComboBoxItem Content="Calculate automatically from end stiffness" />
+                                        </ComboBox>
+
+                                        <!-- Factor inputs -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="k-major" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="3" Grid.Column="0" Text="1.00" />
+
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="k-minor" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="3" Grid.Column="2" Text="1.00" />
+                                    </Grid>
+
+                                    <!-- Moment Shape Settings -->
+                                    <TextBlock Text="Moment shape mode" Style="{StaticResource FieldLabelTextStyle}" Margin="0,4,0,2" />
+                                    <ComboBox x:Name="MomentShapeModeCombo" SelectedIndex="0" Margin="0,0,0,8">
+                                        <ComboBoxItem Content="Simplified (User specified rm)" />
+                                        <ComboBoxItem Content="Calculated from End Moments (Advanced)" />
+                                    </ComboBox>
+
+                                    <!-- Sub-items under Simplified shape mode -->
+                                    <StackPanel Visibility="{Binding SelectedIndex, ElementName=MomentShapeModeCombo, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=0}">
+                                        <CheckBox x:Name="ApplySameRm"
+                                                  Content="Apply same rm to both axes"
+                                                  IsChecked="True"
+                                                  Margin="0,0,0,8" />
+                                        
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Preset -->
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                                                       Text="Moment shape preset" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,2" />
+                                            <ComboBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" SelectedIndex="0" Margin="0,0,0,6">
+                                                <ComboBoxItem Content="Single curvature (rm = +1.0)" />
+                                                <ComboBoxItem Content="Double curvature (rm = -1.0)" />
+                                                <ComboBoxItem Content="Equal end moments (rm = +1.0)" />
+                                                <ComboBoxItem Content="No first order moments / Imperfection only (rm = 1.0)" />
+                                            </ComboBox>
+
+                                            <!-- rm input value -->
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="rm (Major)" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBox Grid.Row="3" Grid.Column="0" Text="1.00" />
+
+                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="rm (Minor)" Style="{StaticResource FieldLabelTextStyle}" 
+                                                       Visibility="{Binding IsChecked, ElementName=ApplySameRm, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                            <TextBox Grid.Row="3" Grid.Column="2" Text="1.00" 
+                                                     Visibility="{Binding IsChecked, ElementName=ApplySameRm, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <!-- Advanced End Moments Panel (Visible when Moment Shape Mode is Calculated from End Moments) -->
+                                    <StackPanel Visibility="{Binding SelectedIndex, ElementName=MomentShapeModeCombo, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=1}">
+                                        <Border BorderBrush="{DynamicResource BorderSoftBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Background="{DynamicResource PanelBackgroundBrush}" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <TextBlock Text="Advanced End Moment Input" Style="{StaticResource FieldLabelTextStyle}" FontWeight="Bold" Margin="0,0,0,6" />
+                                                
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <!-- Major Axis -->
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Text="Major Axis End Moments" Style="{StaticResource FieldLabelTextStyle}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Mtop-major (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="2" Grid.Column="0" Text="85.00" />
+                                                    
+                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Mbottom-major (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="2" Grid.Column="2" Text="85.00" />
+                                                    
+                                                    <!-- Minor Axis -->
+                                                    <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Text="Minor Axis End Moments" Style="{StaticResource FieldLabelTextStyle}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="0,6,0,0"/>
+                                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Mtop-minor (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="5" Grid.Column="0" Text="35.00" />
+                                                    
+                                                    <TextBlock Grid.Row="4" Grid.Column="2" Text="Mbottom-minor (kNm)" Style="{StaticResource FieldLabelTextStyle}"/>
+                                                    <TextBox Grid.Row="5" Grid.Column="2" Text="35.00" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- EC2 Creep and Reinforcement Factors -->
+                                    <Grid Margin="0,4,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Effective creep ratio, φeff" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="0" Text="1.50" />
+                                        
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Reinforcement factor B" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="2" IsEnabled="False" Text="Auto (from As)" />
+                                    </Grid>
+
+                                    <CheckBox Content="Use default A = 0.7 if unknown"
+                                              IsChecked="True"
+                                              Margin="0,0,0,10" />
+
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 3. Amplified Moment Preview -->
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="12" Margin="0,0,0,12"
+                                Visibility="{Binding IsChecked, ElementName=EnableSlendernessCheck, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Amplified Moment Preview"
+                                           Style="{StaticResource GroupTitleTextStyle}"
+                                           Margin="0,0,0,8" />
+                                
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.4*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="26" />
+                                        <RowDefinition Height="26" />
+                                        <RowDefinition Height="26" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Table Header -->
+                                    <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
+                                        <TextBlock Text="Axis" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
+                                        <TextBlock Text="l0 (mm)" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
+                                        <TextBlock Text="λ" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
+                                        <TextBlock Text="λlim" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
+                                        <TextBlock Text="rm" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
+                                        <TextBlock Text="M2 (kNm)" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1">
+                                        <TextBlock Text="MEd used" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                    </Border>
+
+                                    <!-- Row 1: Major -->
+                                    <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="Major" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="3500" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="42.3" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="34.2" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="+1.00" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="19.50" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
+                                        <TextBlock Text="104.50" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+
+                                    <!-- Row 2: Minor -->
+                                    <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="Minor" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="3500" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="24.5" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="34.2" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="+1.00" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
+                                        <TextBlock Text="0.00" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
+                                        <TextBlock Text="35.00" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                </Grid>
+                                
+                                <TextBlock Text="PMM demand source:" FontWeight="Bold" Style="{StaticResource FieldLabelTextStyle}" Margin="0,0,0,4"/>
+                                <TextBlock Text="• Major: Original MEd = 85.00 kNm → Slenderness MEd = 104.50 kNm" FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,2"/>
+                                <TextBlock Text="• Minor: Original MEd = 35.00 kNm → Slenderness MEd = 35.00 kNm (Non-slender)" FontSize="11.5" Foreground="{DynamicResource PrimaryNavyBrush}" Margin="4,0,0,8"/>
+                                
+                                <Separator Margin="0,4,0,8" />
+                                
+                                <Button Content="Recalculate Slenderness"
+                                        Style="{StaticResource CompactButtonStyle}"
+                                        HorizontalAlignment="Stretch"
+                                        Height="32" />
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

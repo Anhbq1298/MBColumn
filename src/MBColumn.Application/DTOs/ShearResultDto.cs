@@ -4,7 +4,7 @@ namespace MBColumn.Application.DTOs;
 
 /// <summary>
 /// Display-ready shear check result for one load case, values converted to the user's unit system.
-/// Force values are in the user's ForceUnit; lengths and stresses remain in mm / MPa.
+/// Force values in the user's ForceUnit; lengths and stresses remain in mm / MPa.
 /// </summary>
 public sealed record ShearResultDto(
     // ── X direction — capacity ────────────────────────────────────────────────
@@ -16,6 +16,9 @@ public sealed record ShearResultDto(
     double UtilisationX,
     CapacityStatus StatusX,
     bool LinksRequiredX,
+    bool IsStruttingCriticalX,
+    double AswSMinRequiredX,    // mm²/mm (§9.2.2(5) ρw,min × bw)
+    bool AswSMinPassX,
 
     // ── Y direction — capacity ────────────────────────────────────────────────
     double VEdYDisplay,
@@ -26,13 +29,16 @@ public sealed record ShearResultDto(
     double UtilisationY,
     CapacityStatus StatusY,
     bool LinksRequiredY,
+    bool IsStruttingCriticalY,
+    double AswSMinRequiredY,
+    bool AswSMinPassY,
 
     // ── Intermediate values — X direction (mm / MPa) ──────────────────────────
     double BwXMm,
     double DEffXMm,
     double KFactorX,
     double RhoLX,
-    double SigCpMpa,    // shared for both directions
+    double SigCpMpa,
 
     // ── Intermediate values — Y direction ─────────────────────────────────────
     double BwYMm,
@@ -41,11 +47,11 @@ public sealed record ShearResultDto(
     double RhoLY,
 
     // ── Link intermediate values ───────────────────────────────────────────────
-    double AswSX,       // Asw/s X  [mm²/mm]
-    double AswSY,       // Asw/s Y  [mm²/mm]
-    double FywdMpa,     // fywd [MPa]
-    double ZXMm,        // lever arm z X [mm]
-    double ZYMm,        // lever arm z Y [mm]
+    double AswSX,
+    double AswSY,
+    double FywdMpa,
+    double ZXMm,
+    double ZYMm,
     double CotThetaX,
     double CotThetaY,
     string ForceUnit)
@@ -56,7 +62,12 @@ public sealed record ShearResultDto(
             : CapacityStatus.Pass;
 
     public double GoverningUtilisation => Math.Max(UtilisationX, UtilisationY);
-
     public bool HasDemand => VEdXDisplay != 0.0 || VEdYDisplay != 0.0;
     public bool HasLinks  => AswSX > 0 || AswSY > 0;
+
+    /// <summary>True when any strut-crushing failure is detected — increasing links will not help.</summary>
+    public bool AnyStruttingCritical => IsStruttingCriticalX || IsStruttingCriticalY;
+
+    /// <summary>True when minimum shear reinforcement §9.2.2(5) is not met in either direction.</summary>
+    public bool AnyMinAswSFail => !AswSMinPassX || !AswSMinPassY;
 }

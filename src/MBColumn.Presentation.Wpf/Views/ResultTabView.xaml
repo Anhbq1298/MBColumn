@@ -75,11 +75,278 @@
 
         <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 1st: Results Summary (PMM, Shear, Compliance Overview)      -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
                 <Border Style="{StaticResource SidebarCardStyle}">
                     <StackPanel>
-                        <TextBlock Text="Diagram Viewports" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,4" />
+                        <TextBlock Text="Results Summary"
+                                   Style="{StaticResource SectionTitleTextStyle}"
+                                   Margin="0,0,0,12" />
+
+                        <!-- Overall Column Status Badge -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Overall Column Status" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource AccentBlueSoftBrush}"
+                                    BorderBrush="{DynamicResource BorderGreyBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="12,4"
+                                    HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            </Border>
+                        </Grid>
+
+                        <Separator Margin="0,0,0,12" Background="{DynamicResource BorderSoftBrush}" />
+
+                        <!-- Row-by-row Check Summaries -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" MinWidth="100" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- PMM Check Summary -->
+                            <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                <TextBlock Text="PMM Interaction" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="Max Util.: " Style="{StaticResource MetricLabelStyle}" Margin="0" />
+                                    <TextBlock Text="{Binding MaxUtilization, StringFormat={}{0:F3}}" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" />
+                                    <TextBlock Text=" | Critical LC: " Style="{StaticResource MetricLabelStyle}" Margin="8,0,0,0" />
+                                    <TextBlock Text="{Binding CriticalLoadCaseName}" TextTrimming="CharacterEllipsis" MaxWidth="150" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Padding="8,2" CornerRadius="6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding StatusText}" Value="FAIL">
+                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding StatusText}" Value="FAIL">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Shear Check Summary -->
+                            <StackPanel Grid.Row="1" Margin="0,0,0,12" DataContext="{Binding Shear}">
+                                <TextBlock Text="Shear Capacity" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="Max Util.: " Style="{StaticResource MetricLabelStyle}" Margin="0" />
+                                    <TextBlock Text="{Binding GoverningUtilText}" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" />
+                                    <TextBlock Text=" (EC2 §6.2)" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Padding="8,2" CornerRadius="6" DataContext="{Binding Shear}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
+                                        <Setter Property="BorderThickness" Value="1" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasDemand}" Value="True">
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding HasDemand}" Value="True" />
+                                                    <Condition Binding="{Binding IsGoverningPass}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock FontWeight="Bold" FontSize="11">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="NO DEMAND" />
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasDemand}" Value="True">
+                                                    <Setter Property="Text" Value="{Binding GoverningStatusText}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasDemand}" Value="True" />
+                                                        <Condition Binding="{Binding IsGoverningPass}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Reinforcement Compliance Summary -->
+                            <StackPanel Grid.Row="2" Margin="0,0,0,4" DataContext="{Binding RebarCompliance}">
+                                <TextBlock Text="Reinforcement Compliance" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="{Binding CodeRef}" Style="{StaticResource MetricLabelStyle}" Margin="0" />
+                                    <TextBlock Text=" — " Style="{StaticResource MetricLabelStyle}" Margin="0" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="{Binding FailCountText}" FontSize="10" Foreground="{DynamicResource AccentRedBrush}" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="All checks conforming" FontSize="10" Foreground="{DynamicResource SuccessGreenBrush}" Visibility="{Binding HasFails, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <Border Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Padding="8,2" CornerRadius="6" DataContext="{Binding RebarCompliance}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding AllPass}" Value="False">
+                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AllPass}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 2nd: Reinforcement Code Compliance in Details              -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <Border Style="{StaticResource SidebarCardStyle}"
+                        DataContext="{Binding RebarCompliance}"
+                        Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="Reinforcement Code Compliance in Details"
+                                   Style="{StaticResource SectionTitleTextStyle}"
+                                   Margin="0,0,0,4" />
+
+                        <!-- Overall status badge -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <Border Padding="10,2" CornerRadius="6">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding AllPass}" Value="False">
+                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AllPass}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding CodeRef, StringFormat='  {0}'}"
+                                       Style="{StaticResource MetricValueStyle}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding FailCountText, StringFormat='  — {0}'}"
+                                       FontSize="10" Foreground="{DynamicResource AccentRedBrush}"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+
+                        <!-- Per-check list -->
+                        <ItemsControl ItemsSource="{Binding Checks}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,1,0,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding StatusText}"
+                                                   FontSize="11" FontWeight="Bold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Fail}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <StackPanel Grid.Column="1" Orientation="Vertical" Margin="4,0,0,0">
+                                            <TextBlock Text="{Binding Description}" FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextDarkBrush}" TextWrapping="Wrap" />
+                                            <TextBlock FontSize="9.5" TextWrapping="Wrap" Margin="0,1,0,0">
+                                                <Run Text="{Binding Provided, Mode=OneWay}" Foreground="{DynamicResource TextMutedBrush}" />
+                                                <Run Text=" / " Foreground="{DynamicResource TextMutedBrush}" />
+                                                <Run Text="{Binding Limit, Mode=OneWay}" Foreground="{DynamicResource TextMutedBrush}" />
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Reference}" FontSize="9"
+                                                       Foreground="{DynamicResource TextMutedBrush}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 3rd: PMM Check in Details                                  -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <Border Style="{StaticResource SidebarCardStyle}">
+                    <StackPanel>
+                        <!-- Header with Export PMM CtrlPts button -->
+                        <DockPanel Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right"
+                                    Content="Export PMM CtrlPts"
+                                    Style="{StaticResource CompactButtonStyle}"
+                                    Command="{Binding ExportAllPointsCommand}" />
+                            <TextBlock Text="PMM Check in Details"
+                                       Style="{StaticResource SectionTitleTextStyle}"
+                                       VerticalAlignment="Center" />
+                        </DockPanel>
+
+                        <!-- Diagram Viewports -->
+                        <TextBlock Text="Diagram Viewports" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,4,0,4" />
                         <TextBlock Text="{Binding ViewportDropdownText}" Style="{StaticResource HelperTextStyle}" Margin="0,0,0,8" />
-                        <ItemsControl ItemsSource="{Binding ViewportOptions}">
+                        <ItemsControl ItemsSource="{Binding ViewportOptions}" Margin="0,0,0,10">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel />
@@ -94,12 +361,11 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </StackPanel>
-                </Border>
 
-                <Border Style="{StaticResource SidebarCardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Navigation" Style="{StaticResource SectionTitleTextStyle}" Margin="0,0,0,10" />
+                        <Separator Margin="0,0,0,10" Background="{DynamicResource BorderSoftBrush}" />
+
+                        <!-- Slice Navigation -->
+                        <TextBlock Text="Slice Navigation" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,6" />
                         <Grid Margin="0,0,0,2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -129,49 +395,12 @@
                         <controls:SectionStateInsetCanvas
                             InsetFigure="{Binding PmChartInset}"
                             Height="190"
-                            Margin="0,10,0,0" />
-                    </StackPanel>
-                </Border>
+                            Margin="0,10,0,10" />
 
-                <Border Style="{StaticResource SidebarCardStyle}">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,10">
-                            <Button DockPanel.Dock="Right"
-                                    Content="Export CSV"
-                                    Style="{StaticResource CompactButtonStyle}"
-                                    Command="{Binding ExportAllPointsCommand}" />
-                            <TextBlock Text="Results Summary"
-                                       Style="{StaticResource SectionTitleTextStyle}"
-                                       VerticalAlignment="Center" />
-                        </DockPanel>
+                        <Separator Margin="0,0,0,10" Background="{DynamicResource BorderSoftBrush}" />
 
-                        <Grid Margin="0,0,0,10">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" MinWidth="110" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Overall" Style="{StaticResource MetricLabelStyle}" />
-                            <Border Grid.Column="1"
-                                    Background="{DynamicResource AccentBlueSoftBrush}"
-                                    BorderBrush="{DynamicResource BorderGreyBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Padding="10,2"
-                                    HorizontalAlignment="Right"
-                                    Margin="8,0,0,5">
-                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" Foreground="{DynamicResource PrimaryNavyBrush}" />
-                            </Border>
-                            <TextBlock Grid.Row="1" Text="Max Utilization" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MaxUtilization, StringFormat={}{0:F3}}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="2" Text="Critical Load Case" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CriticalLoadCaseName}" Style="{StaticResource MetricValueStyle}" />
-                        </Grid>
-
+                        <!-- Load Case Demands & PMM Utilization -->
+                        <TextBlock Text="Load Case PMM Utilization" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,6" />
                         <DataGrid ItemsSource="{Binding LoadCaseRows}"
                                   SelectedItem="{Binding SelectedLoadCaseRow}"
                                   AutoGenerateColumns="False"
@@ -213,13 +442,13 @@
                 </Border>
 
                 <!-- ═══════════════════════════════════════════════════════════ -->
-                <!-- Shear Check Results (EC2 §6.2)                            -->
+                <!-- 4th: Shear Check in Details (EC2 §6.2)                      -->
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <Border Style="{StaticResource SidebarCardStyle}"
                         DataContext="{Binding Shear}"
                         Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibilityConverter}}">
                     <StackPanel>
-                        <TextBlock Text="Shear Check (EC2 §6.2)"
+                        <TextBlock Text="Shear Check in Details (EC2 §6.2)"
                                    Style="{StaticResource SectionTitleTextStyle}"
                                    Margin="0,0,0,4" />
 
@@ -363,6 +592,72 @@
                             <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding VRdYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
                         </Grid>
 
+                        <!-- Strut-crushing warning -->
+                        <TextBlock TextWrapping="Wrap" FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentRedBrush}"
+                                   Margin="0,4,0,2"
+                                   Text="{Binding StruttingWarningText}"
+                                   Visibility="{Binding AnyStruttingCritical, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                        <!-- §9.2.2(5) minimum Asw/s check -->
+                        <StackPanel Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Min. Asw/s  (§9.2.2(5))"
+                                       FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       Margin="0,6,0,3" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="64" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="X dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Y dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Prov." Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AswSXText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AswSYText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Reqd." Style="{StaticResource MetricLabelStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AswSMinReqdXText}" Style="{StaticResource MetricValueStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding AswSMinReqdYText}" Style="{StaticResource MetricValueStyle}" />
+                            </Grid>
+                            <!-- Pass / fail badges -->
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <TextBlock FontSize="10" Margin="0,0,10,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="X: ✓ OK" />
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AswSMinPassX}" Value="False">
+                                                    <Setter Property="Text" Value="X: ✗ FAIL" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock FontSize="10">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="Y: ✓ OK" />
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AswSMinPassY}" Value="False">
+                                                    <Setter Property="Text" Value="Y: ✗ FAIL" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </StackPanel>
+
                         <!-- Utilisation (only when demand is non-zero) -->
                         <StackPanel Visibility="{Binding HasDemand, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Utilisation"
@@ -418,12 +713,11 @@
                         </StackPanel>
 
                         <TextBlock FontSize="9.5" Foreground="{DynamicResource TextMutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap">
-                            <Run Text="Forces in " /><Run Text="{Binding ForceUnit}" FontWeight="SemiBold" />
+                            <Run Text="Forces in " /><Run Text="{Binding ForceUnit, Mode=OneWay}" FontWeight="SemiBold" />
                             <Run Text=" · EC2 EN 1992-1-1:2004 §6.2 · γc = 1.50, γs = 1.15 · cover = 60 mm" />
                         </TextBlock>
                     </StackPanel>
                 </Border>
-
             </StackPanel>
         </ScrollViewer>
 

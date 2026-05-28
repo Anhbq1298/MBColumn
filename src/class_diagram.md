@@ -48,7 +48,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **ReportFormulaBlock** | Represents the ReportFormulaBlock record. | `ReportFormulaBlock.cs` |
 | `class` | **ReportVerificationPointRow** | Data structure representing a row for ReportVerificationPoint. Key properties: Index, PointCode, PointName, StrainDescription. | `ReportVerificationPointRow.cs` |
 | `record` | **SevenPointValidationRowDto** | Data transfer object carrying SevenPointValidationRow data. | `SevenPointValidationRowDto.cs` |
-| `record` | **ShearResultDto** | /// Display-ready shear check result for one load case, values converted to the user's unit system. /// Force values are in the user's ForceUnit; lengths and stresses remain in mm / MPa. ///. Key properties: GoverningStatus, GoverningUtilisation, HasDemand, HasLinks. | `ShearResultDto.cs` |
+| `record` | **ShearResultDto** | /// Display-ready shear check result for one load case, values converted to the user's unit system. /// Force values in the user's ForceUnit; lengths and stresses remain in mm / MPa. ///. Key properties: GoverningStatus, GoverningUtilisation, HasDemand, HasLinks. | `ShearResultDto.cs` |
 | `record` | **ValidationIssue** | Represents the ValidationIssue record. | `ValidationIssue.cs` |
 | `record` | **ValidationResultDto** | Data transfer object carrying ValidationResult data. Key properties: Valid. | `ValidationResultDto.cs` |
 | `enum` | **ValidationSeverity** | Enumeration defining states/types for ValidationSeverity. | `ValidationIssue.cs` |
@@ -138,8 +138,9 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PmmMethodologySectionBuilder** | Represents the PmmMethodologySectionBuilder class. Key methods: Build. | `PmmMethodologySectionBuilder.cs` |
 | `class` | **PmmSummarySectionBuilder** | Represents the PmmSummarySectionBuilder class. Key methods: Build. | `PmmSummarySectionBuilder.cs` |
 | `class` | **ProjectInfoSectionBuilder** | Represents the ProjectInfoSectionBuilder class. Key methods: Build. | `ProjectInfoSectionBuilder.cs` |
+| `class` | **RebarComplianceSectionBuilder** | /// Builds Section 3 — "Reinforcement Code Compliance" — covering: /// EC2 EN 1992-1-1:2004 §9.5.1/9.5.2 — longitudinal reinforcement limits /// EC2 EN 1992-1-1:2004 §9.5.3 — transverse link detailing /// ACI 318-19 §10.6/§25.7.2 — stub (TODO) ///. Key methods: Build. | `RebarComplianceSectionBuilder.cs` |
 | `class` | **RectangularSevenPointBuilder** | Represents the RectangularSevenPointBuilder class. Key methods: BuildTheta0, BuildTheta90. | `RectangularSevenPointBuilder.cs` |
-| `class` | **ShearCheckSectionBuilder** | If VEd ≤ VRd,c: section adequate without links. If VEd > VRd,c: shear reinforcement required. /// Step 2 — Check section with shear reinforcement (EC2 §6.2.3 / ACI §22.6) Determine additional link capacity VRd,s (Vs in ACI notation) and verify strut capacity VRd,max. Governing capacity VRd = min(VRd,s, VRd,max). /// Capacity is always shown even when VEd = 0 (useful as a reference capacity check). Key methods: Build. | `ShearCheckSectionBuilder.cs` |
+| `class` | **ShearCheckSectionBuilder** | /// Builds Section 6 — "Shear Check (EC2 §6.2)" — following the two-step flow /// from the EC2 column design procedure (analogous to ACI §22.5 / §22.6). ///. Key methods: Build. | `ShearCheckSectionBuilder.cs` |
 
 ### Reports/Interfaces
 
@@ -202,7 +203,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **RebarComplianceCheckService** | /// Transverse links (§9.5.3): dsw ≥ max(6, 0.25 dsmax) — §9.5.3(1) minimum link diameter s ≤ min(20 dsmin, bmin, 400) — §9.5.3(3) maximum link spacing gap ≤ 150 mm between restrained bars — §9.5.3(6) /// ACI 318-19 checks (stubs — TODO): 0.01 Ag ≤ Ast ≤ 0.08 Ag — §10.6.1.1 nBars ≥ 4 (ties) / ≥ 6 (spirals) — §10.7.3.1 Tie diameter and spacing — §25.7.2. Key methods: Check. | `RebarComplianceCheckService.cs` |
 | `class` | **RebarCoordinateBuilderService** | Provides service logic and operations for RebarCoordinateBuilder. Key methods: Build, BuildCircular. | `RebarCoordinateBuilderService.cs` |
 | `class` | **ReportHandCalcService** | /// Independently calculates selected PMM control points using transparent hand-calculation /// formulas and compares results against the solver surface. /// Supports ACI 318 (Whitney rectangular stress block) and EC2 (simplified rectangular block, λ/η). /// Only rectangular sections are supported. ///. Key methods: Build. | `ReportHandCalcService.cs` |
-| `class` | **ShearCheckService** | /// Orchestrates the shear capacity check (EC2 §6.2 or ACI §22.5/22.6) for a rectangular /// column section against one or more load cases. /// /// Capacity is always computed, even when VEd = 0, so that the report can show the section's /// shear capacity for reference regardless of whether a shear demand was entered. /// | `ShearCheckService.cs` |
+| `class` | **ShearCheckService** | /// Orchestrates the shear capacity check (EC2 §6.2 / ACI §22.5-22.6) for a column section /// against one or more load cases. Capacity is always computed even when VEd = 0. /// | `ShearCheckService.cs` |
 | `record` | **SpecialCapacityEntry** | Represents the SpecialCapacityEntry record. | `SpecialCapacityPointsService.cs` |
 | `class` | **SpecialCapacityPointsService** | /// Generates five structurally significant capacity points for every neutral-axis angle /// on an interaction surface: max compression, balanced, tension-controlled, pure bending, /// and max tension. The source InteractionSurface is searched/interpolated; no additional /// solver passes are performed. ///. Key methods: Build. | `SpecialCapacityPointsService.cs` |
 | `record` | **struct** | Represents the struct record. | `PmCurveBuilderService.cs` |
@@ -338,10 +339,10 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteEffectiveStrengthFactor. Key properties: ConcreteStressBlockFactor, AlphaCc, UseLetterControlPoints, SupportsNominalReferenceCurve. | `Aci318DesignCodeService.cs` |
-| `class` | **Aci318ShearDesignService** | /// ACI 318-19 shear capacity check — PLACEHOLDER. /// Full implementation to be added in a future sprint. ///. Key methods: Check. | `Aci318ShearDesignService.cs` |
+| `class` | **Aci318ShearDesignService** | ACI 318-19 shear capacity check — PLACEHOLDER. Key methods: Check. | `Aci318ShearDesignService.cs` |
 | `class` | **DesignCodeServiceFactory** | Represents the DesignCodeServiceFactory class. Key methods: Get. | `DesignCodeServiceFactory.cs` |
 | `class` | **Ec2DesignCodeService** | /// Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. /// Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). /// Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). /// Concrete strain limits and parabolic parameters follow Table 3.1 with /// piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. ///. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: ConcreteStressBlockFactor, EpsilonUd, AlphaCc, UseLetterControlPoints. | `Ec2DesignCodeService.cs` |
-| `class` | **Ec2ShearDesignService** | /// Step 2 — With shear reinforcement (§6.2.3) — variable-angle truss: VRd,s = (Asw/s) · z · fywd · cot θ [link capacity] VRd,max = αcw · bw · z · ν₁ · fcd / (cot θ + tan θ) [strut crushing] z = 0.9 d; ν₁ = 0.6·(1 − fck/250); αcw = 1.0 (non-prestressed) Optimal cot θ ∈ [1.0, 2.5] maximises min(VRd,s, VRd,max). /// Sign convention (rectangular section b × h): VEdX → bw = h, d_eff = b − 60 mm cover, Asw/s from TotalLegsX VEdY → bw = b, d_eff = h − 60 mm cover, Asw/s from TotalLegsY. Key methods: Check. | `Ec2ShearDesignService.cs` |
+| `class` | **Ec2ShearDesignService** | /// Minimum shear reinforcement (§9.2.2(5)): ρw,min = 0.08 √fck / fywk → Asw/s ≥ ρw,min · bw /// Effective depth (Fix 1 — from real geometry, not a fixed 60 mm): d_eff = section_dim − cover_nominal − link_dia − main_bar_dia / 2 /// Sign convention (b × h section): VEdX → bw = h, d = b − cover_eff, legs = TotalLegsX VEdY → bw = b, d = h − cover_eff, legs = TotalLegsY /// Circular (Fix 5 — EC2 §6.2.2(5)): Caller passes bMm = 0.8 D, hMm = D. Result: bwX = bwY = 0.8 D; dEffX = dEffY ≈ 0.8D − cover_eff. Key methods: Check. | `Ec2ShearDesignService.cs` |
 | `class` | **ShearDesignServiceFactory** | Represents the ShearDesignServiceFactory class. Key methods: Get. | `ShearDesignServiceFactory.cs` |
 | `record` | **struct** | Represents the struct record. | `Ec2ShearDesignService.cs` |
 
@@ -606,6 +607,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **CadSnapService** | Provides service logic and operations for CadSnap. Key methods: Snap. | `CadSnapService.cs` |
 | `enum` | **CadToolMode** | Enumeration defining states/types for CadToolMode. | `CadToolMode.cs` |
 | `class` | **ColumnItemViewModel** | Represents the ColumnItemViewModel class. Key properties: GroupId, MoveToGroupOptions, Status, StatusText. | `ColumnItemViewModel.cs` |
+| `record` | **ComplianceCheckRowViewModel** | Represents the ComplianceCheckRowViewModel record. Key properties: Reference, Description, Provided, Limit. | `RebarComplianceViewModel.cs` |
 | `record` | **DesignCodeOption** | Represents the DesignCodeOption record. | `InputViewModel.cs` |
 | `enum` | **DiagramViewportType** | Enumeration defining states/types for DiagramViewportType. | `ViewportOptionViewModel.cs` |
 | `class` | **DxfImportViewModel** | Represents the DxfImportViewModel class. Key properties: LayerNames, PreviewRebars, BrowseFileCommand, RefreshLayersCommand. | `DxfImportViewModel.cs` |
@@ -655,6 +657,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **PreviewRebarVm** | Represents the PreviewRebarVm record. | `DxfImportViewModel.cs` |
 | `class` | **ProjectExplorerViewModel** | Represents the ProjectExplorerViewModel class. Key methods: SetSectionStatus, ClearSectionStatuses, SelectNode, SelectColumnById. Key properties: ProjectName, Nodes, SelectedNode, SelectedColumn. | `ProjectExplorerViewModel.cs` |
 | `class` | **ProjectGroupOptionViewModel** | Represents the ProjectGroupOptionViewModel class. Key properties: GroupId, GroupName, CreateGroup, DisplayName. | `EtabsImportViewModel.cs` |
+| `class` | **RebarComplianceViewModel** | /// Exposes the rebar code-compliance check results for the Results tab sidebar panel. ///. Key methods: Load. Key properties: HasResult, AllPass, HasFails, StatusText. | `RebarComplianceViewModel.cs` |
 | `record` | **RebarLayoutTypeOption** | Represents the RebarLayoutTypeOption record. | `RebarLayoutTypeOption.cs` |
 | `class` | **RebarLayoutViewModel** | Represents the RebarLayoutViewModel class. Key properties: Top, Bottom, Left, Right. | `RebarLayoutViewModel.cs` |
 | `record` | **RebarSetLibraryOption** | Represents the RebarSetLibraryOption record. | `InputViewModel.cs` |
@@ -671,7 +674,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **SectionIntegrationMethodOption** | Represents the SectionIntegrationMethodOption record. | `InputViewModel.cs` |
 | `enum` | **SectionStatus** | Enumeration defining states/types for SectionStatus. | `SectionStatus.cs` |
 | `record` | **SevenPointValidationRowViewModel** | Represents the SevenPointValidationRowViewModel record. Key properties: CDisplay, Pn7Display, Mn7Display, PnSolverDisplay. | `ResultViewModel.cs` |
-| `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result shown in the Results tab. /// All force values are already in the user's display unit (kN or kip). /// Intermediate values (bw, d, k, ρl, σcp, Asw/s, z, fywd, cot θ) remain in mm / MPa. ///. Key methods: Load. Key properties: HasResult, HasDemand, HasLinks, ForceUnit. | `ShearResultViewModel.cs` |
+| `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// All force values in the user's display unit; lengths/stresses in mm / MPa. ///. Key methods: Load. Key properties: HasResult, HasDemand, HasLinks, ForceUnit. | `ShearResultViewModel.cs` |
 | `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. | `SnapResult.cs` |
 | `class` | **SnapResult** | Encapsulates the result of Snap operations. Key properties: X, Y, Kind, HasSnap. | `SnapResult.cs` |
 | `class` | **ViewModelBase** | Represents the ViewModelBase class. | `ViewModelBase.cs` |

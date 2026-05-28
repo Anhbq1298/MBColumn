@@ -9,13 +9,18 @@ namespace MBColumn.Domain.Entities;
 public sealed record ShearCheckResult(
     // ── X direction — capacity components ─────────────────────────────────────
     double VEdXN,
-    double VRdcXN,      // concrete contribution without links (§6.2.2)
-    double VRdsXN,      // link contribution (§6.2.3); 0 when no links provided
-    double VRdMaxXN,    // strut crushing limit (§6.2.3); 0 when no links provided
-    double VRdXN,       // governing capacity = min(VRds, VRdMax) if links, else VRdc
+    double VRdcXN,
+    double VRdsXN,
+    double VRdMaxXN,
+    double VRdXN,
     double UtilisationX,
     CapacityStatus StatusX,
     bool LinksRequiredX,
+    /// <summary>True when VEd > VRd,max even at cot θ = 1 — adding more links will NOT help; increase section or fck.</summary>
+    bool IsStruttingCriticalX,
+    /// <summary>Minimum Asw/s required by §9.2.2(5): ρw,min × bw [mm²/mm]. 0 when not applicable.</summary>
+    double AswSMinRequiredX,
+    bool AswSMinPassX,
 
     // ── Y direction — capacity components ─────────────────────────────────────
     double VEdYN,
@@ -26,13 +31,16 @@ public sealed record ShearCheckResult(
     double UtilisationY,
     CapacityStatus StatusY,
     bool LinksRequiredY,
+    bool IsStruttingCriticalY,
+    double AswSMinRequiredY,
+    bool AswSMinPassY,
 
     // ── Intermediate values — X direction ─────────────────────────────────────
-    double BwXMm,       // web width for X-direction shear
-    double DEffXMm,     // effective depth for X-direction shear
-    double KFactorX,    // size-effect factor k = 1 + √(200/d) ≤ 2
-    double RhoLX,       // long. reinforcement ratio ρl ≤ 0.02
-    double SigCpMpa,    // axial compressive stress (shared: same for both directions)
+    double BwXMm,
+    double DEffXMm,
+    double KFactorX,
+    double RhoLX,
+    double SigCpMpa,
 
     // ── Intermediate values — Y direction ─────────────────────────────────────
     double BwYMm,
@@ -41,10 +49,10 @@ public sealed record ShearCheckResult(
     double RhoLY,
 
     // ── Link intermediate values (0 when no links) ─────────────────────────────
-    double AswSX,       // Asw/s for X direction (mm²/mm)
-    double AswSY,       // Asw/s for Y direction (mm²/mm)
-    double FywdMpa,     // design link yield strength
-    double ZXMm,        // lever arm z for X direction
-    double ZYMm,        // lever arm z for Y direction
-    double CotThetaX,   // governing strut angle cot θ for X direction
-    double CotThetaY);  // governing strut angle cot θ for Y direction
+    double AswSX,
+    double AswSY,
+    double FywdMpa,
+    double ZXMm,
+    double ZYMm,
+    double CotThetaX,
+    double CotThetaY);

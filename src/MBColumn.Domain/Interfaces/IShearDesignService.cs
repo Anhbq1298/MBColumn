@@ -11,14 +11,16 @@ public interface IShearDesignService
     /// <summary>
     /// Performs shear capacity checks in both principal directions independently.
     /// </summary>
-    /// <param name="bMm">Section width (X dimension), mm.</param>
-    /// <param name="hMm">Section height (Y dimension), mm.</param>
+    /// <param name="bMm">Section width (X dimension), mm. For circular: 0.8 D (effective width).</param>
+    /// <param name="hMm">Section height (Y dimension), mm. For circular: D.</param>
     /// <param name="totalAslMm2">Total longitudinal reinforcement area, mm².</param>
     /// <param name="fckMpa">Characteristic concrete compressive strength, MPa.</param>
     /// <param name="nedN">Applied axial force, N. Positive = compression.</param>
     /// <param name="vEdXN">Applied shear in X direction, N.</param>
     /// <param name="vEdYN">Applied shear in Y direction, N.</param>
     /// <param name="links">Link (stirrup) reinforcement details; null → check without-links only.</param>
+    /// <param name="coverMm">Nominal concrete cover to the link outer face, mm.</param>
+    /// <param name="mainBarDiaMm">Largest longitudinal bar diameter, mm. Used to compute d_eff.</param>
     ShearCheckResult Check(
         double bMm,
         double hMm,
@@ -27,5 +29,7 @@ public interface IShearDesignService
         double nedN,
         double vEdXN,
         double vEdYN,
-        ShearLinkReinforcement? links);
+        ShearLinkReinforcement? links,
+        double coverMm,
+        double mainBarDiaMm);
 }
