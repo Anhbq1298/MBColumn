@@ -109,7 +109,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center"
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                        <TextBlock Text="Calculate This Section" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12"
+                        <TextBlock Text="Calculate" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12"
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="8,1,0,0" VerticalAlignment="Center"
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -257,7 +257,17 @@
                                     <Grid>
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                             <TextBlock Text="📄 " />
-                                            <TextBlock Text="{Binding Name}" />
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                            <Border Margin="6,0,0,0"
+                                                    VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource ExplorerStatusBadgeStyle}" />
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding StatusText}"
+                                                           FontSize="9"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextDarkBrush}" />
+                                            </Border>
                                             <StackPanel.ContextMenu>
                                                 <ContextMenu Opened="ColumnContextMenu_Opened">
                                                     <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />

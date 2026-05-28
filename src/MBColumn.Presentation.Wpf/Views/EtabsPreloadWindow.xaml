@@ -4,10 +4,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels"
         Title="Import from ETABS"
-        Width="460"
+        Width="820"
+        MinWidth="700"
         SizeToContent="Height"
-        MinHeight="320"
-        MaxHeight="680"
+        MinHeight="360"
+        MaxHeight="720"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Style="{DynamicResource DialogWindowStyle}"
@@ -36,11 +37,17 @@
             </StackPanel>
         </Border>
 
-        <!-- Steps + Combo selection -->
-        <StackPanel Grid.Row="1" Margin="22,18,22,10">
+        <!-- Two-column layout: Progress steps (left) + Combo selection (right) -->
+        <Grid Grid.Row="1" Margin="22,18,22,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="260" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <!-- Progress steps -->
-            <ItemsControl ItemsSource="{Binding Steps}">
+            <!-- Left: Progress steps -->
+            <ItemsControl Grid.Column="0" ItemsSource="{Binding Steps}"
+                          Margin="0,0,20,0"
+                          VerticalAlignment="Top">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:EtabsPreloadStep}">
                         <DockPanel>
@@ -156,15 +163,15 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Combo selection panel — visible after steps 1-3 complete -->
-            <Border Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource BoolToVisibilityConverter}}"
-                    Margin="0,14,0,0"
+            <!-- Right: Combo selection panel — visible after steps 1-3 complete -->
+            <Border Grid.Column="1"
+                    Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource BoolToVisibilityConverter}}"
                     BorderBrush="{DynamicResource BorderGreyBrush}"
-                    BorderThickness="0,1,0,0"
-                    Padding="0,12,0,0">
-                <StackPanel>
+                    BorderThickness="1,0,0,0"
+                    Padding="20,0,0,0">
+                <DockPanel>
                     <!-- Header row -->
-                    <DockPanel Margin="0,0,0,6">
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                         <TextBlock DockPanel.Dock="Right"
                                    FontSize="11"
                                    FontWeight="SemiBold"
@@ -181,13 +188,14 @@
                     </DockPanel>
 
                     <!-- Filter box -->
-                    <TextBox Text="{Binding LoadComboFilterText, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox DockPanel.Dock="Top"
+                             Text="{Binding LoadComboFilterText, UpdateSourceTrigger=PropertyChanged}"
                              Tag="Search…"
                              Margin="0,0,0,6"
                              FontSize="11" />
 
                     <!-- Select All / Clear All -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
                         <Button Content="Select All"
                                 Command="{Binding SelectAllCombosCommand}"
                                 Padding="8,3"
@@ -200,7 +208,6 @@
                     <!-- Combo list — Shift+click range, Ctrl+click toggle -->
                     <ListBox ItemsSource="{Binding FilteredCombinations}"
                              SelectionMode="Extended"
-                             MaxHeight="210"
                              FontSize="11"
                              BorderBrush="{DynamicResource BorderGreyBrush}"
                              BorderThickness="1"
@@ -218,10 +225,10 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </StackPanel>
+                </DockPanel>
             </Border>
 
-        </StackPanel>
+        </Grid>
 
         <!-- Bottom bar -->
         <Grid Grid.Row="2">

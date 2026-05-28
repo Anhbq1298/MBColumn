@@ -6,11 +6,13 @@ namespace MBColumn.Presentation.Wpf.Controls;
 
 public static class AxisRenderer2D
 {
-    private static readonly Brush AxisBrush = new SolidColorBrush(Color.FromRgb(55, 65, 81)); // soft slate
-    private static readonly Brush ZeroAxisBrush = new SolidColorBrush(Color.FromRgb(30, 41, 59)); // dark zero axis
-    private static readonly Brush GridBrush = new SolidColorBrush(Color.FromArgb(0xD0, 203, 213, 225)); // soft transparent blue-grey
-    private static readonly Brush MinorGridBrush = new SolidColorBrush(Color.FromArgb(0xB0, 241, 245, 249)); // very soft
+    private static readonly Brush AxisBrush = new SolidColorBrush(Color.FromRgb(55, 65, 81));
+    private static readonly Brush ZeroAxisBrush = new SolidColorBrush(Color.FromRgb(30, 41, 59));
+    private static readonly Brush GridBrush = new SolidColorBrush(Color.FromArgb(0xD0, 203, 213, 225));
+    private static readonly Brush MinorGridBrush = new SolidColorBrush(Color.FromArgb(0xB0, 241, 245, 249));
     private static readonly Brush TextBrush = new SolidColorBrush(Color.FromRgb(31, 41, 51));
+    private static readonly Brush PAxisLabelBrush = new SolidColorBrush(Color.FromRgb(37, 99, 235));   // blue for P (vertical) axis
+    private static readonly Brush MAxisLabelBrush = new SolidColorBrush(Color.FromRgb(220, 38, 38));   // red for M (horizontal) axis
 
     public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0)
     {
@@ -87,15 +89,25 @@ public static class AxisRenderer2D
         dc.DrawLine(Math.Abs(transform.AxisXValue) < 1e-9 ? zeroAxisPen : axisPen, xAxis0, xAxis1);
         dc.DrawLine(Math.Abs(transform.AxisYValue) < 1e-9 ? zeroAxisPen : axisPen, yAxis0, yAxis1);
         
-        // Titles
-        DrawText(dc, xLabel, 12, new Point(transform.Plot.Right - 74, transform.Plot.Bottom + 30), FontWeights.SemiBold);
-        DrawText(dc, yLabel, 12, new Point(transform.Plot.Left + 8, transform.Plot.Top - 34), FontWeights.SemiBold);
+        // Titles — anchored to the axis ends so they track the actual axis lines
+        var yft = CreateFormattedText(yLabel, 12, FontWeights.SemiBold, PAxisLabelBrush);
+        dc.DrawText(yft, new Point(yAxis1.X - yft.Width / 2, yAxis1.Y - yft.Height - 6));
+
+        var xft = CreateFormattedText(xLabel, 12, FontWeights.SemiBold, MAxisLabelBrush);
+        dc.DrawText(xft, new Point(xAxis1.X + 6, xAxis1.Y - xft.Height / 2));
     }
 
     private static void DrawText(DrawingContext dc, string text, double size, Point point, FontWeight? weight = null)
     {
-        var ft = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight ?? FontWeights.Normal, FontStretches.Normal), size + 1, TextBrush, 1.25);
+        var ft = CreateFormattedText(text, size, weight ?? FontWeights.Normal, TextBrush);
         dc.DrawText(ft, point);
+    }
+
+    private static FormattedText CreateFormattedText(string text, double size, FontWeight weight, Brush brush)
+    {
+        return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+            new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal),
+            size + 1, brush, 1.25);
     }
 }
 

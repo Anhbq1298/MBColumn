@@ -106,7 +106,8 @@ public partial class StartUpWindow : Window
             NoSelectionText.Visibility = Visibility.Collapsed;
 
             TxtPreviewProjName.Text = projectName;
-            TxtPreviewFileName.Text = Path.GetFileName(filePath);
+            TxtPreviewFileName.Text = filePath;
+            TxtPreviewFileName.ToolTip = filePath;
             TxtPreviewLastModified.Text = lastWrite;
             TxtPreviewFileSize.Text = $"{sizeInKb} KB";
 
