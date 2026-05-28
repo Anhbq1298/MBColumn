@@ -10,6 +10,8 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private double pu;
     private double mux;
     private double muy;
+    private double vux;
+    private double vuy;
     private bool isActive;
     private bool hasValidationError;
     private string originalLoadCaseName = "";
@@ -34,6 +36,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public double Pu { get => pu; set => Set(ref pu, value); }
     public double Mux { get => mux; set => Set(ref mux, value); }
     public double Muy { get => muy; set => Set(ref muy, value); }
+    /// <summary>Shear force in X direction in the current display force unit.</summary>
+    public double Vux { get => vux; set => Set(ref vux, value); }
+    /// <summary>Shear force in Y direction in the current display force unit.</summary>
+    public double Vuy { get => vuy; set => Set(ref vuy, value); }
     public bool IsActive { get => isActive; set => Set(ref isActive, value); }
     public bool HasValidationError { get => hasValidationError; set => Set(ref hasValidationError, value); }
     public string OriginalLoadCaseName { get => originalLoadCaseName; set => Set(ref originalLoadCaseName, value); }
@@ -44,6 +50,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string Source { get => source; set => Set(ref source, value); }
 
     public LoadCaseDto ToDto(ForceUnit forceUnit, MomentUnit momentUnit)
-        => new(Id, Name, Pu, Mux, Muy, IsActive, forceUnit, momentUnit);
+        => new(Id, Name, Pu, Mux, Muy, IsActive, forceUnit, momentUnit)
+        {
+            Vux = Vux,
+            Vuy = Vuy
+        };
 }
 

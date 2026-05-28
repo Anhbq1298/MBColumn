@@ -91,7 +91,7 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
                 var (start, end) = centerline.Value;
                 segments.Add(new EtabsPierShellSegmentDto(
                     areaName, pierLabel, storyName, info.Label,
-                    info.Prop, thicknessMm, start, end));
+                    info.Prop, thicknessMm, start, end, info.AxisAngleDegrees));
             }
 
             return segments;
@@ -144,6 +144,8 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
             // ── Per area: pier label + section property (only 1 COM call per area) ──────────
             var areaInfo = new Dictionary<string, AreaRecord>(StringComparer.OrdinalIgnoreCase);
             var pierAreaMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            var axisAnglesByPier = new Dictionary<string, IReadOnlyDictionary<string, double>>(
+                StringComparer.OrdinalIgnoreCase);
 
             foreach (var areaName in bulkNames)
             {
@@ -157,7 +159,9 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
                 string prop = "";
                 try { model.AreaObj.GetProperty(areaName, ref prop); } catch { }
 
-                areaInfo[areaName] = new AreaRecord(pier, ls.Story, ls.Label, prop ?? "");
+                var axisAngle = GetPierStoryAxisAngle(model, pier, ls.Story, axisAnglesByPier);
+
+                areaInfo[areaName] = new AreaRecord(pier, ls.Story, ls.Label, prop ?? "", axisAngle);
 
                 var mapKey = $"{pier}|{ls.Story}";
                 if (!pierAreaMap.TryGetValue(mapKey, out var list))
@@ -324,11 +328,89 @@ public sealed class EtabsPierShellImportService : IEtabsPierShellImportService
     private static double Dist2D((double X, double Y) a, (double X, double Y) b)
         => SMath.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
+    private static double GetPierStoryAxisAngle(
+        cSapModel model,
+        string pierName,
+        string storyName,
+        Dictionary<string, IReadOnlyDictionary<string, double>> cache)
+    {
+        if (string.IsNullOrWhiteSpace(pierName) || string.IsNullOrWhiteSpace(storyName))
+            return 0.0;
+
+        if (!cache.TryGetValue(pierName, out var byStory))
+        {
+            byStory = LoadPierStoryAxisAngles(model, pierName);
+            cache[pierName] = byStory;
+        }
+
+        return byStory.TryGetValue(storyName, out var axisAngle) ? axisAngle : 0.0;
+    }
+
+    private static IReadOnlyDictionary<string, double> LoadPierStoryAxisAngles(cSapModel model, string pierName)
+    {
+        int numberStories = 0;
+        string[] storyNames = [];
+        double[] axisAngles = [];
+        int[] numAreaObjs = [];
+        int[] numLineObjs = [];
+        double[] widthBot = [];
+        double[] thicknessBot = [];
+        double[] widthTop = [];
+        double[] thicknessTop = [];
+        string[] matProp = [];
+        double[] cgBotX = [];
+        double[] cgBotY = [];
+        double[] cgBotZ = [];
+        double[] cgTopX = [];
+        double[] cgTopY = [];
+        double[] cgTopZ = [];
+
+        try
+        {
+            var ret = model.PierLabel.GetSectionProperties(
+                pierName,
+                ref numberStories,
+                ref storyNames,
+                ref axisAngles,
+                ref numAreaObjs,
+                ref numLineObjs,
+                ref widthBot,
+                ref thicknessBot,
+                ref widthTop,
+                ref thicknessTop,
+                ref matProp,
+                ref cgBotX,
+                ref cgBotY,
+                ref cgBotZ,
+                ref cgTopX,
+                ref cgTopY,
+                ref cgTopZ);
+
+            if (ret != 0 || numberStories <= 0 || storyNames.Length == 0 || axisAngles.Length == 0)
+                return new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var result = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        var count = SMath.Min(numberStories, SMath.Min(storyNames.Length, axisAngles.Length));
+        for (var i = 0; i < count; i++)
+        {
+            var story = storyNames[i];
+            if (string.IsNullOrWhiteSpace(story)) continue;
+            result[story] = axisAngles[i];
+        }
+
+        return result;
+    }
+
     // -------------------------------------------------------------------
     // Inner types
     // -------------------------------------------------------------------
 
-    private sealed record AreaRecord(string Pier, string Story, string Label, string Prop);
+    private sealed record AreaRecord(string Pier, string Story, string Label, string Prop, double AxisAngleDegrees);
 
     private sealed class AreaScanCache(
         Dictionary<string, AreaRecord> areaInfo,

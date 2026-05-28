@@ -53,5 +53,11 @@ public sealed record CalculationResultDto(
     public double EsMpa { get; init; }
     public double AlphaCc { get; init; } = 0.85;
     public double DiameterMm { get; init; }
+
+    /// <summary>
+    /// Governing (worst-utilisation) shear result across all active load cases.
+    /// Null when no shear forces were supplied or the design code does not support shear yet.
+    /// </summary>
+    public ShearResultDto? GoverningShearResult { get; init; }
 }
 

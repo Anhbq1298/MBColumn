@@ -91,5 +91,9 @@ public sealed class SnapshotLoadCase
     public double Pu { get; set; }
     public double Mux { get; set; }
     public double Muy { get; set; }
+    /// <summary>Shear force in X direction in the snapshot's force unit. Defaults to 0.</summary>
+    public double Vux { get; set; } = 0.0;
+    /// <summary>Shear force in Y direction in the snapshot's force unit. Defaults to 0.</summary>
+    public double Vuy { get; set; } = 0.0;
     public bool IsActive { get; set; } = true;
 }

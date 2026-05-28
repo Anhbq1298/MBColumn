@@ -16,7 +16,9 @@ public sealed class ColumnCalculationService(
     DiagramDataService diagramData,
     InputValidationService validation,
     IRebarCoordinateBuilderService rebarCoordinates,
-    IPmValidationReportService validationReportService)
+    IPmValidationReportService validationReportService,
+    ShearCheckService? shearCheckService = null,
+    IShearDesignServiceFactory? shearCodeFactory = null)
 {
     public ColumnCalculationService(
         IInteractionSolverFactory solverFactory,
@@ -178,8 +180,18 @@ public sealed class ColumnCalculationService(
         var pointSet = controlPoints.Build(surface, govDemand, input.SelectedPmAngleDegrees, selectedAxial, input.UnitSystem, govRatio, codeService);
         var govPoint = govRatio.GoverningPoint ?? surface.Points.OrderByDescending(p => p.PhiPn).First();
 
+        // ── Shear check ───────────────────────────────────────────────────────
+        IShearDesignService? shearService = shearCodeFactory?.Get(input.DesignCode);
+        IReadOnlyList<ShearResultDto?> shearPerCase = [];
+        ShearResultDto? governingShear = null;
+        if (shearCheckService is not null && section is not IrregularSection)
+        {
+            (shearPerCase, governingShear) =
+                shearCheckService.Check(input, activeCases, coordinateList, shearService);
+        }
+
         // Build per-case result DTOs
-        var lcResultDtos = caseResults.Select(r =>
+        var lcResultDtos = caseResults.Select((r, i) =>
         {
             var govPt = r.Ratio.GoverningPoint ?? surface.Points.OrderByDescending(p => p.PhiPn).First();
             return new LoadCaseResultDto(
@@ -196,7 +208,8 @@ public sealed class ColumnCalculationService(
             {
                 CapacityPDisplay = units.ForceFromN(r.Ratio.CapacityPn, input.ForceUnit),
                 CapacityMxDisplay = units.MomentFromNmm(r.Ratio.CapacityMnx, input.MomentUnit),
-                CapacityMyDisplay = units.MomentFromNmm(r.Ratio.CapacityMny, input.MomentUnit)
+                CapacityMyDisplay = units.MomentFromNmm(r.Ratio.CapacityMny, input.MomentUnit),
+                ShearResult = i < shearPerCase.Count ? shearPerCase[i] : null
             };
         }).ToList();
 
@@ -276,7 +289,8 @@ public sealed class ColumnCalculationService(
             AlphaCc = input.AlphaCc,
             DiameterMm = sectionWidthMm == sectionHeightMm && section.Shape == SectionShapeType.Circular
                 ? sectionWidthMm
-                : 0
+                : 0,
+            GoverningShearResult = governingShear
         };
     }
 

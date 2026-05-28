@@ -38,5 +38,24 @@ public sealed record ColumnInputDto(
     public double AlphaCc { get; init; } = 0.85;
     public IrregularSectionInputDto? Irregular { get; init; }
     public RebarSetLibraryType? RebarSetLibrary { get; init; }
+
+    // ── Shear reinforcement (links / stirrups) ────────────────────────────────
+    /// <summary>Link bar diameter in mm. Used for EC2 shear capacity check.</summary>
+    public double LinkDiameterMm { get; init; } = 0.0;
+
+    /// <summary>Link spacing in mm along the column height.</summary>
+    public double LinkSpacingMm { get; init; } = 0.0;
+
+    /// <summary>Total number of legs resisting shear in the X direction (2 + inner legs X).</summary>
+    public int TotalLegsX { get; init; } = 2;
+
+    /// <summary>Total number of legs resisting shear in the Y direction (2 + inner legs Y).</summary>
+    public int TotalLegsY { get; init; } = 2;
+
+    /// <summary>
+    /// Characteristic yield strength of the links in MPa. Defaults to Fy (same grade).
+    /// TODO: expose a separate link steel grade selector in the UI.
+    /// </summary>
+    public double FywkMpa { get; init; } = 0.0;
 }
 

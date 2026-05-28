@@ -37,16 +37,17 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
             };
         }
 
-        var geoms = new List<Geometry>(segments.Count * 2);
+        var workingSegments = RotateSegmentsToPierAxes(segments);
+        var geoms = new List<Geometry>(workingSegments.Count * 2);
 
-        foreach (var seg in segments)
+        foreach (var seg in workingSegments)
         {
             var body = BuildSegmentBody(seg);
             if (!body.IsEmpty)
                 geoms.Add(body);
         }
 
-        var nodeMap = BuildNodeConnections(segments);
+        var nodeMap = BuildNodeConnections(workingSegments);
         foreach (var (x, y, connected) in nodeMap)
         {
             if (connected.Count >= 2)
@@ -112,6 +113,34 @@ public sealed class IrregularPierGeometryBuilder : IIrregularPierGeometryBuilder
 
         return BufferOp.Buffer(line, seg.ThicknessMm / 2.0, bufParams);
     }
+
+    private static IReadOnlyList<EtabsPierShellSegmentDto> RotateSegmentsToPierAxes(
+        IReadOnlyList<EtabsPierShellSegmentDto> segments)
+    {
+        if (!segments.Any(s => double.IsFinite(s.AxisAngleDegrees) && SMath.Abs(s.AxisAngleDegrees) > 1e-9))
+            return segments;
+
+        return [.. segments.Select(RotateSegmentClockwise)];
+    }
+
+    private static EtabsPierShellSegmentDto RotateSegmentClockwise(EtabsPierShellSegmentDto seg)
+    {
+        if (!double.IsFinite(seg.AxisAngleDegrees) || SMath.Abs(seg.AxisAngleDegrees) <= 1e-9)
+            return seg;
+
+        var radians = seg.AxisAngleDegrees * SMath.PI / 180.0;
+        var cos = SMath.Cos(radians);
+        var sin = SMath.Sin(radians);
+
+        return seg with
+        {
+            Start = RotatePointClockwise(seg.Start, cos, sin),
+            End = RotatePointClockwise(seg.End, cos, sin)
+        };
+    }
+
+    private static (double X, double Y) RotatePointClockwise((double X, double Y) point, double cos, double sin)
+        => (point.X * cos + point.Y * sin, -point.X * sin + point.Y * cos);
 
     // -------------------------------------------------------------------
     // Joint patch: fills the gap at nodes where ≥2 segments meet.

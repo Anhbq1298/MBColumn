@@ -205,6 +205,7 @@ var tests = new List<(string Name, Action Test)>
     ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
     ("ETABS pier geometry snap-tolerance fix",                      TestIrregularPierGeometrySnapTolerance),
     ("ETABS pier geometry forward-cap fix",                         TestIrregularPierGeometryForwardCap),
+    ("ETABS pier geometry applies clockwise axis angle",             TestIrregularPierGeometryAppliesClockwiseAxisAngle),
     ("Irregular equal spacing generated rebars satisfy cover",        TestIrregularEqualSpacingGeneratedRebarsSatisfyCover),
     ("Irregular equal spacing ToDto refreshes stale rebars",          TestIrregularEqualSpacingToDtoRefreshesStaleRebars),
     ("Irregular custom mode clears stale rebar message",              TestIrregularCustomModeClearsStaleRebarMessage),
@@ -3354,6 +3355,31 @@ static void TestIrregularPierGeometryForwardCap()
     // With the bug the patch reached y ≈ 200, inflating the extent to ≈ 300 mm.
     double yExtent = poly.Max(p => p.Y) - poly.Min(p => p.Y);
     IsTrue(yExtent < 250);
+}
+
+static void TestIrregularPierGeometryAppliesClockwiseAxisAngle()
+{
+    var horizontal = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "H", "P1", "S1", "L1", "CW100", 100, (0, 0), (400, 0), 90);
+    var vertical = new MBColumn.Application.DTOs.Etabs.EtabsPierShellSegmentDto(
+        "V", "P1", "S1", "L2", "CW100", 100, (0, 0), (0, 200), 90);
+
+    var result = new MBColumn.Infrastructure.Etabs.IrregularPierGeometryBuilder()
+                     .BuildBoundary([horizontal, vertical]);
+
+    IsTrue(result.ClockwisePolylines.Count >= 1);
+    var poly = result.ClockwisePolylines[0];
+
+    // ETABS pier section axis angles are applied clockwise: this L pier should
+    // become a long downward leg with the short leg pointing right.
+    double minX = poly.Min(p => p.X);
+    double maxX = poly.Max(p => p.X);
+    double minY = poly.Min(p => p.Y);
+    double maxY = poly.Max(p => p.Y);
+
+    IsTrue(Math.Abs(minY) > Math.Abs(maxY));
+    IsTrue(Math.Abs(maxX) > Math.Abs(minX));
+    IsTrue(maxY - minY > maxX - minX);
 }
 
 // ── Tests for 7-Point Strain Controlled Solver ─────────

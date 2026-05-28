@@ -8,4 +8,5 @@ public sealed record EtabsPierShellSegmentDto(
     string SectionProperty,
     double ThicknessMm,
     (double X, double Y) Start,
-    (double X, double Y) End);
+    (double X, double Y) End,
+    double AxisAngleDegrees = 0.0);

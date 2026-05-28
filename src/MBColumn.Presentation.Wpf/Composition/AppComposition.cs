@@ -72,6 +72,11 @@ public sealed class AppComposition : IDisposable
         var validation = new InputValidationService();
         rebarCoordinates = new RebarCoordinateBuilderService(units, metricBars, imperialBars);
 
+        // Shear design services
+        IShearDesignService ec2Shear = new Ec2ShearDesignService();
+        IShearDesignServiceFactory shearFactory = new ShearDesignServiceFactory(ec2Shear);
+        var shearCheck = new ShearCheckService(units);
+
         calculationService = new ColumnCalculationService(
             solverFactory,
             codeFactory,
@@ -81,7 +86,9 @@ public sealed class AppComposition : IDisposable
             diagrams,
             validation,
             rebarCoordinates,
-            new PmValidationReportService(codeFactory));
+            new PmValidationReportService(codeFactory),
+            shearCheck,
+            shearFactory);
     }
 
     public static AppComposition Create()

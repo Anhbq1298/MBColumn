@@ -98,6 +98,7 @@ public sealed class ResultViewModel : ViewModelBase
         MM = new MMDiagramViewModel();
         PM3D = new PM3DViewModel();
         MM3D = new MM3DViewModel();
+        Shear = new ShearResultViewModel();
         ToggleGridCommand = new RelayCommand(() => ShowGrid = !ShowGrid);
         ToggleLabelsCommand = new RelayCommand(() => ShowLabels = !ShowLabels);
         ToggleLegendCommand = new RelayCommand(() => ShowLegend = !ShowLegend);
@@ -137,6 +138,7 @@ public sealed class ResultViewModel : ViewModelBase
     public MMDiagramViewModel MM { get; }
     public PM3DViewModel PM3D { get; }
     public MM3DViewModel MM3D { get; }
+    public ShearResultViewModel Shear { get; }
     public CalculationResultDto? Result
     {
         get => result;
@@ -161,6 +163,7 @@ public sealed class ResultViewModel : ViewModelBase
             MM.Load(value);
             PM3D.Load(value);
             MM3D.Load(value);
+            Shear.Load(value?.GoverningShearResult);
             selectedSliceAngleDegrees = value?.GoverningThetaDegrees ?? 0;
             selectedAxialLoad = value?.PuDisplay ?? 0;
             // Task F fix: raise so TextBoxes reflect the newly loaded values

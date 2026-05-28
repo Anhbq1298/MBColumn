@@ -17,5 +17,8 @@ public sealed record LoadCaseResultDto(
     public double CapacityPDisplay { get; init; }
     public double CapacityMxDisplay { get; init; }
     public double CapacityMyDisplay { get; init; }
+
+    /// <summary>Shear check result for this load case; null when shear forces are zero or not checked.</summary>
+    public ShearResultDto? ShearResult { get; init; }
 }
 

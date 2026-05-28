@@ -10,5 +10,12 @@ public sealed record LoadCaseDto(
     double Muy,
     bool IsActive,
     ForceUnit ForceUnit,
-    MomentUnit MomentUnit);
+    MomentUnit MomentUnit)
+{
+    /// <summary>Shear force in X direction in the user's current ForceUnit. Defaults to 0.</summary>
+    public double Vux { get; init; } = 0.0;
+
+    /// <summary>Shear force in Y direction in the user's current ForceUnit. Defaults to 0.</summary>
+    public double Vuy { get; init; } = 0.0;
+}
 

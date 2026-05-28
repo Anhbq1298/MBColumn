@@ -426,6 +426,8 @@ public sealed class InputViewModel : ViewModelBase
     public string DemandForceHeader => $"P ({ForceLabel})";
     public string DemandMomentXHeader => $"Mx ({MomentLabel})";
     public string DemandMomentYHeader => $"My ({MomentLabel})";
+    public string ShearVuxHeader => $"Vux ({ForceLabel})";
+    public string ShearVuyHeader => $"Vuy ({ForceLabel})";
     public string RebarDiameterUnitLabel => selectedRebarSetLibrary == RebarSetLibraryType.SingaporeMetric ? "mm" : "in";
     public string LinkSpacingUnitLabel => LengthLabel;
 
@@ -746,7 +748,11 @@ public sealed class InputViewModel : ViewModelBase
                 IntegrationMethod = SectionIntegrationMethod.Polygon,
                 AlphaCc = AlphaCc,
                 RebarSetLibrary = selectedRebarSetLibrary,
-                Irregular = irregularDto
+                Irregular = irregularDto,
+                LinkDiameterMm = stirrupDiameterMm,
+                LinkSpacingMm = linkSpacingMm,
+                TotalLegsX = TotalLegsX,
+                TotalLegsY = TotalLegsY
             };
         }
 
@@ -793,7 +799,11 @@ public sealed class InputViewModel : ViewModelBase
                 Ec2Solver = SelectedEc2Solver,
                 IntegrationMethod = SelectedIntegrationMethod,
                 AlphaCc = AlphaCc,
-                RebarSetLibrary = selectedRebarSetLibrary
+                RebarSetLibrary = selectedRebarSetLibrary,
+                LinkDiameterMm = stirrupDiameterMm,
+                LinkSpacingMm = linkSpacingMm,
+                TotalLegsX = TotalLegsX,
+                TotalLegsY = TotalLegsY
             };
         }
 
@@ -826,7 +836,11 @@ public sealed class InputViewModel : ViewModelBase
             Ec2Solver = SelectedEc2Solver,
             IntegrationMethod = SelectedIntegrationMethod,
             AlphaCc = AlphaCc,
-            RebarSetLibrary = selectedRebarSetLibrary
+            RebarSetLibrary = selectedRebarSetLibrary,
+            LinkDiameterMm = stirrupDiameterMm,
+            LinkSpacingMm = linkSpacingMm,
+            TotalLegsX = TotalLegsX,
+            TotalLegsY = TotalLegsY
         };
     }
 
@@ -1618,6 +1632,8 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(DemandForceHeader));
         Raise(nameof(DemandMomentXHeader));
         Raise(nameof(DemandMomentYHeader));
+        Raise(nameof(ShearVuxHeader));
+        Raise(nameof(ShearVuyHeader));
         Raise(nameof(RebarDiameterUnitLabel));
         Raise(nameof(LinkSpacingUnitLabel));
         Raise(nameof(LinkSpacing));
@@ -2154,6 +2170,8 @@ public sealed class InputViewModel : ViewModelBase
                 Pu = lc.Pu,
                 Mux = lc.Mux,
                 Muy = lc.Muy,
+                Vux = lc.Vux,
+                Vuy = lc.Vuy,
                 IsActive = lc.IsActive
             })
             .ToList()
@@ -2227,6 +2245,8 @@ public sealed class InputViewModel : ViewModelBase
         {
             LoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive)
             {
+                Vux = lc.Vux,
+                Vuy = lc.Vuy,
                 OriginalLoadCaseName = lc.OriginalLoadCaseName,
                 SourceObjectName = lc.SourceObjectName,
                 SourceObjectLabel = lc.SourceObjectLabel,
