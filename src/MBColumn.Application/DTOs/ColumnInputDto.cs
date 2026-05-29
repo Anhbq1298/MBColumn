@@ -53,6 +53,9 @@ public sealed record ColumnInputDto(
     /// <summary>Link spacing in mm along the column height.</summary>
     public double LinkSpacingMm { get; init; } = 0.0;
 
+    /// <summary>Diameter to circular hoop centreline, D', in mm. Used only for circular-section EC2 shear.</summary>
+    public double CircularHoopCentrelineDiameterMm { get; init; } = 0.0;
+
     /// <summary>Total number of legs resisting shear in the X direction (2 + inner legs X).</summary>
     public int TotalLegsX { get; init; } = 2;
 

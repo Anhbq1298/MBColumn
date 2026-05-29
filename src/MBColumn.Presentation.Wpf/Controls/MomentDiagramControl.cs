@@ -102,13 +102,13 @@ public sealed class MomentDiagramControl : FrameworkElement
         DrawHorizontalAxis(dc, axisPen, axL, axR, topY);
         DrawHorizontalAxis(dc, axisPen, axL, axR, botY);
 
-        // (−) / (+) labels
+        // (−) / (+) labels — placed inside the diagram to avoid overlapping the value labels
         var minusFt = MakeText("(−)", 10, Brushes.Gray);
         var plusFt = MakeText("(+)", 10, Brushes.Gray);
-        dc.DrawText(minusFt, new Point(axL - 3, topY - 15));
-        dc.DrawText(plusFt, new Point(axR - plusFt.Width + 3, topY - 15));
-        dc.DrawText(MakeText("(−)", 10, Brushes.Gray), new Point(axL - 3, botY + 3));
-        dc.DrawText(MakeText("(+)", 10, Brushes.Gray), new Point(axR - plusFt.Width + 3, botY + 3));
+        dc.DrawText(minusFt, new Point(axL + 2, topY + 4));
+        dc.DrawText(plusFt, new Point(axR - plusFt.Width - 2, topY + 4));
+        dc.DrawText(MakeText("(−)", 10, Brushes.Gray), new Point(axL + 2, botY - minusFt.Height - 2));
+        dc.DrawText(MakeText("(+)", 10, Brushes.Gray), new Point(axR - plusFt.Width - 2, botY - plusFt.Height - 2));
 
 
 

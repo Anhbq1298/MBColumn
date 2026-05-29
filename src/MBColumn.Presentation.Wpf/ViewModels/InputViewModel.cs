@@ -67,6 +67,7 @@ public sealed class InputViewModel : ViewModelBase
     private double stirrupDiameterMm = 10.0;
     private RebarDefinition? selectedStirrupBar;
     private double linkSpacingMm = 200.0;
+    private string selectedCircularHoopType = "Closed hoop";
     private int innerLegsX = 0;
     private int innerLegsY = 0;
     // EC2 link check results (updated in UpdateEc2LinkChecks)
@@ -350,6 +351,9 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(MemberLengthLInM));
             Raise(nameof(L0xText));
             Raise(nameof(L0yText));
+            Raise(nameof(L0xLatex));
+            Raise(nameof(L0yLatex));
+            RaiseImperfectionLatex();
             RefreshSlendernessUiState();
         }
     }
@@ -380,6 +384,8 @@ public sealed class InputViewModel : ViewModelBase
         {
             Set(ref kx, value);
             Raise(nameof(L0xText));
+            Raise(nameof(L0xLatex));
+            RaiseImperfectionLatex();
             RefreshSlendernessUiState();
         }
     }
@@ -390,6 +396,8 @@ public sealed class InputViewModel : ViewModelBase
         {
             Set(ref ky, value);
             Raise(nameof(L0yText));
+            Raise(nameof(L0yLatex));
+            RaiseImperfectionLatex();
             RefreshSlendernessUiState();
         }
     }
@@ -408,7 +416,7 @@ public sealed class InputViewModel : ViewModelBase
     public bool UseDefaultAWhenPhiEffUnknown
     {
         get => useDefaultAWhenPhiEffUnknown;
-        private set => Set(ref useDefaultAWhenPhiEffUnknown, value);
+        set => Set(ref useDefaultAWhenPhiEffUnknown, value);
     }
     public string AFactorDisplayText =>
         !PhiEff.HasValue
@@ -420,6 +428,18 @@ public sealed class InputViewModel : ViewModelBase
     public bool SlendernessSettingsVisibility => IncludeEc2Slenderness;
     public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{Kx.Value * MemberLengthL.Value / 1000.0:F2}" : "auto";
     public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{Ky.Value * MemberLengthL.Value / 1000.0:F2}" : "auto";
+    public string L0xLatex => MemberLengthL is > 0 && Kx is > 0
+        ? $@"l_{{0x}}=k_xL={Kx.Value:F2}\times{MemberLengthL.Value:F0}={Kx.Value * MemberLengthL.Value:F0}\;\mathrm{{mm}}"
+        : @"l_{0x}=k_xL";
+    public string L0yLatex => MemberLengthL is > 0 && Ky is > 0
+        ? $@"l_{{0y}}=k_yL={Ky.Value:F2}\times{MemberLengthL.Value:F0}={Ky.Value * MemberLengthL.Value:F0}\;\mathrm{{mm}}"
+        : @"l_{0y}=k_yL";
+    public string ImperfectionFormulaLatex => @"e_i=\frac{l_0}{400},\quad M_i=N_{Ed}e_i";
+    public string MinimumEccentricityFormulaLatex => @"e_0=\max\left(\frac{h}{30},20\;\text{mm}\right),\quad M_{used}\geq N_{Ed}e_0";
+    public string ImperfectionXCalculationLatex => BuildImperfectionAxisLatex("x", Kx);
+    public string ImperfectionYCalculationLatex => BuildImperfectionAxisLatex("y", Ky);
+    public string MinimumEccentricityXCalculationLatex => BuildMinimumEccentricityAxisLatex("x", CurrentSectionHeightMm());
+    public string MinimumEccentricityYCalculationLatex => BuildMinimumEccentricityAxisLatex("y", CurrentSectionWidthMm());
     public string ImperfectionCalculationText => BuildImperfectionCalculationText();
     public string MinimumEccentricityCalculationText => BuildMinimumEccentricityCalculationText();
 
@@ -437,12 +457,38 @@ public sealed class InputViewModel : ViewModelBase
             stirrupDiameterMm = value?.DiameterMm ?? 10.0;
             Raise();
             Raise(nameof(StirrupDiameterMm));
+            Raise(nameof(CircularHoopCentrelineDiameter));
+            Raise(nameof(CircularHoopCentrelineDiameterText));
             UpdateSectionPreview();
         }
     }
 
     public double StirrupDiameterMm => stirrupDiameterMm;
-
+    public double CircularHoopCentrelineDiameterMm
+    {
+        get
+        {
+            double diameterMm = UnitSystem == UnitSystem.Metric ? Diameter : Diameter * 25.4;
+            double coverMm = UnitSystem == UnitSystem.Metric ? Cover : Cover * 25.4;
+            return Math.Max(diameterMm - 2.0 * coverMm - StirrupDiameterMm, 0.0);
+        }
+    }
+    public double CircularHoopCentrelineDiameter =>
+        UnitSystem == UnitSystem.Metric ? CircularHoopCentrelineDiameterMm : CircularHoopCentrelineDiameterMm / 25.4;
+    public string CircularHoopCentrelineDiameterText => CircularHoopCentrelineDiameterMm > 0
+        ? $"{CircularHoopCentrelineDiameter:F2}"
+        : "auto";
+    public IReadOnlyList<string> CircularHoopTypes { get; } = ["Closed hoop", "Spiral"];
+    public string SelectedCircularHoopType
+    {
+        get => selectedCircularHoopType;
+        set
+        {
+            if (selectedCircularHoopType == value) return;
+            Set(ref selectedCircularHoopType, value);
+            UpdateSectionPreview();
+        }
+    }
     public double LinkSpacingMm
     {
         get => linkSpacingMm;
@@ -725,8 +771,8 @@ public sealed class InputViewModel : ViewModelBase
     }
     public double Width { get => width; set { Set(ref width, value); Raise(nameof(SectionWidth)); UpdateSectionPreview(); } }
     public double Height { get => height; set { Set(ref height, value); Raise(nameof(SectionHeight)); UpdateSectionPreview(); } }
-    public double Diameter { get => diameter; set { Set(ref diameter, value); Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); UpdateSectionPreview(); } }
-    public double Cover { get => cover; set { Set(ref cover, value); SyncSideGlobalInputs(); UpdateSectionPreview(); } }
+    public double Diameter { get => diameter; set { Set(ref diameter, value); Raise(nameof(SectionWidth)); Raise(nameof(SectionHeight)); Raise(nameof(CircularHoopCentrelineDiameter)); Raise(nameof(CircularHoopCentrelineDiameterText)); UpdateSectionPreview(); } }
+    public double Cover { get => cover; set { Set(ref cover, value); Raise(nameof(CircularHoopCentrelineDiameter)); Raise(nameof(CircularHoopCentrelineDiameterText)); SyncSideGlobalInputs(); UpdateSectionPreview(); } }
     public string BarSize { get => barSize; set { Set(ref barSize, value); Raise(nameof(SelectedRebarSize)); SyncSideGlobalInputs(); UpdateSectionPreview(); } }
     public int BarCount { get => barCount; set { Set(ref barCount, value); Raise(nameof(NumberOfBars)); SyncEqualSideCounts(); UpdateSectionPreview(); } }
     public string LayoutPreset { get => layoutPreset; set { Set(ref layoutPreset, value); Raise(nameof(SelectedRebarLayout)); UpdateSectionPreview(); } }
@@ -878,6 +924,7 @@ public sealed class InputViewModel : ViewModelBase
         get => selectedLoadCase;
         set
         {
+            if (ReferenceEquals(selectedLoadCase, value)) return;
             Set(ref selectedLoadCase, value);
             UpdateSectionPropertiesPanel();
         }
@@ -890,6 +937,7 @@ public sealed class InputViewModel : ViewModelBase
             Set(ref slendernessCalculationLoadCase, value);
             Raise(nameof(ImperfectionCalculationText));
             Raise(nameof(MinimumEccentricityCalculationText));
+            RaiseImperfectionLatex();
         }
     }
     public bool IsSlendernessCalculationDetailsOpen
@@ -950,6 +998,7 @@ public sealed class InputViewModel : ViewModelBase
                 Irregular = irregularDto,
                 LinkDiameterMm = stirrupDiameterMm,
                 LinkSpacingMm = linkSpacingMm,
+                CircularHoopCentrelineDiameterMm = IsCircularSection ? CircularHoopCentrelineDiameterMm : 0.0,
                 TotalLegsX = TotalLegsX,
                 TotalLegsY = TotalLegsY
             };
@@ -1008,6 +1057,7 @@ public sealed class InputViewModel : ViewModelBase
                 RebarSetLibrary = selectedRebarSetLibrary,
                 LinkDiameterMm = stirrupDiameterMm,
                 LinkSpacingMm = linkSpacingMm,
+                CircularHoopCentrelineDiameterMm = CircularHoopCentrelineDiameterMm,
                 TotalLegsX = TotalLegsX,
                 TotalLegsY = TotalLegsY
             };
@@ -1052,6 +1102,7 @@ public sealed class InputViewModel : ViewModelBase
             RebarSetLibrary = selectedRebarSetLibrary,
             LinkDiameterMm = stirrupDiameterMm,
             LinkSpacingMm = linkSpacingMm,
+            CircularHoopCentrelineDiameterMm = IsCircularSection ? CircularHoopCentrelineDiameterMm : 0.0,
             TotalLegsX = TotalLegsX,
             TotalLegsY = TotalLegsY
         };
@@ -1593,6 +1644,43 @@ public sealed class InputViewModel : ViewModelBase
         SlendernessCalculationLoadCase = null;
     }
 
+    private void RaiseImperfectionLatex()
+    {
+        Raise(nameof(ImperfectionXCalculationLatex));
+        Raise(nameof(ImperfectionYCalculationLatex));
+        Raise(nameof(MinimumEccentricityXCalculationLatex));
+        Raise(nameof(MinimumEccentricityYCalculationLatex));
+    }
+
+    private string LatexLengthUnit => UnitSystem == UnitSystem.Metric ? @"\text{mm}" : @"\text{in}";
+
+    private string LatexMomentUnit => UnitSystem == UnitSystem.Metric ? @"\text{kN·m}" : @"\text{kip·in}";
+
+    private string BuildImperfectionAxisLatex(string axis, double? k)
+    {
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd || k is not > 0 || MemberLengthL is not > 0)
+            return $@"e_{{i{axis}}}=\text{{pending}}";
+
+        double l0 = k.Value * MemberLengthL.Value;
+        double ei = l0 / 400.0;
+        double imperfectionMoment = ForceLengthToMoment(nEd, ei);
+        return $@"e_{{i{axis}}}=\frac{{{l0:F2}}}{{400}}={ei:F2}\,{LatexLengthUnit},\quad N_{{Ed}}e_{{i{axis}}}={imperfectionMoment:F2}\,{LatexMomentUnit}";
+    }
+
+    private string BuildMinimumEccentricityAxisLatex(string axis, double dimensionMm)
+    {
+        double dimension = UnitSystem == UnitSystem.Metric ? dimensionMm : dimensionMm / 25.4;
+        double minE = UnitSystem == UnitSystem.Metric ? 20.0 : 20.0 / 25.4;
+        double e0 = Math.Max(dimension / 30.0, minE);
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd)
+            return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit}";
+
+        double minMoment = ForceLengthToMoment(nEd, e0);
+        return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit},\quad N_{{Ed}}e_{{0{axis}}}={minMoment:F2}\,{LatexMomentUnit}";
+    }
+
     private string BuildImperfectionCalculationText()
     {
         var lc = SlendernessCalculationLoadCase;
@@ -1971,6 +2059,8 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(RebarDiameterUnitLabel));
         Raise(nameof(LinkSpacingUnitLabel));
         Raise(nameof(LinkSpacing));
+        Raise(nameof(CircularHoopCentrelineDiameter));
+        Raise(nameof(CircularHoopCentrelineDiameterText));
         Raise(nameof(CurrentForceUnit));
         Raise(nameof(CurrentMomentUnit));
     }
@@ -2356,7 +2446,7 @@ public sealed class InputViewModel : ViewModelBase
 
     private void UpdateEc2LinkChecks()
     {
-        if (!IsRectangularSection)
+        if (IsIrregularSection)
         {
             Ec2Check1Text = "—"; Ec2Check1Pass = true;
             Ec2Check2Text = "—"; Ec2Check2Pass = true;
@@ -2366,6 +2456,37 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+
+        if (IsCircularSection)
+        {
+            double dSw0 = stirrupDiameterMm;
+            var barDef0 = AvailableBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase));
+            double dMain0 = barDef0?.DiameterMm ?? 20.0;
+            double diamMm = Diameter * factor;
+
+            // Check 1: tie Ø ≥ max(6, 0.25·dMain)  EC2 §9.5.3(1)
+            double minDiam0 = Math.Max(6.0, 0.25 * dMain0);
+            bool c10 = dSw0 >= minDiam0 - 1e-6;
+            Ec2Check1Text = $"Ø{dSw0:0} ≥ max(6, 0.25·Ø{dMain0:0.#}) = {minDiam0:0.#} mm  {(c10 ? "✓" : "✗")}";
+            Ec2Check1Pass = c10;
+
+            // Check 2: pitch ≤ min(20·dMain, D, 400)  EC2 §9.5.3(3)
+            double sMax0 = Math.Min(Math.Min(20.0 * dMain0, diamMm), 400.0);
+            bool c20 = linkSpacingMm <= sMax0 + 1e-6;
+            Ec2Check2Text = $"s = {linkSpacingMm:0} ≤ min(20·{dMain0:0.#}, D={diamMm:0}, 400) = {sMax0:0} mm  {(c20 ? "✓" : "✗")}";
+            Ec2Check2Pass = c20;
+
+            // No inner-legs check for circular
+            Ec2Check3Text = "—"; Ec2Check3Pass = true;
+
+            // Asw/s for circular tie (1 closed ring per pitch)
+            double aSwMm2_0 = Math.PI * dSw0 * dSw0 / 4.0;
+            double asws0 = linkSpacingMm > 0 ? aSwMm2_0 / linkSpacingMm : 0;
+            Ec2AswsXText = $"Asw/s (circular tie) = {aSwMm2_0:0.##}/{linkSpacingMm:0} = {asws0:0.###} mm²/mm";
+            Ec2AswsYText = "—";
+            return;
+        }
+
         double widthMm = Width * factor;
         double heightMm = Height * factor;
         double coverMm = Cover * factor;
@@ -2677,6 +2798,8 @@ public sealed class InputViewModel : ViewModelBase
                                 loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
                                     ? units.MomentFromNmm(m2xVal, momentUnit)
                                     : null;
+                                loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
+                                loadCase.E2X = slenderness.X?.E2Mm;
 
                                 loadCase.LambdaY = slenderness.Y?.Lambda;
                                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
@@ -2693,6 +2816,14 @@ public sealed class InputViewModel : ViewModelBase
                                 loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
                                     ? units.MomentFromNmm(m2yVal, momentUnit)
                                     : null;
+                                loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
+                                loadCase.E2Y = slenderness.Y?.E2Mm;
+
+                                loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
+                                loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
+                                loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
+                                loadCase.FactorCx = slenderness.X?.FactorC;
+                                loadCase.FactorCy = slenderness.Y?.FactorC;
 
                                 loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
                                     ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, momentUnit)
@@ -3052,6 +3183,8 @@ public sealed class InputViewModel : ViewModelBase
                 loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
                     ? units.MomentFromNmm(m2xVal, CurrentMomentUnit)
                     : null;
+                loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
+                loadCase.E2X = slenderness.X?.E2Mm;
 
                 loadCase.LambdaY = slenderness.Y?.Lambda;
                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
@@ -3068,6 +3201,14 @@ public sealed class InputViewModel : ViewModelBase
                 loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
                     ? units.MomentFromNmm(m2yVal, CurrentMomentUnit)
                     : null;
+                loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
+                loadCase.E2Y = slenderness.Y?.E2Mm;
+
+                loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
+                loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
+                loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
+                loadCase.FactorCx = slenderness.X?.FactorC;
+                loadCase.FactorCy = slenderness.Y?.FactorC;
 
                 loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
                     ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, CurrentMomentUnit)

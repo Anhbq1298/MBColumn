@@ -30,9 +30,11 @@ namespace MBColumn.Infrastructure.DesignCodes;
 ///   VEdX → bw = h,  d = b − cover_eff,  legs = TotalLegsX
 ///   VEdY → bw = b,  d = h − cover_eff,  legs = TotalLegsY
 ///
-/// Circular (Fix 5 — EC2 §6.2.2(5)):
-///   Caller passes bMm = 0.8 D, hMm = D.
-///   Result: bwX = bwY = 0.8 D; dEffX = dEffY ≈ 0.8D − cover_eff.
+/// Circular:
+///   Caller passes bMm = 0.8 D for VRd,c/VRd,max and hMm = D.
+///   VRd,s uses the Orr-Bath circular hoop model:
+///   VRd,s = (π/2) · (Ah/s) · D' · fywd · cot θ.
+///   Internal diameter ties are ignored in VRd,s.
 /// </summary>
 public sealed class Ec2ShearDesignService : IShearDesignService
 {
@@ -51,29 +53,63 @@ public sealed class Ec2ShearDesignService : IShearDesignService
     {
         double acMm2 = bMm * hMm;
         double fcd   = AlphaCc * fckMpa / GammaC;
-
-        // σcp (compressive +ve, capped at 0.2 fcd — §6.2.2(1))
         double sigCp = acMm2 > 0 ? Min(nedN / acMm2, 0.2 * fcd) : 0.0;
+        double linkDia  = links?.LinkDiameterMm ?? 0.0;
+        double coverEff = coverMm + linkDia + mainBarDiaMm / 2.0;
+        double fywkMpa  = links?.FywkMpa ?? 0.0;
 
-        // d_eff = section_dim − cover − link_dia − main_bar_dia/2
-        double linkDia   = links?.LinkDiameterMm ?? 0.0;
-        double coverEff  = coverMm + linkDia + mainBarDiaMm / 2.0;
+        // ── Circular hoop model (Orr-Bath / EC2 §6.2.3) ──────────────────────
+        if (links?.IsCircularHoop == true)
+        {
+            double bw   = bMm;  // 0.8D, set by caller per EC2 §6.2.2(5)
+            double dEff = Max(hMm - coverEff, 1.0); // d = D − cover_eff
+            double dPrim = links.HoopCentrelineDiameterMm > 0
+                ? links.HoopCentrelineDiameterMm
+                : Max(hMm - 2.0 * coverMm - linkDia, 1.0); // auto D' = D − 2c − φh
 
-        // X-direction: bw = h, d = b − cover_eff
-        double bwX   = hMm;
-        double dEffX = Max(bMm - coverEff, 1.0);
+            double rhoWMin = fywkMpa > 0 ? 0.08 * Sqrt(fckMpa) / fywkMpa : 0.0;
+            var dx = CheckDirectionCircular(bw, dEff, dPrim, totalAslMm2, fckMpa, fcd,
+                sigCp, links.HoopAhMm2, links.SpacingMm, fywkMpa, rhoWMin, vEdXN);
+            var dy = CheckDirectionCircular(bw, dEff, dPrim, totalAslMm2, fckMpa, fcd,
+                sigCp, links.HoopAhMm2, links.SpacingMm, fywkMpa, rhoWMin, vEdYN);
 
-        // Y-direction: bw = b, d = h − cover_eff
-        double bwY   = bMm;
-        double dEffY = Max(hMm - coverEff, 1.0);
+            double circularUtilX = dx.VRd > 0 ? Abs(vEdXN) / dx.VRd : (Abs(vEdXN) > 0 ? double.PositiveInfinity : 0.0);
+            double circularUtilY = dy.VRd > 0 ? Abs(vEdYN) / dy.VRd : (Abs(vEdYN) > 0 ? double.PositiveInfinity : 0.0);
 
-        double fywkMpa = links?.FywkMpa ?? 0.0;
-        double rhoWMin = fywkMpa > 0 ? 0.08 * Sqrt(fckMpa) / fywkMpa : 0.0; // §9.2.2(5)
+            return new ShearCheckResult(
+                VEdXN: vEdXN,  VRdcXN: dx.VRdc,  VRdsXN: dx.VRds,  VRdMaxXN: dx.VRdMax,  VRdXN: dx.VRd,
+                UtilisationX: circularUtilX,  StatusX: circularUtilX <= 1.0 ? CapacityStatus.Pass : CapacityStatus.Fail,
+                LinksRequiredX: dx.LinksRequired, IsStruttingCriticalX: dx.IsStruttingCritical,
+                AswSMinRequiredX: dx.AswSMinRequired, AswSMinPassX: dx.AswSMinPass,
+
+                VEdYN: vEdYN,  VRdcYN: dy.VRdc,  VRdsYN: dy.VRds,  VRdMaxYN: dy.VRdMax,  VRdYN: dy.VRd,
+                UtilisationY: circularUtilY,  StatusY: circularUtilY <= 1.0 ? CapacityStatus.Pass : CapacityStatus.Fail,
+                LinksRequiredY: dy.LinksRequired, IsStruttingCriticalY: dy.IsStruttingCritical,
+                AswSMinRequiredY: dy.AswSMinRequired, AswSMinPassY: dy.AswSMinPass,
+
+                BwXMm: bw,  DEffXMm: dEff,  KFactorX: dx.K,  RhoLX: dx.RhoL,  SigCpMpa: sigCp,
+                BwYMm: bw,  DEffYMm: dEff,  KFactorY: dy.K,  RhoLY: dy.RhoL,
+                AswSX: dx.AswS,  AswSY: dy.AswS,
+                FywdMpa: dx.Fywd > 0 ? dx.Fywd : dy.Fywd,
+                ZXMm: dx.Z,  ZYMm: dy.Z,  CotThetaX: dx.CotTheta,  CotThetaY: dy.CotTheta,
+                IsCircularHoop: true,
+                LinkAhMm2: links.HoopAhMm2,
+                LinkSpacingMm: links.SpacingMm,
+                CircularHoopCentrelineDiameterMm: dPrim,
+                FckMpa: fckMpa,
+                FcdMpa: fcd,
+                FywkMpa: fywkMpa);
+        }
+
+        // ── Rectangular leg-count model ───────────────────────────────────────
+        double rhoWMinRect = fywkMpa > 0 ? 0.08 * Sqrt(fckMpa) / fywkMpa : 0.0;
+        double bwX   = hMm;   double dEffX = Max(bMm - coverEff, 1.0);
+        double bwY   = bMm;   double dEffY = Max(hMm - coverEff, 1.0);
 
         var rx = CheckDirection(bwX, dEffX, totalAslMm2, fckMpa, fcd, sigCp,
-            links?.TotalLegsX ?? 0, links?.SpacingMm ?? 0, linkDia, fywkMpa, rhoWMin, vEdXN);
+            links?.TotalLegsX ?? 0, links?.SpacingMm ?? 0, linkDia, fywkMpa, rhoWMinRect, vEdXN);
         var ry = CheckDirection(bwY, dEffY, totalAslMm2, fckMpa, fcd, sigCp,
-            links?.TotalLegsY ?? 0, links?.SpacingMm ?? 0, linkDia, fywkMpa, rhoWMin, vEdYN);
+            links?.TotalLegsY ?? 0, links?.SpacingMm ?? 0, linkDia, fywkMpa, rhoWMinRect, vEdYN);
 
         double utilX = rx.VRd > 0 ? Abs(vEdXN) / rx.VRd : (Abs(vEdXN) > 0 ? double.PositiveInfinity : 0.0);
         double utilY = ry.VRd > 0 ? Abs(vEdYN) / ry.VRd : (Abs(vEdYN) > 0 ? double.PositiveInfinity : 0.0);
@@ -115,7 +151,13 @@ public sealed class Ec2ShearDesignService : IShearDesignService
             ZXMm:       rx.Z,
             ZYMm:       ry.Z,
             CotThetaX:  rx.CotTheta,
-            CotThetaY:  ry.CotTheta);
+            CotThetaY:  ry.CotTheta,
+            IsCircularHoop: false,
+            LinkAhMm2: links is null ? 0.0 : PI * linkDia * linkDia / 4.0,
+            LinkSpacingMm: links?.SpacingMm ?? 0.0,
+            FckMpa: fckMpa,
+            FcdMpa: fcd,
+            FywkMpa: fywkMpa);
     }
 
     // ── Internal per-direction result ────────────────────────────────────────
@@ -181,5 +223,64 @@ public sealed class Ec2ShearDesignService : IShearDesignService
         return new(vRdc, vRds, vRdMax, vRd, linksRequired, isStruttingCritical,
                    aswSMinRequired, aswSMinPass,
                    k, rhoL, aswS, fywd, z, cot);
+    }
+
+    private static DirectionResult CheckDirectionCircular(
+        double bwMm, double dMm, double hoopCentrelineDiameterMm,
+        double totalAslMm2, double fckMpa, double fcdMpa, double sigCpMpa,
+        double hoopAhMm2, double spacingMm, double fywkMpa,
+        double rhoWMin, double vEdN)
+    {
+        double absVEd = Abs(vEdN);
+
+        double k = Min(1.0 + Sqrt(200.0 / dMm), 2.0);
+        double rhoL = Min(totalAslMm2 / (bwMm * dMm), 0.02);
+        double vRdc = (CRdC * k * Pow(100.0 * rhoL * fckMpa, 1.0 / 3.0) + 0.15 * sigCpMpa) * bwMm * dMm;
+        double vMin = 0.035 * Pow(k, 1.5) * Sqrt(fckMpa);
+        vRdc = Max(vRdc, (vMin + 0.15 * sigCpMpa) * bwMm * dMm);
+
+        bool linksRequired = absVEd > vRdc;
+
+        if (hoopAhMm2 <= 0 || spacingMm <= 0 || hoopCentrelineDiameterMm <= 0 || fywkMpa <= 0)
+        {
+            return new(vRdc, 0, 0, vRdc, linksRequired,
+                       IsStruttingCritical: false,
+                       AswSMinRequired: 0, AswSMinPass: true,
+                       k, rhoL, 0, 0, 0, 0);
+        }
+
+        double fywd = fywkMpa / GammaS;
+        double nu1 = 0.6 * (1.0 - fckMpa / 250.0);
+        double z = 0.9 * dMm;
+        double ahOverS = hoopAhMm2 / spacingMm;
+
+        // VRd,s = circularCoefficient * cot(theta); choose cot(theta) in [1, 2.5]
+        // where VRd,s intersects VRd,max when possible.
+        double circularCoefficient = PI / 2.0 * ahOverS * hoopCentrelineDiameterMm * fywd;
+        double cotSq = AlphaCw * bwMm * z * nu1 * fcdMpa / circularCoefficient - 1.0;
+        double cot = cotSq >= 6.25 ? 2.5
+                   : cotSq <= 1.0 ? 1.0
+                                   : Sqrt(cotSq);
+
+        double vRds = new EurocodeCircularColumnShearCalculator()
+            .Calculate(new CircularShearInput(
+                HoopDiameterMm: Sqrt(4.0 * hoopAhMm2 / PI),
+                HoopSpacingMm: spacingMm,
+                HoopCentrelineDiameterMm: hoopCentrelineDiameterMm,
+                FywdMpa: fywd,
+                CotTheta: cot))
+            .VRdsN;
+
+        double vRdMax = AlphaCw * bwMm * z * nu1 * fcdMpa / (cot + 1.0 / cot);
+        double vRd = Min(vRds, vRdMax);
+        double vRdMaxAt45 = AlphaCw * bwMm * z * nu1 * fcdMpa / 2.0;
+        bool isStruttingCritical = absVEd > vRdMaxAt45;
+
+        double aswSMinRequired = rhoWMin * bwMm;
+        bool aswSMinPass = ahOverS >= aswSMinRequired - 1e-6;
+
+        return new(vRdc, vRds, vRdMax, vRd, linksRequired, isStruttingCritical,
+                   aswSMinRequired, aswSMinPass,
+                   k, rhoL, ahOverS, fywd, z, cot);
     }
 }

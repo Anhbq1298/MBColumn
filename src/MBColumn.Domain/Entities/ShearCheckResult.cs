@@ -55,4 +55,12 @@ public sealed record ShearCheckResult(
     double ZXMm,
     double ZYMm,
     double CotThetaX,
-    double CotThetaY);
+    double CotThetaY,
+
+    bool IsCircularHoop = false,
+    double LinkAhMm2 = 0.0,
+    double LinkSpacingMm = 0.0,
+    double CircularHoopCentrelineDiameterMm = 0.0,
+    double FckMpa = 0.0,
+    double FcdMpa = 0.0,
+    double FywkMpa = 0.0);

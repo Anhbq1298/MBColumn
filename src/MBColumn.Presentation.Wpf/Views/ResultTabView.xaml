@@ -437,13 +437,7 @@
                                 <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="lambda x" Binding="{Binding LambdaXDisplay}" Width="68" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="lambda lim,x" Binding="{Binding LambdaLimitXDisplay}" Width="84" MinWidth="72" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="lambda y" Binding="{Binding LambdaYDisplay}" Width="68" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="lambda lim,y" Binding="{Binding LambdaLimitYDisplay}" Width="84" MinWidth="72" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="Slenderness" Binding="{Binding SlendernessStatus}" Width="105" MinWidth="90" ElementStyle="{StaticResource WrapLeftAlignText}" />
-                                <DataGridTextColumn Header="Angle" Binding="{Binding AngleDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="Util." Binding="{Binding UtilizationDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="Utilization Ratio" Binding="{Binding UtilizationDisplay}" Width="120" MinWidth="100" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="75" MinWidth="65" ElementStyle="{StaticResource WrapLeftAlignText}" />
                             </DataGrid.Columns>
                         </DataGrid>
@@ -501,12 +495,82 @@
                             Enter Vux / Vuy in the load case table.
                         </TextBlock>
 
-                        <!-- Shared helper for 2-col row -->
                         <!-- Step 1 — Concrete capacity without links -->
                         <TextBlock Text="Step 1 - Without Reinforcement (VRd,c)"
                                    FontSize="10.5" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   Margin="0,4,0,4" />
+                                   Margin="0,4,0,6" />
+
+                        <!-- Circular section diagram + note (visible for circular only) -->
+                        <Border Visibility="Collapsed"
+                                Background="#F4F7FB" BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Canvas diagram -->
+                                <Canvas Width="160" Height="130" Margin="0,0,12,0">
+                                    <!-- Concrete section fill -->
+                                    <Ellipse Canvas.Left="20" Canvas.Top="5" Width="120" Height="120"
+                                             Fill="#DCE8F5" Stroke="#4A6FA5" StrokeThickness="2"/>
+                                    <!-- Cover dashed circle (r≈50) -->
+                                    <Ellipse Canvas.Left="34" Canvas.Top="19" Width="92" Height="92"
+                                             Fill="Transparent" Stroke="#7A9FD4"
+                                             StrokeThickness="1" StrokeDashArray="4 3"/>
+                                    <!-- 8 rebar dots evenly on cover circle (r=46, center 80,65) -->
+                                    <Ellipse Canvas.Left="76" Canvas.Top="15" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="108" Canvas.Top="28" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="122" Canvas.Top="61" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="108" Canvas.Top="93" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="76" Canvas.Top="106" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="44" Canvas.Top="93" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="30" Canvas.Top="61" Width="8" Height="8" Fill="#C0392B"/>
+                                    <Ellipse Canvas.Left="44" Canvas.Top="28" Width="8" Height="8" Fill="#C0392B"/>
+                                    <!-- bw = 0.8D chord at center y=65, half-width=48 (0.8×60) -->
+                                    <Line X1="32" Y1="65" X2="128" Y2="65"
+                                          Stroke="#E67E22" StrokeThickness="2.5"/>
+                                    <TextBlock Canvas.Left="50" Canvas.Top="67"
+                                               Text="bw = 0.8D" FontSize="8.5"
+                                               Foreground="#E67E22" FontWeight="SemiBold"/>
+                                    <!-- d: from top (y=5) to tension steel centroid (y=110) -->
+                                    <Line X1="12" Y1="5" X2="12" Y2="110"
+                                          Stroke="#1A3A5C" StrokeThickness="1.5"/>
+                                    <Polygon Points="12,5 8,14 16,14" Fill="#1A3A5C"/>
+                                    <Polygon Points="12,110 8,101 16,101" Fill="#1A3A5C"/>
+                                    <TextBlock Canvas.Left="2" Canvas.Top="52"
+                                               Text="d" FontSize="10" FontWeight="Bold"
+                                               Foreground="#1A3A5C"/>
+                                    <!-- D diameter bracket -->
+                                    <Line X1="20" Y1="126" X2="140" Y2="126"
+                                          Stroke="#666" StrokeThickness="1.5"/>
+                                    <Polygon Points="20,126 28,122 28,130" Fill="#666"/>
+                                    <Polygon Points="140,126 132,122 132,130" Fill="#666"/>
+                                    <TextBlock Canvas.Left="76" Canvas.Top="128"
+                                               Text="D" FontSize="9" FontWeight="Bold"
+                                               Foreground="#666"/>
+                                </Canvas>
+                                <!-- Text notes -->
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Circular — EC2 §6.2.2(5)"
+                                               FontWeight="SemiBold" FontSize="10"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               Margin="0,0,0,5"/>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,2">
+                                        <Run Text="D = "/><Run Text="{Binding DiameterText, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    </TextBlock>
+                                    <TextBlock FontSize="9.5" Foreground="#E67E22" Margin="0,0,0,2" FontWeight="SemiBold">
+                                        <Run Text="bw = 0.8D = "/><Run Text="{Binding BwXText, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,2">
+                                        <Run Text="d (X) = "/><Run Text="{Binding DEffXText, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    </TextBlock>
+                                    <TextBlock FontSize="9.5" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,4">
+                                        <Run Text="d (Y) = "/><Run Text="{Binding DEffYText, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    </TextBlock>
+                                    <TextBlock Text="Symmetric: X = Y"
+                                               FontSize="9" Foreground="{DynamicResource TextMutedBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" MinWidth="64" />
@@ -519,20 +583,24 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="X dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
                             <TextBlock Grid.Row="0" Grid.Column="2" Text="Y dir." FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" />
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="d (mm)" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DEffXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding DEffYText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="k" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding KFactorXText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding KFactorYText}" Style="{StaticResource MetricValueStyle}" />
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="VRd,c" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding VRdcXText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding VRdcYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Links?" Style="{StaticResource MetricLabelStyle}" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LinksReqXText}" FontSize="10">
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="bw (mm)" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BwXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding BwYText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="d (mm)" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DEffXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding DEffYText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="k" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding KFactorXText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding KFactorYText}" Style="{StaticResource MetricValueStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="VRd,c" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding VRdcXText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding VRdcYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Links?" Style="{StaticResource MetricLabelStyle}" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LinksReqXText}" FontSize="10">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -545,7 +613,7 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding LinksReqYText}" FontSize="10">
+                            <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding LinksReqYText}" FontSize="10">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -561,6 +629,33 @@
                         </Grid>
 
                         <!-- Step 2 — Capacity with links -->
+                        <Border Background="#FAFCFF"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="8"
+                                Margin="0,6,0,8">
+                            <StackPanel>
+                                <TextBlock Text="Concrete shear capacity"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,4" />
+                                <controls:SafeFormulaControl Formula="{Binding ConcreteFormulaLatex}"
+                                                             Scale="14"
+                                                             FormulaForeground="{DynamicResource TextDarkBrush}"
+                                                             Margin="0,0,0,4" />
+                                <controls:SafeFormulaControl Formula="{Binding ConcreteXSubLatex}"
+                                                             Scale="12"
+                                                             FormulaForeground="#1E64C8"
+                                                             Margin="0,1,0,0" />
+                                <controls:SafeFormulaControl Formula="{Binding ConcreteYSubLatex}"
+                                                             Scale="12"
+                                                             FormulaForeground="#1E64C8"
+                                                             Margin="0,1,0,0" />
+                            </StackPanel>
+                        </Border>
+
                         <TextBlock Text="Step 2 - With Reinforcement (VRd,s / VRd,max)"
                                    FontSize="10.5" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
@@ -601,6 +696,80 @@
                             <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding VRdYText}" Style="{StaticResource MetricValueStyle}" FontWeight="SemiBold" />
                         </Grid>
 
+                        <Border Background="#FAFCFF"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="8"
+                                Margin="0,6,0,8"
+                                Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Shear reinforcement capacity"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,4" />
+                                <controls:SafeFormulaControl Formula="{Binding LinkAreaLatex}"
+                                                             Scale="13"
+                                                             FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                <controls:SafeFormulaControl Formula="{Binding LinkAreaSubLatex}"
+                                                             Scale="12"
+                                                             FormulaForeground="{DynamicResource TextMutedBrush}" />
+                                <controls:SafeFormulaControl Formula="{Binding LinkSteelSubLatex}"
+                                                             Scale="12"
+                                                             FormulaForeground="{DynamicResource TextMutedBrush}"
+                                                             Margin="0,0,0,6" />
+
+                                <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Circular hoop model - Orr-Bath"
+                                               FontSize="9.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="#1E64C8" />
+                                    <controls:SafeFormulaControl Formula="{Binding CircularHoopFormulaLatex}"
+                                                                 Scale="13"
+                                                                 FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding CircularHoopXSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8" />
+                                    <controls:SafeFormulaControl Formula="{Binding CircularHoopYSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8"
+                                                                 Margin="0,0,0,6" />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                    <TextBlock Text="Rectangular leg-count model"
+                                               FontSize="9.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="#1E64C8" />
+                                    <controls:SafeFormulaControl Formula="{Binding RectangularLinkFormulaLatex}"
+                                                                 Scale="13"
+                                                                 FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding RectangularLinkXSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8" />
+                                    <controls:SafeFormulaControl Formula="{Binding RectangularLinkYSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8"
+                                                                 Margin="0,0,0,6" />
+                                </StackPanel>
+
+                                <TextBlock Text="Strut limit"
+                                           FontSize="9.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="#1E64C8" />
+                                <controls:SafeFormulaControl Formula="{Binding VRdMaxFormulaLatex}"
+                                                             Scale="13"
+                                                             FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                <controls:SafeFormulaControl Formula="{Binding VRdMaxXSubLatex}"
+                                                             Scale="12"
+                                                             FormulaForeground="#1E64C8" />
+                                <controls:SafeFormulaControl Formula="{Binding VRdMaxYSubLatex}"
+                                                             Scale="12"
+                                                             FormulaForeground="#1E64C8" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Strut-crushing warning -->
                         <TextBlock TextWrapping="Wrap" FontSize="10" FontWeight="SemiBold"
                                    Foreground="{DynamicResource AccentRedBrush}"
@@ -634,6 +803,29 @@
                                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AswSMinReqdXText}" Style="{StaticResource MetricValueStyle}" />
                                 <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding AswSMinReqdYText}" Style="{StaticResource MetricValueStyle}" />
                             </Grid>
+                            <Border Background="#FAFCFF"
+                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="8"
+                                    Margin="0,6,0,4">
+                                <StackPanel>
+                                    <TextBlock Text="Minimum reinforcement equations"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               Margin="0,0,0,4" />
+                                    <controls:SafeFormulaControl Formula="{Binding MinAswFormulaLatex}"
+                                                                 Scale="13"
+                                                                 FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding MinAswXSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8" />
+                                    <controls:SafeFormulaControl Formula="{Binding MinAswYSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8" />
+                                </StackPanel>
+                            </Border>
                             <!-- Pass / fail badges -->
                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                 <TextBlock FontSize="10" Margin="0,0,10,0">
@@ -719,12 +911,31 @@
                                     </TextBlock.Style>
                                 </TextBlock>
                             </Grid>
+                            <Border Background="#FAFCFF"
+                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="8"
+                                    Margin="0,6,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Demand check equations"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               Margin="0,0,0,4" />
+                                    <controls:SafeFormulaControl Formula="{Binding UtilFormulaLatex}"
+                                                                 Scale="13"
+                                                                 FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding UtilXSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8" />
+                                    <controls:SafeFormulaControl Formula="{Binding UtilYSubLatex}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="#1E64C8" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
-                        <TextBlock FontSize="9.5" Foreground="{DynamicResource TextMutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap">
-                            <Run Text="Forces in " /><Run Text="{Binding ForceUnit, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text=" | EC2 EN 1992-1-1:2004 section 6.2 | gamma c = 1.50, gamma s = 1.15 | cover = 60 mm" />
-                        </TextBlock>
                     </StackPanel>
                 </Border>
             </StackPanel>

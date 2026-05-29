@@ -810,8 +810,47 @@ public sealed class MainWindowViewModel : ViewModelBase
         MarkProjectModified();
     }
 
+    private static readonly HashSet<string> s_displayOnlyProperties = new(StringComparer.Ordinal)
+    {
+        // InputViewModel — derived display labels, not user input
+        "PreviewAreaText", "PreviewAsTotalText", "PreviewIxxText", "PreviewIyyText",
+        "PreviewIxText", "PreviewIyText", "PreviewFcdText", "PreviewFydText",
+        "PreviewEcmText", "PreviewDxText", "PreviewDyText", "PreviewOmegaText",
+        "PreviewNRatioText", "PreviewRebarPercentageText",
+        "PreviewShapeSummaryText", "PreviewRebarLayoutText",
+        "FcdDisplayText", "FcmDisplayText", "EcmDisplayText",
+        "SlendernessWarningText", "HasSlendernessWarnings",
+        "L0xText", "L0yText", "MemberLengthLInM", "AFactorDisplayText",
+        "ImperfectionCalculationText", "MinimumEccentricityCalculationText",
+        "DemandInputModeText", "SlendernessSettingsVisibility",
+        "IsSlendernessCalculationDetailsOpen", "SlendernessCalculationLoadCase",
+        "SectionPreviewLabel", "RebarPreviewLabel", "CoverPreviewLabel", "IsSectionPreviewValid",
+        // LoadCaseViewModel — computed slenderness results, not user input
+        "Status", "HasValidationError", "SlendernessStatusText", "CalculationStatusText",
+        "LambdaX", "LambdaLimitX", "LambdaY", "LambdaLimitY",
+        "RmX", "RmY", "M01x", "M02x", "M0ex", "M2x", "M01y", "M02y", "M0ey", "M2y",
+        "MxUsed", "MyUsed", "SlendernessStatus",
+        "FactorN", "FactorA", "FactorB", "FactorCx", "FactorCy",
+        "NominalCurvatureX", "E2X", "NominalCurvatureY", "E2Y",
+        "Ec2BranchXText", "Ec2BranchYText",
+        // LaTeX display properties derived from slenderness results
+        "LambdaXResultLatex", "LambdaYResultLatex", "LambdaLimitXResultLatex", "LambdaLimitYResultLatex",
+        "MomentRatioXResultLatex", "MomentRatioYResultLatex",
+        "NominalCurvatureXResultLatex", "NominalCurvatureYResultLatex",
+        "NominalCurvatureXM0eLatex", "NominalCurvatureYM0eLatex",
+        "NominalCurvatureXM2Latex", "NominalCurvatureYM2Latex",
+        "NominalCurvatureX1rLatex", "NominalCurvatureY1rLatex",
+        "NominalCurvatureXE2Latex", "NominalCurvatureYE2Latex",
+        "FactorNLatex", "FactorALatex", "FactorBLatex", "FactorCxLatex", "FactorCyLatex",
+        "MxUsedResultLatex", "MyUsedResultLatex",
+        "IsAnyAxisSlender", "IsNeitherAxisSlender",
+        "LambdaXDisplay", "LambdaLimitXDisplay", "LambdaYDisplay", "LambdaLimitYDisplay",
+        "AngleDisplay", "UtilizationDisplay", "StatusDisplay", "IsCritical", "IsFailing",
+    };
+
     private void OnInputChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is not null && s_displayOnlyProperties.Contains(e.PropertyName)) return;
         MarkCalculationOutdated();
         MarkProjectModified();
     }

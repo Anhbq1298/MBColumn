@@ -451,7 +451,7 @@
                                 <TextBlock Text="SECTION PREVIEW"
                                            Style="{StaticResource OverlineTextStyle}"
                                            Margin="0,0,0,2" />
-                                <TextBlock Text="2D VIEW · GRID"
+                                <TextBlock Text="2D VIEW &#x00B7; GRID"
                                            Style="{StaticResource CaptionTextStyle}"
                                            Margin="0,0,0,4" />
                                 <controls:SectionPreviewCanvas Height="240"
@@ -589,7 +589,7 @@
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-                        <!-- Validation banners — only visible when there is something to show -->
+                        <!-- Validation banners - only visible when there is something to show -->
                         <StackPanel Margin="0,0,0,8"
                                     Visibility="{Binding DataContext.IsCalculationOutdated, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="Changes made, recalculation required."
@@ -792,7 +792,7 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
-                            <!-- Preview for Rectangular/Circular — locked, greyed out -->
+                            <!-- Preview for Rectangular/Circular - locked, greyed out -->
                             <DataGrid ItemsSource="{Binding PreviewBoundaryPoints}"
                                       Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                                       AutoGenerateColumns="False"
@@ -1185,12 +1185,12 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <!-- ── Section 2: Stirrups and Shear Links ── -->
+                            <!-- Section 2: Stirrups and Shear Links -->
                             <Separator Margin="0,12,0,10" />
                             <TextBlock Text="2 - Stirrups and Shear Links"
                                        Style="{StaticResource InputSubsectionTitleTextStyle}" />
 
-                            <!-- Stirrup Ø + Link spacing side by side — rectangular only -->
+                            <!-- Stirrup diameter and link spacing side by side - rectangular only -->
                             <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
                                   Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
@@ -1210,7 +1210,7 @@
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="0"
-                                               Text="Stirrup Ø"
+                                               Text="Stirrup &#x00D8;"
                                                Style="{StaticResource FieldLabelTextStyle}" />
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
@@ -1248,7 +1248,94 @@
                                 </Grid>
                             </Grid>
 
-                            <!-- Inner legs X / Y — rectangular only -->
+                            <!-- Circular shear reinforcement -->
+                            <TextBlock Text="Circular Shear Reinforcement"
+                                       Style="{StaticResource InputSubsectionTitleTextStyle}"
+                                       Visibility="{Binding IsCircularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                       Margin="0,0,0,6" />
+                            <Grid Visibility="{Binding IsCircularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                  Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Hoop diameter"
+                                               Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding RebarDiameterUnitLabel}"
+                                               Style="{StaticResource UnitTextStyle}" />
+                                    <ComboBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                              ItemsSource="{Binding AvailableStirrupBars}"
+                                              DisplayMemberPath="DisplayLabel"
+                                              SelectedItem="{Binding SelectedStirrupBar}" />
+                                </Grid>
+                                <Grid Grid.Column="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Hoop spacing"
+                                               Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LinkSpacingUnitLabel}"
+                                               Style="{StaticResource UnitTextStyle}" />
+                                    <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                             Text="{Binding LinkSpacing, UpdateSourceTrigger=PropertyChanged}" />
+                                </Grid>
+                            </Grid>
+
+                            <StackPanel Visibility="{Binding IsCircularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        Margin="0,0,0,8">
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="Hoop type"
+                                                   Style="{StaticResource FieldLabelTextStyle}" />
+                                        <ComboBox Grid.Row="1"
+                                                  ItemsSource="{Binding CircularHoopTypes}"
+                                                  SelectedItem="{Binding SelectedCircularHoopType}" />
+                                    </Grid>
+                                    <Grid Grid.Column="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="36" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="D' to hoop centreline"
+                                                   Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LinkSpacingUnitLabel}"
+                                                   Style="{StaticResource UnitTextStyle}" />
+                                        <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                                 Text="{Binding CircularHoopCentrelineDiameterText, Mode=OneWay}"
+                                                 IsReadOnly="True" />
+                                    </Grid>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Inner legs X / Y - rectangular only -->
                             <Grid Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
                                   Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
@@ -1263,11 +1350,11 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="0"
-                                           Text="Inner legs X (‖ h)"
+                                           Text="Inner legs X (? h)"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="2"
-                                           Text="Inner legs Y (‖ b)"
+                                           Text="Inner legs Y (? b)"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBox Grid.Row="1"
                                          Grid.Column="0"
@@ -1301,10 +1388,74 @@
                                 </StackPanel>
                             </Grid>
 
-                            <!-- EC2 §9.5.3 checks — rectangular only -->
+                            <!-- EC2 9.5.3 checks - circular only -->
+                            <StackPanel Visibility="{Binding IsCircularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                        Margin="0,2,0,0">
+                                <TextBlock Text="EC2 &#x00A7;9.5.3 Link Checks"
+                                           Style="{StaticResource InputSubsectionTitleTextStyle}"
+                                           Margin="0,0,0,4" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                    <Border Width="7" Height="7" CornerRadius="3.5" VerticalAlignment="Center" Margin="0,0,5,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check1Pass}" Value="False">
+                                                        <Setter Property="Background" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <TextBlock Text="{Binding Ec2Check1Text}" FontSize="10" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check1Pass}" Value="False">
+                                                        <Setter Property="Foreground" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                    <Border Width="7" Height="7" CornerRadius="3.5" VerticalAlignment="Center" Margin="0,0,5,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check2Pass}" Value="False">
+                                                        <Setter Property="Background" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <TextBlock Text="{Binding Ec2Check2Text}" FontSize="10" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#2E7D32" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Ec2Check2Pass}" Value="False">
+                                                        <Setter Property="Foreground" Value="#C62828" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Ec2AswsXText}"
+                                           FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="12,0,0,0" />
+                            </StackPanel>
+
+                            <!-- EC2 9.5.3 checks - rectangular only -->
                             <StackPanel Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Margin="0,2,0,0">
-                                <TextBlock Text="EC2 §9.5.3 Link Checks"
+                                <TextBlock Text="EC2 &#x00A7;9.5.3 Link Checks"
                                            Style="{StaticResource InputSubsectionTitleTextStyle}"
                                            Margin="0,0,0,4" />
                                 <StackPanel Orientation="Horizontal"
@@ -1559,7 +1710,7 @@
 
                                     <StackPanel Width="110" Margin="0,0,10,6">
                                         <DockPanel>
-                                            <TextBlock Text="l₀x" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="l&#x2080;x" Style="{StaticResource FieldLabelTextStyle}" />
                                             <TextBlock Text="m" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
                                         </DockPanel>
                                         <TextBox Style="{StaticResource ComputedTextBoxStyle}"
@@ -1568,24 +1719,28 @@
 
                                     <StackPanel Width="110" Margin="0,0,10,6">
                                         <DockPanel>
-                                            <TextBlock Text="l₀y" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <TextBlock Text="l&#x2080;y" Style="{StaticResource FieldLabelTextStyle}" />
                                             <TextBlock Text="m" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
                                         </DockPanel>
                                         <TextBox Style="{StaticResource ComputedTextBoxStyle}"
                                                  Text="{Binding L0yText, Mode=OneWay}" />
                                     </StackPanel>
 
-                                    <StackPanel Width="160" Margin="0,0,10,6">
-                                        <TextBlock Style="{StaticResource FieldLabelTextStyle}"><Run Text="φ" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" — EC2 §5.8.4" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" /></TextBlock>
+                                    <StackPanel Width="200" Margin="0,0,10,6">
+                                        <TextBlock Style="{StaticResource FieldLabelTextStyle}">
+                                            <Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" — Effective creep ratio" />
+                                        </TextBlock>
                                         <TextBox Text="{Binding PhiEff, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
-                                                 ToolTip="Effective creep ratio: φeff = φ(∞,t₀) × M₀EQP/M₀Ed. Typically 0–3. Leave blank to use A = 0.7 as fallback." />
+                                                 ToolTip="&#x03C6;eff = &#x03C6;(&#x221E;,t&#x2080;) &#x00D7; M&#x2080;EQP / M&#x2080;Ed (EC2 &#x00A7;5.8.4).&#x0A;Typical range: 0.5 &#x2013; 2.5.&#x0A;Leave blank to use default A = 0.7." />
+                                        <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,3,0,0" Foreground="{DynamicResource TextMutedBrush}">Typical: 0.5 &#x2013; 2.5  (EC2 &#x00A7;5.8.4)</TextBlock>
                                     </StackPanel>
 
-                                    <StackPanel Width="240" Margin="0,10,10,6">
-                                        <TextBlock Text="{Binding AFactorDisplayText, Mode=OneWay}"
+                                    <StackPanel Width="180" Margin="0,12,10,6">
+                                        <CheckBox Content="Default A = 0.7 (&#x03C6;eff unknown)"
+                                                  IsChecked="{Binding UseDefaultAWhenPhiEffUnknown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="B auto from reinforcement layout"
                                                    Style="{StaticResource HelperTextStyle}"
-                                                   Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,3,0,0"><Run Text="B = &#x221A;(1+2&#x03C9;), &#x03C9; = A" /><Run Text="s" BaselineAlignment="Subscript" FontSize="9" /><Run Text="&#x00B7;f" /><Run Text="yd" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" / (A" /><Run Text="c" BaselineAlignment="Subscript" FontSize="9" /><Run Text="&#x00B7;f" /><Run Text="cd" BaselineAlignment="Subscript" FontSize="9" /><Run Text="), auto" /></TextBlock>
+                                                   Margin="2,4,0,0" />
                                     </StackPanel>
                                 </WrapPanel>
                             </Border>
@@ -1840,6 +1995,22 @@
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
+                                        <DataGridTextColumn Header="λx"
+                                                            Binding="{Binding LambdaX, TargetNullValue='-', StringFormat=F2}"
+                                                            Width="60" IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}" />
+                                        <DataGridTextColumn Header="λlim,x"
+                                                            Binding="{Binding LambdaLimitX, TargetNullValue='-', StringFormat=F2}"
+                                                            Width="72" IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}" />
+                                        <DataGridTextColumn Header="λy"
+                                                            Binding="{Binding LambdaY, TargetNullValue='-', StringFormat=F2}"
+                                                            Width="60" IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}" />
+                                        <DataGridTextColumn Header="λlim,y"
+                                                            Binding="{Binding LambdaLimitY, TargetNullValue='-', StringFormat=F2}"
+                                                            Width="72" IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}" />
                                         <DataGridTextColumn Binding="{Binding MxUsed, TargetNullValue=auto, StringFormat=F1}"
                                                             Width="*"
                                                             IsReadOnly="True"
@@ -2070,7 +2241,7 @@
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
 
-                                                <!-- ===== Mx Diagram (left) — dynamic ===== -->
+                                                <!-- ===== Mx Diagram (left) - dynamic ===== -->
                                                 <controls:MomentDiagramControl
                                                     Grid.Column="0"
                                                     Title="Mx"
@@ -2082,7 +2253,7 @@
                                                 <!-- Separator -->
                                                 <Rectangle Grid.Column="1" Width="1" Fill="#D6DEE6" Margin="0,4" VerticalAlignment="Stretch" />
 
-                                                <!-- ===== My Diagram (right) — dynamic ===== -->
+                                                <!-- ===== My Diagram (right) - dynamic ===== -->
                                                 <controls:MomentDiagramControl
                                                     Grid.Column="2"
                                                     Title="My"
@@ -2308,13 +2479,13 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelTextStyle}"><Run Text="φ" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" — EC2 §5.8.4" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" /></TextBlock>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelTextStyle}"><Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" - EC2 &#x00A7;5.8.4" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" /></TextBlock>
                                         <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding PhiEff, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
-                                                 ToolTip="φeff = φ(∞,t₀) × M₀EQP/M₀Ed. Typically 0–3. Leave blank → A = 0.7 fallback." />
+                                                 ToolTip="&#x03C6;eff = &#x03C6;(&#x221E;,t&#x2080;) &#x00D7; M&#x2080;EQP/M&#x2080;Ed. Typically 0&#x2013;3. Leave blank &#x2192; A = 0.7 fallback." />
                                         <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,0"><Run Text="{Binding AFactorDisplayText, Mode=OneWay}" Foreground="{DynamicResource AccentBlueBrush}" /></TextBlock>
 
                                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Reinforcement factor B" Style="{StaticResource FieldLabelTextStyle}" />
-                                        <TextBox Grid.Row="1" Grid.Column="2" Style="{StaticResource ComputedTextBoxStyle}" Text="Auto (from Aₛ)" />
+                                        <TextBox Grid.Row="1" Grid.Column="2" Style="{StaticResource ComputedTextBoxStyle}" Text="Auto (from A?)" />
                                     </Grid>
 
                                 </StackPanel>
@@ -2695,8 +2866,8 @@
                 Style="{StaticResource CardBorderStyle}"
                 Background="White"
                 Padding="16"
-                MaxWidth="980"
-                MaxHeight="720"
+                MaxWidth="1200"
+                MaxHeight="880"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
             <Border.RenderTransform>
@@ -2986,7 +3157,7 @@
                                                                            DiagramColor="#c0392b"
                                                                            MomentTop="{Binding SlendernessCalculationLoadCase.MxTop}"
                                                                            MomentBottom="{Binding SlendernessCalculationLoadCase.MxBottom}"
-                                                                           Height="300"
+                                                                           Height="170"
                                                                            Margin="2,0" />
                                             <Rectangle Grid.Column="1" Fill="#D6DEE6" Margin="0,4" />
                                             <controls:MomentDiagramControl Grid.Column="2"
@@ -2994,7 +3165,7 @@
                                                                            DiagramColor="#2471a3"
                                                                            MomentTop="{Binding SlendernessCalculationLoadCase.MyTop}"
                                                                            MomentBottom="{Binding SlendernessCalculationLoadCase.MyBottom}"
-                                                                           Height="300"
+                                                                           Height="170"
                                                                            Margin="2,0" />
                                         </Grid>
                                     </StackPanel>
@@ -3041,14 +3212,32 @@
                                             <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
                                             <Run Text="." />
                                         </TextBlock>
-                                        <TextBlock Text="{Binding ImperfectionCalculationText}"
-                                                   Style="{StaticResource ParameterMeaningTextStyle}"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   Margin="0,8,0,6" />
-                                        <TextBlock Text="{Binding MinimumEccentricityCalculationText}"
-                                                   Style="{StaticResource ParameterMeaningTextStyle}"
-                                                   Foreground="{DynamicResource TextDarkBrush}"
-                                                   Margin="0" />
+                                        <StackPanel Margin="0,8,0,6">
+                                            <controls:SafeFormulaControl Formula="{Binding ImperfectionFormulaLatex}"
+                                                                         Scale="13"
+                                                                         FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding ImperfectionXCalculationLatex}"
+                                                                         Scale="12"
+                                                                         FormulaForeground="{DynamicResource AccentBlueBrush}"
+                                                                         Margin="0,4,0,0" />
+                                            <controls:SafeFormulaControl Formula="{Binding ImperfectionYCalculationLatex}"
+                                                                         Scale="12"
+                                                                         FormulaForeground="{DynamicResource AccentBlueBrush}"
+                                                                         Margin="0,4,0,0" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityFormulaLatex}"
+                                                                         Scale="13"
+                                                                         FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityXCalculationLatex}"
+                                                                         Scale="12"
+                                                                         FormulaForeground="{DynamicResource AccentBlueBrush}"
+                                                                         Margin="0,4,0,0" />
+                                            <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityYCalculationLatex}"
+                                                                         Scale="12"
+                                                                         FormulaForeground="{DynamicResource AccentBlueBrush}"
+                                                                         Margin="0,4,0,0" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
 
@@ -3073,19 +3262,19 @@
                                 <TextBlock Text="Axis" FontWeight="SemiBold" TextAlignment="Center" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="{Binding LengthLabel, StringFormat='l₀ ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <TextBlock Text="{Binding LengthLabel, StringFormat='l0 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="λ" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <TextBlock Text="?" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="λlim" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <TextBlock Text="?lim" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="rₘ" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <TextBlock Text="r?" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="{Binding MomentLabel, StringFormat='M₂ ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <TextBlock Text="{Binding MomentLabel, StringFormat='M2 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="4">
                                 <TextBlock Text="{Binding MomentLabel, StringFormat='Moment Used ({0})'}" FontWeight="SemiBold" TextAlignment="Center" />
@@ -3213,8 +3402,8 @@
 
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1.1*" />
-                                <ColumnDefinition Width="2.3*" />
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="2.25*" />
                                 <ColumnDefinition Width="1.35*" />
                                 <ColumnDefinition Width="1.35*" />
                             </Grid.ColumnDefinitions>
@@ -3227,143 +3416,153 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="5">
-                                <TextBlock Text="Step" FontWeight="SemiBold" />
+                            <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
+                                <TextBlock Text="Step" FontWeight="SemiBold" FontSize="13" />
                             </Border>
-                            <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="5">
-                                <TextBlock Text="Equation" FontWeight="SemiBold" />
+                            <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
+                                <TextBlock Text="Equation" FontWeight="SemiBold" FontSize="13" />
                             </Border>
-                            <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="5">
-                                <TextBlock Text="Mx axis" FontWeight="SemiBold" TextAlignment="Center" />
+                            <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
+                                <TextBlock Text="Mx axis" FontWeight="SemiBold" FontSize="13" TextAlignment="Center" />
                             </Border>
-                            <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="5">
-                                <TextBlock Text="My axis" FontWeight="SemiBold" TextAlignment="Center" />
+                            <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="6,8">
+                                <TextBlock Text="My axis" FontWeight="SemiBold" FontSize="13" TextAlignment="Center" />
                             </Border>
 
-                            <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="1. Effective length" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="l" />
-                                    <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
-                                    <Run Text=" = k &#x00D7; L" />
-                                </TextBlock>
+                            <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="1. Effective length" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="l_0=kL" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="{Binding L0xText, StringFormat='l₀x = {0}'}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" /></Border>
-                            <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5"><TextBlock Text="{Binding L0yText, StringFormat='l₀y = {0}'}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" /></Border>
+                            <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding L0xLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding L0yLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
 
-                            <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="2. Slenderness ratio" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="&#x03BB; = l" />
-                                    <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
-                                    <Run Text=" / i" />
-                                </TextBlock>
+                            <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="2. Slenderness ratio" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaFormulaLatex}" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaX, TargetNullValue=-, StringFormat='λx = {0:F2}'}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" /></Border>
-                            <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5"><TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaY, TargetNullValue=-, StringFormat='λy = {0:F2}'}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" /></Border>
+                            <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaXResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaYResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
 
-                            <Border Grid.Row="3" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="3. Slenderness limit" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="3" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="&#x03BB;" />
-                                    <Run Text="lim" BaselineAlignment="Subscript" FontSize="9" />
-                                    <Run Text=" = 20ABC / &#x221A;n" />
-                                </TextBlock>
+                            <Border Grid.Row="3" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="3. Slenderness limit" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="3" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitFormulaLatex}" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="3" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat='λlim,x = {0:F2}'}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" /></Border>
-                            <Border Grid.Row="3" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5"><TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat='λlim,y = {0:F2}'}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" /></Border>
+                            <Border Grid.Row="3" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitXResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="3" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitYResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
 
-                            <Border Grid.Row="4" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="4. Moment ratio" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="4" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="r" />
-                                    <Run Text="m" BaselineAlignment="Subscript" FontSize="9" />
-                                    <Run Text=" = M" />
-                                    <Run Text="01" BaselineAlignment="Subscript" FontSize="9" />
-                                    <Run Text=" / M" />
-                                    <Run Text="02" BaselineAlignment="Subscript" FontSize="9" />
-                                </TextBlock>
-                            </Border>
-                            <Border Grid.Row="4" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
+                            <!-- Row 4: n, A, B, C factors (inserted between Slenderness limit and Moment ratio) -->
+                            <Border Grid.Row="4" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="4. Factors n,A,B,C" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="4" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <StackPanel>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M01x, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M02x, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.RmX, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
+                                    <controls:SafeFormulaControl Formula="n=\frac{N_{Ed}}{A_c f_{cd}}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="A=\frac{1}{1+0.2\varphi_{eff}}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="B=\sqrt{1+2\omega}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="C=1.7-r_m" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Row="4" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5">
+                            <Border Grid.Row="4" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <StackPanel>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M01y, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M02y, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.RmY, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorNLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorALatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorBLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorCxLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="4" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorNLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorALatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorBLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorCyLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="5" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="5. Branch" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="5" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="&#x03BB; &lt; &#x03BB;" /><Run Text="lim" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" &#x21D2; M" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = 0; &#x03BB; &#x2265; &#x03BB;" /><Run Text="lim" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" &#x21D2; nominal curvature" />
-                                </TextBlock>
+                            <Border Grid.Row="5" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="5. Moment ratio" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="5" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentRatioFormulaLatex}" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="5" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchXText}" TextAlignment="Center" /></Border>
-                            <Border Grid.Row="5" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchYText}" TextAlignment="Center" /></Border>
-
-                            <Border Grid.Row="6" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="6. Nominal curvature" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="6" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="M" /><Run Text="0e" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = max(0.6M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" + 0.4M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="9" /><Run Text=", 0.4M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="9" /><Run Text="); M" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = N" /><Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" &#x00D7; e" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" />
-                                </TextBlock>
+                            <Border Grid.Row="5" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentRatioXResultLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="6" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <StackPanel>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="0e" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M0ex, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M2x, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Row="6" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5">
-                                <StackPanel>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="0e" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M0ey, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                    <TextBlock TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}">
-                                        <Run Text="M" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = " /><Run Text="{Binding SlendernessCalculationLoadCase.M2y, TargetNullValue=-, StringFormat=F2}" />
-                                    </TextBlock>
-                                </StackPanel>
+                            <Border Grid.Row="5" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentRatioYResultLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="7" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5"><TextBlock Text="7. Moment used" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="7" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="M" /><Run Text="used" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = max(M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="9" /><Run Text=", M" /><Run Text="0e" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" + M" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" /><Run Text=", M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" + 0.5M" /><Run Text="2" BaselineAlignment="Subscript" FontSize="9" /><Run Text=", N" /><Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" &#x00D7; e" /><Run Text="0" BaselineAlignment="Subscript" FontSize="9" /><Run Text=")" />
-                                </TextBlock>
+                            <Border Grid.Row="6" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="6. Branch" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="6" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.BranchFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="7" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="5">
-                                <TextBlock TextAlignment="Center" Foreground="{DynamicResource DarkNavyBrush}" Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="Mx Used = " /><Run Text="{Binding SlendernessCalculationLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" />
-                                </TextBlock>
+                            <Border Grid.Row="6" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchXText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="6" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchYText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" /></Border>
+
+                            <Border Grid.Row="7" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="7. Nominal curvature" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="7" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="\frac{1}{r}=K_r K_\varphi \frac{\varepsilon_{yd}}{0.45d}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="7" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="5">
-                                <TextBlock TextAlignment="Center" Foreground="{DynamicResource DarkNavyBrush}" Style="{StaticResource MathEquationTextStyle}">
-                                    <Run Text="My Used = " /><Run Text="{Binding SlendernessCalculationLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" />
-                                </TextBlock>
+                            <Border Grid.Row="7" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureX1rLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="7" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureY1rLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <Border Grid.Row="8" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="8. Second order moment" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="8" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="e_2=\frac{1}{r}\cdot\frac{l_0^2}{c}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="M_2=N_{Ed}e_2" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="8" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXE2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXM2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="8" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYE2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYM2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="9" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="9. First order moment" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="9" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="9" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXM0eLatex, Mode=OneWay}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="9" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYM0eLatex, Mode=OneWay}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <Border Grid.Row="10" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="10. Moment used" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="10" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentUsedFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="10" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MxUsedResultLatex}" Scale="14" FormulaForeground="{DynamicResource DarkNavyBrush}" />
+                            </Border>
+                            <Border Grid.Row="10" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MyUsedResultLatex}" Scale="14" FormulaForeground="{DynamicResource DarkNavyBrush}" />
                             </Border>
                         </Grid>
                     </StackPanel>

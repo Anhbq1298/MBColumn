@@ -123,6 +123,13 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             dc.DrawEllipse(FillBrush, BoundaryPen, center, rx, ry);
             double coverRadius = Math.Max(0, rx - c * scale);
             dc.DrawEllipse(null, CoverDashPen, center, coverRadius, coverRadius);
+
+            double hoopRadius = Math.Max(0, rx - (c + StirrupDiameterMm / 2.0) * scale);
+            if (hoopRadius > 0)
+            {
+                var activePen = GetStirrupPen();
+                dc.DrawEllipse(null, activePen, center, hoopRadius, hoopRadius);
+            }
         }
         else
         {

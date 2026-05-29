@@ -48,12 +48,21 @@ public sealed class ShearCheckService(IUnitConversionService units)
         ShearLinkReinforcement? links = null;
         if (input.LinkDiameterMm > 0 && input.LinkSpacingMm > 0)
         {
+            bool isCircularHoop = input.SectionShape == SectionShapeType.Circular;
+            double circularHoopCentrelineDiameterMm = input.CircularHoopCentrelineDiameterMm > 0
+                ? input.CircularHoopCentrelineDiameterMm
+                : isCircularHoop
+                    ? Math.Max(units.LengthToMm(input.Diameter, input.LengthUnit) - 2.0 * coverMm - input.LinkDiameterMm, 1.0)
+                    : 0.0;
+
             links = new ShearLinkReinforcement(
                 input.LinkDiameterMm,
                 input.LinkSpacingMm,
                 input.TotalLegsX,
                 input.TotalLegsY,
-                fywkMpa);
+                fywkMpa,
+                isCircularHoop,
+                circularHoopCentrelineDiameterMm);
         }
 
         double totalAslMm2 = rebarCoordinates.Sum(r => r.Area);
@@ -135,6 +144,17 @@ public sealed class ShearCheckService(IUnitConversionService units)
             FywdMpa:   r.FywdMpa,
             ZXMm:      r.ZXMm,    ZYMm:     r.ZYMm,
             CotThetaX: r.CotThetaX, CotThetaY: r.CotThetaY,
-            ForceUnit: fUnit);
+            ForceUnit: fUnit,
+            SectionShape: input.SectionShape,
+            DiameterMm: input.SectionShape == SectionShapeType.Circular
+                ? units.LengthToMm(input.Diameter, input.LengthUnit)
+                : 0,
+            IsCircularHoop: r.IsCircularHoop,
+            LinkAhMm2: r.LinkAhMm2,
+            LinkSpacingMm: r.LinkSpacingMm,
+            CircularHoopCentrelineDiameterMm: r.CircularHoopCentrelineDiameterMm,
+            FckMpa: r.FckMpa,
+            FcdMpa: r.FcdMpa,
+            FywkMpa: r.FywkMpa);
     }
 }

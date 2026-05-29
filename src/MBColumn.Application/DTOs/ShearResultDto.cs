@@ -54,7 +54,16 @@ public sealed record ShearResultDto(
     double ZYMm,
     double CotThetaX,
     double CotThetaY,
-    string ForceUnit)
+    string ForceUnit,
+    SectionShapeType SectionShape = SectionShapeType.Rectangular,
+    double DiameterMm = 0,
+    bool IsCircularHoop = false,
+    double LinkAhMm2 = 0.0,
+    double LinkSpacingMm = 0.0,
+    double CircularHoopCentrelineDiameterMm = 0.0,
+    double FckMpa = 0.0,
+    double FcdMpa = 0.0,
+    double FywkMpa = 0.0)
 {
     public CapacityStatus GoverningStatus =>
         StatusX == CapacityStatus.Fail || StatusY == CapacityStatus.Fail

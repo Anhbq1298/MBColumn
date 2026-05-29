@@ -140,6 +140,7 @@ var tests = new List<(string Name, Action Test)>
     ("Multi-load case inactive excluded", TestMultiLoadCaseInactiveExcluded),
     ("Multi-load case fallback to single", TestMultiLoadCaseFallbackToSingle),
     ("Multi-load case governing id in result", TestMultiLoadCaseGoverningIdInResult),
+    ("EC2 circular hoop shear benchmark", TestEc2CircularHoopShearBenchmark),
     ("EC2 slenderness off preserves direct PMM moments", TestEc2SlendernessOffPreservesDirectMoments),
     ("EC2 slenderness on maps used PMM moments", TestEc2SlendernessOnMapsUsedMoments),
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
@@ -273,6 +274,39 @@ static void TestSingaporeBars()
         double expectedArea = d switch { 20 => 314.0, 25 => 491.0, _ => Math.PI * d * d / 4.0 };
         AreClose(expectedArea, bar.AreaMm2, 1e-9);
     }
+}
+
+static void TestEc2CircularHoopShearBenchmark()
+{
+    var calculator = new EurocodeCircularColumnShearCalculator();
+    var result = calculator.Calculate(new CircularShearInput(
+        HoopDiameterMm: 10.0,
+        HoopSpacingMm: 150.0,
+        HoopCentrelineDiameterMm: 550.0,
+        FywdMpa: 435.0,
+        CotTheta: 2.0));
+
+    AreClose(78.54, result.AhMm2, 0.01);
+    AreClose(393.0, result.VRdsN / 1000.0, 1.0);
+
+    var service = new Ec2ShearDesignService();
+    var circularHoop = new ShearLinkReinforcement(
+        LinkDiameterMm: 10.0,
+        SpacingMm: 150.0,
+        TotalLegsX: 2,
+        TotalLegsY: 2,
+        FywkMpa: 500.25,
+        IsCircularHoop: true,
+        HoopCentrelineDiameterMm: 550.0);
+    var circularHoopWithDetailingTies = circularHoop with { TotalLegsX = 20, TotalLegsY = 20 };
+
+    var serviceResult = service.Check(480.0, 600.0, 3000.0, 30.0, 0.0, 0.0, 0.0,
+        circularHoop, 20.0, 25.0);
+    var serviceResultWithTies = service.Check(480.0, 600.0, 3000.0, 30.0, 0.0, 0.0, 0.0,
+        circularHoopWithDetailingTies, 20.0, 25.0);
+
+    AreClose(serviceResult.VRdsXN, serviceResultWithTies.VRdsXN, 1e-9);
+    AreClose(serviceResult.VRdsYN, serviceResultWithTies.VRdsYN, 1e-9);
 }
 
 static void TestUsBars()
