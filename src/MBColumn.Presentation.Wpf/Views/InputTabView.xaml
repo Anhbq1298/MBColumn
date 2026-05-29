@@ -3512,45 +3512,45 @@
                             <Border Grid.Row="6" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchXText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="6" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchYText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" /></Border>
 
-                            <Border Grid.Row="7" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="7. Nominal curvature" FontSize="13" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="7" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                            <Border Grid.Row="7" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="7. Nominal curvature" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="7" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="\frac{1}{r}=K_r K_\varphi \frac{\varepsilon_{yd}}{0.45d}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="7" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                            <Border Grid.Row="7" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureX1rLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="7" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                            <Border Grid.Row="7" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureY1rLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="8" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="8. Second order moment" FontSize="13" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="8" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                            <Border Grid.Row="8" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="8. Second order moment" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="8" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <StackPanel>
                                     <controls:SafeFormulaControl Formula="e_2=\frac{1}{r}\cdot\frac{l_0^2}{c}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                     <controls:SafeFormulaControl Formula="M_2=N_{Ed}e_2" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Row="8" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                            <Border Grid.Row="8" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <StackPanel>
                                     <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXE2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                     <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXM2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Row="8" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                            <Border Grid.Row="8" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
                                 <StackPanel>
                                     <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYE2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                     <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYM2Latex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="9" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="9. First order moment" FontSize="13" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="9" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                            <Border Grid.Row="9" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="9. First order moment" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="9" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="9" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                            <Border Grid.Row="9" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXM0eLatex, Mode=OneWay}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="9" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                            <Border Grid.Row="9" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYM0eLatex, Mode=OneWay}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
