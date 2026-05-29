@@ -193,6 +193,7 @@ public sealed class InputViewModel : ViewModelBase
         RefreshSlendernessUiState();
         UpdateSectionPreview();
         AddLoadCaseCommand = new RelayCommand(AddLoadCase);
+        DuplicateLoadCaseCommand = new RelayCommand<LoadCaseViewModel>(DuplicateLoadCase);
         DeleteLoadCaseCommand = new RelayCommand<LoadCaseViewModel>(DeleteLoadCase);
         DeleteSelectedLoadCasesCommand = new RelayCommand<object>(DeleteSelectedLoadCases);
         RemoveDuplicateLoadCasesCommand = new RelayCommand(RemoveDuplicateLoadCases);
@@ -346,10 +347,16 @@ public sealed class InputViewModel : ViewModelBase
         set
         {
             Set(ref memberLengthL, value);
+            Raise(nameof(MemberLengthLInM));
             Raise(nameof(L0xText));
             Raise(nameof(L0yText));
             RefreshSlendernessUiState();
         }
+    }
+    public double? MemberLengthLInM
+    {
+        get => memberLengthL.HasValue ? memberLengthL / 1000.0 : (double?)null;
+        set => MemberLengthL = value.HasValue ? value * 1000.0 : (double?)null;
     }
     public bool IncludeEc2Slenderness
     {
@@ -392,24 +399,27 @@ public sealed class InputViewModel : ViewModelBase
         set
         {
             Set(ref phiEff, value);
+            useDefaultAWhenPhiEffUnknown = !value.HasValue;
+            Raise(nameof(UseDefaultAWhenPhiEffUnknown));
+            Raise(nameof(AFactorDisplayText));
             RefreshSlendernessUiState();
         }
     }
     public bool UseDefaultAWhenPhiEffUnknown
     {
         get => useDefaultAWhenPhiEffUnknown;
-        set
-        {
-            Set(ref useDefaultAWhenPhiEffUnknown, value);
-            RefreshSlendernessUiState();
-        }
+        private set => Set(ref useDefaultAWhenPhiEffUnknown, value);
     }
+    public string AFactorDisplayText =>
+        !PhiEff.HasValue
+            ? "A = 0.7 (fallback, φeff blank)"
+            : $"A = 1/(1+0.2×{PhiEff:F2}) = {1.0 / (1.0 + 0.2 * PhiEff.Value):F3}";
     public string DemandInputModeText => IncludeEc2Slenderness
         ? "Demand input mode: Member end forces"
         : "Demand input mode: Direct section forces";
     public bool SlendernessSettingsVisibility => IncludeEc2Slenderness;
-    public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{Kx.Value * MemberLengthL.Value:F2}" : "auto";
-    public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{Ky.Value * MemberLengthL.Value:F2}" : "auto";
+    public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{Kx.Value * MemberLengthL.Value / 1000.0:F2}" : "auto";
+    public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{Ky.Value * MemberLengthL.Value / 1000.0:F2}" : "auto";
     public string ImperfectionCalculationText => BuildImperfectionCalculationText();
     public string MinimumEccentricityCalculationText => BuildMinimumEccentricityCalculationText();
 
@@ -831,6 +841,7 @@ public sealed class InputViewModel : ViewModelBase
     public ObservableCollection<PreviewBoundaryPoint> PreviewBoundaryPoints { get; } = [];
     public ObservableCollection<LoadCaseViewModel> LoadCases { get; } = [];
     public ICommand AddLoadCaseCommand { get; }
+    public ICommand DuplicateLoadCaseCommand { get; }
     public ICommand DeleteLoadCaseCommand { get; }
     public ICommand DeleteSelectedLoadCasesCommand { get; }
     public ICommand RemoveDuplicateLoadCasesCommand { get; }
@@ -1510,6 +1521,29 @@ public sealed class InputViewModel : ViewModelBase
             source?.Mux ?? Mux,
             source?.Muy ?? Muy);
         LoadCases.Add(lc);
+        SelectedLoadCase = lc;
+        RefreshSlendernessUiState();
+    }
+
+    private void DuplicateLoadCase(LoadCaseViewModel source)
+    {
+        var lc = new LoadCaseViewModel(
+            Guid.NewGuid().ToString("N")[..8],
+            $"{source.Name}_copy",
+            source.Pu,
+            source.Mux,
+            source.Muy)
+        {
+            Vux = source.Vux,
+            Vuy = source.Vuy,
+            MxTop = source.MxTop,
+            MxBottom = source.MxBottom,
+            MyTop = source.MyTop,
+            MyBottom = source.MyBottom,
+            IsActive = source.IsActive
+        };
+        int idx = LoadCases.IndexOf(source);
+        LoadCases.Insert(idx + 1, lc);
         SelectedLoadCase = lc;
         RefreshSlendernessUiState();
     }
