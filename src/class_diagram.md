@@ -706,7 +706,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
-| `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath. | `StartUpWindow.xaml.cs` |
+| `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |
 | `class` | **ReportTabView** | Represents the ReportTabView class. | `ReportTabView.xaml.cs` |
 | `class` | **ResultTabView** | Represents the ResultTabView class. | `ResultTabView.xaml.cs` |
 | `class` | **SectionCadEditorWindow** | Represents the SectionCadEditorWindow class. | `SectionCadEditorWindow.xaml.cs` |

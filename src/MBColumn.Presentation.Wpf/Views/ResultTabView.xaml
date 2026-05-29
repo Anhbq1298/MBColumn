@@ -209,7 +209,7 @@
                                 <TextBlock Text="Reinforcement Compliance" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="{Binding CodeRef}" Style="{StaticResource MetricLabelStyle}" Margin="0" />
-                                    <TextBlock Text=" — " Style="{StaticResource MetricLabelStyle}" Margin="0" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text=" - " Style="{StaticResource MetricLabelStyle}" Margin="0" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
                                     <TextBlock Text="{Binding FailCountText}" FontSize="10" Foreground="{DynamicResource AccentRedBrush}" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
                                     <TextBlock Text="All checks conforming" FontSize="10" Foreground="{DynamicResource SuccessGreenBrush}" Visibility="{Binding HasFails, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                                 </StackPanel>
@@ -281,7 +281,7 @@
                             </Border>
                             <TextBlock Text="{Binding CodeRef, StringFormat='  {0}'}"
                                        Style="{StaticResource MetricValueStyle}" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding FailCountText, StringFormat='  — {0}'}"
+                            <TextBlock Text="{Binding FailCountText, StringFormat='  - {0}'}"
                                        FontSize="10" Foreground="{DynamicResource AccentRedBrush}"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
@@ -497,13 +497,13 @@
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    Margin="0,0,0,6"
                                    Visibility="{Binding HasDemand, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                            No shear demand entered — capacity shown for reference.
+                            No shear demand entered - capacity shown for reference.
                             Enter Vux / Vuy in the load case table.
                         </TextBlock>
 
                         <!-- Shared helper for 2-col row -->
                         <!-- Step 1 — Concrete capacity without links -->
-                        <TextBlock Text="Step 1 — Without Reinforcement (VRd,c)"
+                        <TextBlock Text="Step 1 - Without Reinforcement (VRd,c)"
                                    FontSize="10.5" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                    Margin="0,4,0,4" />
@@ -561,7 +561,7 @@
                         </Grid>
 
                         <!-- Step 2 — Capacity with links -->
-                        <TextBlock Text="Step 2 — With Reinforcement (VRd,s / VRd,max)"
+                        <TextBlock Text="Step 2 - With Reinforcement (VRd,s / VRd,max)"
                                    FontSize="10.5" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                    Margin="0,8,0,4" />
@@ -723,7 +723,7 @@
 
                         <TextBlock FontSize="9.5" Foreground="{DynamicResource TextMutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap">
                             <Run Text="Forces in " /><Run Text="{Binding ForceUnit, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text=" · EC2 EN 1992-1-1:2004 §6.2 · γc = 1.50, γs = 1.15 · cover = 60 mm" />
+                            <Run Text=" | EC2 EN 1992-1-1:2004 section 6.2 | gamma c = 1.50, gamma s = 1.15 | cover = 60 mm" />
                         </TextBlock>
                     </StackPanel>
                 </Border>

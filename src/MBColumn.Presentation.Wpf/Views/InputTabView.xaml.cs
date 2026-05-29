@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Win32;
 using MBColumn.Presentation.Wpf.ViewModels;
 
@@ -8,6 +9,11 @@ namespace MBColumn.Presentation.Wpf.Views;
 
 public partial class InputTabView : UserControl
 {
+    private bool isDraggingSlendernessDetails;
+    private Point slendernessDetailsDragStart;
+    private double slendernessDetailsStartX;
+    private double slendernessDetailsStartY;
+
     protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
     {
         base.OnKeyDown(e);
@@ -20,6 +26,57 @@ public partial class InputTabView : UserControl
         }
     }
     public InputTabView() => InitializeComponent();
+
+    private void SlendernessDetailsHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        isDraggingSlendernessDetails = true;
+        slendernessDetailsDragStart = e.GetPosition(InputRoot);
+        slendernessDetailsStartX = SlendernessDetailsPanelTransform.X;
+        slendernessDetailsStartY = SlendernessDetailsPanelTransform.Y;
+        Mouse.Capture((IInputElement)sender);
+        e.Handled = true;
+    }
+
+    private void SlendernessDetailsHeader_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!isDraggingSlendernessDetails || e.LeftButton != MouseButtonState.Pressed) return;
+
+        Point current = e.GetPosition(InputRoot);
+        double nextX = slendernessDetailsStartX + current.X - slendernessDetailsDragStart.X;
+        double nextY = slendernessDetailsStartY + current.Y - slendernessDetailsDragStart.Y;
+
+        var bounds = GetSlendernessDetailsDragBounds();
+        SlendernessDetailsPanelTransform.X = Math.Clamp(nextX, bounds.minX, bounds.maxX);
+        SlendernessDetailsPanelTransform.Y = Math.Clamp(nextY, bounds.minY, bounds.maxY);
+        e.Handled = true;
+    }
+
+    private void SlendernessDetailsHeader_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!isDraggingSlendernessDetails) return;
+
+        isDraggingSlendernessDetails = false;
+        Mouse.Capture(null);
+        e.Handled = true;
+    }
+
+    private (double minX, double maxX, double minY, double maxY) GetSlendernessDetailsDragBounds()
+    {
+        double rootWidth = Math.Max(InputRoot.ActualWidth, 1.0);
+        double rootHeight = Math.Max(InputRoot.ActualHeight, 1.0);
+        double panelWidth = Math.Max(SlendernessDetailsPanel.ActualWidth, 1.0);
+        double panelHeight = Math.Max(SlendernessDetailsPanel.ActualHeight, 1.0);
+
+        double centeredLeft = (rootWidth - panelWidth) / 2.0;
+        double centeredTop = (rootHeight - panelHeight) / 2.0;
+        const double visibleMargin = 72.0;
+
+        double minX = -centeredLeft - panelWidth + visibleMargin;
+        double maxX = rootWidth - centeredLeft - visibleMargin;
+        double minY = -centeredTop;
+        double maxY = rootHeight - centeredTop - visibleMargin;
+        return (minX, maxX, minY, maxY);
+    }
 
     private void OpenCadEditor_Click(object sender, RoutedEventArgs e)
     {

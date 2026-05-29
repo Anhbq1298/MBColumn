@@ -103,7 +103,7 @@
                         <ListBox x:Name="RecentList" BorderThickness="0" Background="Transparent" SelectionChanged="RecentList_SelectionChanged">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="4,6">
+                                    <Grid Margin="4,6" ToolTip="{Binding FolderPath}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -111,7 +111,7 @@
                                         <TextBlock Text="&#xEC50;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="{DynamicResource AccentBlueBrush}" VerticalAlignment="Center" Margin="4,0,12,0"/>
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextDarkBrush}"/>
-                                            <TextBlock Text="{Binding FolderPath}" FontSize="10.5" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding LastModified}" FontSize="10.5" Foreground="{DynamicResource TextMutedBrush}" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Grid>
                                 </DataTemplate>

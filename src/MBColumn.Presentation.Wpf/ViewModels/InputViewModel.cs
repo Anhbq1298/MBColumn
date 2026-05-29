@@ -105,6 +105,8 @@ public sealed class InputViewModel : ViewModelBase
     private EtabsTierImportMetadataDto? etabsTierMetadata;
     private EtabsImportMetadataDto? etabsMetadata;
     private LoadCaseViewModel? selectedLoadCase;
+    private LoadCaseViewModel? slendernessCalculationLoadCase;
+    private bool isSlendernessCalculationDetailsOpen;
     private bool isRefreshingSlendernessState;
 
     private static readonly IReadOnlyList<MaterialGradeOption> AmericanConcreteGrades =
@@ -200,6 +202,10 @@ public sealed class InputViewModel : ViewModelBase
         GenerateEqualSpacingRebarsCommand = new RelayCommand(GenerateEqualSpacingRebars);
         ImportDxfCommand = new RelayCommand(ImportDxf, () => this.dxfImportDialogService is not null);
         ExportDxfCommand = new RelayCommand(ExportDxf, () => IsIrregularSection && IrregularInput.BoundaryPoints.Count >= 3);
+        ShowSlendernessCalculationDetailsCommand = new RelayCommand<object?>(
+            ShowSlendernessCalculationDetails,
+            loadCase => IncludeEc2Slenderness && loadCase is LoadCaseViewModel);
+        CloseSlendernessCalculationDetailsCommand = new RelayCommand(CloseSlendernessCalculationDetails);
     }
 
     public IReadOnlyList<UnitSystem> UnitSystems { get; } = [UnitSystem.Metric, UnitSystem.Imperial];
@@ -353,6 +359,10 @@ public sealed class InputViewModel : ViewModelBase
             Set(ref includeEc2Slenderness, value);
             Raise(nameof(DemandInputModeText));
             Raise(nameof(SlendernessSettingsVisibility));
+            if (!includeEc2Slenderness)
+            {
+                CloseSlendernessCalculationDetails();
+            }
             RefreshSlendernessUiState();
         }
     }
@@ -400,6 +410,8 @@ public sealed class InputViewModel : ViewModelBase
     public bool SlendernessSettingsVisibility => IncludeEc2Slenderness;
     public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{Kx.Value * MemberLengthL.Value:F2}" : "auto";
     public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{Ky.Value * MemberLengthL.Value:F2}" : "auto";
+    public string ImperfectionCalculationText => BuildImperfectionCalculationText();
+    public string MinimumEccentricityCalculationText => BuildMinimumEccentricityCalculationText();
 
     public IReadOnlyList<RebarDefinition> AvailableStirrupBars => AvailableBars;
 
@@ -824,6 +836,8 @@ public sealed class InputViewModel : ViewModelBase
     public ICommand RemoveDuplicateLoadCasesCommand { get; }
     public ICommand ImportLoadCasesCommand { get; }
     public ICommand ExportLoadCasesCommand { get; }
+    public ICommand ShowSlendernessCalculationDetailsCommand { get; }
+    public ICommand CloseSlendernessCalculationDetailsCommand { get; }
 
     public string SectionPreviewLabel { get => sectionPreviewLabel; private set => Set(ref sectionPreviewLabel, value); }
     public string RebarPreviewLabel { get => rebarPreviewLabel; private set => Set(ref rebarPreviewLabel, value); }
@@ -856,6 +870,21 @@ public sealed class InputViewModel : ViewModelBase
             Set(ref selectedLoadCase, value);
             UpdateSectionPropertiesPanel();
         }
+    }
+    public LoadCaseViewModel? SlendernessCalculationLoadCase
+    {
+        get => slendernessCalculationLoadCase;
+        private set
+        {
+            Set(ref slendernessCalculationLoadCase, value);
+            Raise(nameof(ImperfectionCalculationText));
+            Raise(nameof(MinimumEccentricityCalculationText));
+        }
+    }
+    public bool IsSlendernessCalculationDetailsOpen
+    {
+        get => isSlendernessCalculationDetailsOpen;
+        private set => Set(ref isSlendernessCalculationDetailsOpen, value);
     }
     public string SlendernessWarningText => BuildSlendernessWarningText();
     public bool HasSlendernessWarnings => !string.IsNullOrWhiteSpace(SlendernessWarningText);
@@ -1490,6 +1519,7 @@ public sealed class InputViewModel : ViewModelBase
         LoadCases.Remove(lc);
         EnsureAtLeastOneLoadCase();
         if (SelectedLoadCase == lc) SelectedLoadCase = LoadCases.FirstOrDefault();
+        if (SlendernessCalculationLoadCase == lc) CloseSlendernessCalculationDetails();
         RefreshSlendernessUiState();
     }
 
@@ -1505,8 +1535,90 @@ public sealed class InputViewModel : ViewModelBase
         EnsureAtLeastOneLoadCase();
         if (SelectedLoadCase is null || !LoadCases.Contains(SelectedLoadCase))
             SelectedLoadCase = LoadCases.FirstOrDefault();
+        if (SlendernessCalculationLoadCase is null || !LoadCases.Contains(SlendernessCalculationLoadCase))
+            CloseSlendernessCalculationDetails();
         RefreshSlendernessUiState();
     }
+
+    private void ShowSlendernessCalculationDetails(object? parameter)
+    {
+        var loadCase = parameter as LoadCaseViewModel;
+        if (!IncludeEc2Slenderness || loadCase is null)
+        {
+            return;
+        }
+
+        SelectedLoadCase = loadCase;
+        SlendernessCalculationLoadCase = loadCase;
+        IsSlendernessCalculationDetailsOpen = true;
+    }
+
+    private void CloseSlendernessCalculationDetails()
+    {
+        IsSlendernessCalculationDetailsOpen = false;
+        SlendernessCalculationLoadCase = null;
+    }
+
+    private string BuildImperfectionCalculationText()
+    {
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd || MemberLengthL is not > 0)
+            return "Imperfection values are available after NEd, L, kx, and ky are provided.";
+
+        string x = BuildImperfectionAxisText("Mx", Kx, nEd, lc.MxTop, lc.MxBottom, lc.M01x, lc.M02x);
+        string y = BuildImperfectionAxisText("My", Ky, nEd, lc.MyTop, lc.MyBottom, lc.M01y, lc.M02y);
+        return $"{x}\n{y}";
+    }
+
+    private string BuildImperfectionAxisText(string axis, double? k, double nEd, double? mTop, double? mBot, double? m01, double? m02)
+    {
+        if (k is not > 0 || MemberLengthL is not > 0)
+            return $"{axis}: missing effective length factor.";
+
+        double l0 = k.Value * MemberLengthL.Value;
+        double ei = l0 / 400.0;
+        double imperfectionMoment = ForceLengthToMoment(nEd, ei);
+        string m01Text = m01.HasValue ? $"{m01.Value:F2}" : "pending";
+        string m02Text = m02.HasValue ? $"{m02.Value:F2}" : "pending";
+
+        string header = $"{axis}: ei = {l0:F2} / 400 = {ei:F2} {LengthLabel}\n" +
+                        $"NEd x ei = {nEd:F2} x {ei:F2} = {imperfectionMoment:F2} {MomentLabel}";
+
+        if (mTop.HasValue && mBot.HasValue)
+        {
+            double larger = Math.Abs(mTop.Value) >= Math.Abs(mBot.Value) ? mTop.Value : mBot.Value;
+            double sign = Math.Abs(larger) < 1e-9 ? 1.0 : Math.Sign(larger);
+            double addedMoment = sign * imperfectionMoment;
+            string addStr = addedMoment >= 0 ? $"+ {imperfectionMoment:F2}" : $"- {imperfectionMoment:F2}";
+            return $"{header}\n" +
+                   $"{axis} Top: {mTop.Value:F2} {addStr} = {mTop.Value + addedMoment:F2} {MomentLabel}\n" +
+                   $"{axis} Bot: {mBot.Value:F2} {addStr} = {mBot.Value + addedMoment:F2} {MomentLabel}\n" +
+                   $"→ M01 = {m01Text}, M02 = {m02Text} {MomentLabel}";
+        }
+
+        return $"{header}\nM01 / M02 after imperfection = {m01Text} / {m02Text} {MomentLabel}";
+    }
+
+    private string BuildMinimumEccentricityCalculationText()
+    {
+        double dimensionX = UnitSystem == UnitSystem.Metric ? CurrentSectionHeightMm() : CurrentSectionHeightMm() / 25.4;
+        double dimensionY = UnitSystem == UnitSystem.Metric ? CurrentSectionWidthMm() : CurrentSectionWidthMm() / 25.4;
+        double minE = UnitSystem == UnitSystem.Metric ? 20.0 : 20.0 / 25.4;
+        double e0x = Math.Max(dimensionX / 30.0, minE);
+        double e0y = Math.Max(dimensionY / 30.0, minE);
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd)
+            return $"Mx: e0 = max({dimensionX:F2} / 30, {minE:F2}) = {e0x:F2} {LengthLabel}\nMy: e0 = max({dimensionY:F2} / 30, {minE:F2}) = {e0y:F2} {LengthLabel}.";
+
+        double minMomentX = ForceLengthToMoment(nEd, e0x);
+        double minMomentY = ForceLengthToMoment(nEd, e0y);
+        return $"Mx: e0 = max({dimensionX:F2} / 30, {minE:F2}) = {e0x:F2} {LengthLabel}\nNEd x e0 = {minMomentX:F2} {MomentLabel}\nMy: e0 = max({dimensionY:F2} / 30, {minE:F2}) = {e0y:F2} {LengthLabel}\nNEd x e0 = {minMomentY:F2} {MomentLabel}.";
+    }
+
+    private double ForceLengthToMoment(double force, double length)
+        => UnitSystem == UnitSystem.Metric
+            ? force * length / 1000.0
+            : force * length / 12.0;
 
     private void RemoveDuplicateLoadCases()
     {

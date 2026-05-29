@@ -17,6 +17,7 @@ public class RecentFileItem
     public string FilePath { get; set; } = string.Empty;
     public string FileName => Path.GetFileName(FilePath);
     public string FolderPath => Path.GetDirectoryName(FilePath) ?? string.Empty;
+    public string LastModified { get; set; } = string.Empty;
 }
 
 public partial class StartUpWindow : Window
@@ -47,7 +48,15 @@ public partial class StartUpWindow : Window
     {
         var items = recentService.GetRecent()
             .Where(p => File.Exists(p) && p.EndsWith(".mbc", StringComparison.OrdinalIgnoreCase))
-            .Select(p => new RecentFileItem { FilePath = p })
+            .Select(p =>
+            {
+                var fi = new FileInfo(p);
+                return new RecentFileItem
+                {
+                    FilePath = p,
+                    LastModified = FormatLastModified(fi.LastWriteTime)
+                };
+            })
             .ToList();
         RecentList.ItemsSource = items;
 
@@ -55,6 +64,16 @@ public partial class StartUpWindow : Window
         {
             RecentList.SelectedIndex = 0;
         }
+    }
+
+    private static string FormatLastModified(DateTime lastWrite)
+    {
+        var elapsed = DateTime.Now - lastWrite;
+        if (elapsed.TotalMinutes < 1) return "Just now";
+        if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes} min ago";
+        if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours}h ago";
+        if (elapsed.TotalDays < 7) return $"{(int)elapsed.TotalDays}d ago";
+        return lastWrite.ToString("dd MMM yyyy, HH:mm");
     }
 
     private void BtnInfo_Click(object? sender, RoutedEventArgs e)
