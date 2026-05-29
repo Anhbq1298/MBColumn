@@ -437,10 +437,10 @@
                                 <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="λx" Binding="{Binding LambdaXDisplay}" Width="52" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="λlim,x" Binding="{Binding LambdaLimitXDisplay}" Width="64" MinWidth="55" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="λy" Binding="{Binding LambdaYDisplay}" Width="52" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="λlim,y" Binding="{Binding LambdaLimitYDisplay}" Width="64" MinWidth="55" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="lambda x" Binding="{Binding LambdaXDisplay}" Width="68" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="lambda lim,x" Binding="{Binding LambdaLimitXDisplay}" Width="84" MinWidth="72" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="lambda y" Binding="{Binding LambdaYDisplay}" Width="68" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}" />
+                                <DataGridTextColumn Header="lambda lim,y" Binding="{Binding LambdaLimitYDisplay}" Width="84" MinWidth="72" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Slenderness" Binding="{Binding SlendernessStatus}" Width="105" MinWidth="90" ElementStyle="{StaticResource WrapLeftAlignText}" />
                                 <DataGridTextColumn Header="Angle" Binding="{Binding AngleDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
                                 <DataGridTextColumn Header="Util." Binding="{Binding UtilizationDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />

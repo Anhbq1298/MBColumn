@@ -321,7 +321,7 @@
                                          Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Grid.Row="8"
                                            Grid.Column="0"
-                                           Text="γc"
+                                           Text="gamma c (&#x03B3;c)"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="8"
                                            Grid.Column="1"
@@ -333,7 +333,7 @@
                                          Text="{Binding GammaC, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Grid.Row="10"
                                            Grid.Column="0"
-                                           Text="αcc"
+                                           Text="alpha cc (&#x03B1;cc)"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBox Grid.Row="11"
                                          Grid.Column="0"
@@ -341,7 +341,7 @@
                                          Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Grid.Row="12"
                                            Grid.Column="0"
-                                           Text="fcd = αcc fck / γc"
+                                           Text="fcd = &#x03B1;cc fck / &#x03B3;c"
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="12"
                                            Grid.Column="1"
@@ -546,7 +546,7 @@
                                     <Separator Grid.Row="7" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>
                                     <TextBlock Grid.Row="8" Grid.Column="0" Text="Rebars" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
                                     <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding RebarPreviewLabel}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
-                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="ρ" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="rho (&#x03C1;)" Style="{StaticResource PreviewPropertyLabelTextStyle}"/>
                                     <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding PreviewRebarPercentageText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                 </Grid>
                             </StackPanel>
@@ -1416,7 +1416,7 @@
                                 <Viewbox Stretch="Uniform"
                                          HorizontalAlignment="Stretch"
                                          VerticalAlignment="Center">
-                                    <Canvas Width="900" Height="940">
+                                    <Canvas Width="900" Height="1100">
                                         <Canvas.Resources>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontFamily" Value="Arial, Helvetica, sans-serif"/>
@@ -1424,20 +1424,20 @@
                                             </Style>
                                         </Canvas.Resources>
 
-                                        <Rectangle Width="900" Height="940" Fill="White"/>
+                                        <Rectangle Width="900" Height="1100" Fill="White"/>
 
                                         <!-- Column faces -->
-                                        <Polygon Points="170.0,760.0 480.0,760.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
-                                        <Polygon Points="480.0,760.0 625.0,665.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
+                                        <Polygon Points="170.0,860.0 480.0,860.0 480.0,110.0 170.0,110.0" Fill="#dcecff" Opacity="0.45" />
+                                        <Polygon Points="480.0,860.0 625.0,765.0 625.0,15.0 480.0,110.0" Fill="#dcecff" Opacity="0.65" />
                                         <Polygon Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0" Fill="#dcecff" Opacity="0.55" />
 
                                         <!-- Main prism outline -->
-                                        <Polyline Points="170.0,760.0 480.0,760.0 625.0,665.0 315.0,665.0 170.0,760.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Polyline Points="170.0,860.0 480.0,860.0 625.0,765.0 315.0,765.0 170.0,860.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
                                         <Polyline Points="170.0,110.0 480.0,110.0 625.0,15.0 315.0,15.0 170.0,110.0" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                        <Line X1="170" Y1="760" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                        <Line X1="480" Y1="760" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                        <Line X1="625" Y1="665" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
-                                        <Line X1="315" Y1="665" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
+                                        <Line X1="170" Y1="860" X2="170" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="480" Y1="860" X2="480" Y2="110" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="625" Y1="765" X2="625" Y2="15" Stroke="#0046d5" StrokeThickness="2.6" StrokeLineJoin="Round"/>
+                                        <Line X1="315" Y1="765" X2="315" Y2="15" Stroke="#0046d5" StrokeThickness="1.6" StrokeDashArray="7 7"/>
 
                                         <!-- Mid section -->
                                         <Polygon Points="170.0,445.0 480.0,445.0 625.0,350.0 315.0,350.0" Fill="White" Opacity="0.45" Stroke="#0046d5" StrokeThickness="2.4"/>
@@ -1451,38 +1451,30 @@
                                         <!-- Axial load P -->
                                         <Line X1="397.5" Y1="147.5" X2="397.5" Y2="373.5" Stroke="#0046d5" StrokeThickness="3" />
                                         <Polygon Points="382.5,343.5 397.5,373.5 412.5,343.5" Fill="#0046d5" />
-                                        <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="52" />
+                                        <TextBlock Canvas.Left="415.5" Canvas.Top="157" Text="P" FontSize="58" />
 
                                         <!-- MX -->
                                         <Line X1="397.5" Y1="397.5" X2="647.5" Y2="397.5" Stroke="#0046d5" StrokeThickness="3"/>
                                         <Path Data="M 642.5 384.5 L 669.5 397.5 L 642.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
                                         <Path Data="M 667.5 384.5 L 694.5 397.5 L 667.5 410.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                        <Rectangle Canvas.Left="712.5" Canvas.Top="371.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                        <TextBlock Canvas.Left="723" Canvas.Top="380" Text="MX" FontSize="52" />
+                                        <TextBlock Canvas.Left="723" Canvas.Top="374" Text="MX" FontSize="58" />
 
                                         <!-- MY -->
                                         <Line X1="397.5" Y1="397.5" X2="517.5" Y2="304.5" Stroke="#0046d5" StrokeThickness="3"/>
                                         <Path Data="M 507.5 287.5 L 535.5 285.5 L 520.5 310.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
                                         <Path Data="M 528.5 270.5 L 556.5 268.5 L 541.5 293.5" Stroke="#0046d5" StrokeThickness="3" Fill="Transparent" />
-                                        <Rectangle Canvas.Left="576.5" Canvas.Top="240.5" Width="63" Height="46" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                        <TextBlock Canvas.Left="587" Canvas.Top="249" Text="MY" FontSize="52" />
+                                        <TextBlock Canvas.Left="587" Canvas.Top="243" Text="MY" FontSize="58" />
 
-                                        <!-- Coordinate triad -->
-                                        <Line X1="670" Y1="890" X2="815" Y2="890" Stroke="#0046d5" StrokeThickness="2.2" />
-                                        <Path Data="M 793 879 L 815 890 L 793 901" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                        <Line X1="670" Y1="890" X2="765" Y2="815" Stroke="#0046d5" StrokeThickness="2.2" />
-                                        <Path Data="M 754.8 837.2 L 765 815 L 741.2 820" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                        <Line X1="670" Y1="890" X2="670" Y2="750" Stroke="#0046d5" StrokeThickness="2.2" />
-                                        <Path Data="M 659 772 L 670 750 L 681 772" Stroke="#0046d5" StrokeThickness="1.6" Fill="Transparent" />
-                                        <Rectangle Canvas.Left="825" Canvas.Top="870" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                        <TextBlock Canvas.Left="834" Canvas.Top="875" Text="X" FontSize="24" />
-                                        <Rectangle Canvas.Left="775" Canvas.Top="784" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                        <TextBlock Canvas.Left="784" Canvas.Top="788" Text="Y" FontSize="24" />
-                                        <Rectangle Canvas.Left="653" Canvas.Top="705" Width="34" Height="34" Fill="White" Stroke="#0046d5" StrokeThickness="1.8"/>
-                                        <TextBlock Canvas.Left="662" Canvas.Top="710" Text="Z" FontSize="24" />
-
-                                        <!-- Title -->
-                                        <TextBlock Canvas.Left="260" Canvas.Top="1050" Text="Positive Moment Loads" FontSize="38" FontWeight="SemiBold" />
+                                        <!-- Coordinate triad (enlarged, shifted down) -->
+                                        <Line X1="620" Y1="1040" X2="850" Y2="1040" Stroke="#0046d5" StrokeThickness="2.8" />
+                                        <Path Data="M 822 1025 L 850 1040 L 822 1055" Stroke="#0046d5" StrokeThickness="2.2" Fill="Transparent" />
+                                        <Line X1="620" Y1="1040" X2="770" Y2="920" Stroke="#0046d5" StrokeThickness="2.8" />
+                                        <Path Data="M 755 947 L 770 920 L 740 928" Stroke="#0046d5" StrokeThickness="2.2" Fill="Transparent" />
+                                        <Line X1="620" Y1="1040" X2="620" Y2="830" Stroke="#0046d5" StrokeThickness="2.8" />
+                                        <Path Data="M 606 860 L 620 830 L 634 860" Stroke="#0046d5" StrokeThickness="2.2" Fill="Transparent" />
+                                        <TextBlock Canvas.Left="858" Canvas.Top="1022" Text="X" FontSize="42" FontWeight="SemiBold" />
+                                        <TextBlock Canvas.Left="778" Canvas.Top="895" Text="Y" FontSize="42" FontWeight="SemiBold" />
+                                        <TextBlock Canvas.Left="598" Canvas.Top="790" Text="Z" FontSize="42" FontWeight="SemiBold" />
                                     </Canvas>
                                 </Viewbox>
                             </StackPanel>
@@ -1865,6 +1857,7 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
                                                Text="Member End Moments"
@@ -1912,6 +1905,49 @@
                                                Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue='My Used auto', StringFormat='My Used {0:F2}'}"
                                                Style="{StaticResource HelperTextStyle}"
                                                Margin="0,8,0,0" />
+
+                                    <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                                            Background="White"
+                                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="4"
+                                            Margin="0,12,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Member End Moments Diagram"
+                                                       Style="{StaticResource FieldLabelTextStyle}"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,2,0,2" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- ===== Mx Diagram (left) — dynamic ===== -->
+                                                <controls:MomentDiagramControl
+                                                    Grid.Column="0"
+                                                    Title="Mx"
+                                                    DiagramColor="#c0392b"
+                                                    MomentTop="{Binding SelectedLoadCase.MxTop}"
+                                                    MomentBottom="{Binding SelectedLoadCase.MxBottom}"
+                                                    Height="220" Margin="2,0" />
+
+                                                <!-- Separator -->
+                                                <Rectangle Grid.Column="1" Width="1" Fill="#D6DEE6" Margin="0,4" VerticalAlignment="Stretch" />
+
+                                                <!-- ===== My Diagram (right) — dynamic ===== -->
+                                                <controls:MomentDiagramControl
+                                                    Grid.Column="2"
+                                                    Title="My"
+                                                    DiagramColor="#2471a3"
+                                                    MomentTop="{Binding SelectedLoadCase.MyTop}"
+                                                    MomentBottom="{Binding SelectedLoadCase.MyBottom}"
+                                                    Height="220" Margin="2,0" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -1974,7 +2010,7 @@
                                                    Style="{StaticResource UnitTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                                                  IsReadOnly="True"
-                                                 Text="{Binding MemberLengthL, TargetNullValue=''}" />
+                                                 Text="{Binding MemberLengthL, Mode=OneWay, TargetNullValue=''}" />
                                     </Grid>
 
                                     <!-- Effective Length Mode & Coefficients -->
@@ -1997,7 +2033,7 @@
                                                    Style="{StaticResource FieldLabelTextStyle}"
                                                    Margin="0,0,0,2" />
                                         <ComboBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" SelectedIndex="0" Margin="0,0,0,6">
-                                            <ComboBoxItem Content="k × l (Manual factor)" />
+                                            <ComboBoxItem Content="k &#x00D7; L (Manual factor)" />
                                             <ComboBoxItem Content="Calculate automatically from end stiffness" />
                                         </ComboBox>
 
@@ -2020,9 +2056,9 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="l0x = kx × L" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="l0x = kx &#x00D7; L" Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="True" Text="{Binding L0xText, Mode=OneWay}" />
-                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="l0y = ky × L" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="l0y = ky &#x00D7; L" Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="2" IsReadOnly="True" Text="{Binding L0yText, Mode=OneWay}" />
                                     </Grid>
 
@@ -2127,14 +2163,14 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Effective creep ratio φeff" Style="{StaticResource FieldLabelTextStyle}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Effective creep ratio phi_eff (&#x03C6;eff)" Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding PhiEff, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                                         
                                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Reinforcement factor B" Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="2" IsEnabled="False" Text="Auto (from As)" />
                                     </Grid>
 
-                                    <CheckBox Content="Use default A = 0.7 if φeff is unknown"
+                                    <CheckBox Content="Use default A = 0.7 if phi_eff is unknown"
                                               IsChecked="{Binding UseDefaultAWhenPhiEffUnknown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               Margin="0,0,0,10" />
 
@@ -2174,7 +2210,7 @@
                                     <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding PreviewEcmText, StringFormat='Ecm: {0}'}" Style="{StaticResource HelperTextStyle}" />
                                     <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding PreviewDxText, StringFormat='d_x for Mx curvature: {0}'}" Style="{StaticResource HelperTextStyle}" />
                                     <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding PreviewDyText, StringFormat='d_y for My curvature: {0}'}" Style="{StaticResource HelperTextStyle}" />
-                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding PreviewOmegaText, StringFormat='ω: {0}'}" Style="{StaticResource HelperTextStyle}" />
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding PreviewOmegaText, StringFormat='omega (&#x03C9;): {0}'}" Style="{StaticResource HelperTextStyle}" />
                                     <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewNRatioText, StringFormat='n: {0}'}" Style="{StaticResource HelperTextStyle}" />
                                 </Grid>
                             </Border>
@@ -2212,10 +2248,10 @@
                                         <TextBlock Text="{Binding LengthLabel, StringFormat='l0 ({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="λ" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBlock Text="lambda (&#x03BB;)" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="λlim" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBlock Text="lambda lim (&#x03BB;lim)" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
                                         <TextBlock Text="rm" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
@@ -2235,16 +2271,16 @@
                                         <TextBlock Text="{Binding L0xText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=—, StringFormat=F2}" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=-, StringFormat=F2}" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
                                         <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
@@ -2258,19 +2294,106 @@
                                         <TextBlock Text="{Binding L0yText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=—, StringFormat=F2}" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=-, StringFormat=F2}" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=—, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
                                         <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                    </Border>
+                                </Grid>
+
+                                <TextBlock Text="EC2 calculation details"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,2,0,6" />
+                                <TextBlock Text="Flow: l0 = k x L; lambda = l0 / i; compare lambda with lambda lim; stocky uses M2 = 0, slender uses nominal curvature; Moment Used is passed to PMM."
+                                           TextWrapping="Wrap"
+                                           FontSize="11.5"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="0,0,0,8" />
+
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="0.55*" />
+                                        <ColumnDefinition Width="1.45*" />
+                                        <ColumnDefinition Width="1.35*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                        <TextBlock Text="Axis" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                        <TextBlock Text="First-order end moments" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" />
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                        <TextBlock Text="Slenderness check" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" />
+                                    </Border>
+                                    <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="4">
+                                        <TextBlock Text="Amplified demand" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" />
+                                    </Border>
+
+                                    <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                        <TextBlock Text="Mx" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLoadCase.M01x, TargetNullValue=-, StringFormat='M01: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.M02x, TargetNullValue=-, StringFormat='M02: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=-, StringFormat='rm: {0:F2}'}" FontSize="11" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=-, StringFormat='lambda: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat='lambda lim: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.Ec2BranchXText}" FontSize="11" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLoadCase.M0ex, TargetNullValue=-, StringFormat='M0e: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=-, StringFormat='M2: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat='Mx Used: {0:F2}'}" FontSize="11" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                        <TextBlock Text="My" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLoadCase.M01y, TargetNullValue=-, StringFormat='M01: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.M02y, TargetNullValue=-, StringFormat='M02: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=-, StringFormat='rm: {0:F2}'}" FontSize="11" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=-, StringFormat='lambda: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat='lambda lim: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.Ec2BranchYText}" FontSize="11" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedLoadCase.M0ey, TargetNullValue=-, StringFormat='M0e: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=-, StringFormat='M2: {0:F2}'}" FontSize="11" />
+                                            <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat='My Used: {0:F2}'}" FontSize="11" FontWeight="SemiBold" />
+                                        </StackPanel>
                                     </Border>
                                 </Grid>
                                 

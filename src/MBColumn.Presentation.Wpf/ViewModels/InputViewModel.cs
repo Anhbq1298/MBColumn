@@ -2408,46 +2408,19 @@ public sealed class InputViewModel : ViewModelBase
                 {
                     loadCase.Status = "Excluded";
                     loadCase.HasValidationError = false;
-                    loadCase.LambdaX = null;
-                    loadCase.LambdaLimitX = null;
-                    loadCase.RmX = null;
-                    loadCase.M2x = null;
-                    loadCase.LambdaY = null;
-                    loadCase.LambdaLimitY = null;
-                    loadCase.RmY = null;
-                    loadCase.M2y = null;
-                    loadCase.MxUsed = null;
-                    loadCase.MyUsed = null;
+                    loadCase.ClearEc2SlendernessResults();
                     continue;
                 }
 
                 if (!IncludeEc2Slenderness)
                 {
-                    loadCase.MxUsed = null;
-                    loadCase.MyUsed = null;
+                    loadCase.ClearEc2SlendernessResults();
                     loadCase.Status = "Ready";
                     loadCase.HasValidationError = false;
-                    loadCase.LambdaX = null;
-                    loadCase.LambdaLimitX = null;
-                    loadCase.RmX = null;
-                    loadCase.M2x = null;
-                    loadCase.LambdaY = null;
-                    loadCase.LambdaLimitY = null;
-                    loadCase.RmY = null;
-                    loadCase.M2y = null;
                     continue;
                 }
 
-                loadCase.MxUsed = null;
-                loadCase.MyUsed = null;
-                loadCase.LambdaX = null;
-                loadCase.LambdaLimitX = null;
-                loadCase.RmX = null;
-                loadCase.M2x = null;
-                loadCase.LambdaY = null;
-                loadCase.LambdaLimitY = null;
-                loadCase.RmY = null;
-                loadCase.M2y = null;
+                loadCase.ClearEc2SlendernessResults();
 
                 bool globalMissing = MemberLengthL is not > 0 || Kx is not > 0 || Ky is not > 0;
                 bool missingMoments = loadCase.MxTop is null ||
@@ -2546,6 +2519,15 @@ public sealed class InputViewModel : ViewModelBase
                                 loadCase.LambdaX = slenderness.X?.Lambda;
                                 loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
                                 loadCase.RmX = slenderness.X?.Rm;
+                                loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
+                                    ? units.MomentFromNmm(m01xVal, momentUnit)
+                                    : null;
+                                loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
+                                    ? units.MomentFromNmm(m02xVal, momentUnit)
+                                    : null;
+                                loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
+                                    ? units.MomentFromNmm(m0exVal, momentUnit)
+                                    : null;
                                 loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
                                     ? units.MomentFromNmm(m2xVal, momentUnit)
                                     : null;
@@ -2553,6 +2535,15 @@ public sealed class InputViewModel : ViewModelBase
                                 loadCase.LambdaY = slenderness.Y?.Lambda;
                                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
                                 loadCase.RmY = slenderness.Y?.Rm;
+                                loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
+                                    ? units.MomentFromNmm(m01yVal, momentUnit)
+                                    : null;
+                                loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
+                                    ? units.MomentFromNmm(m02yVal, momentUnit)
+                                    : null;
+                                loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
+                                    ? units.MomentFromNmm(m0eyVal, momentUnit)
+                                    : null;
                                 loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
                                     ? units.MomentFromNmm(m2yVal, momentUnit)
                                     : null;
@@ -2884,16 +2875,7 @@ public sealed class InputViewModel : ViewModelBase
             {
                 foreach (var loadCase in LoadCases)
                 {
-                    loadCase.MxUsed = null;
-                    loadCase.MyUsed = null;
-                    loadCase.LambdaX = null;
-                    loadCase.LambdaLimitX = null;
-                    loadCase.RmX = null;
-                    loadCase.M2x = null;
-                    loadCase.LambdaY = null;
-                    loadCase.LambdaLimitY = null;
-                    loadCase.RmY = null;
-                    loadCase.M2y = null;
+                    loadCase.ClearEc2SlendernessResults();
                     loadCase.Status = loadCase.IsActive ? "Ready" : "Excluded";
                 }
 
@@ -2912,6 +2894,15 @@ public sealed class InputViewModel : ViewModelBase
                 loadCase.LambdaX = slenderness.X?.Lambda;
                 loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
                 loadCase.RmX = slenderness.X?.Rm;
+                loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
+                    ? units.MomentFromNmm(m01xVal, CurrentMomentUnit)
+                    : null;
+                loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
+                    ? units.MomentFromNmm(m02xVal, CurrentMomentUnit)
+                    : null;
+                loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
+                    ? units.MomentFromNmm(m0exVal, CurrentMomentUnit)
+                    : null;
                 loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
                     ? units.MomentFromNmm(m2xVal, CurrentMomentUnit)
                     : null;
@@ -2919,6 +2910,15 @@ public sealed class InputViewModel : ViewModelBase
                 loadCase.LambdaY = slenderness.Y?.Lambda;
                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
                 loadCase.RmY = slenderness.Y?.Rm;
+                loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
+                    ? units.MomentFromNmm(m01yVal, CurrentMomentUnit)
+                    : null;
+                loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
+                    ? units.MomentFromNmm(m02yVal, CurrentMomentUnit)
+                    : null;
+                loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
+                    ? units.MomentFromNmm(m0eyVal, CurrentMomentUnit)
+                    : null;
                 loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
                     ? units.MomentFromNmm(m2yVal, CurrentMomentUnit)
                     : null;

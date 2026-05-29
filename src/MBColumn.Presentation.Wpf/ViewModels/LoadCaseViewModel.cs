@@ -21,10 +21,16 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private double? lambdaX;
     private double? lambdaLimitX;
     private double? rmX;
+    private double? m01x;
+    private double? m02x;
+    private double? m0ex;
     private double? m2x;
     private double? lambdaY;
     private double? lambdaLimitY;
     private double? rmY;
+    private double? m01y;
+    private double? m02y;
+    private double? m0ey;
     private double? m2y;
     private bool isActive;
     private bool hasValidationError;
@@ -110,14 +116,26 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public double? MyBottom { get => myBottom; set => Set(ref myBottom, value); }
     public double? MxUsed { get => mxUsed; set => Set(ref mxUsed, value); }
     public double? MyUsed { get => myUsed; set => Set(ref myUsed, value); }
-    public double? LambdaX { get => lambdaX; set => Set(ref lambdaX, value); }
-    public double? LambdaLimitX { get => lambdaLimitX; set => Set(ref lambdaLimitX, value); }
+    public double? LambdaX { get => lambdaX; set { Set(ref lambdaX, value); Raise(nameof(Ec2BranchXText)); } }
+    public double? LambdaLimitX { get => lambdaLimitX; set { Set(ref lambdaLimitX, value); Raise(nameof(Ec2BranchXText)); } }
     public double? RmX { get => rmX; set => Set(ref rmX, value); }
+    public double? M01x { get => m01x; set => Set(ref m01x, value); }
+    public double? M02x { get => m02x; set => Set(ref m02x, value); }
+    public double? M0ex { get => m0ex; set => Set(ref m0ex, value); }
     public double? M2x { get => m2x; set => Set(ref m2x, value); }
-    public double? LambdaY { get => lambdaY; set => Set(ref lambdaY, value); }
-    public double? LambdaLimitY { get => lambdaLimitY; set => Set(ref lambdaLimitY, value); }
+    public double? LambdaY { get => lambdaY; set { Set(ref lambdaY, value); Raise(nameof(Ec2BranchYText)); } }
+    public double? LambdaLimitY { get => lambdaLimitY; set { Set(ref lambdaLimitY, value); Raise(nameof(Ec2BranchYText)); } }
     public double? RmY { get => rmY; set => Set(ref rmY, value); }
+    public double? M01y { get => m01y; set => Set(ref m01y, value); }
+    public double? M02y { get => m02y; set => Set(ref m02y, value); }
+    public double? M0ey { get => m0ey; set => Set(ref m0ey, value); }
     public double? M2y { get => m2y; set => Set(ref m2y, value); }
+    public string Ec2BranchXText => LambdaX.HasValue && LambdaLimitX.HasValue
+        ? LambdaX.Value >= LambdaLimitX.Value ? "Nominal curvature" : "Stocky, M2 = 0"
+        : "-";
+    public string Ec2BranchYText => LambdaY.HasValue && LambdaLimitY.HasValue
+        ? LambdaY.Value >= LambdaLimitY.Value ? "Nominal curvature" : "Stocky, M2 = 0"
+        : "-";
     public bool IsActive { get => isActive; set => Set(ref isActive, value); }
     public bool HasValidationError { get => hasValidationError; set => Set(ref hasValidationError, value); }
     public string Status
@@ -151,5 +169,25 @@ public sealed class LoadCaseViewModel : ViewModelBase
             MxUsed = MxUsed,
             MyUsed = MyUsed
         };
+
+    public void ClearEc2SlendernessResults()
+    {
+        MxUsed = null;
+        MyUsed = null;
+        LambdaX = null;
+        LambdaLimitX = null;
+        RmX = null;
+        M01x = null;
+        M02x = null;
+        M0ex = null;
+        M2x = null;
+        LambdaY = null;
+        LambdaLimitY = null;
+        RmY = null;
+        M01y = null;
+        M02y = null;
+        M0ey = null;
+        M2y = null;
+    }
 }
 
