@@ -820,11 +820,17 @@ public sealed class MainWindowViewModel : ViewModelBase
         "PreviewShapeSummaryText", "PreviewRebarLayoutText",
         "FcdDisplayText", "FcmDisplayText", "EcmDisplayText",
         "SlendernessWarningText", "HasSlendernessWarnings",
-        "L0xText", "L0yText", "MemberLengthLInM", "AFactorDisplayText",
+        "L0xText", "L0yText", "L0xLatex", "L0yLatex", "MemberLengthLInM", "AFactorDisplayText",
         "ImperfectionCalculationText", "MinimumEccentricityCalculationText",
+        "ImperfectionXCalculationLatex", "ImperfectionYCalculationLatex",
+        "MinimumEccentricityXCalculationLatex", "MinimumEccentricityYCalculationLatex",
         "DemandInputModeText", "SlendernessSettingsVisibility",
         "IsSlendernessCalculationDetailsOpen", "SlendernessCalculationLoadCase",
         "SectionPreviewLabel", "RebarPreviewLabel", "CoverPreviewLabel", "IsSectionPreviewValid",
+        // Section geometry alias/derived properties — underlying properties (Width, Height, etc.) still trigger correctly
+        "SectionWidth", "SectionHeight", "NumberOfBars", "SelectedRebarSize", "SelectedRebarLayout",
+        "CircularHoopCentrelineDiameter", "CircularHoopCentrelineDiameterText",
+        "LinkSpacing",
         // LoadCaseViewModel — computed slenderness results, not user input
         "Status", "HasValidationError", "SlendernessStatusText", "CalculationStatusText",
         "LambdaX", "LambdaLimitX", "LambdaY", "LambdaLimitY",

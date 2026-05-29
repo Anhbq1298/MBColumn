@@ -326,7 +326,7 @@ public sealed class InputViewModel : ViewModelBase
         get => alphaCc;
         set
         {
-            Set(ref alphaCc, value);
+            if (!Set(ref alphaCc, value)) return;
             RaiseMaterialDerivedProperties();
             RefreshSlendernessUiState();
         }
@@ -336,7 +336,7 @@ public sealed class InputViewModel : ViewModelBase
         get => gammaC;
         set
         {
-            Set(ref gammaC, value);
+            if (!Set(ref gammaC, value)) return;
             RaiseMaterialDerivedProperties();
             RefreshSlendernessUiState();
         }
@@ -347,7 +347,7 @@ public sealed class InputViewModel : ViewModelBase
         get => memberLengthL;
         set
         {
-            Set(ref memberLengthL, value);
+            if (!Set(ref memberLengthL, value)) return;
             Raise(nameof(MemberLengthLInM));
             Raise(nameof(L0xText));
             Raise(nameof(L0yText));
@@ -382,7 +382,7 @@ public sealed class InputViewModel : ViewModelBase
         get => kx;
         set
         {
-            Set(ref kx, value);
+            if (!Set(ref kx, value)) return;
             Raise(nameof(L0xText));
             Raise(nameof(L0xLatex));
             RaiseImperfectionLatex();
@@ -394,7 +394,7 @@ public sealed class InputViewModel : ViewModelBase
         get => ky;
         set
         {
-            Set(ref ky, value);
+            if (!Set(ref ky, value)) return;
             Raise(nameof(L0yText));
             Raise(nameof(L0yLatex));
             RaiseImperfectionLatex();
@@ -406,7 +406,7 @@ public sealed class InputViewModel : ViewModelBase
         get => phiEff;
         set
         {
-            Set(ref phiEff, value);
+            if (!Set(ref phiEff, value)) return;
             useDefaultAWhenPhiEffUnknown = !value.HasValue;
             Raise(nameof(UseDefaultAWhenPhiEffUnknown));
             Raise(nameof(AFactorDisplayText));
@@ -819,11 +819,8 @@ public sealed class InputViewModel : ViewModelBase
         get => fc;
         set
         {
-            Set(ref fc, value);
-            if (!isApplyingMaterialPreset)
-            {
-                SyncSelectedConcreteGradeToValue();
-            }
+            if (!Set(ref fc, value)) return;
+            if (!isApplyingMaterialPreset) SyncSelectedConcreteGradeToValue();
             RaiseMaterialDerivedProperties();
             RefreshSlendernessUiState();
         }
@@ -834,11 +831,8 @@ public sealed class InputViewModel : ViewModelBase
         get => fy;
         set
         {
-            Set(ref fy, value);
-            if (!isApplyingMaterialPreset)
-            {
-                SyncSelectedSteelGradeToValue();
-            }
+            if (!Set(ref fy, value)) return;
+            if (!isApplyingMaterialPreset) SyncSelectedSteelGradeToValue();
             RaiseMaterialDerivedProperties();
             RefreshSlendernessUiState();
         }
@@ -849,7 +843,7 @@ public sealed class InputViewModel : ViewModelBase
         get => es;
         set
         {
-            Set(ref es, value);
+            if (!Set(ref es, value)) return;
             RaiseMaterialDerivedProperties();
             RefreshSlendernessUiState();
         }
