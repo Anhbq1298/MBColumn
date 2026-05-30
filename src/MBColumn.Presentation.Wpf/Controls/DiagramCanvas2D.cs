@@ -623,11 +623,23 @@ public class DiagramCanvas2D : FrameworkElement
         }
         if (ShowSpecialPoints)
         {
+            double screenCenterX = transform.ToScreen(0, 0).X;
             foreach (var p in points.Where(p => p.IsSpecialPoint))
             {
                 var brush = GetSpecialPointBrush(p.Label);
                 var pt = transform.ToScreen(p.X, p.Y);
-                dc.DrawEllipse(Brushes.White, new Pen(brush, 1.8), pt, 4.5, 4.5);
+                dc.DrawEllipse(Brushes.White, new Pen(brush, 1.8), pt, 5.5, 5.5);
+
+                if (ShowLabels && p.CpNumber > 0)
+                {
+                    string cpLabel = $"CP-{p.CpNumber:D2}";
+                    var ft = CreateText(cpLabel, 10, brush, FontWeights.SemiBold);
+                    double lx = pt.X >= screenCenterX
+                        ? pt.X + 8
+                        : pt.X - ft.Width - 8;
+                    double ly = pt.Y - ft.Height / 2;
+                    dc.DrawText(ft, new Point(lx, ly));
+                }
             }
         }
     }

@@ -173,7 +173,7 @@
                     <!-- Header row -->
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                         <TextBlock DockPanel.Dock="Right"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                    VerticalAlignment="Center">
@@ -181,7 +181,7 @@
                             <Run Text=" selected" />
                         </TextBlock>
                         <TextBlock Text="Select load combinations:"
-                                   FontSize="12"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextDarkBrush}"
                                    VerticalAlignment="Center" />
@@ -192,7 +192,7 @@
                              Text="{Binding LoadComboFilterText, UpdateSourceTrigger=PropertyChanged}"
                              Tag="Search…"
                              Margin="0,0,0,6"
-                             FontSize="11" />
+                             FontSize="{StaticResource FontSizeBody}" />
 
                     <!-- Select All / Clear All -->
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
@@ -208,7 +208,7 @@
                     <!-- Combo list — Shift+click range, Ctrl+click toggle -->
                     <ListBox ItemsSource="{Binding FilteredCombinations}"
                              SelectionMode="Extended"
-                             FontSize="11"
+                             FontSize="{StaticResource FontSizeBody}"
                              BorderBrush="{DynamicResource BorderGreyBrush}"
                              BorderThickness="1"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -256,11 +256,11 @@
                             Visibility="{Binding IsAwaitingComboSelection, Converter={StaticResource BoolToVisibilityConverter}}" />
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    TextTrimming="CharacterEllipsis" />
                         <TextBlock Text="{Binding ComboSelectionCountText}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                    Margin="6,0,0,0"

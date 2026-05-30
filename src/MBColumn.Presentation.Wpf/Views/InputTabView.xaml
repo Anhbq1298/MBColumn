@@ -74,6 +74,8 @@
         <Style x:Key="PreviewPropertyValueTextStyle"
                TargetType="TextBlock"
                BasedOn="{StaticResource MutedValueTextStyle}">
+            <Setter Property="FontWeight"
+                    Value="Normal" />
             <Setter Property="Margin"
                     Value="0,0,0,4" />
             <Setter Property="TextWrapping"
@@ -595,7 +597,7 @@
                             <TextBlock Text="Changes made, recalculation required."
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource AccentRedBrush}"
-                                       FontSize="12"
+                                       FontSize="{StaticResource FontSizeBody}"
                                        FontWeight="SemiBold"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,4" />
@@ -2065,22 +2067,22 @@
                                         Command="{Binding DeleteSelectedLoadCasesCommand}"
                                         CommandParameter="{Binding SelectedItems, ElementName=LoadCasesGrid}"
                                         Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4" FontSize="11.5" Margin="0,0,8,0"
+                                        Padding="10,4" FontSize="{StaticResource FontSizeBody}" Margin="0,0,8,0"
                                         Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                                 <Button Content="Delete demand case"
                                         Command="{Binding DeleteSelectedLoadCasesCommand}"
                                         CommandParameter="{Binding SelectedItems, ElementName=SlenderLoadCasesGrid}"
                                         Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4" FontSize="11.5" Margin="0,0,8,0"
+                                        Padding="10,4" FontSize="{StaticResource FontSizeBody}" Margin="0,0,8,0"
                                         Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}" />
                                 <Button Content="Import from CSV"
                                         Command="{Binding ImportLoadCasesCommand}"
                                         Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4" FontSize="11.5" Margin="0,0,8,0" />
+                                        Padding="10,4" FontSize="{StaticResource FontSizeBody}" Margin="0,0,8,0" />
                                 <Button Content="Export to CSV"
                                         Command="{Binding ExportLoadCasesCommand}"
                                         Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4" FontSize="11.5" />
+                                        Padding="10,4" FontSize="{StaticResource FontSizeBody}" />
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -2286,7 +2288,7 @@
                                                        Margin="0,0,8,0"
                                                        VerticalAlignment="Center" />
                                             <TextBlock Text="Status: Disabled - PMM uses original input moments"
-                                                       FontSize="11.5"
+                                                       FontSize="{StaticResource FontSizeBody}"
                                                        Foreground="{DynamicResource TextMutedBrush}"
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center" />
@@ -2549,7 +2551,7 @@
 
                                     <!-- Table Header -->
                                     <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="Axis" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBlock Text="Axis" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="2,0">
                                         <controls:SafeFormulaControl Formula="l_0" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" HorizontalAlignment="Center" />
@@ -2564,56 +2566,56 @@
                                         <controls:SafeFormulaControl Formula="r_m" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" HorizontalAlignment="Center" />
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="2,0">
-                                        <TextBlock Text="{Binding MomentLabel, StringFormat='M2&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBlock Text="{Binding MomentLabel, StringFormat='M2&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="2,0">
-                                        <TextBlock Text="{Binding MomentLabel, StringFormat='Moment Used&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <TextBlock Text="{Binding MomentLabel, StringFormat='Moment Used&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
 
                                     <!-- Row 1: Mx -->
                                     <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="Mx" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="Mx" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding L0xText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding L0xText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=-, StringFormat=F2}" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=-, StringFormat=F2}" Foreground="#C62828" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
 
                                     <!-- Row 2: My -->
                                     <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="My" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="My" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding L0yText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding L0yText}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=-, StringFormat=F2}" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=-, StringFormat=F2}" Foreground="#2E7D32" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=-, StringFormat=F2}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1">
-                                        <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5"/>
+                                        <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" FontWeight="Bold" Foreground="{DynamicResource DarkNavyBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"/>
                                     </Border>
                                 </Grid>
 
@@ -2623,14 +2625,14 @@
                                            Margin="0,2,0,6" />
                                 <StackPanel Margin="0,0,0,8">
                                     <TextBlock Text="Flow"
-                                               FontSize="11.5"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                Margin="0,0,0,2" />
                                     <controls:SafeFormulaControl Formula="l_0=kL,\quad \lambda=\frac{l_0}{i},\quad \lambda&lt;\lambda_{lim}\Rightarrow M_2=0,\quad \lambda\geq\lambda_{lim}\Rightarrow \mathrm{nominal\;curvature}"
                                                                  Scale="12"
                                                                  FormulaForeground="{DynamicResource TextMutedBrush}" />
                                     <TextBlock Text="Moment Used is passed to PMM."
-                                               FontSize="11.5"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                Margin="0,2,0,0" />
                                 </StackPanel>
@@ -3404,19 +3406,19 @@
                             </Grid.RowDefinitions>
 
                             <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
-                                <TextBlock Text="Step" FontWeight="SemiBold" FontSize="13" />
+                                <TextBlock Text="Step" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
-                                <TextBlock Text="Equation" FontWeight="SemiBold" FontSize="13" />
+                                <TextBlock Text="Equation" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
-                                <TextBlock Text="Mx axis" FontWeight="SemiBold" FontSize="13" TextAlignment="Center" />
+                                <TextBlock Text="Mx axis" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" TextAlignment="Center" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="6,8">
-                                <TextBlock Text="My axis" FontWeight="SemiBold" FontSize="13" TextAlignment="Center" />
+                                <TextBlock Text="My axis" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" TextAlignment="Center" />
                             </Border>
 
-                            <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="1. Effective length" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="1" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="1. Effective length" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="l_0=kL" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
@@ -3427,7 +3429,7 @@
                                 <controls:SafeFormulaControl Formula="{Binding L0yLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="2. Slenderness ratio" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="2. Slenderness ratio" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaFormulaLatex}" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
@@ -3438,7 +3440,7 @@
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaYResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="3" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="3. Slenderness limit" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="3" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="3. Slenderness limit" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="3" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitFormulaLatex}" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
@@ -3450,7 +3452,7 @@
                             </Border>
 
                             <!-- Row 4: n, A, B, C factors (inserted between Slenderness limit and Moment ratio) -->
-                            <Border Grid.Row="4" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="4. Factors n,A,B,C" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="4" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="4. Factors n,A,B,C" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="4" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <StackPanel>
                                     <controls:SafeFormulaControl Formula="n=\frac{N_{Ed}}{A_c f_{cd}}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
@@ -3476,7 +3478,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="5" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="5. Moment ratio" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="5" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="5. Moment ratio" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="5" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentRatioFormulaLatex}" Scale="15" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
@@ -3487,14 +3489,14 @@
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentRatioYResultLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="6" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="6. Branch" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="6" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="6. Branch" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="6" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.BranchFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
-                            <Border Grid.Row="6" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchXText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" /></Border>
-                            <Border Grid.Row="6" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchYText}" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="6" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchXText}" FontSize="{StaticResource FontSizeBody}" TextAlignment="Center" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="6" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchYText}" FontSize="{StaticResource FontSizeBody}" TextAlignment="Center" TextWrapping="Wrap" /></Border>
 
-                            <Border Grid.Row="7" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="7. Nominal curvature" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="7" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="7. Nominal curvature" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="7" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="\frac{1}{r}=K_r K_\varphi \frac{\varepsilon_{yd}}{0.45d}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
@@ -3505,7 +3507,7 @@
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureY1rLatex, Mode=OneWay}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="8" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="8. Second order moment" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="8" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="8. Second order moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="8" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <StackPanel>
                                     <controls:SafeFormulaControl Formula="e_2=\frac{1}{r}\cdot\frac{l_0^2}{c}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
@@ -3525,7 +3527,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="9" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="9. First order moment" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="9" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="9. First order moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="9" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
@@ -3536,7 +3538,7 @@
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYM0eLatex, Mode=OneWay}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
 
-                            <Border Grid.Row="10" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="10. Moment used" FontSize="13" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="10" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="10. Moment used" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
                             <Border Grid.Row="10" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
                                 <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentUsedFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>

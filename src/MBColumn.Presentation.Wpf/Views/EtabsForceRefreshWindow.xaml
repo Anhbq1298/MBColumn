@@ -70,7 +70,7 @@
                     <StackPanel>
                         <TextBlock Text="ETABS Connection" Style="{StaticResource SectionHeaderStyle}" />
                         <TextBlock Text="{Binding ConnectionStatus}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    Margin="0,0,0,6" />
@@ -175,7 +175,7 @@
 
                     <TextBlock Grid.Row="2"
                                Text="{Binding StatusMessage}"
-                               FontSize="11"
+                               FontSize="{StaticResource FontSizeBody}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,6,0,0"
@@ -227,7 +227,7 @@
                             Margin="0,0,0,8"
                             Visibility="{Binding PreviewHasWarnings, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"
                                    Foreground="#7B5800" />
                     </Border>
@@ -271,7 +271,7 @@
                             VerticalAlignment="Center"
                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
                     <TextBlock Text="{Binding BusyText}"
-                               FontSize="11"
+                               FontSize="{StaticResource FontSizeBody}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                VerticalAlignment="Center" />
                 </StackPanel>

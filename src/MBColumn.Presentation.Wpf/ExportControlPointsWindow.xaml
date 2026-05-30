@@ -341,7 +341,7 @@
                                 Visibility="{Binding HasEmptyState, Converter={StaticResource BoolToVisibilityConverter}}">
                             <TextBlock Text="{Binding EmptyStateMessage}"
                                        Style="{StaticResource HelperTextStyle}"
-                                       FontSize="12"
+                                       FontSize="{StaticResource FontSizeBody}"
                                        TextAlignment="Center" />
                         </Border>
                     </Grid>

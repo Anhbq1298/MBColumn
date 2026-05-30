@@ -25,5 +25,11 @@ public sealed record ControlPointDto(
     string StatusText = "")
 {
     public bool IsSpecialPoint { get; init; } = false;
+
+    /// <summary>
+    /// Structural CP number (1–7) assigned by the analysis layer.
+    /// 0 = not a named control point.
+    /// </summary>
+    public int CpNumber { get; init; } = 0;
 }
 

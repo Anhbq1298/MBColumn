@@ -44,29 +44,29 @@ public static class SpecialCapacityPointsService
             double cBalance = dtMm > 1e-6 ? ecu * dtMm / (ecu + eyield) : 0;
             double cTension = dtMm > 1e-6 ? ecu * dtMm / (ecu + eyield + 0.003) : 0;
 
-            result.Add(new SpecialCapacityEntry("Max Compression", a, theta, pts[0]));
+            result.Add(new SpecialCapacityEntry("Max Compression", a, theta, pts[0], CpNumber: 1));
 
             var zeroTension = InterpolateAtDepth(pts, cZeroTension);
             if (zeroTension is not null)
-                result.Add(new SpecialCapacityEntry("Zero Tension", a, theta, zeroTension));
+                result.Add(new SpecialCapacityEntry("Zero Tension", a, theta, zeroTension, CpNumber: 2));
 
             var halfYield = InterpolateAtDepth(pts, cHalfYield);
             if (halfYield is not null)
-                result.Add(new SpecialCapacityEntry("50% Yield", a, theta, halfYield));
+                result.Add(new SpecialCapacityEntry("50% Yield", a, theta, halfYield, CpNumber: 3));
 
             var balanced = InterpolateAtDepth(pts, cBalance);
             if (balanced is not null)
-                result.Add(new SpecialCapacityEntry("Balanced", a, theta, balanced));
+                result.Add(new SpecialCapacityEntry("Balanced", a, theta, balanced, CpNumber: 4));
 
             var tensionCtrl = InterpolateAtDepth(pts, cTension);
             if (tensionCtrl is not null)
-                result.Add(new SpecialCapacityEntry("Tension Control", a, theta, tensionCtrl));
+                result.Add(new SpecialCapacityEntry("Tension Control", a, theta, tensionCtrl, CpNumber: 5));
 
             var pureBending = InterpolateAtPn(pts, 0.0);
             if (pureBending is not null)
-                result.Add(new SpecialCapacityEntry("Pure Bending", a, theta, pureBending));
+                result.Add(new SpecialCapacityEntry("Pure Bending", a, theta, pureBending, CpNumber: 6));
 
-            result.Add(new SpecialCapacityEntry("Max Tension", a, theta, pts[^1]));
+            result.Add(new SpecialCapacityEntry("Max Tension", a, theta, pts[^1], CpNumber: 7));
         }
 
         return result;
@@ -149,4 +149,5 @@ public sealed record SpecialCapacityEntry(
     string Label,
     int AngleIndex,
     double ThetaDegrees,
-    InteractionPoint Source);
+    InteractionPoint Source,
+    int CpNumber = 0);

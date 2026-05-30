@@ -2,14 +2,25 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <!-- Font families used across all theme dictionaries -->
-    <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text, Segoe UI, Aptos, Arial</FontFamily>
+    <FontFamily x:Key="AppFontFamily">/MBColumn;component/Resources/Fonts/#Inter, Segoe UI Variable Text, Segoe UI, Arial</FontFamily>
     <FontFamily x:Key="TechnicalMonoFontFamily">Cascadia Mono, Consolas, Courier New</FontFamily>
 
-    <!-- Font size tokens used across all theme dictionaries -->
+    <!--
+        FONT SIZE SCALE — single source of truth, referenced everywhere via {StaticResource}.
+        Do NOT hardcode numeric font sizes in views; use these keys instead.
+
+        Body/Helper  : 12   — all regular text, labels, table cells, helper notes
+        Section      : 14   — section/card headers, subheadings
+        Formula      : 12   — SafeFormulaControl Scale attribute
+        Caption      : 10.5 — overlines, tiny secondary labels only
+        DialogTitle  : 16   — dialog/window header titles
+        WindowTitle  : 22   — main window app title
+    -->
     <sys:Double x:Key="FontSizeCaption">10.5</sys:Double>
-    <sys:Double x:Key="FontSizeHelper">11</sys:Double>
-    <sys:Double x:Key="FontSizeBody">12.5</sys:Double>
+    <sys:Double x:Key="FontSizeHelper">12</sys:Double>
+    <sys:Double x:Key="FontSizeBody">12</sys:Double>
     <sys:Double x:Key="FontSizeSection">14</sys:Double>
+    <sys:Double x:Key="FontSizeFormula">12</sys:Double>
     <sys:Double x:Key="FontSizeDialogTitle">16</sys:Double>
     <sys:Double x:Key="FontSizeWindowTitle">22</sys:Double>
 </ResourceDictionary>

@@ -26,7 +26,7 @@
                                 <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding AllPass}" Value="False">
-                                        <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                        <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -37,7 +37,7 @@
                                     <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding AllPass}" Value="False">
-                                            <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -49,7 +49,7 @@
                                VerticalAlignment="Center" />
                     <TextBlock Text="{Binding FailCountText, StringFormat='  - {0}'}"
                                FontSize="10"
-                               Foreground="{DynamicResource AccentRedBrush}"
+                               Foreground="{DynamicResource WarningAmberBrush}"
                                VerticalAlignment="Center"
                                Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </StackPanel>
@@ -64,7 +64,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0"
                                            Text="{Binding StatusText}"
-                                           FontSize="12"
+                                           FontSize="{StaticResource FontSizeBody}"
                                            FontWeight="Bold"
                                            VerticalAlignment="Top"
                                            Margin="0,1,0,0">
@@ -73,7 +73,7 @@
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Fail}" Value="True">
-                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -81,7 +81,7 @@
                                 </TextBlock>
                                 <StackPanel Grid.Column="1" Orientation="Vertical" Margin="4,0,0,0">
                                     <TextBlock Text="{Binding Description}"
-                                               FontSize="11.5"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextDarkBrush}"
                                                TextWrapping="Wrap" />

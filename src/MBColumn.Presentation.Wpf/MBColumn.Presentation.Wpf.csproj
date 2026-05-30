@@ -24,6 +24,10 @@
     <Resource Include="Resources\MomentSignConvention.png" />
     <Resource Include="Resources\app.ico" />
     <Resource Include="icon\*.png" />
+    <Resource Include="Resources\Fonts\Inter-Regular.ttf" />
+    <Resource Include="Resources\Fonts\Inter-Medium.ttf" />
+    <Resource Include="Resources\Fonts\Inter-SemiBold.ttf" />
+    <Resource Include="Resources\Fonts\Inter-Bold.ttf" />
   </ItemGroup>
 
   <ItemGroup>

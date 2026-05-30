@@ -287,7 +287,7 @@ public sealed class ColumnCalculationService(
                 cp.DisplayP, cp.DisplayMx, cp.DisplayMy, cp.Phi,
                 cp.ThetaDegrees, cp.NeutralAxisDepth, cp.Label, cp.GroupKey,
                 false, false, false, false, 0, "special")
-            { IsSpecialPoint = true })
+            { IsSpecialPoint = true, CpNumber = cp.CpNumber })
             .ToList();
         pmmSurface = pmmSurface with { SpecialCapacityPoints = special3dDtos };
 
@@ -401,7 +401,7 @@ public sealed class ColumnCalculationService(
             SortKey: 0,
             GroupKey: groupKey,
             SliceKey: "special")
-        { IsSpecialPoint = true };
+        { IsSpecialPoint = true, CpNumber = entry.CpNumber };
     }
 
     private IReadOnlyList<CapacityDebugPointDto> BuildCapacityDebugPoints(InteractionSurface surface, InteractionPoint governingPoint, ColumnInputDto input)

@@ -158,7 +158,7 @@
                                 </Style>
                             </Border.Style>
                             <TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       FontSize="12" FontWeight="SemiBold">
+                                       FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -206,7 +206,7 @@
                                 </Style>
                             </Border.Style>
                             <TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       FontSize="12" FontWeight="SemiBold">
+                                       FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -253,7 +253,7 @@
                                 </Style>
                             </Border.Style>
                             <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       FontSize="12" FontWeight="SemiBold">
+                                       FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -316,7 +316,7 @@
                         <TextBlock DockPanel.Dock="Bottom"
                                    Text="{Binding UnitConversionMessage}"
                                    Foreground="{DynamicResource TextMutedBrush}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,0" />
                         <StackPanel Orientation="Horizontal">
@@ -333,7 +333,7 @@
                                     Margin="8,0,0,0" />
                             <TextBlock Text="{Binding ModelName, StringFormat='  {0}'}"
                                        VerticalAlignment="Center"
-                                       FontSize="12"
+                                       FontSize="{StaticResource FontSizeBody}"
                                        Foreground="{DynamicResource TextDarkBrush}" />
                         </StackPanel>
                     </DockPanel>
@@ -509,7 +509,7 @@
                                 </Style>
                             </Border.Style>
                             <TextBlock Text="{Binding Flow1ValidationMessage}"
-                                       FontSize="11"
+                                       FontSize="{StaticResource FontSizeBody}"
                                        TextWrapping="Wrap"
                                        Foreground="#7B5E00" />
                         </Border>
@@ -537,7 +537,7 @@
                         <TextBlock DockPanel.Dock="Top"
                                    Text="No sections yet. Select items on the left, then click + New Section."
                                    Foreground="{DynamicResource TextMutedBrush}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,0">
                             <TextBlock.Style>
@@ -564,7 +564,7 @@
                                                             ToolTip="Delete section"
                                                             Command="{Binding DataContext.DeleteMbColumnSectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}">
-                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <Button DockPanel.Dock="Right"
@@ -572,7 +572,7 @@
                                                             ToolTip="Clear all items from section"
                                                             Command="{Binding ClearSectionCommand}"
                                                             Margin="0,0,4,0">
-                                                        <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                        <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <StackPanel DockPanel.Dock="Right"
@@ -671,7 +671,7 @@
                                                         Padding="8,3"
                                                         MinHeight="24"
                                                         HorizontalAlignment="Left"
-                                                        FontSize="11" />
+                                                        FontSize="{StaticResource FontSizeBody}" />
 
                                                 <ItemsControl ItemsSource="{Binding Items}"
                                                               Margin="0,6,0,0">
@@ -692,10 +692,10 @@
                                                                         Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Border}}"
                                                                         CommandParameter="{Binding}"
                                                                         Style="{StaticResource SmallIconButtonStyle}"
-                                                                        FontSize="12"
+                                                                        FontSize="{StaticResource FontSizeBody}"
                                                                         Foreground="{DynamicResource TextMutedBrush}"
                                                                         ToolTip="Remove from section" />
-                                                                <TextBlock FontSize="11"
+                                                                <TextBlock FontSize="{StaticResource FontSizeBody}"
                                                                            Foreground="{DynamicResource TextDarkBrush}"
                                                                            VerticalAlignment="Center">
                                                                     <Run Text="{Binding EtabsSectionName, Mode=OneWay}" />
@@ -743,7 +743,7 @@
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                         <TextBlock DockPanel.Dock="Left"
                                    Text="{Binding SelectedLoadCombinationCount, StringFormat='{}{0} selected'}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    VerticalAlignment="Center" />
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -752,21 +752,21 @@
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Padding="8,3"
                                     MinHeight="24"
-                                    FontSize="11" />
+                                    FontSize="{StaticResource FontSizeBody}" />
                             <Button Content="None"
                                     Command="{Binding ClearAllCombosCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Padding="8,3"
                                     MinHeight="24"
-                                    FontSize="11"
+                                    FontSize="{StaticResource FontSizeBody}"
                                     Margin="4,0,0,0" />
                         </StackPanel>
                     </DockPanel>
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
                         <TextBox Text="{Binding LoadCombinationFilterText, UpdateSourceTrigger=PropertyChanged}"
-                                 FontSize="11" />
+                                 FontSize="{StaticResource FontSizeBody}" />
                         <TextBlock Text="Search combinations..."
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    IsHitTestVisible="False"
                                    Margin="6,0,0,0"
@@ -788,7 +788,7 @@
                     </Grid>
                     <ListBox ItemsSource="{Binding FilteredLoadCombinations}"
                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                             FontSize="12"
+                             FontSize="{StaticResource FontSizeBody}"
                              SelectionMode="Extended"
                              SelectionChanged="OnListBoxSelectionChanged"
                              DisplayMemberPath="Name">
@@ -805,7 +805,7 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top"
                                Text="{Binding AllAssignedItems.Count, StringFormat='{}{0} item(s)'}"
-                               FontSize="11"
+                               FontSize="{StaticResource FontSizeBody}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
                     <DataGrid ItemsSource="{Binding AllAssignedItems}"
@@ -816,7 +816,7 @@
                               CanUserReorderColumns="False"
                               HeadersVisibility="Column"
                               SelectionMode="Single"
-                              FontSize="11"
+                              FontSize="{StaticResource FontSizeBody}"
                               RowHeight="22"
                               BorderBrush="{DynamicResource BorderGreyBrush}">
                         <DataGrid.Columns>
@@ -859,7 +859,7 @@
                             <StackPanel Grid.Column="0">
                                 <DockPanel Margin="0,0,0,4">
                                     <TextBlock DockPanel.Dock="Right"
-                                               FontSize="11"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                VerticalAlignment="Center"
                                                Margin="6,0,0,0">
                                         <TextBlock.Style>
@@ -874,21 +874,21 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="Design Forces:" FontSize="11"
+                                    <TextBlock Text="Design Forces:" FontSize="{StaticResource FontSizeBody}"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center" />
                                 </DockPanel>
                                 <RadioButton Content="Use Design Forces"
                                              IsChecked="{Binding UseDesignForces, Mode=TwoWay}"
                                              IsEnabled="{Binding IsDesignForcesImported}"
-                                             FontSize="11"
+                                             FontSize="{StaticResource FontSizeBody}"
                                              Margin="0,2" />
                             </StackPanel>
                             <!-- Element Forces -->
                             <StackPanel Grid.Column="2">
                                 <DockPanel Margin="0,0,0,4">
                                     <TextBlock DockPanel.Dock="Right"
-                                               FontSize="11"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                VerticalAlignment="Center"
                                                Margin="6,0,0,0">
                                         <TextBlock.Style>
@@ -903,14 +903,14 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="Element Forces:" FontSize="11"
+                                    <TextBlock Text="Element Forces:" FontSize="{StaticResource FontSizeBody}"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center" />
                                 </DockPanel>
                                 <RadioButton Content="Use Element Forces"
                                              IsChecked="{Binding UseElementForces, Mode=TwoWay}"
                                              IsEnabled="{Binding IsElementForcesAvailable}"
-                                             FontSize="11"
+                                             FontSize="{StaticResource FontSizeBody}"
                                              Margin="0,2" />
                             </StackPanel>
                         </Grid>
@@ -924,7 +924,7 @@
                                 Padding="14,5"
                                 MinHeight="28" />
                         <TextBlock Text="{Binding ForceCacheStatus}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis"
@@ -944,13 +944,13 @@
                             </Style>
                         </Border.Style>
                         <TextBlock Text="{Binding Flow2ValidationMessage}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"
                                    Foreground="#7B5E00" />
                     </Border>
 
                     <!-- Force rows TabControl -->
-                    <TabControl FontSize="11">
+                    <TabControl FontSize="{StaticResource FontSizeBody}">
                         <!-- Tab 1: Column Forces (filtered by ObjectType == Column) -->
                         <TabItem Header="Column Forces">
                             <DataGrid ItemsSource="{Binding FilteredColumnMappedForceRows}"
@@ -961,7 +961,7 @@
                                       CanUserReorderColumns="False"
                                       HeadersVisibility="Column"
                                       SelectionMode="Single"
-                                      FontSize="11"
+                                      FontSize="{StaticResource FontSizeBody}"
                                       RowHeight="22"
                                       BorderBrush="{DynamicResource BorderGreyBrush}">
                                 <DataGrid.Columns>
@@ -985,7 +985,7 @@
                                       CanUserReorderColumns="False"
                                       HeadersVisibility="Column"
                                       SelectionMode="Single"
-                                      FontSize="11"
+                                      FontSize="{StaticResource FontSizeBody}"
                                       RowHeight="22"
                                       BorderBrush="{DynamicResource BorderGreyBrush}">
                                 <DataGrid.Columns>
@@ -1025,7 +1025,7 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top"
                                Margin="0,0,0,10"
-                               FontSize="11"
+                               FontSize="{StaticResource FontSizeBody}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap">
                         <Run Text="{Binding MbColumnSectionsReadyCount, Mode=OneWay}" />
@@ -1034,7 +1034,7 @@
 
                     <TextBlock DockPanel.Dock="Top"
                                Text="No MB Column Sections defined. Go back to Step 1 and assign items to sections."
-                               FontSize="11"
+                               FontSize="{StaticResource FontSizeBody}"
                                Foreground="{DynamicResource AccentRedBrush}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,8">
@@ -1050,7 +1050,7 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <TabControl FontSize="11">
+                    <TabControl FontSize="{StaticResource FontSizeBody}">
                         <!-- Tab 1: Section list with Project Group assignment -->
                         <TabItem Header="Sections">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -1061,7 +1061,7 @@
                                                 <StackPanel>
                                                     <DockPanel>
                                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <TextBlock Text="Project Group:" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                                                            <TextBlock Text="Project Group:" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" />
                                                             <ComboBox ItemsSource="{Binding DataContext.TargetGroups, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                       DisplayMemberPath="DisplayName"
                                                                       SelectedItem="{Binding SelectedTargetGroup, Mode=TwoWay}"
@@ -1073,7 +1073,7 @@
                                                                     Margin="4,0,0,0" Padding="6,2" />
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding SectionName}"
-                                                                   FontSize="12"
+                                                                   FontSize="{StaticResource FontSizeBody}"
                                                                    FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                                                    VerticalAlignment="Center" />
@@ -1081,7 +1081,7 @@
                                                     <ItemsControl ItemsSource="{Binding Items}" Margin="0,4,0,0">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate DataType="{x:Type vm:EtabsColumnImportRowViewModel}">
-                                                                <TextBlock FontSize="11"
+                                                                <TextBlock FontSize="{StaticResource FontSizeBody}"
                                                                            Foreground="{DynamicResource TextDarkBrush}"
                                                                            Margin="0,1">
                                                                     <Run Text="{Binding EtabsSectionName, Mode=OneWay}" />
@@ -1108,7 +1108,7 @@
                                       CanUserAddRows="False"
                                       CanUserDeleteRows="False"
                                       HeadersVisibility="Column"
-                                      FontSize="11"
+                                      FontSize="{StaticResource FontSizeBody}"
                                       RowHeight="22"
                                       BorderBrush="{DynamicResource BorderGreyBrush}">
                                 <DataGrid.Columns>
@@ -1155,19 +1155,19 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ModelName}" FontSize="11" Margin="0,0,0,4" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Units" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PresentUnits}" FontSize="11" Margin="0,0,0,4" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Stories" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" Margin="0,0,0,4">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ModelName}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Units" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PresentUnits}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Stories" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,4">
                             <Run Text="{Binding StoryCount, Mode=OneWay}" />
                             <Run Text=" stories / " />
                             <Run Text="{Binding PierCount, Mode=OneWay}" />
                             <Run Text=" piers" />
                         </TextBlock>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Frames" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FrameObjectCount}" FontSize="11" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Frames" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FrameObjectCount}" FontSize="{StaticResource FontSizeBody}" />
                     </Grid>
                 </GroupBox>
 
@@ -1183,10 +1183,10 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Text="Combos" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
+                            <TextBlock Grid.Row="0" Text="Combos" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4" />
                             <TextBlock Grid.Row="0" Grid.Column="1"
                                        Text="{Binding SelectedLoadCombinationCount, StringFormat='{}{0} selected'}"
-                                       FontSize="11" Margin="0,0,0,4" />
+                                       FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,4" />
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -1251,7 +1251,7 @@
 
                 <TextBlock Text="{Binding ConnectionStatus}"
                            VerticalAlignment="Center"
-                           FontSize="12"
+                           FontSize="{StaticResource FontSizeBody}"
                            Foreground="{DynamicResource TextDarkBrush}" />
             </DockPanel>
         </Border>

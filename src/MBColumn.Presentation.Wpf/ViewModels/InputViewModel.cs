@@ -1652,7 +1652,7 @@ public sealed class InputViewModel : ViewModelBase
 
     private string LatexLengthUnit => UnitSystem == UnitSystem.Metric ? @"\text{mm}" : @"\text{in}";
 
-    private string LatexMomentUnit => UnitSystem == UnitSystem.Metric ? @"\text{kN·m}" : @"\text{kip·in}";
+    private string LatexMomentUnit => UnitSystem == UnitSystem.Metric ? @"\mathrm{kN\cdot m}" : @"\mathrm{kip\cdot in}";
 
     private string BuildImperfectionAxisLatex(string axis, double? k)
     {

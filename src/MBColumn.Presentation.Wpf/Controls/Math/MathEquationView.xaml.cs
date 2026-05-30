@@ -116,6 +116,10 @@ public partial class MathEquationView : UserControl
         queuedRenderSignature = signature;
         ResetRenderCompletion();
 
+        LoadingIndicator.Visibility = Visibility.Visible;
+        FallbackTextBlock.Visibility = Visibility.Hidden;
+        MathWebView.Visibility = Visibility.Hidden;
+
         if (!IsLoaded || !IsVisible)
         {
             return;
@@ -201,6 +205,7 @@ public partial class MathEquationView : UserControl
 
     private void ShowFallback()
     {
+        LoadingIndicator.Visibility = Visibility.Collapsed;
         MathWebView.Visibility = Visibility.Collapsed;
         FallbackTextBlock.Visibility = Visibility.Visible;
         Height = double.NaN;
@@ -222,6 +227,7 @@ public partial class MathEquationView : UserControl
             return;
         }
 
+        LoadingIndicator.Visibility = Visibility.Collapsed;
         IsRenderComplete = true;
         completedRenderSignature = queuedRenderSignature;
         renderCompletion.TrySetResult(null);
