@@ -7,6 +7,7 @@ using MBColumn.Application.Services.ImportExport;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.Math;
+using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections;
 using System.Collections.ObjectModel;
@@ -895,6 +896,7 @@ public sealed class InputViewModel : ViewModelBase
     public ICommand CloseSlendernessCalculationDetailsCommand { get; }
 
     public string SectionPreviewLabel { get => sectionPreviewLabel; private set => Set(ref sectionPreviewLabel, value); }
+    public string SectionPreviewSvg { get; private set; } = "";
     public string RebarPreviewLabel { get => rebarPreviewLabel; private set => Set(ref rebarPreviewLabel, value); }
     public string CoverPreviewLabel { get => coverPreviewLabel; private set => Set(ref coverPreviewLabel, value); }
     public bool IsSectionPreviewValid { get => isSectionPreviewValid; private set => Set(ref isSectionPreviewValid, value); }
@@ -1115,11 +1117,31 @@ public sealed class InputViewModel : ViewModelBase
         {
             UpdateSectionPreviewInternal();
             UpdateEc2LinkChecks();
+            RebuildSectionPreviewSvg();
         }
         finally
         {
             _isUpdatingPreview = false;
         }
+    }
+
+    private void RebuildSectionPreviewSvg()
+    {
+        try
+        {
+            double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+            double widthMm = Width * factor;
+            double heightMm = Height * factor;
+            double diameterMm = Diameter * factor;
+            double coverMm = Cover * factor;
+            var bars = PreviewRebars.Select(r => new RebarCoordinateDto(
+                r.Index.ToString(), r.X * factor, r.Y * factor, r.Diameter * factor,
+                Math.PI * Math.Pow(r.Diameter * factor / 2, 2), r.Label, "")).ToList();
+            SectionPreviewSvg = SectionGeometryRenderer.RenderSection(
+                SelectedSectionShape, widthMm, heightMm, diameterMm, coverMm, bars);
+        }
+        catch { SectionPreviewSvg = ""; }
+        Raise(nameof(SectionPreviewSvg));
     }
 
     private void UpdateSectionPreviewInternal()
