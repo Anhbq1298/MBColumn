@@ -140,10 +140,18 @@ public sealed class MomentDiagramControl : FrameworkElement
         dc.DrawLine(diagPen, new Point(topX, topY), new Point(botX, botY));
         dc.DrawLine(diagPen, new Point(botX, botY), new Point(centerX, botY));
 
-        // ─── Moment dots ───
+        // ─── 7 control points along the moment distribution line ───
+        const int NumControlPoints = 7;
         double dotR = 5;
-        dc.DrawEllipse(diagBrush, null, new Point(topX, topY), dotR, dotR);
-        dc.DrawEllipse(diagBrush, null, new Point(botX, botY), dotR, dotR);
+        double innerDotR = 3.0;
+        for (int i = 0; i < NumControlPoints; i++)
+        {
+            double t = i / (double)(NumControlPoints - 1);
+            double px = topX + t * (botX - topX);
+            double py = topY + t * (botY - topY);
+            bool isEndpoint = i == 0 || i == NumControlPoints - 1;
+            dc.DrawEllipse(diagBrush, null, new Point(px, py), isEndpoint ? dotR : innerDotR, isEndpoint ? dotR : innerDotR);
+        }
 
         // ─── Joint circles on column ───
         double jR = 6;

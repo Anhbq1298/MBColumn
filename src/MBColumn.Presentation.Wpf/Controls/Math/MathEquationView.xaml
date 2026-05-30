@@ -17,5 +17,14 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       DefaultBackgroundColor="Transparent" />
+        <ProgressBar x:Name="LoadingIndicator"
+                     IsIndeterminate="True"
+                     Height="2"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     Foreground="{DynamicResource AccentBlueBrush}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Visibility="Collapsed" />
     </Grid>
 </UserControl>

@@ -6,7 +6,8 @@
         xmlns:views="clr-namespace:MBColumn.Presentation.Wpf.Views"
         Title="{Binding WindowTitle}"
         Icon="Resources/desktop-icon.png"
-        Height="900" Width="1460" MinHeight="780" MinWidth="1280">
+        Height="960" Width="1680" MinHeight="800" MinWidth="1400"
+        WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <Style x:Key="EmptyStateCardStyle" TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
             <Setter Property="MaxWidth" Value="520" />
@@ -67,7 +68,7 @@
                         Margin="0,0,2,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="New" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="New" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding OpenProjectCommand}"
@@ -77,7 +78,7 @@
                         Margin="0,0,2,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Open" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="Open" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding SaveProjectCommand}"
@@ -87,7 +88,7 @@
                         Margin="0,0,2,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Save" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="Save" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
                     </StackPanel>
                 </Button>
                 <Button Command="{Binding SaveProjectAsCommand}"
@@ -97,7 +98,7 @@
                         Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE792;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Save As" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="Save As" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
                     </StackPanel>
                 </Button>
                 <Separator Margin="0,4,12,4" />
@@ -109,7 +110,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center"
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                        <TextBlock Text="Calculate" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="12"
+                        <TextBlock Text="Calculate" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="8,1,0,0" VerticalAlignment="Center"
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -132,7 +133,7 @@
                                  IsIndeterminate="True"
                                  VerticalAlignment="Center" />
                     <TextBlock Text="{Binding CalculationStatus}"
-                               FontSize="12"
+                               FontSize="{StaticResource FontSizeBody}"
                                Foreground="{DynamicResource TextDarkBrush}"
                                VerticalAlignment="Center"
                                Margin="8,0,0,0" />
@@ -169,7 +170,7 @@
                                     BorderBrush="Transparent"
                                     MinHeight="0"
                                     Cursor="Hand">
-                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
                                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 <Button.ContextMenu>
                                     <ContextMenu>
@@ -197,7 +198,7 @@
                             <TextBlock Text="{Binding Explorer.ProjectName}"
                                        Foreground="White"
                                        FontWeight="SemiBold"
-                                       FontSize="12"
+                                       FontSize="{StaticResource FontSizeBody}"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
                         </DockPanel>
@@ -493,11 +494,11 @@
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding SaveNotificationText}"
                                    Foreground="White"
-                                   FontSize="13"
+                                   FontSize="{StaticResource FontSizeSection}"
                                    FontWeight="SemiBold" />
                         <TextBlock Text="All changes are persisted to disk."
                                    Foreground="#C8F0D8"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    Margin="0,2,0,0" />
                     </StackPanel>
                 </StackPanel>
@@ -525,7 +526,7 @@
                                  BorderBrush="Transparent" />
                     <TextBlock Text="Saving project…"
                                Foreground="White"
-                               FontSize="13"
+                               FontSize="{StaticResource FontSizeSection}"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Margin="12,0,0,0" />
@@ -548,7 +549,7 @@
                 <StackPanel>
                     <TextBlock Text="{Binding ImportStatusText}"
                                Foreground="White"
-                               FontSize="13"
+                               FontSize="{StaticResource FontSizeSection}"
                                FontWeight="SemiBold"
                                Margin="0,0,0,10" />
                     <ProgressBar Height="6"

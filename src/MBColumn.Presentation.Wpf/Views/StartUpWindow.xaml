@@ -53,7 +53,7 @@
                         BorderBrush="#DCEAF5"
                         ToolTip="Developer information">
                     <TextBlock Text="i"
-                               FontSize="13"
+                               FontSize="{StaticResource FontSizeSection}"
                                FontWeight="Bold"
                                Foreground="White"
                                HorizontalAlignment="Center"
@@ -62,8 +62,8 @@
 
                 <StackPanel VerticalAlignment="Center" Margin="24,0,0,0">
                     <TextBlock Text="MBColumn" FontSize="26" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Reinforced Concrete Section Design For Wall and Column" FontSize="12.5" Foreground="#DCEAF5" Margin="2,2,0,0"/>
-                    <TextBlock Text="v1.0.0" FontSize="11" Foreground="#DCEAF5" Opacity="0.75" Margin="2,4,0,0"/>
+                    <TextBlock Text="Reinforced Concrete Section Design For Wall and Column" FontSize="{StaticResource FontSizeBody}" Foreground="#DCEAF5" Margin="2,2,0,0"/>
+                    <TextBlock Text="v1.0.0" FontSize="{StaticResource FontSizeBody}" Foreground="#DCEAF5" Opacity="0.75" Margin="2,4,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -90,7 +90,7 @@
                             Style="{StaticResource SecondaryButtonStyle}"
                             Padding="8,2"
                             MinHeight="22"
-                            FontSize="11"
+                            FontSize="{StaticResource FontSizeBody}"
                             VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="{DynamicResource TextDarkBrush}" VerticalAlignment="Center"/>
@@ -110,7 +110,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="&#xEC50;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="{DynamicResource AccentBlueBrush}" VerticalAlignment="Center" Margin="4,0,12,0"/>
                                         <StackPanel Grid.Column="1">
-                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextDarkBrush}"/>
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextDarkBrush}"/>
                                             <TextBlock Text="{Binding LastModified}" FontSize="10.5" Foreground="{DynamicResource TextMutedBrush}" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Grid>
@@ -146,7 +146,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="Project Preview" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}"/>
+                            <TextBlock Text="Project Preview" FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold" Foreground="{DynamicResource TextMutedBrush}"/>
 
                             <StackPanel Grid.Row="1" Margin="0,8,0,0">
                                 <TextBlock x:Name="TxtPreviewProjName" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource PrimaryNavyBrush}" TextTrimming="CharacterEllipsis"/>
@@ -186,7 +186,7 @@
                                                 <Border Background="{DynamicResource AccentBlueSoftBrush}" 
                                                         BorderBrush="{DynamicResource AccentBlueBrush}" BorderThickness="1" 
                                                         CornerRadius="3" Padding="6,2" Margin="0,0,4,4">
-                                                    <TextBlock Text="{Binding}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource DarkNavyBrush}"/>
+                                                    <TextBlock Text="{Binding}" FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold" Foreground="{DynamicResource DarkNavyBrush}"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -203,7 +203,7 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center"
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                            <TextBlock Text="New Project..." Margin="8,0,0,0" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"
+                            <TextBlock Text="New Project..." Margin="8,0,0,0" FontWeight="SemiBold" FontSize="{StaticResource FontSizeSection}" VerticalAlignment="Center"
                                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                         </StackPanel>
                     </Button>
@@ -218,14 +218,14 @@
                         <Button x:Name="BtnOpen" Grid.Column="0" MinHeight="32">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14" VerticalAlignment="Center"/>
-                                <TextBlock Text="Open Project..." Margin="6,0,0,0" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="Open Project..." Margin="6,0,0,0" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         
                         <Button x:Name="BtnCancel" Grid.Column="2" MinHeight="32">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="Exit" Margin="6,0,0,0" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Exit" Margin="6,0,0,0" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </Grid>

@@ -53,9 +53,11 @@
         </Style>
 
         <Style x:Key="DetailEllipsisButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactButtonStyle}">
-            <Setter Property="Width" Value="86" />
-            <Setter Property="Height" Value="22" />
-            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Width" Value="80" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="MinHeight" Value="18" />
+            <Setter Property="Padding" Value="4,0" />
+            <Setter Property="FontSize" Value="10" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="ToolTip" Value="Open details" />
         </Style>
@@ -99,14 +101,35 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Overall Column Status" Style="{StaticResource MetricLabelStyle}" VerticalAlignment="Center" FontWeight="SemiBold" />
-                            <Border Grid.Column="1"
-                                    Background="{DynamicResource AccentBlueSoftBrush}"
-                                    BorderBrush="{DynamicResource BorderGreyBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="10"
-                                    Padding="12,4"
-                                    HorizontalAlignment="Right">
-                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="13" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            <Border Grid.Column="1" CornerRadius="10" Padding="12,3" HorizontalAlignment="Right">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsOverallWarning}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsOverallFail}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding OverallStatusText}" FontWeight="Bold" FontSize="{StaticResource FontSizeBody}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOverallWarning}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsOverallFail}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Border>
                         </Grid>
 
@@ -116,9 +139,10 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" MinWidth="100" />
+                                <ColumnDefinition Width="Auto" MinWidth="90" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -126,7 +150,14 @@
 
                             <!-- PMM Check Summary -->
                             <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                                <TextBlock Text="PMM Interaction" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="PMM Interaction" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" VerticalAlignment="Center" />
+                                    <Button Content="View Details"
+                                            Style="{StaticResource DetailEllipsisButtonStyle}"
+                                            IsEnabled="{Binding HasResult}"
+                                            Margin="8,0,0,0"
+                                            Click="OpenPmmDetails_Click" />
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="Max Util.: " Style="{StaticResource MetricLabelStyle}" Margin="0" />
                                     <TextBlock Text="{Binding MaxUtilization, StringFormat={}{0:F3}}" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" />
@@ -145,7 +176,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11">
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="{StaticResource FontSizeBody}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
@@ -161,18 +192,18 @@
 
                             <!-- Shear Check Summary -->
                             <StackPanel Grid.Row="1" Margin="0,0,0,12" DataContext="{Binding Shear}">
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right"
-                                            Content="View Details"
-                                            Style="{StaticResource DetailEllipsisButtonStyle}"
-                                            IsEnabled="{Binding HasResult}"
-                                            Click="OpenShearDetails_Click" />
+                                <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Shear Capacity"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource PrimaryNavyBrush}"
-                                               FontSize="11.5"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                VerticalAlignment="Center" />
-                                </DockPanel>
+                                    <Button Content="View Details"
+                                            Style="{StaticResource DetailEllipsisButtonStyle}"
+                                            IsEnabled="{Binding HasResult}"
+                                            Margin="8,0,0,0"
+                                            Click="OpenShearDetails_Click" />
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="Max Util.: " Style="{StaticResource MetricLabelStyle}" Margin="0" />
                                     <TextBlock Text="{Binding GoverningUtilText}" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" />
@@ -181,7 +212,7 @@
                                     <TextBlock Text="{Binding GoverningCaseName}" TextTrimming="CharacterEllipsis" MaxWidth="150"
                                                FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}"
                                                Visibility="{Binding HasEnvelopeSummary, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                    <TextBlock Text=" (EC2 §6.2)" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                    <TextBlock Text=" (EC2 §6.2)" FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                 </StackPanel>
                             </StackPanel>
                             <Border Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Padding="8,2" CornerRadius="6" DataContext="{Binding Shear}">
@@ -205,7 +236,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock FontWeight="Bold" FontSize="11">
+                                <TextBlock FontWeight="Bold" FontSize="{StaticResource FontSizeBody}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="NO DEMAND" />
@@ -230,23 +261,23 @@
 
                             <!-- Reinforcement Compliance Summary -->
                             <StackPanel Grid.Row="2" Margin="0,0,0,4" DataContext="{Binding RebarCompliance}">
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right"
-                                            Content="View Details"
-                                            Style="{StaticResource DetailEllipsisButtonStyle}"
-                                            IsEnabled="{Binding HasResult}"
-                                            Click="OpenRebarComplianceDetails_Click" />
+                                <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Reinforcement Compliance"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource PrimaryNavyBrush}"
-                                               FontSize="11.5"
+                                               FontSize="{StaticResource FontSizeBody}"
                                                VerticalAlignment="Center" />
-                                </DockPanel>
+                                    <Button Content="View Details"
+                                            Style="{StaticResource DetailEllipsisButtonStyle}"
+                                            IsEnabled="{Binding HasResult}"
+                                            Margin="8,0,0,0"
+                                            Click="OpenRebarComplianceDetails_Click" />
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="{Binding CodeRef}" Style="{StaticResource MetricLabelStyle}" Margin="0" />
-                                    <TextBlock Text=" - " Style="{StaticResource MetricLabelStyle}" Margin="0" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                    <TextBlock Text="{Binding FailCountText}" FontSize="10" Foreground="{DynamicResource AccentRedBrush}" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                    <TextBlock Text="All checks conforming" FontSize="10" Foreground="{DynamicResource SuccessGreenBrush}" Visibility="{Binding HasFails, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                    <TextBlock Text=" – " Style="{StaticResource MetricLabelStyle}" Margin="0" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="{Binding FailCountText}" FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource WarningAmberBrush}" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="All checks conforming" FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource SuccessGreenBrush}" Visibility="{Binding HasFails, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                                 </StackPanel>
                             </StackPanel>
                             <Border Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Padding="8,2" CornerRadius="6" DataContext="{Binding RebarCompliance}">
@@ -255,24 +286,48 @@
                                         <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding AllPass}" Value="False">
-                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="11">
+                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="{StaticResource FontSizeBody}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding AllPass}" Value="False">
-                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
                             </Border>
+
+                            <!-- 7 Special Capacity Points Summary -->
+                            <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="0,12,0,0"
+                                        Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Text="7 Capacity Points (Current Slice)"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           Margin="0,0,0,8" />
+                                
+                                <DataGrid ItemsSource="{Binding SevenPointValidationRows}"
+                                          IsReadOnly="True"
+                                          AutoGenerateColumns="False"
+                                          HeadersVisibility="Column"
+                                          MaxHeight="250"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Point" Binding="{Binding PointName}" />
+                                        <DataGridTextColumn Header="c (mm)" Binding="{Binding CDisplay}" />
+                                        <DataGridTextColumn Header="P (kN)" Binding="{Binding PnSolverDisplay}" />
+                                        <DataGridTextColumn Header="M (kN·m)" Binding="{Binding MnSolverDisplay}" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -296,7 +351,7 @@
                                         <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding AllPass}" Value="False">
-                                                <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -307,7 +362,7 @@
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding AllPass}" Value="False">
-                                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -317,7 +372,7 @@
                             <TextBlock Text="{Binding CodeRef, StringFormat='  {0}'}"
                                        Style="{StaticResource MetricValueStyle}" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding FailCountText, StringFormat='  - {0}'}"
-                                       FontSize="10" Foreground="{DynamicResource AccentRedBrush}"
+                                       FontSize="10" Foreground="{DynamicResource WarningAmberBrush}"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
                         </StackPanel>
@@ -332,13 +387,13 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{Binding StatusText}"
-                                                   FontSize="11" FontWeight="Bold" VerticalAlignment="Center">
+                                                   FontSize="{StaticResource FontSizeBody}" FontWeight="Bold" VerticalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Fail}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -365,7 +420,7 @@
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <!-- 3rd: PMM Check in Details                                  -->
                 <!-- ═══════════════════════════════════════════════════════════ -->
-                <Border Style="{StaticResource SidebarCardStyle}">
+                <Border x:Name="PmmDetailsBorder" Style="{StaticResource SidebarCardStyle}">
                     <StackPanel>
                         <!-- Header with Export PMM CtrlPts button -->
                         <DockPanel Margin="0,0,0,10">
@@ -379,7 +434,7 @@
                         </DockPanel>
 
                         <!-- Diagram Viewports -->
-                        <TextBlock Text="Diagram Viewports" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,4,0,4" />
+                        <TextBlock Text="Diagram Viewports" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" Margin="0,4,0,4" />
                         <TextBlock Text="{Binding ViewportDropdownText}" Style="{StaticResource HelperTextStyle}" Margin="0,0,0,8" />
                         <ItemsControl ItemsSource="{Binding ViewportOptions}" Margin="0,0,0,10">
                             <ItemsControl.ItemsPanel>
@@ -400,7 +455,7 @@
                         <Separator Margin="0,0,0,10" Background="{DynamicResource BorderSoftBrush}" />
 
                         <!-- Slice Navigation -->
-                        <TextBlock Text="Slice Navigation" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,6" />
+                        <TextBlock Text="Slice Navigation" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,6" />
                         <Grid Margin="0,0,0,2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -434,12 +489,12 @@
 
                         <Separator Margin="0,0,0,10" Background="{DynamicResource BorderSoftBrush}" />
 
-                        <TextBlock Text="Demand Source" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,4" />
+                        <TextBlock Text="Demand Source" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,4" />
                         <TextBlock Text="{Binding DemandSourceSummary}" Style="{StaticResource HelperTextStyle}" />
                         <TextBlock Text="{Binding DemandSourceDetail}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,10" />
 
                         <!-- Load Case Demands & PMM Utilization -->
-                        <TextBlock Text="Load Case PMM Utilization" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11" Margin="0,0,0,6" />
+                        <TextBlock Text="Load Case PMM Utilization" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,6" />
                         <DataGrid ItemsSource="{Binding LoadCaseRows}"
                                   SelectedItem="{Binding SelectedLoadCaseRow}"
                                   AutoGenerateColumns="False"

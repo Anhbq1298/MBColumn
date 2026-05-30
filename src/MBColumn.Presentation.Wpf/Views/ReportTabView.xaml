@@ -38,14 +38,14 @@
                 <StackPanel Margin="16">
                     <TextBlock Text="Calculation Report"
                                Style="{StaticResource SectionTitleTextStyle}"
-                               FontSize="14"/>
+                               FontSize="{StaticResource FontSizeSection}"/>
 
                     <!-- Status -->
                     <Border Background="#F0F4F8" BorderBrush="#CCD6E0" BorderThickness="1"
                             CornerRadius="2" Padding="8,6" Margin="0,12,0,0">
                         <StackPanel>
                             <TextBlock Text="{Binding ResultStatusText}"
-                                       FontSize="11" FontWeight="SemiBold"
+                                       FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextMutedBrush}"/>
                             <TextBlock Text="{Binding ReportPreviewStatusText}"
                                        FontSize="10" Foreground="#555"
@@ -144,7 +144,7 @@
                                                 </Button.Style>
                                                 <TextBlock Text="{Binding Title}"
                                                            TextWrapping="Wrap"
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource FontSizeBody}"
                                                            Foreground="{DynamicResource TextDarkBrush}"/>
                                             </Button>
                                         </Grid>
@@ -174,10 +174,10 @@
                                    FontSize="18" FontWeight="Bold"
                                    Foreground="{DynamicResource PrimaryNavyBrush}"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Margin="0,16,0,0" FontSize="12" Foreground="#888"
+                        <TextBlock Margin="0,16,0,0" FontSize="{StaticResource FontSizeBody}" Foreground="#888"
                                    HorizontalAlignment="Center"
                                    Text="{Binding ResultStatusText, StringFormat='Status: {0}'}"/>
-                        <TextBlock Margin="0,8,0,0" FontSize="11" Foreground="#888"
+                        <TextBlock Margin="0,8,0,0" FontSize="{StaticResource FontSizeBody}" Foreground="#888"
                                    HorizontalAlignment="Center"
                                    Text="{Binding ReportPreviewPlaceholderText}"/>
                         <Button Content="Show Preview"

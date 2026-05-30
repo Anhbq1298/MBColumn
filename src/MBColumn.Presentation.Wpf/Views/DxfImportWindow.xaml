@@ -63,7 +63,7 @@
                           Padding="12">
                     <StackPanel>
                         <TextBlock Text="Layer(s) to import the section from"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    Margin="0,0,0,10" />
                         <Grid Margin="0,0,0,8">
@@ -182,7 +182,7 @@
                     Margin="0,0,0,8">
                 <TextBlock Text="{Binding SummaryText}"
                            TextWrapping="Wrap"
-                           FontSize="12" />
+                           FontSize="{StaticResource FontSizeBody}" />
             </Border>
 
             <!-- Message (error or status) -->

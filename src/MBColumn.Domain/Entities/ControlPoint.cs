@@ -33,5 +33,6 @@ public sealed record ControlPoint(
     string RegionClassification = "")
 {
     public bool IsSpecialPoint { get; init; } = false;
+    public int CpNumber { get; init; } = 0;
 }
 

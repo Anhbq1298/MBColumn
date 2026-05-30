@@ -13,7 +13,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **ChartReferenceLineDto** | Data transfer object carrying ChartReferenceLine data. | `ChartReferenceLineDto.cs` |
 | `record` | **ColumnInputDto** | Data transfer object carrying ColumnInput data. Key properties: LoadCases, RebarLayoutType, SectionShape, Diameter. | `ColumnInputDto.cs` |
 | `record` | **ComplianceCheck** | /// A single pass/fail code-compliance check item. /// | `RebarComplianceResult.cs` |
-| `record` | **ControlPointDto** | Data transfer object carrying ControlPoint data. Key properties: IsSpecialPoint. | `ControlPointDto.cs` |
+| `record` | **ControlPointDto** | Data transfer object carrying ControlPoint data. Key properties: IsSpecialPoint, CpNumber. | `ControlPointDto.cs` |
 | `record` | **ControlPointExportRow** | Data structure representing a row for ControlPointExport. Key properties: ThetaDeg, PointIndex, P, MxPositive. | `ControlPointExportRow.cs` |
 | `record` | **ControlPointPreviewResult** | Encapsulates the result of ControlPointPreview operations. | `ControlPointExportRow.cs` |
 | `record` | **ControlPointTableDto** | Data transfer object carrying ControlPointTable data. | `ControlPointTableDto.cs` |
@@ -286,7 +286,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **CircularSection** | Represents the CircularSection record. Key properties: RadiusMm, WidthMm, HeightMm, AreaMm2. | `CircularSection.cs` |
 | `record` | **ColumnSection** | Represents the ColumnSection record. | `ColumnSection.cs` |
 | `record` | **ConcreteMaterial** | Represents the ConcreteMaterial record. | `ConcreteMaterial.cs` |
-| `record` | **ControlPoint** | Represents the ControlPoint record. Key properties: IsSpecialPoint. | `ControlPoint.cs` |
+| `record` | **ControlPoint** | Represents the ControlPoint record. Key properties: IsSpecialPoint, CpNumber. | `ControlPoint.cs` |
 | `record` | **DiagramControlPointSet** | Represents the DiagramControlPointSet record. Key properties: SpecialCapacityPoints. | `DiagramControlPointSet.cs` |
 | `record` | **InteractionPoint** | Represents the InteractionPoint record. Key properties: ThetaRad, IsSpecialPoint, SpecialPointType, DesignP. | `InteractionPoint.cs` |
 | `record` | **InteractionSurface** | Represents the InteractionSurface record. Key properties: RowLength. | `InteractionSurface.cs` |

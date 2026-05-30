@@ -27,7 +27,7 @@ public sealed class DiagramDataService
             ReferenceLines = PmCurveBuilderService.BuildPmAngleReferenceLines(points),
             NominalCapacityPoints = NominalCapacity(points),
             ReducedCapacityPoints = reducedPoints,
-            SpecialCapacityPoints = ExtractSpecialPointsFromCurve(reducedPoints)
+            SpecialCapacityPoints = ExtractSpecialPointsFromCurve(reducedPoints, set, angleDegrees)
         };
     }
 
@@ -35,7 +35,7 @@ public sealed class DiagramDataService
     // always lie exactly on the envelope regardless of chart angle.
     // Phi stored on each curve point identifies ACI strain zones:
     //   phiMin → compression-controlled boundary, phiMax → tension-controlled.
-    private static IReadOnlyList<ControlPointDto> ExtractSpecialPointsFromCurve(IReadOnlyList<ControlPointDto> reducedPoints)
+    private static IReadOnlyList<ControlPointDto> ExtractSpecialPointsFromCurve(IReadOnlyList<ControlPointDto> reducedPoints, DiagramControlPointSet set, double angleDegrees)
     {
         var valid = reducedPoints
             .Where(p => double.IsFinite(p.X) && double.IsFinite(p.Y) && double.IsFinite(p.Phi))
@@ -47,14 +47,16 @@ public sealed class DiagramDataService
         bool phiVaries = phiMax - phiMin > 1e-3;
 
         var result = new List<ControlPointDto>();
-        result.Add(SpecialOnCurve(MaxAxialCompression(valid), "Max Compression", "MaxCompression"));
-        result.Add(SpecialOnCurve(valid.MinBy(p => p.Y)!, "Max Tension",     "MaxTension"));
+        result.Add(SpecialOnCurve(MaxAxialCompression(valid), "Max Compression", "MaxCompression", 1));
+        result.Add(SpecialOnCurve(valid.MinBy(p => p.Y)!, "Max Tension",     "MaxTension",     7));
 
         // Positive (M+) and negative (M-) branches sorted by P descending
         var pos = valid.Where(p => p.X >= 0).OrderByDescending(p => p.Y).ToList();
         var neg = valid.Where(p => p.X < 0).OrderByDescending(p => p.Y).ToList();
         AddBranchSpecials(result, pos, phiMin, phiMax, phiVaries);
         AddBranchSpecials(result, neg, phiMin, phiMax, phiVaries);
+
+        AddInterpolated3DSpecials(result, pos, neg, set.SpecialCapacityPoints, angleDegrees);
 
         return result;
     }
@@ -86,15 +88,15 @@ public sealed class DiagramDataService
         if (branch.Count < 2) return;
 
         // Pure Bending: exact envelope intersection at P = 0.
-        TryAddOnCurve(result, InterpolatePureBending(branch), "Pure Bending", "PureBending");
+        TryAddOnCurve(result, InterpolatePureBending(branch), "Pure Bending", "PureBending", 6);
 
         if (!phiVaries)
         {
             // phi nearly constant (EC2 etc.) — place at 1/3 and 2/3 of branch by index
             if (branch.Count >= 3)
             {
-                TryAddOnCurve(result, branch[branch.Count / 3],     "Balanced",        "Balanced");
-                TryAddOnCurve(result, branch[2 * branch.Count / 3], "Tension Control", "TensionControl");
+                TryAddOnCurve(result, branch[branch.Count / 3],     "Balanced",        "Balanced",        4);
+                TryAddOnCurve(result, branch[2 * branch.Count / 3], "Tension Control", "TensionControl",  5);
             }
             return;
         }
@@ -105,7 +107,7 @@ public sealed class DiagramDataService
 
         // Balanced: first from top where phi rises above compression-controlled zone
         int balIdx = branch.FindIndex(p => p.Phi > balThreshold);
-        TryAddOnCurve(result, balIdx >= 0 ? branch[balIdx] : null, "Balanced", "Balanced");
+        TryAddOnCurve(result, balIdx >= 0 ? branch[balIdx] : null, "Balanced", "Balanced", 4);
 
         // Tension Control: first point AFTER balanced where phi reaches the TC zone.
         // Starting from balIdx prevents non-monotonic phi from placing TC above balanced.
@@ -115,12 +117,86 @@ public sealed class DiagramDataService
         // Fallback: phi threshold never reached (e.g. lightly reinforced, wide transition)
         if (tc is null && branch.Count - searchFrom > 2)
             tc = branch[searchFrom + 2 * (branch.Count - searchFrom) / 3];
-        TryAddOnCurve(result, tc, "Tension Control", "TensionControl");
+        TryAddOnCurve(result, tc, "Tension Control", "TensionControl", 5);
     }
 
-    private static void TryAddOnCurve(List<ControlPointDto> result, ControlPointDto? src, string label, string keyPart)
+    private static void AddInterpolated3DSpecials(List<ControlPointDto> result, List<ControlPointDto> pos, List<ControlPointDto> neg, IReadOnlyList<ControlPoint> special3d, double angleDegrees)
     {
-        if (src is not null) result.Add(SpecialOnCurve(src, label, keyPart));
+        if (special3d.Count == 0) return;
+        
+        var cpsToExtract = new[] { 2, 3 }; // Zero Tension, 50% Yield
+        foreach (int cp in cpsToExtract)
+        {
+            var pts = special3d.Where(p => p.CpNumber == cp).OrderBy(p => p.ThetaDegrees).ToList();
+            if (pts.Count < 2) continue;
+
+            var pPos = InterpolateSpecialP(pts, angleDegrees);
+            if (pPos.HasValue) TryAddOnCurve(result, InterpolateOnBranch(pos, pPos.Value), GetCpLabel(cp), GetCpKey(cp), cp);
+
+            var pNeg = InterpolateSpecialP(pts, angleDegrees + 180.0);
+            if (pNeg.HasValue) TryAddOnCurve(result, InterpolateOnBranch(neg, pNeg.Value), GetCpLabel(cp), GetCpKey(cp), cp);
+        }
+    }
+
+    private static double? InterpolateSpecialP(IReadOnlyList<ControlPoint> pts, double angleDegrees)
+    {
+        double angle = NormalizeTheta(angleDegrees);
+        if (angle < pts[0].ThetaDegrees) angle += 360.0;
+        
+        var extended = pts.ToList();
+        extended.Add(pts[0] with { ThetaDegrees = pts[0].ThetaDegrees + 360.0 });
+        
+        for (int i = 0; i < extended.Count - 1; i++)
+        {
+            var a = extended[i];
+            var b = extended[i + 1];
+            if (a.ThetaDegrees <= angle && b.ThetaDegrees >= angle)
+            {
+                double denom = b.ThetaDegrees - a.ThetaDegrees;
+                double t = Math.Abs(denom) < 1e-9 ? 0.0 : (angle - a.ThetaDegrees) / denom;
+                return Linear(a.DisplayP, b.DisplayP, t);
+            }
+        }
+        return null;
+    }
+
+    private static ControlPointDto? InterpolateOnBranch(IReadOnlyList<ControlPointDto> branch, double targetP)
+    {
+        if (branch.Count == 0) return null;
+        for (int i = 0; i < branch.Count - 1; i++)
+        {
+            var a = branch[i];
+            var b = branch[i + 1];
+            if ((a.Y >= targetP && b.Y <= targetP) || (a.Y <= targetP && b.Y >= targetP))
+            {
+                double denom = b.Y - a.Y;
+                double t = Math.Abs(denom) < 1e-9 ? 0.0 : (targetP - a.Y) / denom;
+                t = Math.Clamp(t, 0.0, 1.0);
+                return a with
+                {
+                    X = Linear(a.X, b.X, t),
+                    Y = Linear(a.Y, b.Y, t),
+                    Z = Linear(a.Z, b.Z, t),
+                    P = Linear(a.P, b.P, t),
+                    Mx = Linear(a.Mx, b.Mx, t),
+                    My = Linear(a.My, b.My, t),
+                    Phi = Linear(a.Phi, b.Phi, t),
+                    ThetaDegrees = Linear(a.ThetaDegrees, b.ThetaDegrees, t),
+                    NeutralAxisDepth = Linear(a.NeutralAxisDepth, b.NeutralAxisDepth, t),
+                    SortKey = Linear(a.SortKey, b.SortKey, t),
+                    Utilization = Linear(a.Utilization, b.Utilization, t)
+                };
+            }
+        }
+        return branch.MinBy(p => Math.Abs(p.Y - targetP));
+    }
+
+    private static string GetCpLabel(int cp) => cp switch { 2 => "Zero Tension", 3 => "50% Yield", _ => "Special" };
+    private static string GetCpKey(int cp) => cp switch { 2 => "ZeroTension", 3 => "HalfYield", _ => "Special" };
+
+    private static void TryAddOnCurve(List<ControlPointDto> result, ControlPointDto? src, string label, string keyPart, int cpNumber)
+    {
+        if (src is not null) result.Add(SpecialOnCurve(src, label, keyPart, cpNumber));
     }
 
     private static ControlPointDto? InterpolatePureBending(IReadOnlyList<ControlPointDto> branch)
@@ -175,16 +251,17 @@ public sealed class DiagramDataService
     private static bool CrossesZero(double a, double b)
         => (a <= 0.0 && b >= 0.0) || (a >= 0.0 && b <= 0.0);
 
-    private static ControlPointDto SpecialOnCurve(ControlPointDto src, string label, string keyPart)
+    private static ControlPointDto SpecialOnCurve(ControlPointDto src, string label, string keyPart, int cpNumber)
         => src with
         {
-            Label     = label,
-            GroupKey  = $"SpecialCapacity|{keyPart}",
+            Label          = label,
+            GroupKey       = $"SpecialCapacity|{keyPart}",
             IsSpecialPoint = true,
-            IsDemand  = false,
-            IsGoverning = false,
-            IsReference = false,
-            IsNominal = false
+            CpNumber       = cpNumber,
+            IsDemand       = false,
+            IsGoverning    = false,
+            IsReference    = false,
+            IsNominal      = false
         };
 
     private static IReadOnlyList<ControlPointDto> NominalCapacity(IReadOnlyList<ControlPointDto> points)
@@ -473,7 +550,7 @@ public sealed class DiagramDataService
             var chartY = p.DiagramType == DiagramType.PM ? p.DisplayP : p.DisplayMy;
             bool isNominal = p.GroupKey.Contains("Nominal", StringComparison.OrdinalIgnoreCase);
             return new ControlPointDto(p.DiagramType, p.DisplayMx, chartY, p.DisplayP, p.DisplayP, p.DisplayMx, p.DisplayMy, p.Phi, p.ThetaDegrees, p.NeutralAxisDepth, p.Label, p.GroupKey, p.IsDemandPoint, p.IsGoverningPoint, p.IsReferencePoint, isNominal, p.SortKey, p.SliceKey)
-            { IsSpecialPoint = p.IsSpecialPoint };
+            { IsSpecialPoint = p.IsSpecialPoint, CpNumber = p.CpNumber };
         }).ToList();
 
     private static IReadOnlyList<ControlPointDto> BuildMxMyBoundaryAtDisplayP(IReadOnlyList<ControlPoint> points, double selectedPDisplay, bool nominal)

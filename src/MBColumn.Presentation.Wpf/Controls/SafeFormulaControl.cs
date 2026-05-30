@@ -16,7 +16,7 @@ public sealed class SafeFormulaControl : ContentControl
 
     public static readonly DependencyProperty ScaleProperty = DependencyProperty.Register(
         nameof(Scale), typeof(double), typeof(SafeFormulaControl),
-        new PropertyMetadata(16.0, OnChanged));
+        new PropertyMetadata(12.0, OnChanged));
 
     public static readonly DependencyProperty FormulaForegroundProperty = DependencyProperty.Register(
         nameof(FormulaForeground), typeof(Brush), typeof(SafeFormulaControl),

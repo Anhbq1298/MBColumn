@@ -18,7 +18,7 @@ public sealed class RebarComplianceViewModel : ViewModelBase
     public bool HasResult => result is not null;
     public bool AllPass   => result?.AllPass ?? true;
     public bool HasFails  => result?.FailCount > 0;
-    public string StatusText  => result is null ? "—" : result.AllPass ? "PASS" : "FAIL";
+    public string StatusText  => result is null ? "—" : result.AllPass ? "PASS" : "WARNING";
     public string FailCountText => result?.FailCount is { } n and > 0 ? $"{n} item(s) non-conforming" : "";
     public string CodeRef => result?.DesignCode == Domain.Enums.DesignCodeType.Ec2 ? "EC2 §9.5" : "ACI §10.6 / §25.7";
 

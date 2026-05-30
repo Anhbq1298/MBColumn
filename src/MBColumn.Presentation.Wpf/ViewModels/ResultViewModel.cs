@@ -218,6 +218,9 @@ public sealed class ResultViewModel : ViewModelBase
             showControlPointsCommand.RaiseCanExecuteChanged();
             exportAllPointsCommand.RaiseCanExecuteChanged();
             Raise(nameof(StatusText));
+            Raise(nameof(OverallStatusText));
+            Raise(nameof(IsOverallFail));
+            Raise(nameof(IsOverallWarning));
             Raise(nameof(PmmRatio));
             Raise(nameof(Pu));
             Raise(nameof(Mux));
@@ -273,6 +276,21 @@ public sealed class ResultViewModel : ViewModelBase
     public bool HasLoadCaseRows => loadCaseRows.Count > 0;
     public bool HasSevenPointValidation => sevenPointValidationRows.Count > 0;
     public string StatusText => Result is null ? "Not calculated" : Result.Status == CapacityStatus.Pass ? "PASS" : "FAIL";
+
+    public string OverallStatusText
+    {
+        get
+        {
+            if (Result is null) return "Not calculated";
+            if (Result.Status != CapacityStatus.Pass) return "FAIL";
+            if (Shear.HasDemand && !Shear.IsGoverningPass) return "FAIL";
+            if (!RebarCompliance.AllPass) return "PASS WITH WARNING";
+            return "PASS";
+        }
+    }
+
+    public bool IsOverallFail    => OverallStatusText == "FAIL";
+    public bool IsOverallWarning => OverallStatusText == "PASS WITH WARNING";
     public bool IsAciCode => Result?.DesignCode == DesignCodeType.Aci318Style;
     public double PmmRatio => Result?.Ratio ?? 0;
     public double MaxUtilization => LoadCaseRows.Count == 0 ? PmmRatio : LoadCaseRows.Max(r => r.Utilization);
