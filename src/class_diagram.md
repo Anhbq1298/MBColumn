@@ -419,6 +419,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **ApproxEqualityComparer** | Represents the ApproxEqualityComparer class. Key methods: Equals, GetHashCode. | `SectionGeometryRenderer.cs` |
 | `class` | **InteractionDiagramSvgRenderer** | /// Renders P-M and Mx-My interaction diagrams as standalone SVG strings. ///. Key methods: RenderPmDiagram, RenderMmDiagram. | `InteractionDiagramSvgRenderer.cs` |
 | `class` | **SectionGeometryRenderer** | /// Generates SVG diagrams for section geometry and rebar layout. /// All coordinates in mm; SVG output is scaled to fit a fixed viewport. ///. Key methods: RenderRectangularSection, RenderCircularSection, RenderSection. | `SectionGeometryRenderer.cs` |
 

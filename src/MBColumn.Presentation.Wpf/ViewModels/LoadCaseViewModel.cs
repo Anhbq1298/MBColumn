@@ -99,13 +99,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public double Vy { get => Vuy; set => Vuy = value; }
     public double Mx { get => Mux; set => Mux = value; }
     public double My { get => Muy; set => Muy = value; }
-    public double? MxTop { get => mxTop; set { Set(ref mxTop, value); Raise(nameof(MxDiagramSvg)); } }
-    public double? MxBottom { get => mxBottom; set { Set(ref mxBottom, value); Raise(nameof(MxDiagramSvg)); } }
-    public double? MyTop { get => myTop; set { Set(ref myTop, value); Raise(nameof(MyDiagramSvg)); } }
-    public double? MyBottom { get => myBottom; set { Set(ref myBottom, value); Raise(nameof(MyDiagramSvg)); } }
-
-    public string MxDiagramSvg => BuildMomentSvg(MxTop, MxBottom, "Mx", "#c0392b");
-    public string MyDiagramSvg => BuildMomentSvg(MyTop, MyBottom, "My", "#2471a3");
+    public double? MxTop { get => mxTop; set => Set(ref mxTop, value); }
+    public double? MxBottom { get => mxBottom; set => Set(ref mxBottom, value); }
+    public double? MyTop { get => myTop; set => Set(ref myTop, value); }
+    public double? MyBottom { get => myBottom; set => Set(ref myBottom, value); }
     public double? MxUsed { get => mxUsed; set { Set(ref mxUsed, value); Raise(nameof(MxUsedResultLatex)); } }
     public double? MyUsed { get => myUsed; set { Set(ref myUsed, value); Raise(nameof(MyUsedResultLatex)); } }
     public double? LambdaX { get => lambdaX; set { Set(ref lambdaX, value); Raise(nameof(Ec2BranchXText)); RaiseSlendernessLatex(); } }
@@ -256,29 +253,6 @@ public sealed class LoadCaseViewModel : ViewModelBase
     }
 
     private static string Fmt(double? value) => value.HasValue ? value.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) : "-";
-
-    private static string BuildMomentSvg(double? top, double? bottom, string title, string color)
-    {
-        const int W = 80, H = 200, colX = 37, colW = 6, topY = 16, botY = 178, maxLen = 28;
-        double tVal = top ?? 0, bVal = bottom ?? 0;
-        double maxAbs = Math.Max(Math.Abs(tVal), Math.Abs(bVal));
-        double scale = maxAbs > 1e-9 ? maxLen / maxAbs : 0;
-        double tLen = tVal * scale, bLen = bVal * scale;
-        static string D(double v) => v.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-
-        return $"""
-<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="Segoe UI,Arial" font-size="9">
-  <rect x="{colX}" y="{topY}" width="{colW}" height="{botY - topY}" fill="#444"/>
-  <line x1="{colX + colW / 2}" y1="{topY}" x2="{D(colX + colW / 2 + tLen)}" y2="{topY}" stroke="{color}" stroke-width="2.5"/>
-  <circle cx="{D(colX + colW / 2 + tLen)}" cy="{topY}" r="3" fill="{color}" opacity="{(Math.Abs(tVal) > 1e-9 ? "1" : "0")}"/>
-  <line x1="{colX + colW / 2}" y1="{botY}" x2="{D(colX + colW / 2 + bLen)}" y2="{botY}" stroke="{color}" stroke-width="2.5"/>
-  <circle cx="{D(colX + colW / 2 + bLen)}" cy="{botY}" r="3" fill="{color}" opacity="{(Math.Abs(bVal) > 1e-9 ? "1" : "0")}"/>
-  <text x="{D(colX + colW / 2 + tLen + (tLen >= 0 ? 5 : -5))}" y="{topY + 4}" fill="{color}" text-anchor="{(tLen >= 0 ? "start" : "end")}" font-size="8">{D(tVal)}</text>
-  <text x="{D(colX + colW / 2 + bLen + (bLen >= 0 ? 5 : -5))}" y="{botY + 4}" fill="{color}" text-anchor="{(bLen >= 0 ? "start" : "end")}" font-size="8">{D(bVal)}</text>
-  <text x="{W / 2}" y="{H - 3}" fill="{color}" text-anchor="middle" font-weight="bold">{title}</text>
-</svg>
-""";
-    }
 
     private static bool IsSlender(double? m2) => m2.HasValue && Math.Abs(m2.Value) > 1e-9;
 

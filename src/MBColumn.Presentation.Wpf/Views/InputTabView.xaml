@@ -454,11 +454,24 @@
                                 <TextBlock Text="2D VIEW &#x00B7; GRID"
                                            Style="{StaticResource CaptionTextStyle}"
                                            Margin="0,0,0,4" />
-                                <controls:SvgImageControl Height="240"
-                                                          MinHeight="160"
-                                                          HorizontalAlignment="Stretch"
-                                                          SvgContent="{Binding SectionPreviewSvg}"
-                                                          MaxDisplayWidth="300" />
+                                <controls:SectionPreviewCanvas Height="240"
+                                                               MinHeight="160"
+                                                               HorizontalAlignment="Stretch"
+                                                               SectionWidth="{Binding SectionWidth}"
+                                                               SectionHeight="{Binding SectionHeight}"
+                                                               Cover="{Binding Cover}"
+                                                               UnitSystem="{Binding SelectedUnitSystem}"
+                                                               SectionShape="{Binding SelectedSectionShape}"
+                                                               Rebars="{Binding PreviewRebars}"
+                                                               SectionLabel="{Binding SectionPreviewLabel}"
+                                                               RebarLabel="{Binding RebarPreviewLabel}"
+                                                               CoverLabel="{Binding CoverPreviewLabel}"
+                                                               IsValid="{Binding IsSectionPreviewValid}"
+                                                               ErrorMessage="{Binding SectionPreviewErrorMessage}"
+                                                               BoundaryPoints="{Binding PreviewBoundaryPoints}"
+                                                               StirrupDiameterMm="{Binding StirrupDiameterMm}"
+                                                               InnerLegsX="{Binding InnerLegsX}"
+                                                               InnerLegsY="{Binding InnerLegsY}" />
                                 <StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Left"
                                             Margin="0,8,0,10">
@@ -2222,19 +2235,25 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <!-- ===== Mx Diagram (left) - dynamic ===== -->
-                                                <controls:SvgImageControl Grid.Column="0"
-                                                    SvgContent="{Binding SelectedLoadCase.MxDiagramSvg}"
-                                                    MaxDisplayWidth="80"
-                                                    Height="200" Margin="2,0" />
+                                                <controls:MomentDiagramControl
+                                                    Grid.Column="0"
+                                                    Title="Mx"
+                                                    DiagramColor="#c0392b"
+                                                    MomentTop="{Binding SelectedLoadCase.MxTop}"
+                                                    MomentBottom="{Binding SelectedLoadCase.MxBottom}"
+                                                    Height="220" Margin="2,0" />
 
                                                 <!-- Separator -->
                                                 <Rectangle Grid.Column="1" Width="1" Fill="#D6DEE6" Margin="0,4" VerticalAlignment="Stretch" />
 
                                                 <!-- ===== My Diagram (right) - dynamic ===== -->
-                                                <controls:SvgImageControl Grid.Column="2"
-                                                    SvgContent="{Binding SelectedLoadCase.MyDiagramSvg}"
-                                                    MaxDisplayWidth="80"
-                                                    Height="200" Margin="2,0" />
+                                                <controls:MomentDiagramControl
+                                                    Grid.Column="2"
+                                                    Title="My"
+                                                    DiagramColor="#2471a3"
+                                                    MomentTop="{Binding SelectedLoadCase.MyTop}"
+                                                    MomentBottom="{Binding SelectedLoadCase.MyBottom}"
+                                                    Height="220" Margin="2,0" />
                                             </Grid>
                                         </StackPanel>
                                     </Border>
@@ -2972,13 +2991,21 @@
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
 
-                                                <controls:SvgImageControl Grid.Column="0"
-                                                    SvgContent="{Binding SlendernessCalculationLoadCase.MxDiagramSvg}"
-                                                    MaxDisplayWidth="80" Height="200" Margin="2,0" />
+                                                <controls:MomentDiagramControl Grid.Column="0"
+                                                                               Title="Mx"
+                                                                               DiagramColor="#c0392b"
+                                                                               MomentTop="{Binding SlendernessCalculationLoadCase.MxTop}"
+                                                                               MomentBottom="{Binding SlendernessCalculationLoadCase.MxBottom}"
+                                                                               Height="300"
+                                                                               Margin="2,0" />
                                                 <Rectangle Grid.Column="1" Fill="#D6DEE6" Margin="0,4" />
-                                                <controls:SvgImageControl Grid.Column="2"
-                                                    SvgContent="{Binding SlendernessCalculationLoadCase.MyDiagramSvg}"
-                                                    MaxDisplayWidth="80" Height="200" Margin="2,0" />
+                                                <controls:MomentDiagramControl Grid.Column="2"
+                                                                               Title="My"
+                                                                               DiagramColor="#2471a3"
+                                                                               MomentTop="{Binding SlendernessCalculationLoadCase.MyTop}"
+                                                                               MomentBottom="{Binding SlendernessCalculationLoadCase.MyBottom}"
+                                                                               Height="300"
+                                                                               Margin="2,0" />
                                             </Grid>
                                         </StackPanel>
                                     </Border>
@@ -3107,13 +3134,21 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
-                                            <controls:SvgImageControl Grid.Column="0"
-                                                SvgContent="{Binding SlendernessCalculationLoadCase.MxDiagramSvg}"
-                                                MaxDisplayWidth="80" Height="170" Margin="2,0" />
+                                            <controls:MomentDiagramControl Grid.Column="0"
+                                                                           Title="Mx"
+                                                                           DiagramColor="#c0392b"
+                                                                           MomentTop="{Binding SlendernessCalculationLoadCase.MxTop}"
+                                                                           MomentBottom="{Binding SlendernessCalculationLoadCase.MxBottom}"
+                                                                           Height="170"
+                                                                           Margin="2,0" />
                                             <Rectangle Grid.Column="1" Fill="#D6DEE6" Margin="0,4" />
-                                            <controls:SvgImageControl Grid.Column="2"
-                                                SvgContent="{Binding SlendernessCalculationLoadCase.MyDiagramSvg}"
-                                                MaxDisplayWidth="80" Height="170" Margin="2,0" />
+                                            <controls:MomentDiagramControl Grid.Column="2"
+                                                                           Title="My"
+                                                                           DiagramColor="#2471a3"
+                                                                           MomentTop="{Binding SlendernessCalculationLoadCase.MyTop}"
+                                                                           MomentBottom="{Binding SlendernessCalculationLoadCase.MyBottom}"
+                                                                           Height="170"
+                                                                           Margin="2,0" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>

@@ -61,6 +61,13 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Triggers>
+            <!-- Read-only cells: grey, non-editable cursor -->
+            <Trigger Property="IsReadOnly" Value="True">
+                <Setter Property="Background" Value="#EFEFEF" />
+                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+            <!-- Selection clears grey so the row's selection colour shows through -->
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
@@ -73,6 +80,10 @@
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Style.Triggers>
+            <!-- Read-only table: grey row background -->
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=IsReadOnly}" Value="True">
+                <Setter Property="Background" Value="#EFEFEF" />
+            </DataTrigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource AccentBlueSoftBrush}" />
             </Trigger>
