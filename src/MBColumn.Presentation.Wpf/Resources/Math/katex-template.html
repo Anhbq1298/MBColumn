@@ -75,9 +75,13 @@
           strict: "ignore"
         });
 
-        report("rendered", {
-          width: Math.ceil(document.body.scrollWidth),
-          height: Math.ceil(document.body.scrollHeight)
+        // Wait for KaTeX fonts to finish loading before reporting dimensions,
+        // so the host knows the equation is truly fully rendered.
+        document.fonts.ready.then(function () {
+          report("rendered", {
+            width: Math.ceil(document.body.scrollWidth),
+            height: Math.ceil(document.body.scrollHeight)
+          });
         });
       }
       catch (err) {
