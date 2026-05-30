@@ -1,5 +1,6 @@
 ﻿using System.Windows.Input;
 using MBColumn.Application.DTOs;
+using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Presentation.Wpf.Commands;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -27,6 +28,7 @@ public sealed class PMDiagramViewModel : ViewModelBase
     public double SelectedAngle { get; private set; }
     public string UnitLabels { get; private set; } = "";
     public double Ratio { get; private set; }
+    public string DiagramSvg { get; private set; } = "";
     public int ResetVersion { get => resetVersion; private set => Set(ref resetVersion, value); }
     public bool ShowGrid { get => showGrid; set => Set(ref showGrid, value); }
     public bool ShowLabels { get => showLabels; set => Set(ref showLabels, value); }
@@ -52,8 +54,17 @@ public sealed class PMDiagramViewModel : ViewModelBase
 
     private void RaiseAll()
     {
+        var allPoints = CapacityPoints
+            .Concat(ReferenceLines)
+            .Concat(DemandPoint is not null ? [DemandPoint] : Array.Empty<ControlPointDto>())
+            .Concat(GoverningPoint is not null ? [GoverningPoint] : Array.Empty<ControlPointDto>())
+            .ToList();
+        DiagramSvg = allPoints.Count > 0
+            ? InteractionDiagramSvgRenderer.RenderPmDiagram(allPoints, XAxisLabel, YAxisLabel, Ratio)
+            : "";
         Raise(nameof(DiagramTitle)); Raise(nameof(XAxisLabel)); Raise(nameof(YAxisLabel)); Raise(nameof(UnitLabels)); Raise(nameof(CapacityPoints));
         Raise(nameof(DemandPoint)); Raise(nameof(GoverningPoint)); Raise(nameof(ReferenceLines)); Raise(nameof(SelectedAngle)); Raise(nameof(Ratio));
+        Raise(nameof(DiagramSvg));
     }
 }
 

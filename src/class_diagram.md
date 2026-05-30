@@ -137,7 +137,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **CalculationReportBuilder** | /// Builds a complete ReportData with all 10 report sections /// from project metadata and a CalculationResultDto. ///. Key methods: Build. | `CalculationReportBuilder.cs` |
-| `class` | **CircularSevenPointBuilder** | /// Generates the 7-point independent verification for circular sections /// using the circular compression segment method. /// Correct centroid formula: ybar = (2/3)(R²-yNA²)^(3/2) / Aseg ///. Key methods: Build. | `CircularSevenPointBuilder.cs` |
+| `class` | **CircularSevenPointBuilder** | /// Generates the 7-point independent verification for circular sections /// using the circular compression segment method. /// Correct centroid formula: ybar = (2/3)(R²-y_a²)^(3/2) / Aseg ///. Key methods: Build. | `CircularSevenPointBuilder.cs` |
 | `class` | **ConclusionSectionBuilder** | Represents the ConclusionSectionBuilder class. Key methods: Build. | `ConclusionSectionBuilder.cs` |
 | `class` | **DemandCaseSectionBuilder** | Represents the DemandCaseSectionBuilder class. Key methods: BuildAppliedDemand, BuildDemandResults. | `DemandCaseSectionBuilder.cs` |
 | `class` | **GeometryMaterialSectionBuilder** | Represents the GeometryMaterialSectionBuilder class. Key methods: Build. | `GeometryMaterialSectionBuilder.cs` |

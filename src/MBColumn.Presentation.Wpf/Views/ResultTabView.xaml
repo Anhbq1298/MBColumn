@@ -1044,25 +1044,11 @@
                                 </StackPanel>
                             </WrapPanel>
                         </Border>
-                        <controls:DiagramCanvas2D Grid.Row="2"
+                        <controls:SvgImageControl Grid.Row="2"
                                                   MinHeight="220"
-                                                  Points="{Binding PmAnglePoints}"
-                                                  ReferenceLines="{Binding PmReferenceLines}"
-                                                  XAxisLabel="{Binding PM.XAxisLabel}"
-                                                  YAxisLabel="{Binding PM.YAxisLabel}"
-                                                  ShowGrid="{Binding ShowGrid}"
-                                                  ShowLabels="{Binding ShowLabels}"
-                                                  ShowDemandPoint="{Binding ShowDemandPoint}"
-                                                  ShowDemandLabel="False"
-                                                  ShowReferenceLines="{Binding ShowPmaxPmin}"
-                                                  ShowNominalCurve="{Binding ShowNominalCurve}"
-                                                  XGridStep="{Binding MStep}"
-                                                  YGridStep="{Binding PStep}"
-                                                  BoundsOverride="{Binding SharedPmBounds}"
-                                                  SelectedPoint="{Binding SelectedChartPoint}"
-                                                  HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
-                                                  Ratio="{Binding PM.Ratio}"
-                                                  ResetVersion="{Binding PM.ResetVersion}" />
+                                                  SvgContent="{Binding PM.DiagramSvg}"
+                                                  MaxDisplayWidth="700"
+                                                  HorizontalAlignment="Stretch" />
                     </Grid>
                 </Border>
 
@@ -1115,23 +1101,11 @@
                                 </StackPanel>
                             </WrapPanel>
                         </Border>
-                        <controls:DiagramCanvas2D Grid.Row="2"
+                        <controls:SvgImageControl Grid.Row="2"
                                                   MinHeight="220"
-                                                  Points="{Binding MxMyPoints}"
-                                                  XAxisLabel="{Binding MM.XAxisLabel}"
-                                                  YAxisLabel="{Binding MM.YAxisLabel}"
-                                                  ShowGrid="{Binding ShowGrid}"
-                                                  ShowLabels="{Binding ShowLabels}"
-                                                  ShowDemandPoint="{Binding ShowDemandPoint}"
-                                                  ShowDemandLabel="False"
-                                                  ShowNominalCurve="{Binding ShowNominalCurve}"
-                                                  UseEqualAspect="{Binding UseEqualAspectForMM}"
-                                                  XGridStep="{Binding MStepX}"
-                                                  YGridStep="{Binding MStepY}"
-                                                  SelectedPoint="{Binding SelectedChartPoint}"
-                                                  HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
-                                                  Ratio="{Binding MM.Ratio}"
-                                                  ResetVersion="{Binding MM.ResetVersion}" />
+                                                  SvgContent="{Binding MM.DiagramSvg}"
+                                                  MaxDisplayWidth="700"
+                                                  HorizontalAlignment="Stretch" />
                     </Grid>
                 </Border>
             </Grid>
