@@ -39,30 +39,34 @@ public partial class ResultDetailWindow : Window
 
     private async Task WaitForMathRenderAsync()
     {
-        for (int cycle = 0; cycle < 4; cycle++)
+        var deadline = Task.Delay(TimeSpan.FromSeconds(20));
+        int emptyPolls = 0;
+
+        while (!deadline.IsCompleted)
         {
             await Dispatcher.Yield(DispatcherPriority.Render);
             UpdateLayout();
 
             var mathViews = FindVisualChildren<MathEquationView>(DetailHost).ToList();
+
+            if (mathViews.Count == 0)
+            {
+                // Visual tree may not be fully built yet; poll briefly then give up.
+                if (++emptyPolls >= 5) return;
+                await Task.WhenAny(Task.Delay(100), deadline);
+                continue;
+            }
+
+            emptyPolls = 0;
             var pending = mathViews
                 .Where(view => !view.IsRenderComplete)
                 .Select(view => view.RenderCompletion)
                 .ToArray();
 
-            if (pending.Length == 0)
-            {
-                if (mathViews.Count > 0)
-                {
-                    return;
-                }
+            if (pending.Length == 0) return; // All equations fully rendered
 
-                await Task.Delay(100);
-                continue;
-            }
-
-            var timeout = Task.Delay(TimeSpan.FromSeconds(8));
-            await Task.WhenAny(Task.WhenAll(pending), timeout);
+            // Block until every pending equation finishes or the deadline fires.
+            await Task.WhenAny(Task.WhenAll(pending), deadline);
         }
     }
 
