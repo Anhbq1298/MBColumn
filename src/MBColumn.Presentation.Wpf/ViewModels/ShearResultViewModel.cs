@@ -10,14 +10,21 @@ namespace MBColumn.Presentation.Wpf.ViewModels;
 public sealed class ShearResultViewModel : ViewModelBase
 {
     private ShearResultDto? dto;
+    private IReadOnlyList<ShearEnvelopeSummaryRowViewModel> envelopeSummaryRows = [];
 
     public void Load(ShearResultDto? result)
+        => Load(result, []);
+
+    public void Load(ShearResultDto? result, IReadOnlyList<LoadCaseResultDto>? loadCaseResults)
     {
         dto = result;
+        envelopeSummaryRows = BuildEnvelopeSummaryRows(loadCaseResults ?? [], result);
         Raise(string.Empty);
     }
 
     public bool HasResult => dto is not null;
+    public IReadOnlyList<ShearEnvelopeSummaryRowViewModel> EnvelopeSummaryRows => envelopeSummaryRows;
+    public bool HasEnvelopeSummary => envelopeSummaryRows.Count > 0;
     public bool HasDemand => dto?.HasDemand == true;
     public bool HasLinks => dto?.HasLinks == true;
     public string ForceUnit => dto?.ForceUnit ?? "kN";
@@ -62,19 +69,6 @@ public sealed class ShearResultViewModel : ViewModelBase
     public string VRdXText => dto is null ? "-" : $"{dto.VRdXDisplay:F1}";
     public string VRdYText => dto is null ? "-" : $"{dto.VRdYDisplay:F1}";
 
-    public string LinkAreaEquationText => dto is null || !HasLinks ? "-" :
-        $"Ah = pi x phi_h^2 / 4 = {dto.LinkAhMm2:F2} mm2";
-    public string LinkSpacingEquationText => dto is null || !HasLinks ? "-" :
-        $"s = {dto.LinkSpacingMm:F0} mm, fywd = fyk / gamma_s = {dto.FywkMpa:F1} / 1.15 = {dto.FywdMpa:F1} MPa";
-    public string CircularHoopEquationXText => BuildCircularHoopEquation(isX: true);
-    public string CircularHoopEquationYText => BuildCircularHoopEquation(isX: false);
-    public string RectangularLinkEquationXText => BuildRectangularLinkEquation(isX: true);
-    public string RectangularLinkEquationYText => BuildRectangularLinkEquation(isX: false);
-    public string VRdMaxEquationXText => BuildVRdMaxEquation(isX: true);
-    public string VRdMaxEquationYText => BuildVRdMaxEquation(isX: false);
-    public string MinAswEquationXText => BuildMinAswEquation(isX: true);
-    public string MinAswEquationYText => BuildMinAswEquation(isX: false);
-
     public bool IsStruttingCriticalX => dto?.IsStruttingCriticalX == true;
     public bool IsStruttingCriticalY => dto?.IsStruttingCriticalY == true;
     public bool AnyStruttingCritical => dto?.AnyStruttingCritical == true;
@@ -98,15 +92,6 @@ public sealed class ShearResultViewModel : ViewModelBase
     public bool IsGoverningPass => dto?.GoverningStatus == CapacityStatus.Pass;
     public string GoverningUtilText => dto is null ? "-" : $"{dto.GoverningUtilisation:F3}";
 
-    public string KEquationXText => BuildKEquation(isX: true);
-    public string KEquationYText => BuildKEquation(isX: false);
-    public string RhoEquationXText => BuildRhoEquation(isX: true);
-    public string RhoEquationYText => BuildRhoEquation(isX: false);
-    public string VRdcEquationXText => BuildVRdcEquation(isX: true);
-    public string VRdcEquationYText => BuildVRdcEquation(isX: false);
-    public string UtilEquationXText => BuildUtilEquation(isX: true);
-    public string UtilEquationYText => BuildUtilEquation(isX: false);
-
     public string ConcreteFormulaLatex =>
         @"V_{Rd,c}=\max\left(\left[C_{Rd,c}k(100\rho_l f_{ck})^{1/3}+k_1\sigma_{cp}\right]b_wd,\;(v_{min}+k_1\sigma_{cp})b_wd\right)";
     public string ConcreteXSubLatex => BuildConcreteSubLatex(isX: true);
@@ -122,6 +107,8 @@ public sealed class ShearResultViewModel : ViewModelBase
     public string RectangularLinkFormulaLatex => @"V_{Rd,s}=\frac{A_{sw}}{s}zf_{ywd}\cot\theta";
     public string RectangularLinkXSubLatex => BuildRectangularLinkSubLatex(isX: true);
     public string RectangularLinkYSubLatex => BuildRectangularLinkSubLatex(isX: false);
+    public string RectangularLinkInputXSubLatex => BuildRectangularLinkInputSubLatex(isX: true);
+    public string RectangularLinkInputYSubLatex => BuildRectangularLinkInputSubLatex(isX: false);
     public string VRdMaxFormulaLatex => @"V_{Rd,max}=\frac{\alpha_{cw}b_wz\nu_1f_{cd}}{\cot\theta+\tan\theta}";
     public string VRdMaxXSubLatex => BuildVRdMaxSubLatex(isX: true);
     public string VRdMaxYSubLatex => BuildVRdMaxSubLatex(isX: false);
@@ -131,6 +118,23 @@ public sealed class ShearResultViewModel : ViewModelBase
     public string UtilFormulaLatex => @"DCR=\frac{|V_{Ed}|}{V_{Rd}}";
     public string UtilXSubLatex => BuildUtilSubLatex(isX: true);
     public string UtilYSubLatex => BuildUtilSubLatex(isX: false);
+
+    public string Step1UtilXSubLatex => BuildStep1UtilSubLatex(isX: true);
+    public string Step1UtilYSubLatex => BuildStep1UtilSubLatex(isX: false);
+    public string Step2UtilXSubLatex => BuildStep2UtilSubLatex(isX: true);
+    public string Step2UtilYSubLatex => BuildStep2UtilSubLatex(isX: false);
+    public string GoverningCaseName =>
+        envelopeSummaryRows.FirstOrDefault(r => r.IsGoverning)?.CaseName ?? "";
+
+    public bool ShowUtilisationPanel => HasDemand || (IsCircularHoop && HasLinks);
+
+    public bool ShowLinksNotRequiredX => HasDemand && dto?.LinksRequiredX == false;
+    public bool ShowLinksNotRequiredY => HasDemand && dto?.LinksRequiredY == false;
+    public bool ShowLinksRequiredX => HasDemand && dto?.LinksRequiredX == true;
+    public bool ShowLinksRequiredY => HasDemand && dto?.LinksRequiredY == true;
+    public bool ShowStep2FailX => HasDemand && HasLinks && dto?.StatusX == CapacityStatus.Fail;
+    public bool ShowStep2FailY => HasDemand && HasLinks && dto?.StatusY == CapacityStatus.Fail;
+    public bool HasLinksAndDemand => HasLinks && HasDemand;
 
     private static double ThetaDeg(double cot) =>
         cot > 0 ? System.Math.Atan(1.0 / cot) * 180.0 / System.Math.PI : 0;
@@ -147,7 +151,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double rho = isX ? dto.RhoLX : dto.RhoLY;
         double v = isX ? dto.VRdcXDisplay : dto.VRdcYDisplay;
         string axis = isX ? "x" : "y";
-        return $@"{axis}:\quad k={F(k, 3)},\;\rho_l={F(rho, 4)},\;b_w={F(bw, 0)}\;\mathrm{{mm}},\;d={F(d, 0)}\;\mathrm{{mm}}\Rightarrow V_{{Rd,c}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"k={F(k, 3)},\;\rho_l={F(rho, 4)},\;b_w={F(bw, 0)}\;\mathrm{{mm}},\;d={F(d, 0)}\;\mathrm{{mm}}\Rightarrow V_{{Rd,c}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildCircularHoopSubLatex(bool isX)
@@ -156,7 +160,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
         double v = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
         string axis = isX ? "x" : "y";
-        return $@"{axis}:\quad V_{{Rd,s}}=\frac{{\pi}}{{2}}\frac{{{F(dto.LinkAhMm2, 2)}}}{{{F(dto.LinkSpacingMm, 0)}}}({F(dto.CircularHoopCentrelineDiameterMm, 0)})({F(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"V_{{Rd,s}}=\frac{{\pi}}{{2}}\frac{{{F(dto.LinkAhMm2, 2)}}}{{{F(dto.LinkSpacingMm, 0)}}}({F(dto.CircularHoopCentrelineDiameterMm, 0)})({F(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildRectangularLinkSubLatex(bool isX)
@@ -166,8 +170,16 @@ public sealed class ShearResultViewModel : ViewModelBase
         double z = isX ? dto.ZXMm : dto.ZYMm;
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
         double v = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
-        string axis = isX ? "x" : "y";
-        return $@"{axis}:\quad V_{{Rd,s}}={F(aswS, 4)}({F(z, 0)})({F(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"V_{{Rd,s}}={F(aswS, 4)}({F(z, 0)})({F(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+    }
+
+    private string BuildRectangularLinkInputSubLatex(bool isX)
+    {
+        if (dto is null || !HasLinks) return "";
+        double aswS = isX ? dto.AswSX : dto.AswSY;
+        double z = isX ? dto.ZXMm : dto.ZYMm;
+        double cot = isX ? dto.CotThetaX : dto.CotThetaY;
+        return $@"\frac{{A_{{sw}}}}{{s}}={F(aswS, 4)}\;\mathrm{{mm^2/mm}},\quad z={F(z, 0)}\;\mathrm{{mm}},\quad \cot\theta={F(cot, 2)}";
     }
 
     private string BuildVRdMaxSubLatex(bool isX)
@@ -178,7 +190,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
         double v = isX ? dto.VRdMaxXDisplay : dto.VRdMaxYDisplay;
         string axis = isX ? "x" : "y";
-        return $@"{axis}:\quad b_w={F(bw, 0)},\;z={F(z, 0)},\;f_{{cd}}={F(dto.FcdMpa, 2)},\;\cot\theta={F(cot, 2)}\Rightarrow V_{{Rd,max}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"b_w={F(bw, 0)},\;z={F(z, 0)},\;f_{{cd}}={F(dto.FcdMpa, 2)},\;\cot\theta={F(cot, 2)}\Rightarrow V_{{Rd,max}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildMinAswSubLatex(bool isX)
@@ -188,7 +200,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double req = isX ? dto.AswSMinRequiredX : dto.AswSMinRequiredY;
         double prov = isX ? dto.AswSX : dto.AswSY;
         string axis = isX ? "x" : "y";
-        return $@"{axis}:\quad \frac{{A_{{sw}}}}{{s}}_{{min}}=\frac{{0.08\sqrt{{{F(dto.FckMpa, 1)}}}}}{{{F(dto.FywkMpa, 1)}}}({F(bw, 0)})={F(req, 4)}\;\mathrm{{mm^2/mm}},\quad \frac{{A_{{sw}}}}{{s}}={F(prov, 4)}";
+        return $@"\frac{{A_{{sw}}}}{{s}}_{{min}}=\frac{{0.08\sqrt{{{F(dto.FckMpa, 1)}}}}}{{{F(dto.FywkMpa, 1)}}}({F(bw, 0)})={F(req, 4)}\;\mathrm{{mm^2/mm}},\quad \frac{{A_{{sw}}}}{{s}}={F(prov, 4)}";
     }
 
     private string BuildUtilSubLatex(bool isX)
@@ -198,78 +210,105 @@ public sealed class ShearResultViewModel : ViewModelBase
         double vRd = isX ? dto.VRdXDisplay : dto.VRdYDisplay;
         double util = isX ? dto.UtilisationX : dto.UtilisationY;
         string axis = isX ? "x" : "y";
-        return $@"{axis}:\quad DCR=\frac{{|{F(vEd, 1)}|}}{{{F(vRd, 1)}}}={F(util, 3)}";
+        return $@"DCR=\frac{{|{F(vEd, 1)}|}}{{{F(vRd, 1)}}}={F(util, 3)}";
     }
 
-    private string BuildKEquation(bool isX)
+    private string BuildStep1UtilSubLatex(bool isX)
     {
-        if (dto is null) return "-";
-        double d = isX ? dto.DEffXMm : dto.DEffYMm;
-        double k = isX ? dto.KFactorX : dto.KFactorY;
-        return $"k = min(1 + sqrt(200 / d), 2.0) = min(1 + sqrt(200 / {d:F0}), 2.0) = {k:F3}";
+        if (dto is null || !HasDemand) return "";
+        double vEd = Math.Abs(isX ? dto.VEdXDisplay : dto.VEdYDisplay);
+        double vRdc = isX ? dto.VRdcXDisplay : dto.VRdcYDisplay;
+        double util = vRdc > 0 ? vEd / vRdc : 0;
+        return $@"\frac{{|V_{{Ed}}|}}{{V_{{Rd,c}}}}=\frac{{|{F(vEd, 1)}|}}{{{F(vRdc, 1)}\;\mathrm{{{ForceUnit}}}}}={F(util, 3)}";
     }
 
-    private string BuildRhoEquation(bool isX)
+    private string BuildStep2UtilSubLatex(bool isX)
     {
-        if (dto is null) return "-";
-        double bw = isX ? dto.BwXMm : dto.BwYMm;
-        double d = isX ? dto.DEffXMm : dto.DEffYMm;
-        double rho = isX ? dto.RhoLX : dto.RhoLY;
-        return $"rho_l = min(Asl / (bw x d), 0.02) = {rho:F4} using bw = {bw:F0} mm and d = {d:F0} mm";
+        if (dto is null || !HasLinks) return "";
+        double vEd = Math.Abs(isX ? dto.VEdXDisplay : dto.VEdYDisplay);
+        double vRds = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
+        double util = vRds > 0 ? vEd / vRds : 0;
+        return $@"\frac{{|V_{{Ed}}|}}{{V_{{Rd,s}}}}=\frac{{|{F(vEd, 1)}|}}{{{F(vRds, 1)}\;\mathrm{{{ForceUnit}}}}}={F(util, 3)}";
     }
 
-    private string BuildVRdcEquation(bool isX)
+    private static IReadOnlyList<ShearEnvelopeSummaryRowViewModel> BuildEnvelopeSummaryRows(
+        IReadOnlyList<LoadCaseResultDto> loadCaseResults,
+        ShearResultDto? governing)
     {
-        if (dto is null) return "-";
-        double bw = isX ? dto.BwXMm : dto.BwYMm;
-        double d = isX ? dto.DEffXMm : dto.DEffYMm;
-        double v = isX ? dto.VRdcXDisplay : dto.VRdcYDisplay;
-        return $"VRd,c = [CRd,c k (100 rho_l fck)^(1/3) + k1 sigma_cp] bw d = {v:F1} {ForceUnit} (bw = {bw:F0}, d = {d:F0}, fck = {dto.FckMpa:F1} MPa)";
+        var candidates = loadCaseResults
+            .Where(r => r.ShearResult is not null)
+            .Select(r => (Case: r, Shear: r.ShearResult!))
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            return governing is null
+                ? []
+                : MarkGoverning([
+                    BuildRow("Vx envelope", "Envelope", governing.VEdXDisplay, governing.VRdXDisplay, governing.UtilisationX, governing.StatusX, governing.ForceUnit),
+                    BuildRow("Vy envelope", "Envelope", governing.VEdYDisplay, governing.VRdYDisplay, governing.UtilisationY, governing.StatusY, governing.ForceUnit)
+                ]);
+        }
+
+        var x = candidates
+            .OrderByDescending(c => Math.Abs(c.Shear.VEdXDisplay))
+            .ThenByDescending(c => c.Shear.UtilisationX)
+            .First();
+        var y = candidates
+            .OrderByDescending(c => Math.Abs(c.Shear.VEdYDisplay))
+            .ThenByDescending(c => c.Shear.UtilisationY)
+            .First();
+
+        return MarkGoverning([
+            BuildRow("Vx envelope", x.Case.LoadCaseName, x.Shear.VEdXDisplay, x.Shear.VRdXDisplay, x.Shear.UtilisationX, x.Shear.StatusX, x.Shear.ForceUnit),
+            BuildRow("Vy envelope", y.Case.LoadCaseName, y.Shear.VEdYDisplay, y.Shear.VRdYDisplay, y.Shear.UtilisationY, y.Shear.StatusY, y.Shear.ForceUnit)
+        ]);
     }
 
-    private string BuildCircularHoopEquation(bool isX)
-    {
-        if (dto is null || !HasLinks) return "-";
-        double cot = isX ? dto.CotThetaX : dto.CotThetaY;
-        double v = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
-        return $"VRd,s = (pi / 2) x (Ah / s) x D' x fywd x cot theta = (pi / 2) x ({dto.LinkAhMm2:F2} / {dto.LinkSpacingMm:F0}) x {dto.CircularHoopCentrelineDiameterMm:F0} x {dto.FywdMpa:F1} x {cot:F2} = {v:F1} {ForceUnit}";
-    }
+    private static ShearEnvelopeSummaryRowViewModel BuildRow(
+        string direction,
+        string caseName,
+        double demand,
+        double capacity,
+        double ratio,
+        CapacityStatus status,
+        string forceUnit)
+        => new(
+            Direction: direction,
+            CaseName: caseName,
+            Demand: Math.Abs(demand),
+            Capacity: capacity,
+            Ratio: ratio,
+            Status: status,
+            ForceUnit: forceUnit,
+            IsGoverning: false);
 
-    private string BuildRectangularLinkEquation(bool isX)
+    private static IReadOnlyList<ShearEnvelopeSummaryRowViewModel> MarkGoverning(IReadOnlyList<ShearEnvelopeSummaryRowViewModel> rows)
     {
-        if (dto is null || !HasLinks) return "-";
-        double aswS = isX ? dto.AswSX : dto.AswSY;
-        double z = isX ? dto.ZXMm : dto.ZYMm;
-        double cot = isX ? dto.CotThetaX : dto.CotThetaY;
-        double v = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
-        return $"VRd,s = (Asw / s) x z x fywd x cot theta = {aswS:F4} x {z:F0} x {dto.FywdMpa:F1} x {cot:F2} = {v:F1} {ForceUnit}";
-    }
+        if (rows.Count == 0)
+        {
+            return rows;
+        }
 
-    private string BuildVRdMaxEquation(bool isX)
-    {
-        if (dto is null || !HasLinks) return "-";
-        double bw = isX ? dto.BwXMm : dto.BwYMm;
-        double z = isX ? dto.ZXMm : dto.ZYMm;
-        double cot = isX ? dto.CotThetaX : dto.CotThetaY;
-        double v = isX ? dto.VRdMaxXDisplay : dto.VRdMaxYDisplay;
-        return $"VRd,max = alpha_cw bw z nu1 fcd / (cot theta + tan theta) = {v:F1} {ForceUnit} (bw = {bw:F0}, z = {z:F0}, fcd = {dto.FcdMpa:F2} MPa, cot theta = {cot:F2})";
+        double governingRatio = rows.Max(r => r.Ratio);
+        return rows
+            .Select(r => r with { IsGoverning = Math.Abs(r.Ratio - governingRatio) < 1e-9 })
+            .ToList();
     }
+}
 
-    private string BuildMinAswEquation(bool isX)
-    {
-        if (dto is null || !HasLinks) return "-";
-        double bw = isX ? dto.BwXMm : dto.BwYMm;
-        double req = isX ? dto.AswSMinRequiredX : dto.AswSMinRequiredY;
-        double prov = isX ? dto.AswSX : dto.AswSY;
-        return $"Asw/s,min = rho_w,min x bw = 0.08 sqrt(fck) / fyk x {bw:F0} = {req:F4} mm2/mm; provided = {prov:F4} mm2/mm";
-    }
-
-    private string BuildUtilEquation(bool isX)
-    {
-        if (dto is null) return "-";
-        double vEd = isX ? dto.VEdXDisplay : dto.VEdYDisplay;
-        double vRd = isX ? dto.VRdXDisplay : dto.VRdYDisplay;
-        double util = isX ? dto.UtilisationX : dto.UtilisationY;
-        return $"DCR = |VEd| / VRd = |{vEd:F1}| / {vRd:F1} = {util:F3}";
-    }
+public sealed record ShearEnvelopeSummaryRowViewModel(
+    string Direction,
+    string CaseName,
+    double Demand,
+    double Capacity,
+    double Ratio,
+    CapacityStatus Status,
+    string ForceUnit,
+    bool IsGoverning)
+{
+    public string DemandText => $"{Demand:F1} {ForceUnit}";
+    public string CapacityText => $"{Capacity:F1} {ForceUnit}";
+    public string RatioText => $"{Ratio:F3}";
+    public string StatusText => Status == CapacityStatus.Pass ? "PASS" : "FAIL";
 }

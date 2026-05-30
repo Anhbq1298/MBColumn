@@ -1446,10 +1446,10 @@
                                         </TextBlock.Style>
                                     </TextBlock>
                                 </StackPanel>
-                                <TextBlock Text="{Binding Ec2AswsXText}"
-                                           FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="12,0,0,0" />
+                                <controls:SafeFormulaControl Formula="{Binding Ec2AswsXLatex}"
+                                                             Scale="14"
+                                                             FormulaForeground="{DynamicResource TextMutedBrush}"
+                                                             Margin="12,2,0,2" />
                             </StackPanel>
 
                             <!-- EC2 9.5.3 checks - rectangular only -->
@@ -1539,14 +1539,14 @@
                                         </TextBlock.Style>
                                     </TextBlock>
                                 </StackPanel>
-                                <TextBlock Text="{Binding Ec2AswsXText}"
-                                           FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="12,0,0,1" />
-                                <TextBlock Text="{Binding Ec2AswsYText}"
-                                           FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="12,0,0,0" />
+                                <controls:SafeFormulaControl Formula="{Binding Ec2AswsXLatex}"
+                                                             Scale="14"
+                                                             FormulaForeground="{DynamicResource TextMutedBrush}"
+                                                             Margin="12,2,0,2" />
+                                <controls:SafeFormulaControl Formula="{Binding Ec2AswsYLatex}"
+                                                             Scale="14"
+                                                             FormulaForeground="{DynamicResource TextMutedBrush}"
+                                                             Margin="12,2,0,0" />
                             </StackPanel>
                         </StackPanel>
                     </GroupBox>
@@ -1735,13 +1735,6 @@
                                         <TextBlock Style="{StaticResource HelperTextStyle}" Margin="0,3,0,0" Foreground="{DynamicResource TextMutedBrush}">Typical: 0.5 &#x2013; 2.5  (EC2 &#x00A7;5.8.4)</TextBlock>
                                     </StackPanel>
 
-                                    <StackPanel Width="180" Margin="0,12,10,6">
-                                        <CheckBox Content="Default A = 0.7 (&#x03C6;eff unknown)"
-                                                  IsChecked="{Binding UseDefaultAWhenPhiEffUnknown, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        <TextBlock Text="B auto from reinforcement layout"
-                                                   Style="{StaticResource HelperTextStyle}"
-                                                   Margin="2,4,0,0" />
-                                    </StackPanel>
                                 </WrapPanel>
                             </Border>
 
@@ -2559,16 +2552,16 @@
                                         <TextBlock Text="Axis" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="2,0">
-                                        <TextBlock Text="{Binding LengthLabel, StringFormat='l0 ({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <controls:SafeFormulaControl Formula="l_0" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" HorizontalAlignment="Center" />
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="lambda (&#x03BB;)" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5"/>
+                                        <controls:SafeFormulaControl Formula="\lambda" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" HorizontalAlignment="Center" />
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="lambda lim (&#x03BB;lim)" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10.5"/>
+                                        <controls:SafeFormulaControl Formula="\lambda_{lim}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" HorizontalAlignment="Center" />
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1">
-                                        <TextBlock Text="rm" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                        <controls:SafeFormulaControl Formula="r_m" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" HorizontalAlignment="Center" />
                                     </Border>
                                     <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="2,0">
                                         <TextBlock Text="{Binding MomentLabel, StringFormat='M2&#x0a;({0})'}" TextWrapping="Wrap" TextAlignment="Center" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
@@ -2628,11 +2621,19 @@
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource PrimaryNavyBrush}"
                                            Margin="0,2,0,6" />
-                                <TextBlock Text="Flow: l0 = k x L; lambda = l0 / i; compare lambda with lambda lim; stocky uses M2 = 0, slender uses nominal curvature; Moment Used is passed to PMM."
-                                           TextWrapping="Wrap"
-                                           FontSize="11.5"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="0,0,0,8" />
+                                <StackPanel Margin="0,0,0,8">
+                                    <TextBlock Text="Flow"
+                                               FontSize="11.5"
+                                               Foreground="{DynamicResource TextMutedBrush}"
+                                               Margin="0,0,0,2" />
+                                    <controls:SafeFormulaControl Formula="l_0=kL,\quad \lambda=\frac{l_0}{i},\quad \lambda&lt;\lambda_{lim}\Rightarrow M_2=0,\quad \lambda\geq\lambda_{lim}\Rightarrow \mathrm{nominal\;curvature}"
+                                                                 Scale="12"
+                                                                 FormulaForeground="{DynamicResource TextMutedBrush}" />
+                                    <TextBlock Text="Moment Used is passed to PMM."
+                                               FontSize="11.5"
+                                               Foreground="{DynamicResource TextMutedBrush}"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
 
                                 <Expander Header="Step-by-step equations"
                                           IsExpanded="True"
@@ -2672,67 +2673,59 @@
                                             <TextBlock Text="1. Effective length" TextWrapping="Wrap" />
                                         </Border>
                                         <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="l0 = k x L" TextWrapping="Wrap" />
+                                            <controls:SafeFormulaControl Formula="l_0=kL" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="{Binding L0xText, StringFormat='l0x = {0}'}" TextAlignment="Center" />
+                                            <controls:SafeFormulaControl Formula="{Binding L0xLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
-                                            <TextBlock Text="{Binding L0yText, StringFormat='l0y = {0}'}" TextAlignment="Center" />
+                                            <controls:SafeFormulaControl Formula="{Binding L0yLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
 
                                         <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                             <TextBlock Text="2. Slenderness ratio" TextWrapping="Wrap" />
                                         </Border>
                                         <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="lambda = l0 / i" TextWrapping="Wrap" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=-, StringFormat='lambda x = {0:F2}'}" TextAlignment="Center" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaXResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=-, StringFormat='lambda y = {0:F2}'}" TextAlignment="Center" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaYResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
 
                                         <Border Grid.Row="3" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                             <TextBlock Text="3. Slenderness limit" TextWrapping="Wrap" />
                                         </Border>
                                         <Border Grid.Row="3" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="lambda lim = 20 A B C / sqrt(n)" TextWrapping="Wrap" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaLimitFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="3" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat='lambda lim,x = {0:F2}'}" TextAlignment="Center" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaLimitXResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="3" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat='lambda lim,y = {0:F2}'}" TextAlignment="Center" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaLimitYResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
 
                                         <Border Grid.Row="4" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                             <TextBlock Text="4. Moment ratio" TextWrapping="Wrap" />
                                         </Border>
                                         <Border Grid.Row="4" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="rm = M01 / M02" TextWrapping="Wrap" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MomentRatioFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="4" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding SelectedLoadCase.M01x, TargetNullValue=-, StringFormat='M01 = {0:F2}'}" TextAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedLoadCase.M02x, TargetNullValue=-, StringFormat='M02 = {0:F2}'}" TextAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=-, StringFormat='rm = {0:F2}'}" TextAlignment="Center" />
-                                            </StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MomentRatioXResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="4" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding SelectedLoadCase.M01y, TargetNullValue=-, StringFormat='M01 = {0:F2}'}" TextAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedLoadCase.M02y, TargetNullValue=-, StringFormat='M02 = {0:F2}'}" TextAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=-, StringFormat='rm = {0:F2}'}" TextAlignment="Center" />
-                                            </StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MomentRatioYResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
 
                                         <Border Grid.Row="5" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                             <TextBlock Text="5. Branch" TextWrapping="Wrap" />
                                         </Border>
                                         <Border Grid.Row="5" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="if lambda &lt; lambda lim: M2 = 0; otherwise nominal curvature" TextWrapping="Wrap" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.BranchFormulaLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="5" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                             <TextBlock Text="{Binding SelectedLoadCase.Ec2BranchXText}" TextAlignment="Center" FontWeight="SemiBold" />
@@ -2745,32 +2738,26 @@
                                             <TextBlock Text="6. Nominal curvature" TextWrapping="Wrap" />
                                         </Border>
                                         <Border Grid.Row="6" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="M0e = max(0.6 M02 + 0.4 M01, 0.4 M02); M2 = NEd x e2" TextWrapping="Wrap" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.NominalCurvatureFormulaLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="6" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding SelectedLoadCase.M0ex, TargetNullValue=-, StringFormat='M0e = {0:F2}'}" TextAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=-, StringFormat='M2 = {0:F2}'}" TextAlignment="Center" />
-                                            </StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.NominalCurvatureXResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="6" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding SelectedLoadCase.M0ey, TargetNullValue=-, StringFormat='M0e = {0:F2}'}" TextAlignment="Center" />
-                                                <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=-, StringFormat='M2 = {0:F2}'}" TextAlignment="Center" />
-                                            </StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.NominalCurvatureYResultLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
 
                                         <Border Grid.Row="7" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                             <TextBlock Text="7. Moment used" TextWrapping="Wrap" FontWeight="SemiBold" />
                                         </Border>
                                         <Border Grid.Row="7" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="MUsed = max(M02, M0e + M2, M01 + 0.5 M2, NEd x e0)" TextWrapping="Wrap" FontWeight="SemiBold" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MomentUsedFormulaLatex}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </Border>
                                         <Border Grid.Row="7" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
-                                            <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat='Mx Used = {0:F2}'}" TextAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource DarkNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MxUsedResultLatex}" Scale="12" FormulaForeground="{DynamicResource DarkNavyBrush}" />
                                         </Border>
                                         <Border Grid.Row="7" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
-                                            <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat='My Used = {0:F2}'}" TextAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource DarkNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MyUsedResultLatex}" Scale="12" FormulaForeground="{DynamicResource DarkNavyBrush}" />
                                         </Border>
                                     </Grid>
                                 </Expander>
@@ -2806,23 +2793,20 @@
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding SelectedLoadCase.M01x, TargetNullValue=-, StringFormat='M01: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.M02x, TargetNullValue=-, StringFormat='M02: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.RmX, TargetNullValue=-, StringFormat='rm: {0:F2}'}" FontSize="11" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MomentRatioXResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </StackPanel>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaX, TargetNullValue=-, StringFormat='lambda: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat='lambda lim: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.Ec2BranchXText}" FontSize="11" FontWeight="SemiBold" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaXResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaLimitXResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,2,0,0" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.Ec2BranchXLatex}" Scale="11" FormulaForeground="{DynamicResource PrimaryNavyBrush}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Grid.Row="1" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding SelectedLoadCase.M0ex, TargetNullValue=-, StringFormat='M0e: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.M2x, TargetNullValue=-, StringFormat='M2: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.MxUsed, TargetNullValue=auto, StringFormat='Mx Used: {0:F2}'}" FontSize="11" FontWeight="SemiBold" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.NominalCurvatureXResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MxUsedResultLatex}" Scale="11" FormulaForeground="{DynamicResource DarkNavyBrush}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
 
@@ -2831,23 +2815,20 @@
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding SelectedLoadCase.M01y, TargetNullValue=-, StringFormat='M01: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.M02y, TargetNullValue=-, StringFormat='M02: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.RmY, TargetNullValue=-, StringFormat='rm: {0:F2}'}" FontSize="11" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MomentRatioYResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" />
                                         </StackPanel>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaY, TargetNullValue=-, StringFormat='lambda: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat='lambda lim: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.Ec2BranchYText}" FontSize="11" FontWeight="SemiBold" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaYResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.LambdaLimitYResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,2,0,0" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.Ec2BranchYLatex}" Scale="11" FormulaForeground="{DynamicResource PrimaryNavyBrush}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Grid.Row="2" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding SelectedLoadCase.M0ey, TargetNullValue=-, StringFormat='M0e: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.M2y, TargetNullValue=-, StringFormat='M2: {0:F2}'}" FontSize="11" />
-                                            <TextBlock Text="{Binding SelectedLoadCase.MyUsed, TargetNullValue=auto, StringFormat='My Used: {0:F2}'}" FontSize="11" FontWeight="SemiBold" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.NominalCurvatureYResultLatex}" Scale="11" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding SelectedLoadCase.MyUsedResultLatex}" Scale="11" FormulaForeground="{DynamicResource DarkNavyBrush}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -2866,9 +2847,10 @@
                 Style="{StaticResource CardBorderStyle}"
                 Background="White"
                 Padding="16"
-                MaxWidth="1200"
-                MaxHeight="880"
-                HorizontalAlignment="Center"
+                MaxWidth="1500"
+                MaxHeight="920"
+                HorizontalAlignment="Stretch"
+                Margin="24"
                 VerticalAlignment="Center">
             <Border.RenderTransform>
                 <TranslateTransform x:Name="SlendernessDetailsPanelTransform" />
@@ -3265,13 +3247,13 @@
                                 <TextBlock Text="{Binding LengthLabel, StringFormat='l0 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="?" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <controls:SafeFormulaControl Formula="\lambda" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="?lim" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <controls:SafeFormulaControl Formula="\lambda_{lim}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="r?" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <controls:SafeFormulaControl Formula="r_m" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
                                 <TextBlock Text="{Binding MomentLabel, StringFormat='M2 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />

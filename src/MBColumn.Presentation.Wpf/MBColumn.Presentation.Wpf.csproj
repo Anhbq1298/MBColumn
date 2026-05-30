@@ -27,6 +27,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Resources\Math\katex-template.html" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Resources\Math\KaTeX\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3967.48" />
     <PackageReference Include="SharpVectors.Wpf" Version="1.8.5" />
     <PackageReference Include="WpfMath" Version="2.1.0" />
   </ItemGroup>

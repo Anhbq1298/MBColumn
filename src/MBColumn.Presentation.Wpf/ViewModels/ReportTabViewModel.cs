@@ -7,6 +7,7 @@ using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Reports.Graphics;
+using MBColumn.Infrastructure.Reports.Html;
 using static MBColumn.Infrastructure.Reports.Graphics.InteractionDiagramSvgRenderer;
 using MBColumn.Presentation.Wpf.Commands;
 using Microsoft.Win32;
@@ -22,7 +23,9 @@ public sealed class ReportTabViewModel : ViewModelBase
 {
     private readonly DiagramDataService _diagramSvc = new();
     private readonly PmSevenPointReportMapper _pm7Mapper = new();
-    private readonly MBColumn.Domain.Interfaces.IUnitConversionService _units = new MBColumn.Infrastructure.Math.UnitConversionService();
+    private readonly IUnitConversionService _units = new UnitConversionService();
+    private readonly ReportWebViewRenderer _htmlRenderer = new();
+    private ReportData? _cachedReportData;
     private CalculationResultDto? _cachedResult;
     private CancellationTokenSource? _reportCts;
 
@@ -53,6 +56,7 @@ public sealed class ReportTabViewModel : ViewModelBase
     private bool isExportBusy;
     private bool isGeneratingReport;
     private bool isReportPreviewVisible;
+    private string reportHtmlContent = "";
     private GoverningChartPreviewViewModel? governingChart;
 
     private double sectionWidth;
@@ -71,16 +75,23 @@ public sealed class ReportTabViewModel : ViewModelBase
     private double mmRatio;
     private string pmSliceLabel = "P-M Interaction";
 
+    /// <summary>Set by the View so the ViewModel can trigger a WebView2 PDF print.</summary>
+    public Func<string, Task>? WebViewPrintToPdfAsync { get; set; }
+
+    /// <summary>Set by the View so the ViewModel can scroll the WebView2 to an anchor.</summary>
+    public Action<string>? WebViewScrollToAnchor { get; set; }
+
     public ReportTabViewModel()
     {
         GeneratePreviewCommand = new RelayCommand(RevealReportPreview, CanRevealReportPreview);
         RevealReportPreviewCommand = GeneratePreviewCommand;
         HideReportPreviewCommand = new RelayCommand(HideReportPreview, () => IsReportPreviewVisible);
         PreviewPdfCommand = new RelayCommand(PreviewPdf, CanExport);
-        SaveAsPdfCommand = new RelayCommand(SaveAsPdf, CanExport);
+        SaveAsPdfCommand = new RelayCommand(async () => await SaveAsPdfAsync(), CanExport);
         SaveAsHtmlCommand = new RelayCommand(SaveAsHtml, CanExport);
         SelectAllSectionsCommand = new RelayCommand(() => SetAllToggles(true));
         DeselectAllSectionsCommand = new RelayCommand(() => SetAllToggles(false));
+        ScrollToSectionCommand = new RelayCommand<string>(ScrollToSection);
     }
 
     public ICommand GeneratePreviewCommand { get; }
@@ -91,6 +102,7 @@ public sealed class ReportTabViewModel : ViewModelBase
     public ICommand SaveAsHtmlCommand { get; }
     public ICommand SelectAllSectionsCommand { get; }
     public ICommand DeselectAllSectionsCommand { get; }
+    public ICommand ScrollToSectionCommand { get; }
 
     public ObservableCollection<ReportSection> ReportSections { get; } = [];
     public ObservableCollection<ReportSectionToggleViewModel> SectionToggles { get; } = [];
@@ -107,6 +119,12 @@ public sealed class ReportTabViewModel : ViewModelBase
             Raise();
             RaiseReportPreviewState();
         }
+    }
+
+    public string ReportHtmlContent
+    {
+        get => reportHtmlContent;
+        private set => Set(ref reportHtmlContent, value);
     }
 
     public bool HasReportSections  => ReportSections.Count > 0 && !isGeneratingReport;
@@ -229,11 +247,23 @@ public sealed class ReportTabViewModel : ViewModelBase
             t.IsVisible = visible;
     }
 
+    private void ScrollToSection(string sectionNumber)
+    {
+        var anchorId = $"sec-{sectionNumber.Replace(".", "-")}";
+        WebViewScrollToAnchor?.Invoke(anchorId);
+    }
+
     private void OnToggleVisibilityChanged()
     {
         Raise(nameof(VisibleReportSections));
         Raise(nameof(VisibleSectionCount));
         Raise(nameof(ReportPreviewStatusText));
+
+        if (_cachedReportData is not null && _htmlRenderer.CanRender())
+        {
+            var visible = SectionToggles.Where(t => t.IsVisible).Select(t => t.Section);
+            ReportHtmlContent = _htmlRenderer.BuildHtml(_cachedReportData, visible);
+        }
     }
 
     private void SetReportPreviewVisible(bool value)
@@ -459,7 +489,7 @@ public sealed class ReportTabViewModel : ViewModelBase
             var grpName   = _cachedGroupName;
             var tierName  = _cachedDesignTierName;
 
-            var sections = await Task.Run(() =>
+            var (reportData, reportHtml) = await Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -505,16 +535,19 @@ public sealed class ReportTabViewModel : ViewModelBase
                 var builder = new CalculationReportBuilder();
                 var data    = builder.Build(projName, grpName, tierName, result, codeService, unitService,
                                             sectionSvg, pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
-                return data.Sections;
+                string html = _htmlRenderer.CanRender() ? _htmlRenderer.BuildHtml(data) : "";
+                return (data, html);
             }, ct);
 
             ct.ThrowIfCancellationRequested();
 
-            foreach (var section in sections)
+            _cachedReportData = reportData;
+            ReportHtmlContent = reportHtml;
+            foreach (var section in reportData.Sections)
                 ReportSections.Add(section);
 
             SectionToggles.Clear();
-            foreach (var section in sections)
+            foreach (var section in reportData.Sections)
             {
                 var toggle = new ReportSectionToggleViewModel(section);
                 toggle.PropertyChanged += (_, _) => OnToggleVisibilityChanged();
@@ -574,7 +607,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         finally { IsExportBusy = false; }
     }
 
-    private void SaveAsPdf()
+    private async Task SaveAsPdfAsync()
     {
         if (_cachedResult is null) return;
         var dialog = new SaveFileDialog
@@ -587,9 +620,16 @@ public sealed class ReportTabViewModel : ViewModelBase
         try
         {
             IsExportBusy = true;
-            var data = BuildReportData();
-            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
-            renderer.RenderToFile(data, dialog.FileName);
+            if (WebViewPrintToPdfAsync is not null && !string.IsNullOrEmpty(ReportHtmlContent))
+            {
+                await WebViewPrintToPdfAsync(dialog.FileName);
+            }
+            else
+            {
+                var data = BuildReportData();
+                var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
+                renderer.RenderToFile(data, dialog.FileName);
+            }
             System.Windows.MessageBox.Show($"PDF saved to:\n{dialog.FileName}", "Export Complete",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
@@ -813,6 +853,7 @@ public sealed class ReportSectionToggleViewModel : ViewModelBase
 
     public MBColumn.Application.Reports.Models.ReportSection Section { get; }
     public string Title => $"{Section.Number}.  {Section.Title}";
+    public string SectionNumber => Section.Number;
 
     public bool IsVisible
     {

@@ -174,7 +174,7 @@ public sealed class ResultViewModel : ViewModelBase
             MM.Load(value);
             PM3D.Load(value);
             MM3D.Load(value);
-            Shear.Load(value?.GoverningShearResult);
+            Shear.Load(value?.GoverningShearResult, value?.LoadCaseResults);
             RebarCompliance.Load(value?.RebarCompliance);
             selectedSliceAngleDegrees = value?.GoverningThetaDegrees ?? 0;
             selectedAxialLoad = value?.PuDisplay ?? 0;

@@ -125,6 +125,12 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string Ec2BranchYText => LambdaY.HasValue && LambdaLimitY.HasValue
         ? LambdaY.Value >= LambdaLimitY.Value ? "Nominal curvature" : "Stocky, M2 = 0"
         : "-";
+    public string Ec2BranchXLatex => LambdaX.HasValue && LambdaLimitX.HasValue
+        ? LambdaX.Value >= LambdaLimitX.Value ? @"\mathrm{Nominal\;curvature}" : @"\mathrm{Stocky:}\;M_2=0"
+        : "-";
+    public string Ec2BranchYLatex => LambdaY.HasValue && LambdaLimitY.HasValue
+        ? LambdaY.Value >= LambdaLimitY.Value ? @"\mathrm{Nominal\;curvature}" : @"\mathrm{Stocky:}\;M_2=0"
+        : "-";
     public string LambdaFormulaLatex => @"\lambda=\frac{l_0}{i}";
     public string LambdaXResultLatex => LambdaX.HasValue ? $@"\lambda_x={LambdaX.Value:F2}" : @"\lambda_x=-";
     public string LambdaYResultLatex => LambdaY.HasValue ? $@"\lambda_y={LambdaY.Value:F2}" : @"\lambda_y=-";
@@ -256,6 +262,8 @@ public sealed class LoadCaseViewModel : ViewModelBase
         Raise(nameof(LambdaYResultLatex));
         Raise(nameof(LambdaLimitXResultLatex));
         Raise(nameof(LambdaLimitYResultLatex));
+        Raise(nameof(Ec2BranchXLatex));
+        Raise(nameof(Ec2BranchYLatex));
         Raise(nameof(MomentRatioXResultLatex));
         Raise(nameof(MomentRatioYResultLatex));
         Raise(nameof(NominalCurvatureXResultLatex));
@@ -274,4 +282,3 @@ public sealed class LoadCaseViewModel : ViewModelBase
         Raise(nameof(IsNeitherAxisSlender));
     }
 }
-

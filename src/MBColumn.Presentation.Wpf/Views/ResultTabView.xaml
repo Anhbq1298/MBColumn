@@ -52,6 +52,14 @@
             <Setter Property="Margin" Value="0,0,7,0" />
         </Style>
 
+        <Style x:Key="DetailEllipsisButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactButtonStyle}">
+            <Setter Property="Width" Value="86" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="ToolTip" Value="Open details" />
+        </Style>
+
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
@@ -153,10 +161,26 @@
 
                             <!-- Shear Check Summary -->
                             <StackPanel Grid.Row="1" Margin="0,0,0,12" DataContext="{Binding Shear}">
-                                <TextBlock Text="Shear Capacity" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Content="View Details"
+                                            Style="{StaticResource DetailEllipsisButtonStyle}"
+                                            IsEnabled="{Binding HasResult}"
+                                            Click="OpenShearDetails_Click" />
+                                    <TextBlock Text="Shear Capacity"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               FontSize="11.5"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="Max Util.: " Style="{StaticResource MetricLabelStyle}" Margin="0" />
                                     <TextBlock Text="{Binding GoverningUtilText}" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" />
+                                    <TextBlock Text=" | Critical LC: " Style="{StaticResource MetricLabelStyle}" Margin="8,0,0,0"
+                                               Visibility="{Binding HasEnvelopeSummary, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <TextBlock Text="{Binding GoverningCaseName}" TextTrimming="CharacterEllipsis" MaxWidth="150"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}"
+                                               Visibility="{Binding HasEnvelopeSummary, Converter={StaticResource BoolToVisibilityConverter}}" />
                                     <TextBlock Text=" (EC2 §6.2)" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                 </StackPanel>
                             </StackPanel>
@@ -206,7 +230,18 @@
 
                             <!-- Reinforcement Compliance Summary -->
                             <StackPanel Grid.Row="2" Margin="0,0,0,4" DataContext="{Binding RebarCompliance}">
-                                <TextBlock Text="Reinforcement Compliance" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="11.5" />
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right"
+                                            Content="View Details"
+                                            Style="{StaticResource DetailEllipsisButtonStyle}"
+                                            IsEnabled="{Binding HasResult}"
+                                            Click="OpenRebarComplianceDetails_Click" />
+                                    <TextBlock Text="Reinforcement Compliance"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               FontSize="11.5"
+                                               VerticalAlignment="Center" />
+                                </DockPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="{Binding CodeRef}" Style="{StaticResource MetricLabelStyle}" Margin="0" />
                                     <TextBlock Text=" - " Style="{StaticResource MetricLabelStyle}" Margin="0" Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
@@ -247,7 +282,7 @@
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <Border Style="{StaticResource SidebarCardStyle}"
                         DataContext="{Binding RebarCompliance}"
-                        Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibilityConverter}}">
+                        Visibility="Collapsed">
                     <StackPanel>
                         <TextBlock Text="Reinforcement Code Compliance in Details"
                                    Style="{StaticResource SectionTitleTextStyle}"
@@ -449,7 +484,7 @@
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <Border Style="{StaticResource SidebarCardStyle}"
                         DataContext="{Binding Shear}"
-                        Visibility="{Binding HasResult, Converter={StaticResource BoolToVisibilityConverter}}">
+                        Visibility="Collapsed">
                     <StackPanel>
                         <TextBlock Text="Shear Check in Details (EC2 §6.2)"
                                    Style="{StaticResource SectionTitleTextStyle}"

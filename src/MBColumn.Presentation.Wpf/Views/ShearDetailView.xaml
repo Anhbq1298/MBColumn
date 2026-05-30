@@ -1,0 +1,329 @@
+﻿<UserControl x:Class="MBColumn.Presentation.Wpf.Views.ShearDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
+             FontFamily="{StaticResource AppFontFamily}">
+    <UserControl.Resources>
+        <Style x:Key="MetricLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
+            <Setter Property="Margin" Value="0,0,0,5" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="11.5" />
+        </Style>
+
+        <Style x:Key="MetricValueStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="Margin" Value="8,0,0,5" />
+        </Style>
+
+        <Style x:Key="FormulaPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="Margin" Value="0,6,0,10" />
+        </Style>
+
+        <Style x:Key="DetailSubheadStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+            <Setter Property="Margin" Value="0,8,0,6" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <Border Style="{StaticResource SidebarCardStyle}">
+            <StackPanel>
+                <TextBlock Text="Shear Check in Details (EC2 &#x00A7;6.2)"
+                           Style="{StaticResource SectionTitleTextStyle}"
+                           Margin="0,0,0,4" />
+
+                <TextBlock Text="Envelope Summary"
+                           Style="{StaticResource DetailSubheadStyle}"
+                           Visibility="{Binding HasEnvelopeSummary, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <DataGrid ItemsSource="{Binding EnvelopeSummaryRows}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeRows="False"
+                          CanUserSortColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="All"
+                          RowHeaderWidth="0"
+                          Margin="0,0,0,8"
+                          MinHeight="82"
+                          MaxHeight="120"
+                          Visibility="{Binding HasEnvelopeSummary, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsGoverning}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Envelope" Binding="{Binding Direction}" Width="1.1*" />
+                        <DataGridTextColumn Header="Combo" Binding="{Binding CaseName}" Width="1.2*" />
+                        <DataGridTextColumn Header="Demand" Binding="{Binding DemandText}" Width="*" />
+                        <DataGridTextColumn Header="Capacity" Binding="{Binding CapacityText}" Width="*" />
+                        <DataGridTextColumn Header="Ratio" Binding="{Binding RatioText}" Width="0.8*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="0.8*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel Orientation="Horizontal"
+                            Margin="0,0,0,8"
+                            Visibility="{Binding HasDemand, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Border Padding="10,2" CornerRadius="6">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsGoverningPass}" Value="False">
+                                        <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="{Binding GoverningStatusText}" FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGoverningPass}" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                    <TextBlock Text="{Binding GoverningUtilText, StringFormat='  Governing ratio = {0}'}"
+                               Style="{StaticResource MetricValueStyle}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock FontSize="10.5"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           Margin="0,0,0,8">
+                    The summary uses the envelope shear demand from all included combinations. Detailed checks below use the governing envelope.
+                </TextBlock>
+
+                <TabControl Margin="0,0,0,4">
+                    <TabItem Header="X direction">
+                        <ScrollViewer VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="8">
+                                <TextBlock Text="Step 1 - Without Reinforcement (VRd,c)" Style="{StaticResource DetailSubheadStyle}" />
+                                <Border Style="{StaticResource FormulaPanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Concrete shear capacity" Style="{StaticResource DetailSubheadStyle}" Margin="0,0,0,5" />
+                                        <controls:SafeFormulaControl Formula="{Binding ConcreteFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" Margin="0,0,0,4" />
+                                        <controls:SafeFormulaControl Formula="{Binding ConcreteXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Visibility="{Binding HasDemand, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding Step1UtilXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <TextBlock Text="&#x2714; Shear reinforcement not required"
+                                                       FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource SuccessGreenBrush}"
+                                                       Margin="0,5,0,0"
+                                                       Visibility="{Binding ShowLinksNotRequiredX, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            <TextBlock Text="&#x26A0; Links required"
+                                                       FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AccentRedBrush}"
+                                                       Margin="0,5,0,0"
+                                                       Visibility="{Binding ShowLinksRequiredX, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock Text="Step 2 - With Reinforcement (VRd,s / VRd,max)" Style="{StaticResource DetailSubheadStyle}" />
+                                <TextBlock Text="No link data provided."
+                                           FontSize="10.5"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Visibility="{Binding HasLinks, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+
+                                <Border Style="{StaticResource FormulaPanelStyle}"
+                                        Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Shear reinforcement capacity" Style="{StaticResource DetailSubheadStyle}" Margin="0,0,0,5" />
+                                        <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <controls:SafeFormulaControl Formula="{Binding LinkAreaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding LinkAreaSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                        </StackPanel>
+                                        <controls:SafeFormulaControl Formula="{Binding LinkSteelSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6" />
+                                        <TextBlock Text="Circular hoop model - Orr-Bath" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <controls:SafeFormulaControl Formula="{Binding CircularHoopFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding CircularHoopXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6" />
+                                        </StackPanel>
+                                        <TextBlock Text="Rectangular leg-count model" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Visibility="{Binding IsCircularHoop, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                        <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                            <controls:SafeFormulaControl Formula="{Binding RectangularLinkInputXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding RectangularLinkFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding RectangularLinkXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6" />
+                                        </StackPanel>
+                                        <TextBlock Text="Strut limit" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                                        <controls:SafeFormulaControl Formula="{Binding VRdMaxFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                        <controls:SafeFormulaControl Formula="{Binding VRdMaxXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Visibility="{Binding HasLinksAndDemand, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding Step2UtilXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <TextBlock Text="&#x26A0; Section fails in shear"
+                                                       FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AccentRedBrush}"
+                                                       Margin="0,5,0,0"
+                                                       Visibility="{Binding ShowStep2FailX, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Minimum Asw/s  (&#x00A7;9.2.2(5))" Style="{StaticResource DetailSubheadStyle}" />
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Minimum reinforcement equations" Style="{StaticResource DetailSubheadStyle}" Margin="0,0,0,5" />
+                                            <controls:SafeFormulaControl Formula="{Binding MinAswFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding MinAswXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding ShowUtilisationPanel, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Utilisation" Style="{StaticResource DetailSubheadStyle}" />
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding UtilFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding UtilXSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="Y direction">
+                        <ScrollViewer VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="8">
+                                <TextBlock Text="Step 1 - Without Reinforcement (VRd,c)" Style="{StaticResource DetailSubheadStyle}" />
+                                <Border Style="{StaticResource FormulaPanelStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Concrete shear capacity" Style="{StaticResource DetailSubheadStyle}" Margin="0,0,0,5" />
+                                        <controls:SafeFormulaControl Formula="{Binding ConcreteFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" Margin="0,0,0,4" />
+                                        <controls:SafeFormulaControl Formula="{Binding ConcreteYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Visibility="{Binding HasDemand, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding Step1UtilYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <TextBlock Text="&#x2714; Shear reinforcement not required"
+                                                       FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource SuccessGreenBrush}"
+                                                       Margin="0,5,0,0"
+                                                       Visibility="{Binding ShowLinksNotRequiredY, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            <TextBlock Text="&#x26A0; Links required"
+                                                       FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AccentRedBrush}"
+                                                       Margin="0,5,0,0"
+                                                       Visibility="{Binding ShowLinksRequiredY, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock Text="Step 2 - With Reinforcement (VRd,s / VRd,max)" Style="{StaticResource DetailSubheadStyle}" />
+                                <TextBlock Text="No link data provided."
+                                           FontSize="10.5"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Visibility="{Binding HasLinks, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+
+                                <Border Style="{StaticResource FormulaPanelStyle}"
+                                        Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Shear reinforcement capacity" Style="{StaticResource DetailSubheadStyle}" Margin="0,0,0,5" />
+                                        <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <controls:SafeFormulaControl Formula="{Binding LinkAreaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding LinkAreaSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                        </StackPanel>
+                                        <controls:SafeFormulaControl Formula="{Binding LinkSteelSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6" />
+                                        <TextBlock Text="Circular hoop model - Orr-Bath" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <controls:SafeFormulaControl Formula="{Binding CircularHoopFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding CircularHoopYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6" />
+                                        </StackPanel>
+                                        <TextBlock Text="Rectangular leg-count model" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" Visibility="{Binding IsCircularHoop, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                                        <StackPanel Visibility="{Binding IsCircularHoop, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                            <controls:SafeFormulaControl Formula="{Binding RectangularLinkInputYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding RectangularLinkFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding RectangularLinkYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6" />
+                                        </StackPanel>
+                                        <TextBlock Text="Strut limit" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                                        <controls:SafeFormulaControl Formula="{Binding VRdMaxFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                        <controls:SafeFormulaControl Formula="{Binding VRdMaxYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <StackPanel Visibility="{Binding HasLinksAndDemand, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding Step2UtilYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                            <TextBlock Text="&#x26A0; Section fails in shear"
+                                                       FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource AccentRedBrush}"
+                                                       Margin="0,5,0,0"
+                                                       Visibility="{Binding ShowStep2FailY, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding HasLinks, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Minimum Asw/s  (&#x00A7;9.2.2(5))" Style="{StaticResource DetailSubheadStyle}" />
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Minimum reinforcement equations" Style="{StaticResource DetailSubheadStyle}" Margin="0,0,0,5" />
+                                            <controls:SafeFormulaControl Formula="{Binding MinAswFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding MinAswYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding ShowUtilisationPanel, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Utilisation" Style="{StaticResource DetailSubheadStyle}" />
+                                    <Border Style="{StaticResource FormulaPanelStyle}">
+                                        <StackPanel>
+                                            <controls:SafeFormulaControl Formula="{Binding UtilFormulaLatex}" Scale="13" FormulaForeground="{DynamicResource PrimaryNavyBrush}" />
+                                            <controls:SafeFormulaControl Formula="{Binding UtilYSubLatex}" Scale="13" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </StackPanel>
+        </Border>
+    </ScrollViewer>
+</UserControl>

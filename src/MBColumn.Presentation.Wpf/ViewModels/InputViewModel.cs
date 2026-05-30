@@ -79,6 +79,8 @@ public sealed class InputViewModel : ViewModelBase
     private bool ec2Check3Pass = true;
     private string ec2AswsXText = "—";
     private string ec2AswsYText = "—";
+    private string ec2AswsXLatex = "";
+    private string ec2AswsYLatex = "";
     private bool _isUpdatingPreview = false;
     private string previewAreaText = "—";
     private string previewIxxText = "—";
@@ -568,6 +570,8 @@ public sealed class InputViewModel : ViewModelBase
     public bool Ec2Check3Pass { get => ec2Check3Pass; private set => Set(ref ec2Check3Pass, value); }
     public string Ec2AswsXText { get => ec2AswsXText; private set => Set(ref ec2AswsXText, value); }
     public string Ec2AswsYText { get => ec2AswsYText; private set => Set(ref ec2AswsYText, value); }
+    public string Ec2AswsXLatex { get => ec2AswsXLatex; private set => Set(ref ec2AswsXLatex, value); }
+    public string Ec2AswsYLatex { get => ec2AswsYLatex; private set => Set(ref ec2AswsYLatex, value); }
 
     public IReadOnlyList<SectionIntegrationMethodOption> SectionIntegrationMethodOptions { get; } =
     [
@@ -2155,6 +2159,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(Ec2Check2Text)); Raise(nameof(Ec2Check2Pass));
         Raise(nameof(Ec2Check3Text)); Raise(nameof(Ec2Check3Pass));
         Raise(nameof(Ec2AswsXText)); Raise(nameof(Ec2AswsYText));
+        Raise(nameof(Ec2AswsXLatex)); Raise(nameof(Ec2AswsYLatex));
     }
 
     public void ResetToDefaults()
@@ -2446,6 +2451,7 @@ public sealed class InputViewModel : ViewModelBase
             Ec2Check2Text = "—"; Ec2Check2Pass = true;
             Ec2Check3Text = "—"; Ec2Check3Pass = true;
             Ec2AswsXText = "—"; Ec2AswsYText = "—";
+            Ec2AswsXLatex = ""; Ec2AswsYLatex = "";
             return;
         }
 
@@ -2478,6 +2484,8 @@ public sealed class InputViewModel : ViewModelBase
             double asws0 = linkSpacingMm > 0 ? aSwMm2_0 / linkSpacingMm : 0;
             Ec2AswsXText = $"Asw/s (circular tie) = {aSwMm2_0:0.##}/{linkSpacingMm:0} = {asws0:0.###} mm²/mm";
             Ec2AswsYText = "—";
+            Ec2AswsXLatex = $@"\frac{{A_h}}{{s}}=\frac{{{aSwMm2_0:0.##}}}{{{linkSpacingMm:0}}}={asws0:0.###}\;\mathrm{{mm^2/mm}}";
+            Ec2AswsYLatex = "";
             return;
         }
 
@@ -2520,6 +2528,8 @@ public sealed class InputViewModel : ViewModelBase
         double aswY = linkSpacingMm > 0 ? totY * aSwMm2 / linkSpacingMm : 0;
         Ec2AswsXText = $"Asw/s (X) = {totX}×{aSwMm2:0.##}/{linkSpacingMm:0} = {aswX:0.###} mm²/mm";
         Ec2AswsYText = $"Asw/s (Y) = {totY}×{aSwMm2:0.##}/{linkSpacingMm:0} = {aswY:0.###} mm²/mm";
+        Ec2AswsXLatex = $@"\left(\frac{{A_{{sw}}}}{{s}}\right)_x=\frac{{{totX}\times{aSwMm2:0.##}}}{{{linkSpacingMm:0}}}={aswX:0.###}\;\mathrm{{mm^2/mm}}";
+        Ec2AswsYLatex = $@"\left(\frac{{A_{{sw}}}}{{s}}\right)_y=\frac{{{totY}\times{aSwMm2:0.##}}}{{{linkSpacingMm:0}}}={aswY:0.###}\;\mathrm{{mm^2/mm}}";
     }
 
     private void UpdateSectionPropertiesPanel()

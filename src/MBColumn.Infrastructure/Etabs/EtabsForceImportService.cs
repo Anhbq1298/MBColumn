@@ -394,9 +394,10 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
         var fieldCount = fields.Length;
 
-        // Phase 1: collect candidates
+        // Phase 1: collect candidates and build numeric station ranges per (objectName, effectiveCombo)
         var candidates = new List<(EtabsColumnImportDto Col, string Combo, string StepType,
                                    string RawLoc, double P, double M2, double M3, double V2)>();
+        var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
 
         for (var r = 0; r < numRecords; r++)
         {
@@ -417,6 +418,18 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 m2Idx >= 0 ? ParseDouble(tableData[b + m2Idx]) : 0.0,
                 m3Idx >= 0 ? ParseDouble(tableData[b + m3Idx]) : 0.0,
                 v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0));
+
+            if (TryParseDouble(rawLoc) is double sv)
+            {
+                var isSingle = string.IsNullOrEmpty(stepType)
+                    || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
+                    || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
+                var rangeKey = $"{col.ObjectName}|{(isSingle ? combo : $"{combo} ({stepType})")}";
+                if (stationRanges.TryGetValue(rangeKey, out var existing))
+                    stationRanges[rangeKey] = (SMath.Min(existing.Min, sv), SMath.Max(existing.Max, sv));
+                else
+                    stationRanges[rangeKey] = (sv, sv);
+            }
         }
 
         var results = new List<EtabsForceResultDto>(candidates.Count);
@@ -424,16 +437,25 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
         foreach (var (col, combo, stepType, rawLoc, p, m2, m3, v2) in candidates)
         {
-            // Keep raw numeric station value for specificity; normalize named stations only.
-            var station = TryParseDouble(rawLoc) is double sv
-                ? sv.ToString("G6", CultureInfo.InvariantCulture)
-                : NormalizeStation(rawLoc);
-
             // Envelope combos produce Max and Min rows — append step type to distinguish them
             var isSingleStep = string.IsNullOrEmpty(stepType)
                 || stepType.Contains("Linear Add", StringComparison.OrdinalIgnoreCase)
                 || stepType.Contains("NonLinear Add", StringComparison.OrdinalIgnoreCase);
             var effectiveCombo = isSingleStep ? combo : $"{combo} ({stepType})";
+
+            // Map numeric stations to Top/Bottom/Mid using per-element min/max range
+            string station;
+            if (TryParseDouble(rawLoc) is double sv)
+            {
+                var rangeKey = $"{col.ObjectName}|{effectiveCombo}";
+                station = stationRanges.TryGetValue(rangeKey, out var range)
+                    ? NormalizeNumericStation(rawLoc, range.Min, range.Max)
+                    : NormalizeStation(rawLoc);
+            }
+            else
+            {
+                station = NormalizeStation(rawLoc);
+            }
 
             var key = $"{col.ObjectName}|{effectiveCombo}|{station}";
             if (!seen.Add(key)) continue;

@@ -1,289 +1,13 @@
 <UserControl x:Class="MBColumn.Presentation.Wpf.Views.ReportTabView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
-             xmlns:models="clr-namespace:MBColumn.Application.Reports.Models;assembly=MBColumn.Application"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              MinHeight="560">
 
     <UserControl.Resources>
 
-        <!-- ── Converters ─────────────────────────────────────────────────── -->
-        <!-- NullOrEmptyToCollapsedConverter already registered in App.xaml    -->
-
-        <!-- ── Block DataTemplates ────────────────────────────────────────── -->
-
-        <!-- HeadingBlock -->
-        <DataTemplate x:Key="HeadingTemplate" DataType="{x:Type models:HeadingBlock}">
-            <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Margin="0,10,0,2">
-                <TextBlock.Style>
-                    <Style TargetType="TextBlock">
-                        <Setter Property="FontSize"   Value="11"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                        <Setter Property="Foreground" Value="#555555"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Level}" Value="2">
-                                <Setter Property="FontSize"   Value="13"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
-                                <Setter Property="Foreground" Value="#1A3A5C"/>
-                                <Setter Property="Margin"     Value="0,14,0,4"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Level}" Value="3">
-                                <Setter Property="FontSize"   Value="12"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="#1A3A5C"/>
-                                <Setter Property="Margin"     Value="0,12,0,3"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Level}" Value="4">
-                                <Setter Property="FontSize"   Value="11"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="#2E5F8A"/>
-                                <Setter Property="Margin"     Value="0,8,0,2"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBlock.Style>
-            </TextBlock>
-        </DataTemplate>
-
-        <!-- ParagraphBlock -->
-        <DataTemplate x:Key="ParagraphTemplate" DataType="{x:Type models:ParagraphBlock}">
-            <TextBlock Text="{Binding Text}" FontSize="10.5" TextWrapping="Wrap"
-                       Foreground="#333" Margin="0,3,0,3" LineHeight="16"/>
-        </DataTemplate>
-
-        <!-- NoteBlock -->
-        <DataTemplate x:Key="NoteTemplate" DataType="{x:Type models:NoteBlock}">
-            <Border Background="#EBF5FB" BorderBrush="#AED6F1" BorderThickness="1"
-                    CornerRadius="2" Padding="8,6" Margin="0,4,0,4">
-                <TextBlock Text="{Binding Text}" FontSize="10" TextWrapping="Wrap"
-                           Foreground="#1A5276" FontStyle="Italic"/>
-            </Border>
-        </DataTemplate>
-
-        <!-- FormulaBlock -->
-        <DataTemplate x:Key="FormulaTemplate" DataType="{x:Type models:FormulaBlock}">
-            <Border BorderBrush="#DDDDDD" BorderThickness="1" Background="#FAFAFA"
-                    CornerRadius="2" Padding="8,6" Margin="0,4,0,4">
-                <StackPanel>
-                    <!-- Title -->
-                    <TextBlock Text="{Binding Title}" FontSize="10" Foreground="#555"
-                               FontWeight="SemiBold" Margin="0,0,0,4"
-                               Visibility="{Binding Title,
-                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                    <!-- Main formula (LaTeX) -->
-                    <controls:SafeFormulaControl Formula="{Binding LatexFormula}" Scale="17"
-                                                 FormulaForeground="#1A3A5C" Margin="0,2,0,2"
-                                                 Visibility="{Binding LatexFormula,
-                                                     Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                    <!-- Substitution -->
-                    <controls:SafeFormulaControl Formula="{Binding SubstitutionText}" Scale="13"
-                                                 FormulaForeground="#555555" Margin="0,2,0,2"
-                                                 Visibility="{Binding SubstitutionText,
-                                                     Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                    <!-- Result -->
-                    <controls:SafeFormulaControl Formula="{Binding ResultText}" Scale="13"
-                                                 FormulaForeground="#1A3A5C" Margin="0,2,0,0"
-                                                 Visibility="{Binding ResultText,
-                                                     Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <!-- TableBlock -->
-        <DataTemplate x:Key="TableTemplate" DataType="{x:Type models:TableBlock}">
-            <Border BorderBrush="#DDDDDD" BorderThickness="1" Margin="0,4,0,4">
-                <controls:ReportTableControl Block="{Binding}"/>
-            </Border>
-        </DataTemplate>
-
-        <!-- SteelTableBlock -->
-        <DataTemplate x:Key="SteelTableTemplate" DataType="{x:Type models:SteelTableBlock}">
-            <StackPanel Margin="0,4,0,4">
-                <DataGrid ItemsSource="{Binding Rows}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
-                          CanUserAddRows="False" HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal" RowHeaderWidth="0"
-                          FontSize="10" BorderBrush="#DDDDDD" BorderThickness="1">
-                    <DataGrid.ColumnHeaderStyle>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background"   Value="#1A3A5C"/>
-                            <Setter Property="Foreground"   Value="White"/>
-                            <Setter Property="FontWeight"   Value="SemiBold"/>
-                            <Setter Property="Padding"      Value="4,3"/>
-                            <Setter Property="FontSize"     Value="10"/>
-                        </Style>
-                    </DataGrid.ColumnHeaderStyle>
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="#"         Binding="{Binding Index}"    Width="28"/>
-                        <DataGridTextColumn Header="X (mm)"   Binding="{Binding XMm}"      Width="*"/>
-                        <DataGridTextColumn Header="Y (mm)"   Binding="{Binding YMm}"      Width="*"/>
-                        <DataGridTextColumn Header="d (mm)"   Binding="{Binding DMm}"      Width="*"/>
-                        <DataGridTextColumn Header="εs"       Binding="{Binding EpsilonS}" Width="*"/>
-                        <DataGridTextColumn Header="fs (MPa)" Binding="{Binding FsMpa}"    Width="*"/>
-                        <DataGridTextColumn Header="As (mm²)" Binding="{Binding AsMm2}"    Width="*"/>
-                        <DataGridTextColumn Header="Fs (kN)"  Binding="{Binding FsKn}"     Width="*"/>
-                        <DataGridTextColumn Header="FsY"      Binding="{Binding FsYKnm}"   Width="*"/>
-                        <DataGridTextColumn Header="FsX"      Binding="{Binding FsXKnm}"   Width="*"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-                <!-- Sum row -->
-                <Border Background="#E8F4FD" BorderBrush="#DDDDDD" BorderThickness="0,0,1,1" Padding="4,3">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Σ  " FontWeight="SemiBold" FontSize="10"/>
-                        <TextBlock Text="Fs = " FontSize="10" Foreground="#555"/>
-                        <TextBlock Text="{Binding SumFs}" FontSize="10" FontWeight="SemiBold" Margin="0,0,12,0"/>
-                        <TextBlock Text="FsY = " FontSize="10" Foreground="#555"/>
-                        <TextBlock Text="{Binding SumFsY}" FontSize="10" FontWeight="SemiBold" Margin="0,0,12,0"/>
-                        <TextBlock Text="FsX = " FontSize="10" Foreground="#555"/>
-                        <TextBlock Text="{Binding SumFsX}" FontSize="10" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </DataTemplate>
-
-        <!-- ImageBlock — SVG rendered via SharpVectors -->
-        <DataTemplate x:Key="ImageTemplate" DataType="{x:Type models:ImageBlock}">
-            <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
-                    Padding="8" Margin="0,4,0,4">
-                <StackPanel HorizontalAlignment="Center">
-                    <controls:SvgImageControl SvgContent="{Binding SvgContent}"
-                                              MaxDisplayWidth="{Binding WidthPct,
-                                                  Converter={StaticResource PctOf720Converter}}"
-                                              HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Caption}" FontSize="9" Foreground="#555"
-                               HorizontalAlignment="Center" FontStyle="Italic" Margin="0,4,0,0"
-                               Visibility="{Binding Caption,
-                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <!-- SectionPreviewBlock — rendered via SectionPreviewCanvas -->
-        <DataTemplate x:Key="SectionPreviewTemplate" DataType="{x:Type models:SectionPreviewBlock}">
-            <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
-                    Padding="8" Margin="0,4,0,4">
-                <StackPanel HorizontalAlignment="Center">
-                    <controls:SectionPreviewCanvas
-                        Width="{Binding WidthPct, Converter={StaticResource PctOf720Converter}}"
-                        MinHeight="300"
-                        SectionWidth="{Binding SectionWidth}"
-                        SectionHeight="{Binding SectionHeight}"
-                        Cover="{Binding Cover}"
-                        UnitSystem="{Binding UnitSystem}"
-                        SectionShape="{Binding SectionShape}"
-                        Rebars="{Binding Rebars}"
-                        BoundaryPoints="{Binding BoundaryPoints}"
-                        HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding Caption}" FontSize="9" Foreground="#555"
-                               HorizontalAlignment="Center" FontStyle="Italic" Margin="0,4,0,0"
-                               Visibility="{Binding Caption,
-                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <!-- DiagramBlock — rendered via DiagramCanvas2D (WPF native, no SVG clip-path issues) -->
-        <DataTemplate x:Key="DiagramTemplate" DataType="{x:Type models:DiagramBlock}">
-            <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="1"
-                    Padding="8" Margin="0,4,0,4">
-                <StackPanel HorizontalAlignment="Center">
-                    <controls:DiagramCanvas2D
-                        Width="{Binding WidthPct, Converter={StaticResource PctOf720Converter}}"
-                        MinHeight="300"
-                        Points="{Binding Points}"
-                        ReferenceLines="{Binding ReferenceLines}"
-                        XAxisLabel="{Binding XAxisLabel}"
-                        YAxisLabel="{Binding YAxisLabel}"
-                        Ratio="{Binding Ratio}"
-                        UseEqualAspect="{Binding UseEqualAspect}"
-                        ShowNominalCurve="True"
-                        ShowSpecialPoints="False"
-                        ShowDemandLabel="False"
-                        Focusable="False"/>
-                    <TextBlock Text="{Binding Caption}" FontSize="9" Foreground="#555"
-                               HorizontalAlignment="Center" FontStyle="Italic" Margin="0,4,0,0"
-                               Visibility="{Binding Caption,
-                                   Converter={StaticResource NullOrEmptyToCollapsedConverter}}"/>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <!-- DividerBlock -->
-        <DataTemplate x:Key="DividerTemplate" DataType="{x:Type models:DividerBlock}">
-            <Separator Margin="0,6,0,6" Background="#DDDDDD"/>
-        </DataTemplate>
-
-        <!-- PageBreakBlock -->
-        <DataTemplate x:Key="PageBreakTemplate" DataType="{x:Type models:PageBreakBlock}">
-            <Border Margin="0,8,0,8" Height="2" Background="#E0E6EF"/>
-        </DataTemplate>
-
-        <!-- SummaryBoxBlock -->
-        <DataTemplate x:Key="SummaryBoxTemplate" DataType="{x:Type models:SummaryBoxBlock}">
-            <Border Padding="12,10" Margin="0,6,0,6" CornerRadius="3" BorderThickness="2">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background"   Value="#EAFAF1"/>
-                        <Setter Property="BorderBrush"  Value="#27AE60"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsPass}" Value="False">
-                                <Setter Property="Background"  Value="#FDEDEC"/>
-                                <Setter Property="BorderBrush" Value="#E74C3C"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="SemiBold"
-                               VerticalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#1E8449"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPass}" Value="False">
-                                        <Setter Property="Foreground" Value="#C0392B"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                    <TextBlock Grid.Column="1" Text="{Binding Value}"
-                               FontSize="18" FontWeight="Bold" VerticalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#1E8449"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPass}" Value="False">
-                                        <Setter Property="Foreground" Value="#C0392B"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
-            </Border>
-        </DataTemplate>
-
-        <!-- ── Template Selector ──────────────────────────────────────────── -->
-        <controls:ReportBlockTemplateSelector x:Key="BlockSelector"
-            HeadingTemplate   ="{StaticResource HeadingTemplate}"
-            ParagraphTemplate ="{StaticResource ParagraphTemplate}"
-            NoteTemplate      ="{StaticResource NoteTemplate}"
-            FormulaTemplate   ="{StaticResource FormulaTemplate}"
-            TableTemplate     ="{StaticResource TableTemplate}"
-            SteelTableTemplate="{StaticResource SteelTableTemplate}"
-            ImageTemplate     ="{StaticResource ImageTemplate}"
-            DiagramTemplate   ="{StaticResource DiagramTemplate}"
-            DividerTemplate   ="{StaticResource DividerTemplate}"
-            PageBreakTemplate ="{StaticResource PageBreakTemplate}"
-            SummaryBoxTemplate="{StaticResource SummaryBoxTemplate}"
-            SectionPreviewTemplate="{StaticResource SectionPreviewTemplate}"/>
-
         <!-- ── Layout helpers ─────────────────────────────────────────────── -->
+
         <Style x:Key="A4PageStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Width"      Value="794"/>
@@ -390,9 +114,14 @@
                                         <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}"
                                                   Padding="4,3"
                                                   FontSize="11">
-                                            <TextBlock Text="{Binding Title}"
-                                                       TextWrapping="Wrap"
-                                                       FontSize="11"/>
+                                            <Button Command="{Binding DataContext.ScrollToSectionCommand,
+                                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding SectionNumber}"
+                                                    Style="{StaticResource HyperlinkButton}"
+                                                    FontSize="11"
+                                                    HorizontalContentAlignment="Left">
+                                                <TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontSize="11"/>
+                                            </Button>
                                         </CheckBox>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -405,13 +134,12 @@
         </Border>
 
         <!-- ═══════════════════════════════════════════════════════════
-             Right: dynamic report preview
+             Right: report preview (single WebView2)
              ═══════════════════════════════════════════════════════ -->
         <Grid Grid.Column="2" Background="#CCCCCC">
 
-            <!-- No result placeholder (visible only when no sections) -->
-            <ScrollViewer
-                          VerticalScrollBarVisibility="Auto"
+            <!-- Placeholder — shown when no content yet -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Auto"
                           Visibility="{Binding ShowReportPreviewPlaceholder,
                               Converter={StaticResource BoolToVisibilityConverter}}">
@@ -437,49 +165,12 @@
                 </Border>
             </ScrollViewer>
 
-            <!-- Dynamic sections — ItemsControl is the direct ScrollViewer child so
-                 VirtualizingStackPanel can skip off-screen sections entirely. -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Auto"
+            <!-- WebView2 — renders the full KaTeX HTML report -->
+            <wv2:WebView2 x:Name="ReportWebView"
                           Visibility="{Binding ShowReportContent,
-                              Converter={StaticResource BoolToVisibilityConverter}}">
-                <ItemsControl x:Name="ReportContent"
-                              ItemsSource="{Binding VisibleReportSections}"
-                              Margin="24,24,24,40"
-                              HorizontalAlignment="Left"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              VirtualizingPanel.ScrollUnit="Pixel">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type models:ReportSection}">
-                            <Border Style="{StaticResource A4PageStyle}">
-                                <StackPanel>
-
-                                    <!-- Section title bar -->
-                                    <Border Background="#1A3A5C" Padding="10,7"
-                                            Margin="0,0,0,14" CornerRadius="2">
-                                        <TextBlock FontSize="13" FontWeight="Bold"
-                                                   Foreground="White">
-                                            <Run Text="{Binding Number, Mode=OneWay}"/>
-                                            <Run Text=".  "/>
-                                            <Run Text="{Binding Title, Mode=OneWay}"/>
-                                        </TextBlock>
-                                    </Border>
-
-                                    <!-- Blocks -->
-                                    <ItemsControl ItemsSource="{Binding Blocks}"
-                                                  ItemTemplateSelector="{StaticResource BlockSelector}"/>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                              Converter={StaticResource BoolToVisibilityConverter}}"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"/>
 
         </Grid>
     </Grid>

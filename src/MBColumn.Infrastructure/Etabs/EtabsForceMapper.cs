@@ -65,21 +65,57 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
 
     public IReadOnlyList<SnapshotLoadCase> ToLoadCases(IReadOnlyList<MbColumnMappedForceRow> rows)
     {
-        return rows.Select((r, i) => new SnapshotLoadCase
+        var endMoments = BuildEndMomentLookup(rows);
+        return rows.Select((r, i) =>
         {
-            Id = $"etabs_{i + 1}",
-            Label = r.LoadCaseName,
-            OriginalLoadCaseName = r.LoadCombo,
-            SourceObjectName = r.Label,
-            SourceObjectLabel = r.Label,
-            Story = r.Story,
-            Station = r.Location,
-            Source = "ETABS",
-            Pu = r.P,
-            Mux = r.Mx,
-            Muy = r.My,
-            IsActive = true
+            endMoments.TryGetValue(RowGroupKey(r), out var e);
+            return new SnapshotLoadCase
+            {
+                Id = $"etabs_{i + 1}",
+                Label = r.LoadCaseName,
+                OriginalLoadCaseName = r.LoadCombo,
+                SourceObjectName = r.Label,
+                SourceObjectLabel = r.Label,
+                Story = r.Story,
+                Station = r.Location,
+                Source = "ETABS",
+                Pu = r.P,
+                Mux = r.Mx,
+                Muy = r.My,
+                MxTop = e.HasValue ? e.Value.TopMx : null,
+                MxBottom = e.HasValue ? e.Value.BotMx : null,
+                MyTop = e.HasValue ? e.Value.TopMy : null,
+                MyBottom = e.HasValue ? e.Value.BotMy : null,
+                IsActive = true
+            };
         }).ToList();
+    }
+
+    private static string RowGroupKey(MbColumnMappedForceRow r) =>
+        $"{r.Label}|{r.Story}|{r.LoadCombo}";
+
+    private static Dictionary<string, (double TopMx, double BotMx, double TopMy, double BotMy)?>
+        BuildEndMomentLookup(IReadOnlyList<MbColumnMappedForceRow> rows)
+    {
+        var lookup = new Dictionary<string, (double, double, double, double)?>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in rows.GroupBy(RowGroupKey, StringComparer.OrdinalIgnoreCase))
+        {
+            var topRow = group.FirstOrDefault(r => r.Location.Equals("Top", StringComparison.OrdinalIgnoreCase));
+            var botRow = group.FirstOrDefault(r =>
+                r.Location.Equals("Bottom", StringComparison.OrdinalIgnoreCase) ||
+                r.Location.Equals("Bot",    StringComparison.OrdinalIgnoreCase));
+
+            // Fallback: single-station row (design forces envelope) serves as both ends
+            topRow ??= botRow ?? group.FirstOrDefault();
+            botRow ??= topRow;
+
+            if (topRow is null) continue;
+
+            lookup[group.Key] = (topRow.Mx, botRow!.Mx, topRow.My, botRow.My);
+        }
+
+        return lookup;
     }
 
     private static double MapAxialForce(double etabsP, MbColumnForceSourceMode forceSource)

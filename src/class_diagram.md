@@ -427,6 +427,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **HtmlCalculationReportRenderer** | /// Generates a self-contained HTML calculation report with inline CSS, /// embedded SVG, and print-friendly A4 page styling. ///. Key methods: RenderToFile, RenderToBytes. | `HtmlCalculationReportRenderer.cs` |
+| `class` | **ReportWebViewRenderer** | /// Generates a single self-contained HTML string for the in-app WebView2 preview. /// Embeds KaTeX inline so every formula field renders as proper math. ///. Key methods: CanRender, BuildHtml. | `ReportWebViewRenderer.cs` |
 
 ### Reports/Pdf
 
@@ -554,7 +555,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ReportBlockTemplateSelector** | Represents the ReportBlockTemplateSelector class. Key methods: SelectTemplate. Key properties: HeadingTemplate, ParagraphTemplate, NoteTemplate, FormulaTemplate. | `ReportBlockTemplateSelector.cs` |
 | `class` | **ReportPaginator** | /// Paginates a FrameworkElement across multiple printed pages by slicing it /// vertically after scaling to fit the page width. ///. Key methods: GetPage. Key properties: IsPageCountValid, PageCount, PageSize, Source. | `ReportPaginator.cs` |
 | `class` | **ReportTableControl** | /// Renders a TableBlock (string[][] rows) as a WPF Grid with headers and data rows. ///. Key properties: Block. | `ReportTableControl.cs` |
-| `class` | **SafeFormulaControl** | /// Renders a LaTeX formula using WpfMath. /// Normalizes double-backslash (produced by raw string literals) to single-backslash before rendering. /// Falls back to readable plain text if WpfMath cannot parse the formula. ///. Key properties: Formula, Scale, FormulaForeground. | `SafeFormulaControl.cs` |
+| `class` | **SafeFormulaControl** | /// Renders a LaTeX formula through the enhanced math view while preserving the old simple API. /// Falls back to readable plain text if WebView2 or KaTeX cannot render the formula. ///. Key properties: Formula, Scale, FormulaForeground, DisplayMode. | `SafeFormulaControl.cs` |
 | `class` | **SectionPreviewCanvas** | Represents the SectionPreviewCanvas class. Key properties: SectionWidth, SectionHeight, SectionShape, Cover. | `SectionPreviewCanvas.cs` |
 | `class` | **SectionStateInsetCanvas** | /// Sidebar panel that renders a PmChartInsetFigureDto (section with NA, compression/tension zones). /// Fills its available area; legend sits at the bottom. ///. Key properties: InsetFigure. | `SectionStateInsetCanvas.cs` |
 | `class` | **SvgImageControl** | /// Renders an SVG string as a WPF image using SharpVectors. /// Rendering is deferred to background priority so it never blocks the UI thread. ///. Key properties: SvgContent, MaxDisplayWidth. | `SvgImageControl.cs` |
@@ -565,6 +566,15 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
 | `record` | **struct** | Represents the struct record. | `InteractionViewport3D.cs` |
 | `record` | **struct** | Represents the struct record. Key properties: IsValid. | `InteractionViewport3D.cs` |
+
+### Controls/Math
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **MathEquationView** | Represents the MathEquationView class. Key properties: IsRenderComplete, RenderCompletion, Latex, FallbackText. | `MathEquationView.xaml.cs` |
+| `class` | **MathEquationViewModel** | Represents the MathEquationViewModel class. Key properties: Latex, FallbackText, RenderMode, FontSize. | `MathEquationViewModel.cs` |
+| `enum` | **MathRenderMode** | Enumeration defining states/types for MathRenderMode. | `MathRenderMode.cs` |
+| `class` | **MathRenderService** | Provides service logic and operations for MathRender. Key methods: BuildHtml, HasLocalAssets, NormalizeLatex. | `MathRenderService.cs` |
 
 ### Converters
 
@@ -679,15 +689,16 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **ReportDemandCaseRowViewModel** | Represents the ReportDemandCaseRowViewModel record. Key properties: IsFailing. | `ReportTabViewModel.cs` |
 | `class` | **ReportPaginatorService** | Provides service logic and operations for ReportPaginator. Key methods: Paginate. | `A4ReportModels.cs` |
 | `class` | **ReportPm7RowViewModel** | Represents the ReportPm7RowViewModel class. Key properties: Index, PointCode, PointName, StrainDescription. | `A4ReportModels.cs` |
-| `class` | **ReportSectionToggleViewModel** | Represents the ReportSectionToggleViewModel class. Key properties: Title, IsVisible. | `ReportTabViewModel.cs` |
-| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: GeneratePreviewCommand, RevealReportPreviewCommand, HideReportPreviewCommand, PreviewPdfCommand. | `ReportTabViewModel.cs` |
+| `class` | **ReportSectionToggleViewModel** | Represents the ReportSectionToggleViewModel class. Key properties: Title, SectionNumber, IsVisible. | `ReportTabViewModel.cs` |
+| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: WebViewScrollToAnchor, GeneratePreviewCommand, RevealReportPreviewCommand, HideReportPreviewCommand. | `ReportTabViewModel.cs` |
 | `class` | **ReportUnitConverter** | Represents the ReportUnitConverter class. Key methods: MmToDip, InchToDip. | `A4ReportModels.cs` |
 | `class` | **ResultViewModel** | Represents the ResultViewModel class. Key methods: ToggleViewport, CloseViewport. Key properties: PM, MM, PM3D, MM3D. | `ResultViewModel.cs` |
 | `class` | **SectionCadEditorViewModel** | Represents the SectionCadEditorViewModel class. Key methods: AddBoundaryPoint, AddRebar, AddPolylinePoint, UpdatePolylinePreview. Key properties: BoundaryPoints, Rebars, Draft, ToolMode. | `SectionCadEditorViewModel.cs` |
 | `record` | **SectionIntegrationMethodOption** | Represents the SectionIntegrationMethodOption record. | `InputViewModel.cs` |
 | `enum` | **SectionStatus** | Enumeration defining states/types for SectionStatus. | `SectionStatus.cs` |
 | `record` | **SevenPointValidationRowViewModel** | Represents the SevenPointValidationRowViewModel record. Key properties: CDisplay, Pn7Display, Mn7Display, PnSolverDisplay. | `ResultViewModel.cs` |
-| `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// All force values in the user's display unit; lengths/stresses in mm / MPa. ///. Key methods: Load. Key properties: HasResult, HasDemand, HasLinks, ForceUnit. | `ShearResultViewModel.cs` |
+| `record` | **ShearEnvelopeSummaryRowViewModel** | Represents the ShearEnvelopeSummaryRowViewModel record. Key properties: DemandText, CapacityText, RatioText, StatusText. | `ShearResultViewModel.cs` |
+| `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// All force values in the user's display unit; lengths/stresses in mm / MPa. ///. Key methods: Load. Key properties: HasResult, EnvelopeSummaryRows, HasEnvelopeSummary, HasDemand. | `ShearResultViewModel.cs` |
 | `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. | `SnapResult.cs` |
 | `class` | **SnapResult** | Encapsulates the result of Snap operations. Key properties: X, Y, Kind, HasSnap. | `SnapResult.cs` |
 | `class` | **ViewModelBase** | Represents the ViewModelBase class. | `ViewModelBase.cs` |
@@ -709,10 +720,13 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
+| `class` | **RebarComplianceDetailView** | Represents the RebarComplianceDetailView class. | `RebarComplianceDetailView.xaml.cs` |
 | `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |
 | `class` | **ReportTabView** | Represents the ReportTabView class. | `ReportTabView.xaml.cs` |
+| `class` | **ResultDetailWindow** | Represents the ResultDetailWindow class. | `ResultDetailWindow.xaml.cs` |
 | `class` | **ResultTabView** | Represents the ResultTabView class. | `ResultTabView.xaml.cs` |
 | `class` | **SectionCadEditorWindow** | Represents the SectionCadEditorWindow class. | `SectionCadEditorWindow.xaml.cs` |
 | `class` | **SectionSelectionItem** | Represents the SectionSelectionItem class. Key methods: GetSelectedIds. Key properties: Id, Name, IsSelected. | `SelectSectionsDialog.xaml.cs` |
 | `class` | **SelectSectionsDialog** | Represents the SelectSectionsDialog class. | `SelectSectionsDialog.xaml.cs` |
+| `class` | **ShearDetailView** | Represents the ShearDetailView class. | `ShearDetailView.xaml.cs` |
 | `class` | **StartUpWindow** | Represents the StartUpWindow class. | `StartUpWindow.xaml.cs` |
