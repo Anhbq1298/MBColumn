@@ -31,9 +31,27 @@
       font-size: 1em;
     }
 
+    /* Use sans-serif for all math-mode characters */
+    .katex .katex-mathit,
+    .katex .mathdefault,
+    .katex .mord,
+    .katex .mop,
+    .katex .mbin,
+    .katex .mrel,
+    .katex .mpunct,
+    .katex .mopen,
+    .katex .mclose,
+    .katex .minner {
+      font-family: "Arial", "Segoe UI", sans-serif;
+    }
+    .katex .katex-mathit,
+    .katex .mathdefault {
+      font-style: italic;
+    }
     .katex .mtext,
     .katex .text {
-      font-family: "Segoe UI Variable Text", "Segoe UI", "Aptos", "Arial", sans-serif;
+      font-family: "Arial", "Segoe UI", sans-serif;
+      font-style: normal;
     }
   </style>
 </head>
