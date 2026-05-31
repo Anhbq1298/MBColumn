@@ -257,8 +257,11 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
             ? asTotal * fyd / (area * concrete.Fcd)
             : 0.0;
 
-        double dx = RebarSpread(section.RebarLayout.Bars.Select(b => b.YMm), 0.8 * section.HeightMm);
-        double dy = RebarSpread(section.RebarLayout.Bars.Select(b => b.XMm), 0.8 * section.WidthMm);
+        double spreadY = RebarSpread(section.RebarLayout.Bars.Select(b => b.YMm), 0.8 * section.HeightMm);
+        double dx = (section.HeightMm / 2.0) + (spreadY / 2.0);
+
+        double spreadX = RebarSpread(section.RebarLayout.Bars.Select(b => b.XMm), 0.8 * section.WidthMm);
+        double dy = (section.WidthMm / 2.0) + (spreadX / 2.0);
 
         return new(
             area,

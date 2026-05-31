@@ -103,7 +103,7 @@
                 </Button>
                 <Separator Margin="0,4,12,4" />
                 <Button Click="CalculateButton_Click"
-                        IsEnabled="{Binding HasCurrentSection}"
+                        IsEnabled="{Binding HasSections}"
                         ToolTip="Choose calculation scope"
                         Style="{StaticResource PrimaryButtonStyle}"
                         MinHeight="30" Padding="14,4">
@@ -117,10 +117,12 @@
                     </StackPanel>
                     <Button.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Calculate This Section"
-                                      Command="{Binding Path=PlacementTarget.DataContext.CalculateCurrentColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                            <MenuItem Header="Calculate All Sections"
-                                      Command="{Binding Path=PlacementTarget.DataContext.CalculateAllColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                             <MenuItem Header="Calculate This Section"
+                                       Command="{Binding Path=PlacementTarget.DataContext.CalculateCurrentColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                             <MenuItem Header="Calculate Selected Sections"
+                                       Command="{Binding Path=PlacementTarget.DataContext.CalculateSelectedColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                             <MenuItem Header="Calculate All Sections"
+                                       Command="{Binding Path=PlacementTarget.DataContext.CalculateAllColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
@@ -144,9 +146,9 @@
         <!-- Main content: sidebar + tabs -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" MinWidth="150" MaxWidth="320" />
+                <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="4" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
 
             <!-- Project Explorer -->
@@ -233,8 +235,9 @@
                                 <HierarchicalDataTemplate DataType="{x:Type vm:GroupItemViewModel}" ItemsSource="{Binding Columns}">
                                     <Grid>
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                            <TextBlock Text="📁 " />
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="True" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock Text="📁 " VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center"/>
                                             <StackPanel.ContextMenu>
                                                 <ContextMenu>
                                                     <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
@@ -257,7 +260,8 @@
                                 <DataTemplate DataType="{x:Type vm:ColumnItemViewModel}">
                                     <Grid>
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                            <TextBlock Text="📄 " />
+                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="False" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock Text="📄 " VerticalAlignment="Center" />
                                             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
                                             <Border Margin="6,0,0,0"
                                                     VerticalAlignment="Center">
@@ -299,9 +303,8 @@
                 </DockPanel>
             </Border>
 
-            <!-- GridSplitter -->
-            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
-                          Background="{DynamicResource BorderGreyBrush}" />
+            <!-- Divider (non-resizable) -->
+            <Border Grid.Column="1" Background="{DynamicResource BorderGreyBrush}" />
 
             <!-- Tabs -->
             <TabControl Grid.Column="2" Margin="14,14,18,18"

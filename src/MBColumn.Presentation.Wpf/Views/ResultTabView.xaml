@@ -65,14 +65,6 @@
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
-        <Grid.Resources>
-            <Style x:Key="WrapRightAlignText" TargetType="TextBlock" BasedOn="{StaticResource RightAlignText}">
-                <Setter Property="TextWrapping" Value="Wrap" />
-            </Style>
-            <Style x:Key="WrapLeftAlignText" TargetType="TextBlock" BasedOn="{StaticResource LeftAlignText}">
-                <Setter Property="TextWrapping" Value="Wrap" />
-            </Style>
-        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -115,7 +107,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding OverallStatusText}" FontWeight="Bold" FontSize="{StaticResource FontSizeBody}">
+                                <TextBlock Text="{Binding OverallStatusText}" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
@@ -176,7 +168,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding StatusText}" FontWeight="Bold" FontSize="{StaticResource FontSizeBody}">
+                                <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource SuccessGreenBrush}" />
@@ -305,29 +297,7 @@
                                 </TextBlock>
                             </Border>
 
-                            <!-- 7 Special Capacity Points Summary -->
-                            <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="0,12,0,0"
-                                        Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <TextBlock Text="7 Capacity Points (Current Slice)"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource PrimaryNavyBrush}"
-                                           FontSize="{StaticResource FontSizeBody}"
-                                           Margin="0,0,0,8" />
-                                
-                                <DataGrid ItemsSource="{Binding SevenPointValidationRows}"
-                                          IsReadOnly="True"
-                                          AutoGenerateColumns="False"
-                                          HeadersVisibility="Column"
-                                          MaxHeight="250"
-                                          ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Point" Binding="{Binding PointName}" />
-                                        <DataGridTextColumn Header="c (mm)" Binding="{Binding CDisplay}" />
-                                        <DataGridTextColumn Header="P (kN)" Binding="{Binding PnSolverDisplay}" />
-                                        <DataGridTextColumn Header="M (kN·m)" Binding="{Binding MnSolverDisplay}" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </StackPanel>
+
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -493,6 +463,44 @@
                         <TextBlock Text="{Binding DemandSourceSummary}" Style="{StaticResource HelperTextStyle}" />
                         <TextBlock Text="{Binding DemandSourceDetail}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,10" />
 
+                        <!-- 7 Special Capacity Points Summary -->
+                        <StackPanel Margin="0,0,0,10" Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="7 Capacity Points (Current Slice)" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,6" />
+                            <DataGrid ItemsSource="{Binding SevenPointValidationRows}"
+                                      IsReadOnly="True"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      CanUserResizeColumns="True"
+                                      CanUserResizeRows="False"
+                                      CanUserSortColumns="False"
+                                      ColumnWidth="Auto"
+                                      HeadersVisibility="Column"
+                                      MaxHeight="250"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Point" Binding="{Binding UniqueName}" Width="Auto" />
+                                    <DataGridTextColumn Header="Description" Binding="{Binding PointName}" Width="*" />
+                                    <DataGridTextColumn Header="c (mm)" Binding="{Binding CDisplay}" Width="Auto" />
+                                    <DataGridTextColumn Binding="{Binding PnSolverDisplay}" Width="Auto">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="P ("/><Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding MnSolverDisplay}" Width="Auto">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="M ("/><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+
                         <!-- Load Case Demands & PMM Utilization -->
                         <TextBlock Text="Load Case PMM Utilization" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,6" />
                         <DataGrid ItemsSource="{Binding LoadCaseRows}"
@@ -504,7 +512,7 @@
                                   CanUserResizeRows="False"
                                   CanUserSortColumns="False"
                                   IsReadOnly="True"
-                                  ColumnWidth="SizeToCells"
+                                  ColumnWidth="Auto"
                                   MinHeight="126"
                                   MaxHeight="240"
                                   HorizontalScrollBarVisibility="Disabled">
@@ -523,12 +531,45 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="120" MinWidth="90" ElementStyle="{StaticResource WrapLeftAlignText}" />
-                                <DataGridTextColumn Header="P" Binding="{Binding PDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="Mx" Binding="{Binding MxDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="My" Binding="{Binding MyDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="Utilization Ratio" Binding="{Binding UtilizationDisplay}" Width="120" MinWidth="100" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="75" MinWidth="65" ElementStyle="{StaticResource WrapLeftAlignText}" />
+                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="*" MinWidth="80" ElementStyle="{StaticResource WrapLeftAlignText}" />
+                                <DataGridTextColumn Binding="{Binding PDisplay}" Width="Auto" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                                <Run Text="P" /><LineBreak />
+                                                <Run Text="(" /><Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding MxDisplay}" Width="Auto" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                                <Run Text="Mx" /><LineBreak />
+                                                <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding MyDisplay}" Width="Auto" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                                <Run Text="My" /><LineBreak />
+                                                <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding UtilizationDisplay}" Width="Auto" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">Utilization<LineBreak />Ratio</TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="Auto" MinWidth="50" ElementStyle="{StaticResource WrapLeftAlignText}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
@@ -1082,7 +1123,7 @@
                                 <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
                                 <CheckBox Content="Demand" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
                                 <CheckBox Content="P max/min" IsChecked="{Binding ShowPmaxPmin}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                                <CheckBox Content="Nominal" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Nominal" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
                                 <TextBlock Text="P step" Style="{StaticResource ChartConfigLabelStyle}" />
                                 <TextBox Text="{Binding PStep, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />
                                 <TextBlock Text="M step" Style="{StaticResource ChartConfigLabelStyle}" />
@@ -1094,8 +1135,22 @@
                                     <Border Width="14" Height="3" Background="{DynamicResource AccentRedBrush}" VerticalAlignment="Center" Margin="0,0,4,2"
                                             Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
                                     <TextBlock Text="Nominal"
-                                               Style="{StaticResource ChartConfigLabelStyle}"
+                                               Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2"
                                                Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Red" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-01" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Orange" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-02" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Gold" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-03" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Green" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-04" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Blue" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-05" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Indigo" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-06" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Violet" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="CP-07" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
                                 </StackPanel>
                             </WrapPanel>
                         </Border>
@@ -1152,7 +1207,7 @@
                                 <CheckBox Content="Labels" IsChecked="{Binding ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
                                 <CheckBox Content="Legend" IsChecked="{Binding ShowLegend}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
                                 <CheckBox Content="Demand" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                                <CheckBox Content="Nominal" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
+                                <CheckBox Content="Nominal" IsChecked="{Binding ShowNominalCurve}" Style="{StaticResource ChartConfigCheckBoxStyle}" Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
                                 <CheckBox Content="Equal aspect" IsChecked="{Binding UseEqualAspectForMM}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
                                 <TextBlock Text="X step" Style="{StaticResource ChartConfigLabelStyle}" />
                                 <TextBox Text="{Binding MStepX, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}" Style="{StaticResource ChartConfigInputStyle}" />

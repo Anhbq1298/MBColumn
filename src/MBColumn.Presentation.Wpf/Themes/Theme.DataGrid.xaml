@@ -17,6 +17,14 @@
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
 
+    <Style x:Key="WrapRightAlignText" TargetType="TextBlock" BasedOn="{StaticResource RightAlignText}">
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="WrapLeftAlignText" TargetType="TextBlock" BasedOn="{StaticResource LeftAlignText}">
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
     <Style x:Key="RightAlignEditingTextBox" TargetType="TextBox">
         <Setter Property="HorizontalContentAlignment" Value="Right" />
         <Setter Property="Margin" Value="0" />
@@ -49,6 +57,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Setter Property="BorderThickness" Value="0,0,1,1" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Bottom" />
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="DataGridCell">
@@ -61,10 +77,8 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Triggers>
-            <!-- Read-only cells: grey, non-editable cursor -->
+            <!-- Read-only cells: non-editable cursor, but keep normal active text colors -->
             <Trigger Property="IsReadOnly" Value="True">
-                <Setter Property="Background" Value="#EFEFEF" />
-                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
                 <Setter Property="Cursor" Value="Arrow" />
             </Trigger>
             <!-- Selection clears grey so the row's selection colour shows through -->
@@ -80,10 +94,6 @@
         <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}" />
         <Style.Triggers>
-            <!-- Read-only table: grey row background -->
-            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}, Path=IsReadOnly}" Value="True">
-                <Setter Property="Background" Value="#EFEFEF" />
-            </DataTrigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource AccentBlueSoftBrush}" />
             </Trigger>

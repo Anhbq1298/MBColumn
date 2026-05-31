@@ -35,4 +35,5 @@ public sealed record LoadCaseDto(
 
     /// <summary>Final My demand after EC2 slenderness amplification in the user's current MomentUnit.</summary>
     public double? MyUsed { get; init; }
+
 }

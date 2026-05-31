@@ -2,6 +2,7 @@ using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
+using MBColumn.Presentation.Wpf.Views;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -69,20 +70,33 @@ public sealed class MainWindowViewModel : ViewModelBase
             projectService,
             OnColumnSelected,
             SaveCurrentColumnInput,
-            projectNameDialogService.PromptColumnName,
+            projectNameDialogService,
             projectNameDialogService.PromptSelectSections,
             messageService);
 
         CalculateCommand = new AsyncRelayCommand(CalculateCurrentColumnAsync, () => !IsCalculating && HasCurrentSection);
         CalculateCurrentColumnCommand = CalculateCommand;
         CalculateAllColumnsCommand = new AsyncRelayCommand(CalculateAllColumnsAsync, () => !IsCalculating && HasSections);
+        CalculateSelectedColumnsCommand = new AsyncRelayCommand(CalculateSelectedColumnsAsync, () => !IsCalculating && HasSelectedColumns);
         NewProjectCommand = new RelayCommand(NewProject);
         OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
-        ImportFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
-        RefreshEtabsForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+
+        // ETABS commands — explicit source-differentiated versions plus legacy wrappers
+        ImportSectionsFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
+        ImportElementForcesCommand = new AsyncRelayCommand(ImportElementForcesAsync,
             () => etabsForceRefreshDialogService is not null);
+        ImportDesignForcesCommand = new AsyncRelayCommand(ImportDesignForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
+        RefreshElementForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
+        RefreshDesignForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
+
+        // Legacy wrappers kept for existing XAML bindings
+        ImportFromEtabsCommand = ImportSectionsFromEtabsCommand;
+        RefreshEtabsForcesCommand = RefreshElementForcesCommand;
 
         SubscribeToInputChanges();
         UpdateWindowTitle();
@@ -90,8 +104,15 @@ public sealed class MainWindowViewModel : ViewModelBase
         Explorer.Nodes.CollectionChanged += (_, _) =>
         {
             Raise(nameof(HasSections));
+            Raise(nameof(HasSelectedColumns));
             RaiseCommandStates();
             RaiseStatusProperties();
+        };
+
+        Explorer.SelectedColumnsChanged += () =>
+        {
+            Raise(nameof(HasSelectedColumns));
+            RaiseCommandStates();
         };
 
         projectService.ProjectChanged += (_, _) =>
@@ -109,10 +130,20 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand CalculateCommand { get; }
     public ICommand CalculateCurrentColumnCommand { get; }
     public ICommand CalculateAllColumnsCommand { get; }
+    public ICommand CalculateSelectedColumnsCommand { get; }
     public ICommand NewProjectCommand { get; }
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
+
+    // Explicit ETABS commands
+    public ICommand ImportSectionsFromEtabsCommand { get; }
+    public ICommand ImportElementForcesCommand { get; }
+    public ICommand ImportDesignForcesCommand { get; }
+    public ICommand RefreshElementForcesCommand { get; }
+    public ICommand RefreshDesignForcesCommand { get; }
+
+    // Legacy — kept so existing XAML bindings continue to work
     public ICommand ImportFromEtabsCommand { get; }
     public ICommand RefreshEtabsForcesCommand { get; }
 
@@ -132,6 +163,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     public int SelectedMainTabIndex { get => selectedMainTabIndex; set => Set(ref selectedMainTabIndex, value); }
     public bool HasCurrentSection => currentColumn is not null;
     public bool HasSections => Explorer is not null && Explorer.Nodes.Count > 0;
+    public bool HasSelectedColumns => Explorer is not null && Explorer.GetSelectedColumnIds().Count > 0;
     public bool HasCurrentResult => Result.HasResult;
     public bool ShowInputEmptyState => !HasCurrentSection;
     public bool ShowResultContent => HasCurrentSection && HasCurrentResult && !IsCalculationOutdated;
@@ -226,12 +258,187 @@ public sealed class MainWindowViewModel : ViewModelBase
     private async Task CalculateCurrentColumnAsync()
         => await RunWithProgressAsync("Calculating this section...", async () =>
         {
-            await Task.Yield();
-            CalculateCurrentColumn();
+            try
+            {
+                ValidationMessage = "";
+                var dto = Input.ToDto();
+                var result = await Task.Run(() => calculationService.Calculate(dto));
+                
+                Input.ApplySlendernessResults(result);
+                projectSession.StoreCurrentColumnResult(result);
+                Result.Result = result;
+                IsCalculationOutdated = false;
+                if (Explorer is not null && currentColumn is not null)
+                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
+                SelectedMainTabIndex = 1;
+                RaiseResultStateProperties();
+
+                // Auto-save column input and result after successful calculation
+                if (currentColumn is not null)
+                {
+                    SaveCurrentColumnInput();
+                    projectService.SaveColumnResult(currentColumn.Id, result);
+                }
+
+                RefreshReportFromCurrentWorkspace();
+
+                // Wait for WPF rendering to complete
+                await Task.Delay(250);
+            }
+            catch (Exception ex)
+            {
+                ValidationMessage = ex.Message;
+                if (Explorer is not null && currentColumn is not null)
+                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Error);
+                RaiseStatusProperties();
+                messageService.ShowWarning(ex.Message, "Validation");
+            }
         });
 
     private async Task CalculateAllColumnsAsync()
         => await RunWithProgressAsync("Calculating all sections...", CalculateAllColumnsBackgroundAsync);
+
+    private async Task CalculateSelectedColumnsAsync()
+        => await RunWithProgressAsync("Calculating selected sections...", CalculateSelectedColumnsBackgroundAsync);
+
+    private async Task CalculateSelectedColumnsBackgroundAsync()
+    {
+        var selectedIds = Explorer.GetSelectedColumnIds().ToHashSet();
+        if (selectedIds.Count == 0) return;
+
+        var columns = projectService.GetColumns().Where(c => selectedIds.Contains(c.Id)).ToList();
+        if (columns.Count == 0) return;
+
+        SaveCurrentColumnInput();
+
+        var selectedId = currentColumn?.Id;
+        var failedColumns = new List<string>();
+
+        var inputs = columns
+            .Select(c => new
+            {
+                Column = c,
+                Snapshot = projectService.LoadColumnInput(c.Id)
+            })
+            .Where(x => x.Snapshot is not null)
+            .ToList();
+
+        CalculationProgressWindow? progressWindow = null;
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            progressWindow = new CalculationProgressWindow
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+                ProgressMax = inputs.Count,
+                ProgressValue = 0,
+                StatusText = $"Calculating: [0/{inputs.Count}] calculated"
+            };
+            progressWindow.Show();
+        });
+
+        var backgroundResults = await Task.Run(() =>
+        {
+            var results = new List<(int ColumnId, string Name, MBColumn.Application.DTOs.CalculationResultDto? Result, string? Error)>();
+            var localInput = inputFactory();
+
+            int calculatedCount = 0;
+            foreach (var item in inputs)
+            {
+                try
+                {
+                    localInput.LoadFromSnapshot(item.Snapshot!);
+                    var result = calculationService.Calculate(localInput.ToDto());
+                    results.Add((item.Column.Id, item.Column.Name, result, null));
+                }
+                catch (Exception ex)
+                {
+                    results.Add((item.Column.Id, item.Column.Name, null, ex.Message));
+                }
+                finally
+                {
+                    calculatedCount++;
+                    int currentCount = calculatedCount;
+                    System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        try
+                        {
+                            if (progressWindow is not null && progressWindow.IsLoaded)
+                            {
+                                progressWindow.ProgressValue = currentCount;
+                                progressWindow.StatusText = $"Calculating: [{currentCount}/{inputs.Count}] calculated";
+                            }
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+                    });
+                }
+            }
+            return results;
+        });
+
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                if (progressWindow is not null && progressWindow.IsLoaded)
+                {
+                    progressWindow.Close();
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        });
+
+        suppressModified = true;
+        try
+        {
+            foreach (var item in backgroundResults)
+            {
+                var columnId = item.ColumnId;
+                if (item.Result is not null)
+                {
+                    projectSession.StoreColumnResult(columnId, item.Result);
+                    projectService.SaveColumnResult(columnId, item.Result);
+                    Explorer.SetSectionStatus(columnId, SectionStatus.Calculated);
+                }
+                else if (item.Error is not null)
+                {
+                    Explorer.SetSectionStatus(columnId, SectionStatus.Error);
+                    failedColumns.Add($"{item.Name}: {item.Error}");
+                }
+            }
+
+            if (selectedId is not null)
+            {
+                var selectedSnapshot = projectService.LoadColumnInput(selectedId.Value);
+                if (selectedSnapshot is not null)
+                    Input.LoadFromSnapshot(selectedSnapshot);
+            }
+        }
+        finally
+        {
+            suppressModified = false;
+        }
+
+        if (failedColumns.Count > 0)
+        {
+            ValidationMessage = string.Join(Environment.NewLine, failedColumns);
+            messageService.ShowWarning(
+                $"Some sections could not be calculated:\n\n{ValidationMessage}",
+                "Validation");
+            return;
+        }
+
+        ValidationMessage = "";
+        ApplyCurrentColumnResult();
+        RefreshReportFromCurrentWorkspace();
+        SelectedMainTabIndex = 1;
+        RaiseResultStateProperties();
+    }
 
     private async Task RunWithProgressAsync(string status, Func<Task> calculateAsync)
     {
@@ -254,40 +461,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void CalculateCurrentColumn()
-    {
-        try
-        {
-            ValidationMessage = "";
-            var result = calculationService.Calculate(Input.ToDto());
-            Input.ApplySlendernessResults(result);
-            projectSession.StoreCurrentColumnResult(result);
-            Result.Result = result;
-            IsCalculationOutdated = false;
-            if (Explorer is not null && currentColumn is not null)
-                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
-            SelectedMainTabIndex = 1;
-            RaiseResultStateProperties();
-
-            // Auto-save column input and result after successful calculation
-            if (currentColumn is not null)
-            {
-                SaveCurrentColumnInput();
-                projectService.SaveColumnResult(currentColumn.Id, result);
-            }
-
-            RefreshReportFromCurrentWorkspace();
-        }
-        catch (Exception ex)
-        {
-            ValidationMessage = ex.Message;
-            if (Explorer is not null && currentColumn is not null)
-                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Error);
-            RaiseStatusProperties();
-            messageService.ShowWarning(ex.Message, "Validation");
-        }
-    }
-
     private async Task CalculateAllColumnsBackgroundAsync()
     {
         var columns = projectService.GetColumns();
@@ -307,11 +480,25 @@ public sealed class MainWindowViewModel : ViewModelBase
             .Where(x => x.Snapshot is not null)
             .ToList();
 
+        CalculationProgressWindow? progressWindow = null;
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            progressWindow = new CalculationProgressWindow
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+                ProgressMax = inputs.Count,
+                ProgressValue = 0,
+                StatusText = $"Calculating: [0/{inputs.Count}] calculated"
+            };
+            progressWindow.Show();
+        });
+
         var backgroundResults = await Task.Run(() =>
         {
             var results = new List<(int ColumnId, string Name, MBColumn.Application.DTOs.CalculationResultDto? Result, string? Error)>();
             var localInput = inputFactory();
 
+            int calculatedCount = 0;
             foreach (var item in inputs)
             {
                 try
@@ -324,8 +511,43 @@ public sealed class MainWindowViewModel : ViewModelBase
                 {
                     results.Add((item.Column.Id, item.Column.Name, null, ex.Message));
                 }
+                finally
+                {
+                    calculatedCount++;
+                    int currentCount = calculatedCount;
+                    System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        try
+                        {
+                            if (progressWindow is not null && progressWindow.IsLoaded)
+                            {
+                                progressWindow.ProgressValue = currentCount;
+                                progressWindow.StatusText = $"Calculating: [{currentCount}/{inputs.Count}] calculated";
+                            }
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+                    });
+                }
             }
             return results;
+        });
+
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                if (progressWindow is not null && progressWindow.IsLoaded)
+                {
+                    progressWindow.Close();
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         });
 
         suppressModified = true;
@@ -562,6 +784,48 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             IsImporting = false;
         }
+    }
+
+    private async Task ImportElementForcesAsync()
+    {
+        var bindings = GetEtabsBindings();
+        if (bindings.Count == 0)
+        {
+            messageService.ShowInformation(
+                "No ETABS-linked sections found.\nImport sections from ETABS first to create a binding, then use this command to import element forces.",
+                "Import Element Forces");
+            return;
+        }
+        // Route through the existing refresh dialog for now.
+        // A dedicated element-force import dialog will replace this in a later phase.
+        await RefreshEtabsForcesAsync();
+    }
+
+    private async Task ImportDesignForcesAsync()
+    {
+        var bindings = GetEtabsBindings();
+        if (bindings.Count == 0)
+        {
+            messageService.ShowInformation(
+                "No ETABS-linked sections found.\nImport sections from ETABS first to create a binding, then use this command to import design forces.",
+                "Import Design Forces");
+            return;
+        }
+        // Route through the existing refresh dialog for now.
+        // A dedicated design-force import dialog will replace this in a later phase.
+        await RefreshEtabsForcesAsync();
+    }
+
+    private IReadOnlyList<Application.DTOs.Etabs.EtabsSectionBinding> GetEtabsBindings()
+    {
+        var bindings = new List<Application.DTOs.Etabs.EtabsSectionBinding>();
+        foreach (var col in projectService.GetColumns())
+        {
+            var snapshot = projectService.LoadColumnInput(col.Id);
+            if (snapshot?.EtabsBinding is not null)
+                bindings.Add(snapshot.EtabsBinding);
+        }
+        return bindings;
     }
 
     private async Task RefreshEtabsForcesAsync()
@@ -892,6 +1156,16 @@ public sealed class MainWindowViewModel : ViewModelBase
             calculate.RaiseCanExecuteChanged();
         if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)
             calculateAll.RaiseCanExecuteChanged();
+        if (CalculateSelectedColumnsCommand is AsyncRelayCommand calculateSelected)
+            calculateSelected.RaiseCanExecuteChanged();
+        if (ImportElementForcesCommand is AsyncRelayCommand importElem)
+            importElem.RaiseCanExecuteChanged();
+        if (ImportDesignForcesCommand is AsyncRelayCommand importDes)
+            importDes.RaiseCanExecuteChanged();
+        if (RefreshElementForcesCommand is AsyncRelayCommand refreshElem)
+            refreshElem.RaiseCanExecuteChanged();
+        if (RefreshDesignForcesCommand is AsyncRelayCommand refreshDes)
+            refreshDes.RaiseCanExecuteChanged();
     }
 
     private void RaiseStatusProperties()

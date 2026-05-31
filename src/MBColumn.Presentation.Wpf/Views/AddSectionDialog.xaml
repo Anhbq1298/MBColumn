@@ -1,0 +1,57 @@
+<Window x:Class="MBColumn.Presentation.Wpf.Views.AddSectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add New Section"
+        Width="380" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Style="{DynamicResource DialogWindowStyle}">
+    <Grid Style="{DynamicResource DialogRootGridStyle}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{DynamicResource DialogHeaderBorderStyle}">
+            <StackPanel>
+                <TextBlock Text="Add New Section" Style="{DynamicResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="Enter the section name and optionally assign it to a group."
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{DynamicResource DialogBodyBorderStyle}">
+            <StackPanel>
+                <TextBlock Text="Section name"
+                           Style="{StaticResource FieldLabelTextStyle}" />
+                <TextBox x:Name="NameBox"
+                         MinWidth="280"
+                         Margin="0,0,0,12"
+                         KeyDown="NameBox_KeyDown" />
+
+                <TextBlock Text="Assign to Group"
+                           Style="{StaticResource FieldLabelTextStyle}" />
+                <ComboBox x:Name="GroupComboBox"
+                          MinWidth="280"
+                          DisplayMemberPath="Name"
+                          SelectedValuePath="Id" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{DynamicResource DialogFooterBarStyle}">
+            <StackPanel Style="{DynamicResource DialogActionPanelStyle}">
+                <Button Content="Cancel"
+                         Width="88"
+                         IsCancel="True"
+                         Click="Cancel_Click"
+                         Style="{DynamicResource DialogActionButtonStyle}"
+                         Margin="0,0,8,0" />
+                <Button Content="OK"
+                         Width="88"
+                         IsDefault="True"
+                         Click="OK_Click"
+                         Style="{StaticResource PrimaryButtonStyle}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

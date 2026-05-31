@@ -1,0 +1,38 @@
+<Window x:Class="MBColumn.Presentation.Wpf.Views.CalculationProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Calculating..."
+        Width="380" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Style="{DynamicResource DialogWindowStyle}"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Grid Style="{DynamicResource DialogRootGridStyle}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{DynamicResource DialogHeaderBorderStyle}">
+            <StackPanel>
+                <TextBlock Text="Calculation Progress" Style="{DynamicResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="Running batch column calculations. Please wait..."
+                           Style="{DynamicResource DialogHeaderSubtitleTextStyle}" />
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{DynamicResource DialogBodyBorderStyle}">
+            <StackPanel>
+                <TextBlock Text="{Binding StatusText}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource DarkNavyBrush}"
+                           Margin="0,0,0,8" />
+                <ProgressBar Value="{Binding ProgressValue}"
+                             Maximum="{Binding ProgressMax}"
+                             Height="16"
+                             IsIndeterminate="False"
+                             Background="#E0E0E0"
+                             Foreground="{DynamicResource ActionBlueBrush}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

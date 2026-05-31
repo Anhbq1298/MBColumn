@@ -5,13 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="ETABSv1">
-      <HintPath>..\ETABSv1.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <PropertyGroup>

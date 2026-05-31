@@ -10,6 +10,7 @@ using System.Windows.Input;
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
 public sealed record SevenPointValidationRowViewModel(
+    string UniqueName,
     string PointName,
     string TargetStrainState,
     double C,
@@ -69,7 +70,7 @@ public sealed class ResultViewModel : ViewModelBase
     private RelayCommand showControlPointsCommand = null!;
     private RelayCommand exportAllPointsCommand = null!;
     private bool showGrid = true;
-    private bool showLabels = true;
+    private bool showLabels = false;
     private bool showLegend = true;
     private bool showDemandPoint = true;
     private bool showPmaxPmin;
@@ -199,7 +200,8 @@ public sealed class ResultViewModel : ViewModelBase
                     r.LambdaLimitY)).ToList()
                 : [];
             
-            SevenPointValidationRows = value?.SevenPointValidationRows?.Select(r => new SevenPointValidationRowViewModel(
+            SevenPointValidationRows = value?.SevenPointValidationRows?.Select((r, i) => new SevenPointValidationRowViewModel(
+                $"CP-0{i + 1}",
                 r.PointName, r.HandCalcState, r.HandCalcC, r.HandCalcPn, r.HandCalcMn,
                 r.SolverPn, r.SolverMn, r.PnDeviationPercent, r.MnDeviationPercent
             )).ToList() ?? [];
@@ -237,6 +239,8 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(SelectedPuLevelText));
             RaiseNavigationLabels();
             Raise(nameof(IsAciCode));
+            
+            if (!IsAciCode) ShowNominalCurve = false;
         }
     }
     public IReadOnlyList<ControlPointDto> PmAnglePoints { get => pmAnglePoints; private set => Set(ref pmAnglePoints, value); }
