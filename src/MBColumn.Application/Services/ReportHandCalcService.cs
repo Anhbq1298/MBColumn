@@ -367,8 +367,8 @@ public static class ReportHandCalcService
                 $$"""\varepsilon_t = 0.5 \times {{F(eyd,5)}}""", ""),
 
             new("Neutral axis depth",
-                $$$"""c_{half} = \\frac{ {{{ecuL}}} \\cdot d_t }{ {{{ecuL}}} + 0.5 \varepsilon_{y}}""",
-                $$"""c_{half} = \\frac{ {{F(ecu,4)}} \\times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(0.5*eyd,5)}} }""",
+                $$$"""c_{half} = \frac{ {{{ecuL}}} \cdot d_t }{ {{{ecuL}}} + 0.5 \varepsilon_{y}}""",
+                $$"""c_{half} = \frac{ {{F(ecu,4)}} \times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(0.5*eyd,5)}} }""",
                 $$"""c_{half} = {{F(c,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
@@ -446,8 +446,8 @@ public static class ReportHandCalcService
                 $$"""d_t = {{F(dt,1)}}\,\mathrm{mm}"""),
 
             new("Balanced neutral axis depth",
-                $$"""c_b = \\frac{ {{ecuL}} \\cdot d_t }{ {{ecuL}} + {{(fydL == @"f_y" ? @"\varepsilon_y" : @"\varepsilon_{yd}")}}}""",
-                $$"""c_b = \\frac{ {{F(ecu,4)}} \\times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(eyd,5)}} }""",
+                $$"""c_b = \frac{ {{ecuL}} \cdot d_t }{ {{ecuL}} + {{(fydL == @"f_y" ? @"\varepsilon_y" : @"\varepsilon_{yd}")}}}""",
+                $$"""c_b = \frac{ {{F(ecu,4)}} \times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(eyd,5)}} }""",
                 $$"""c_b = {{F(cb,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
@@ -527,8 +527,8 @@ public static class ReportHandCalcService
                 $$"""\varepsilon_{t,limit} = {{F(etLimit,4)}}""", ""),
 
             new("Neutral axis depth at tension limit",
-                $$"""c_t = \\frac{ {{ecuL}} \\cdot d_t }{ {{ecuL}} + \varepsilon_{t,limit} }""",
-                $$"""c_t = \\frac{ {{F(ecu,4)}} \\times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(etLimit,4)}} }""",
+                $$"""c_t = \frac{ {{ecuL}} \cdot d_t }{ {{ecuL}} + \varepsilon_{t,limit} }""",
+                $$"""c_t = \frac{ {{F(ecu,4)}} \times {{F(dt,1)}} }{ {{F(ecu,4)}} + {{F(etLimit,4)}} }""",
                 $$"""c_t = {{F(ct,1)}}\,\mathrm{mm}"""),
 
             new($"Stress block depth  ({beta1L} = {F(beta1,4)})",
@@ -601,7 +601,7 @@ public static class ReportHandCalcService
                 $$"""c = {{F(c,2)}}\,\mathrm{mm}"""),
 
             new("Moment capacity at pure bending NA",
-                $$"""M_{nx}(c) = C_c \!\left(\\tfrac{h}{2}-\\tfrac{a}{2}\\right) + \sum A_{si} f_{si} y_i""",
+                $$"""M_{nx}(c) = C_c \!\left(\tfrac{h}{2}-\tfrac{a}{2}\right) + \sum A_{si} f_{si} y_i""",
                 $$"""a = {{beta1L}} c = {{F(beta1,4)}} \times {{F(c,2)}} = {{F(beta1*c,2)}}\,\mathrm{mm}""",
                 $$"""M_{nx} = {{F(Mn/1e6,1)}}\,\mathrm{kN}\cdot\mathrm{m}"""),
 

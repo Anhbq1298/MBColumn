@@ -34,6 +34,22 @@
                     <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
                     <Setter Property="BorderBrush" Value="{DynamicResource AccentRedBrush}" />
                 </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Status}" Value="{x:Static vm:SectionStatus.Calculated}" />
+                        <Condition Binding="{Binding OverallStatus}" Value="FAIL" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentRedBrush}" />
+                </MultiDataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding Status}" Value="{x:Static vm:SectionStatus.Calculated}" />
+                        <Condition Binding="{Binding OverallStatus}" Value="WARNING" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#FFF7E6" />
+                    <Setter Property="BorderBrush" Value="#C98600" />
+                </MultiDataTrigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
@@ -125,6 +141,16 @@
                                        Command="{Binding Path=PlacementTarget.DataContext.CalculateAllColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                         </ContextMenu>
                     </Button.ContextMenu>
+                </Button>
+                <Button Command="{Binding BatchPrintCommand}"
+                        ToolTip="Batch Print PDF reports for checked sections"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        MinHeight="30" Padding="12,4"
+                        Margin="6,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE749;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="Batch Print" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
+                    </StackPanel>
                 </Button>
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
@@ -244,6 +270,10 @@
                                                     <MenuItem Header="Add New Section" Command="{Binding AddSectionCommand}" />
                                                     <MenuItem Header="Add Existing Sections..." Command="{Binding AddExistingSectionsCommand}" />
                                                     <Separator />
+                                                    <MenuItem Header="Print Group Reports..." 
+                                                              Command="{Binding Path=PlacementTarget.DataContext.PrintGroupReportsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding}" />
+                                                    <Separator />
                                                     <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
                                                 </ContextMenu>
                                             </StackPanel.ContextMenu>
@@ -277,6 +307,10 @@
                                                 <ContextMenu Opened="ColumnContextMenu_Opened">
                                                     <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
                                                     <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="Print Report as PDF..."
+                                                              Command="{Binding Path=PlacementTarget.DataContext.PrintSingleReportCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                              CommandParameter="{Binding}" />
                                                     <Separator />
                                                     <MenuItem Header="Move to Group..." ItemsSource="{Binding MoveToGroupOptions}">
                                                         <MenuItem.ItemContainerStyle>

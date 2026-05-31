@@ -3,6 +3,13 @@ using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.Views;
+using MBColumn.Domain.Interfaces;
+using MBColumn.Application.Reports.Builders;
+using MBColumn.Application.Reports.Models;
+using MBColumn.Infrastructure.Reports.Pdf;
+using MBColumn.Infrastructure.DesignCodes;
+using MBColumn.Infrastructure.Math;
+using System.IO;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -82,6 +89,9 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
+        BatchPrintCommand = new RelayCommand(OpenBatchPrintWindow);
+        PrintGroupReportsCommand = new RelayCommand<GroupItemViewModel>(PrintGroupReports);
+        PrintSingleReportCommand = new RelayCommand<ColumnItemViewModel>(async (col) => await PrintSingleReportAsync(col));
 
         // ETABS commands — explicit source-differentiated versions plus legacy wrappers
         ImportSectionsFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
@@ -135,6 +145,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
+    public ICommand BatchPrintCommand { get; }
+    public ICommand PrintGroupReportsCommand { get; }
+    public ICommand PrintSingleReportCommand { get; }
 
     // Explicit ETABS commands
     public ICommand ImportSectionsFromEtabsCommand { get; }
@@ -438,6 +451,153 @@ public sealed class MainWindowViewModel : ViewModelBase
         RefreshReportFromCurrentWorkspace();
         SelectedMainTabIndex = 1;
         RaiseResultStateProperties();
+    }
+
+    private void OpenBatchPrintWindow()
+    {
+        var vm = new BatchPrintWindowViewModel(
+            projectService,
+            projectSession,
+            calculationService,
+            messageService,
+            Explorer,
+            inputFactory);
+        
+        var win = new BatchPrintWindow(vm);
+        win.ShowDialog();
+    }
+
+    private void PrintGroupReports(GroupItemViewModel? group)
+    {
+        if (group is null) return;
+
+        foreach (var node in Explorer.Nodes)
+        {
+            node.IsChecked = false;
+        }
+        group.IsChecked = true;
+
+        OpenBatchPrintWindow();
+    }
+
+    private async Task PrintSingleReportAsync(ColumnItemViewModel? column)
+    {
+        if (column is null) return;
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Print Report as PDF",
+            Filter = "PDF files (*.pdf)|*.pdf",
+            FileName = $"{column.Name}_Report.pdf"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        string pdfPath = dialog.FileName;
+
+        var result = projectService.LoadColumnResult(column.Id);
+        if (result is null || column.Status != SectionStatus.Calculated)
+        {
+            IsCalculating = true;
+            CalculationStatus = "Calculating...";
+            try
+            {
+                await Task.Run(() =>
+                {
+                    var snapshot = projectService.LoadColumnInput(column.Id);
+                    if (snapshot is not null)
+                    {
+                        var localInput = inputFactory();
+                        localInput.LoadFromSnapshot(snapshot);
+                        var calcResult = calculationService.Calculate(localInput.ToDto());
+                        if (calcResult is not null)
+                        {
+                            projectSession.StoreColumnResult(column.Id, calcResult);
+                            projectService.SaveColumnResult(column.Id, calcResult);
+                            Explorer.SetSectionStatus(column.Id, SectionStatus.Calculated);
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                messageService.ShowError($"Calculation failed:\n{ex.Message}", "Print Error");
+                IsCalculating = false;
+                return;
+            }
+            finally
+            {
+                IsCalculating = false;
+            }
+        }
+
+        IsCalculating = true;
+        CalculationStatus = "Generating report...";
+        try
+        {
+            await Task.Run(() =>
+            {
+                var res = projectService.LoadColumnResult(column.Id);
+                if (res is null) throw new InvalidOperationException("No calculation result available.");
+
+                string groupName = projectService.GetGroups().FirstOrDefault(g => g.Id == column.GroupId)?.Name ?? "Default";
+                string projectName = projectService.ProjectName;
+
+                IDesignCodeService codeService = res.DesignCode == Domain.Enums.DesignCodeType.Aci318Style
+                    ? new Aci318DesignCodeService()
+                    : new Ec2DesignCodeService { AlphaCc = res.AlphaCc };
+                IUnitConversionService unitService = new UnitConversionService();
+
+                string? sectionSvg = null;
+                try
+                {
+                    sectionSvg = MBColumn.Infrastructure.Reports.Graphics.SectionGeometryRenderer.RenderSection(
+                        res.SectionShape,
+                        res.SectionWidthMm, res.SectionHeightMm,
+                        res.DiameterMm > 0 ? res.DiameterMm : res.SectionWidthMm,
+                        res.CoverMm, res.RebarCoordinates);
+                }
+                catch { }
+
+                DiagramBlock? pmDiagramBlock = null, mmDiagramBlock = null;
+                try
+                {
+                    var diag = new DiagramDataService();
+                    double theta = res.GoverningThetaDegrees;
+                    var pmData = diag.BuildPmAngleDiagramData(res.ControlPoints, res.UnitSystem, theta);
+                    var pmAll = pmData.Points.Concat(diag.BuildPmAngleDemandPoints(res.LoadCaseResults, theta)).Concat(pmData.SpecialCapacityPoints).ToList();
+                    pmDiagramBlock = new DiagramBlock(pmAll, pmData.ReferenceLines,
+                        $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", res.Ratio,
+                        UseEqualAspect: false, WidthPct: 90,
+                        Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
+
+                    var mmData = diag.BuildMxMyDiagramDataAtDisplayP(res.ControlPoints, res.UnitSystem, res.PuDisplay);
+                    var mmAll = mmData.Points.Concat(diag.BuildMxMyDemandPoints(res.LoadCaseResults)).ToList();
+                    mmDiagramBlock = new DiagramBlock(mmAll, [],
+                        $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", res.Ratio,
+                        UseEqualAspect: true, WidthPct: 80,
+                        Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
+                }
+                catch { }
+
+                var builder = new CalculationReportBuilder();
+                var reportData = builder.Build(projectName, groupName, column.Name,
+                                               res, codeService, unitService, sectionSvg,
+                                               pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
+
+                var renderer = new QuestPdfCalculationReportRenderer();
+                renderer.RenderToFile(reportData, pdfPath);
+            });
+
+            messageService.ShowInformation($"Report successfully saved to:\n{pdfPath}", "Print Complete");
+        }
+        catch (Exception ex)
+        {
+            messageService.ShowError($"Printing report failed:\n{ex.Message}", "Print Error");
+        }
+        finally
+        {
+            IsCalculating = false;
+        }
     }
 
     private async Task RunWithProgressAsync(string status, Func<Task> calculateAsync)
@@ -1158,6 +1318,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             calculateAll.RaiseCanExecuteChanged();
         if (CalculateSelectedColumnsCommand is AsyncRelayCommand calculateSelected)
             calculateSelected.RaiseCanExecuteChanged();
+        if (BatchPrintCommand is RelayCommand batchPrint)
+            batchPrint.RaiseCanExecuteChanged();
         if (ImportElementForcesCommand is AsyncRelayCommand importElem)
             importElem.RaiseCanExecuteChanged();
         if (ImportDesignForcesCommand is AsyncRelayCommand importDes)

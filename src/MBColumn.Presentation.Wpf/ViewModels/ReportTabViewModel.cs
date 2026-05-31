@@ -106,6 +106,7 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     public ObservableCollection<ReportSection> ReportSections { get; } = [];
     public ObservableCollection<ReportSectionToggleViewModel> SectionToggles { get; } = [];
+    public ObservableCollection<ReportTreeItemViewModel> ReportTreeNodes { get; } = [];
     public bool HasSectionToggles => SectionToggles.Count > 0;
     public int VisibleSectionCount => SectionToggles.Count(t => t.IsVisible);
 
@@ -328,6 +329,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         SetReportPreviewVisible(false);
         ReportSections.Clear();
         SectionToggles.Clear();
+        ReportTreeNodes.Clear();
         Raise(nameof(HasResult));
         Raise(nameof(HasSectionToggles));
         RaiseReportPreviewState();
@@ -353,6 +355,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         SetReportPreviewVisible(false);
         ReportSections.Clear();
         SectionToggles.Clear();
+        ReportTreeNodes.Clear();
         IsGeneratingReport = false;
         Raise(nameof(HasSectionToggles));
         RaiseReportPreviewState();
@@ -553,6 +556,7 @@ public sealed class ReportTabViewModel : ViewModelBase
                 toggle.PropertyChanged += (_, _) => OnToggleVisibilityChanged();
                 SectionToggles.Add(toggle);
             }
+            BuildReportTree();
             Raise(nameof(HasSectionToggles));
             Raise(nameof(VisibleSectionCount));
 
@@ -712,6 +716,45 @@ public sealed class ReportTabViewModel : ViewModelBase
         return builder.Build(_cachedProjectName, _cachedGroupName, _cachedDesignTierName,
                              result, codeService, unitService, sectionSvg,
                              pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
+    }
+
+    private void BuildReportTree()
+    {
+        ReportTreeNodes.Clear();
+
+        var mainReportRoot = new ReportTreeItemViewModel { Title = "Main Report" };
+        var appendixRoot = new ReportTreeItemViewModel { Title = "Appendix" };
+
+        foreach (var toggle in SectionToggles)
+        {
+            var treeItem = new ReportTreeItemViewModel();
+            treeItem.InitializeFromToggle(toggle);
+
+            bool isAppendix = toggle.SectionNumber.StartsWith("A", StringComparison.OrdinalIgnoreCase);
+
+            if (isAppendix)
+            {
+                treeItem.Parent = appendixRoot;
+                appendixRoot.Children.Add(treeItem);
+            }
+            else
+            {
+                treeItem.Parent = mainReportRoot;
+                mainReportRoot.Children.Add(treeItem);
+            }
+        }
+
+        if (mainReportRoot.Children.Count > 0)
+        {
+            mainReportRoot.VerifyCheckedState();
+            ReportTreeNodes.Add(mainReportRoot);
+        }
+
+        if (appendixRoot.Children.Count > 0)
+        {
+            appendixRoot.VerifyCheckedState();
+            ReportTreeNodes.Add(appendixRoot);
+        }
     }
 
     // ── Preview helpers ───────────────────────────────────────────────────────
@@ -878,4 +921,102 @@ public sealed record ReportDemandCaseRowViewModel(
     double CapacityMy)
 {
     public bool IsFailing => PmmRatio > 1.0;
+}
+
+public sealed class ReportTreeItemViewModel : ViewModelBase
+{
+    private string _title = "";
+    private bool? _isChecked = true;
+    private ReportTreeItemViewModel? _parent;
+
+    public string Title
+    {
+        get => _title;
+        set => Set(ref _title, value);
+    }
+
+    public string SectionNumber { get; set; } = "";
+
+    public bool? IsChecked
+    {
+        get => _isChecked;
+        set => SetIsChecked(value, updateChildren: true, updateParent: true);
+    }
+
+    public ReportTreeItemViewModel? Parent
+    {
+        get => _parent;
+        set => Set(ref _parent, value);
+    }
+
+    public ReportSectionToggleViewModel? SectionToggle { get; set; }
+
+    public ObservableCollection<ReportTreeItemViewModel> Children { get; } = [];
+
+    public bool HasChildren => Children.Count > 0;
+
+    public ReportTreeItemViewModel()
+    {
+    }
+
+    public void InitializeFromToggle(ReportSectionToggleViewModel toggle)
+    {
+        SectionToggle = toggle;
+        _title = toggle.Title;
+        SectionNumber = toggle.SectionNumber;
+        _isChecked = toggle.IsVisible;
+        
+        toggle.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(ReportSectionToggleViewModel.IsVisible))
+            {
+                SetIsChecked(toggle.IsVisible, updateChildren: false, updateParent: true);
+            }
+        };
+    }
+
+    private void SetIsChecked(bool? value, bool updateChildren, bool updateParent)
+    {
+        if (_isChecked == value) return;
+
+        _isChecked = value;
+        Raise(nameof(IsChecked));
+
+        if (updateChildren && value.HasValue)
+        {
+            foreach (var child in Children)
+            {
+                child.SetIsChecked(value.Value, updateChildren: true, updateParent: false);
+            }
+        }
+
+        if (SectionToggle is not null && value.HasValue)
+        {
+            SectionToggle.IsVisible = value.Value;
+        }
+
+        if (updateParent && Parent is not null)
+        {
+            Parent.VerifyCheckedState();
+        }
+    }
+
+    public void VerifyCheckedState()
+    {
+        bool? state = null;
+        for (int i = 0; i < Children.Count; ++i)
+        {
+            bool? current = Children[i].IsChecked;
+            if (i == 0)
+            {
+                state = current;
+            }
+            else if (state != current)
+            {
+                state = null;
+                break;
+            }
+        }
+        SetIsChecked(state, updateChildren: false, updateParent: true);
+    }
 }

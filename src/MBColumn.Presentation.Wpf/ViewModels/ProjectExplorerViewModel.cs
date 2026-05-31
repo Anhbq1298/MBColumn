@@ -414,7 +414,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
     private ColumnItemViewModel CreateItem(ColumnRecord record)
     {
-        var item = new ColumnItemViewModel(record, SelectNode, DuplicateColumn, DeleteColumn);
+        var item = new ColumnItemViewModel(record, SelectNode, DuplicateColumn, DeleteColumn, projectService);
         if (sectionStatuses.TryGetValue(record.Id, out var status))
             item.Status = status;
 

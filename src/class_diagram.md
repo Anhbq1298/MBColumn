@@ -483,7 +483,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **QuestPdfCalculationReportRenderer** | /// Renders a ReportData to an A4 PDF using QuestPDF. /// No content is clipped. Formula blocks keep together. Tables split by complete rows only. ///. Key methods: RenderToFile, RenderToBytes. | `QuestPdfCalculationReportRenderer.cs` |
+| `class` | **PdfMergeUtility** | Represents the PdfMergeUtility class. Key methods: MergePdfDocuments. | `PdfMergeUtility.cs` |
+| `class` | **QuestPdfCalculationReportRenderer** | /// Renders a ReportData to an A4 PDF using QuestPDF. /// No content is clipped. Formula blocks keep together. Tables split by complete rows only. ///. Key methods: RenderToFile, RenderToBytes, AddBookmarks. | `QuestPdfCalculationReportRenderer.cs` |
 
 ### Reports/Svg
 
@@ -676,6 +677,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **A4ReportPageViewModel** | Represents the A4ReportPageViewModel class. Key properties: PageNumber, PageWidthMm, PageHeightMm, MarginMm. | `A4ReportModels.cs` |
+| `class` | **BatchPrintWindowViewModel** | Represents the BatchPrintWindowViewModel class. Key properties: Nodes, OutputPath, KeepProjectStructure, FlatFiles. | `BatchPrintWindowViewModel.cs` |
 | `class` | **CadPointViewModel** | Represents the CadPointViewModel class. Key properties: X, Y. | `CadPointViewModel.cs` |
 | `class` | **CadRebarViewModel** | Represents the CadRebarViewModel class. Key properties: X, Y, BarSize, AreaMm2. | `CadRebarViewModel.cs` |
 | `class` | **CadSnapService** | Provides service logic and operations for CadSnap. Key methods: Snap. | `CadSnapService.cs` |
@@ -742,6 +744,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ReportPm7RowViewModel** | Represents the ReportPm7RowViewModel class. Key properties: Index, PointCode, PointName, StrainDescription. | `A4ReportModels.cs` |
 | `class` | **ReportSectionToggleViewModel** | Represents the ReportSectionToggleViewModel class. Key properties: Title, SectionNumber, IsVisible. | `ReportTabViewModel.cs` |
 | `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: WebViewScrollToAnchor, GeneratePreviewCommand, RevealReportPreviewCommand, HideReportPreviewCommand. | `ReportTabViewModel.cs` |
+| `class` | **ReportTreeItemViewModel** | Represents the ReportTreeItemViewModel class. Key methods: InitializeFromToggle, VerifyCheckedState. Key properties: Title, SectionNumber, IsChecked, Parent. | `ReportTabViewModel.cs` |
 | `class` | **ReportUnitConverter** | Represents the ReportUnitConverter class. Key methods: MmToDip, InchToDip. | `A4ReportModels.cs` |
 | `class` | **ResultViewModel** | Represents the ResultViewModel class. Key methods: ToggleViewport, CloseViewport. Key properties: PM, MM, PM3D, MM3D. | `ResultViewModel.cs` |
 | `class` | **SectionCadEditorViewModel** | Represents the SectionCadEditorViewModel class. Key methods: AddBoundaryPoint, AddRebar, AddPolylinePoint, UpdatePolylinePreview. Key properties: BoundaryPoints, Rebars, Draft, ToolMode. | `SectionCadEditorViewModel.cs` |
@@ -762,6 +765,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **AddSectionDialog** | Represents the AddSectionDialog class. Key properties: SectionName, SelectedGroupId. | `AddSectionDialog.xaml.cs` |
+| `class` | **BatchPrintWindow** | Represents the BatchPrintWindow class. | `BatchPrintWindow.xaml.cs` |
 | `class` | **CalculationProgressWindow** | Represents the CalculationProgressWindow class. Key properties: StatusText, ProgressValue, ProgressMax. | `CalculationProgressWindow.xaml.cs` |
 | `class` | **DxfImportWindow** | Represents the DxfImportWindow class. | `DxfImportWindow.xaml.cs` |
 | `class` | **EtabsForceRefreshWindow** | Represents the EtabsForceRefreshWindow class. | `EtabsForceRefreshWindow.xaml.cs` |
