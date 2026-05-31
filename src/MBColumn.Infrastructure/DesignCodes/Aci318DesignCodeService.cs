@@ -17,6 +17,11 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
     // Hognestad parabola exponent n = 2 for ACI.
     public double ConcreteParabolicExponent(double fckMpa) => 2.0;
 
+    // ACI assumes a uniform 0.003 strain at pure compression — no EC2 εc3 pivot.
+    public double ConcreteRectangularUltimateStrain(double fckMpa) => ConcreteUltimateStrain(fckMpa);
+    public double ConcreteRectangularPeakStrain(double fckMpa) => ConcretePeakStrain(fckMpa);
+    public bool UseEc2CompressionDomain => false;
+
     // ACI rectangular block stress = 0.85 f'c; no high-strength η reduction.
     public double ConcreteEffectiveStrengthFactor(double fckMpa) => 1.0;
 

@@ -19,10 +19,10 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
         var fibers = GetConcreteFibers(section, settings);
         double nx = neutralAxis.CompressionNormal.X;
         double ny = neutralAxis.CompressionNormal.Y;
-        double c = neutralAxis.NeutralAxisDepth;
-        double na = neutralAxis.NeutralAxisOffset;
-        double ecu = neutralAxis.ExtremeCompressionStrain;
-        double peakStrain = designCode.ConcretePeakStrain(concrete.FcMpa);
+        bool useBilinear = designCode.UseEc2CompressionDomain;
+        double peakStrain = useBilinear
+            ? designCode.ConcreteRectangularPeakStrain(concrete.FcMpa)
+            : designCode.ConcretePeakStrain(concrete.FcMpa);
         double exponent = designCode.ConcreteParabolicExponent(concrete.FcMpa);
         double concreteStressCap = designCode.ConcreteStressBlockFactor
             * designCode.ConcreteEffectiveStrengthFactor(concrete.FcMpa)
@@ -37,13 +37,13 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
 
         foreach (var fiber in fibers)
         {
-            double strain = ecu * ((fiber.X * nx + fiber.Y * ny) - na) / c;
+            double strain = neutralAxis.GetStrainAtProjection(fiber.X * nx + fiber.Y * ny);
             maxConcreteStrain = SMath.Max(maxConcreteStrain, strain);
             minConcreteStrain = SMath.Min(minConcreteStrain, strain);
             if (strain <= 0.0) continue;
 
             hasConcreteCompression = true;
-            double stress = ConcreteStress(strain, peakStrain, exponent, concreteStressCap, designCode.SupportsNominalReferenceCurve);
+            double stress = ConcreteStress(strain, peakStrain, exponent, concreteStressCap, designCode.SupportsNominalReferenceCurve, useBilinear);
             double force = stress * fiber.Area;
             concreteN += force;
             concreteMx -= force * fiber.Y;
@@ -85,9 +85,7 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
     {
         double nx = neutralAxis.CompressionNormal.X;
         double ny = neutralAxis.CompressionNormal.Y;
-        double c = neutralAxis.NeutralAxisDepth;
-        double na = neutralAxis.NeutralAxisOffset;
-        double ecu = neutralAxis.ExtremeCompressionStrain;
+        bool useBilinear = designCode.UseEc2CompressionDomain;
         double fyd = designCode.SteelDesignStrength(steel.FyMpa);
         double epsUd = designCode.SteelMaxTensileStrain(steel.FyMpa, steel.EsMpa);
         double steelN = 0.0;
@@ -100,7 +98,7 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
         foreach (var bar in section.RebarLayout.Bars)
         {
             double projection = bar.XMm * nx + bar.YMm * ny;
-            double strain = ecu * (projection - na) / c;
+            double strain = neutralAxis.GetStrainAtProjection(projection);
             maxSteelStrain = SMath.Max(maxSteelStrain, strain);
             minSteelStrain = SMath.Min(minSteelStrain, strain);
             if (strain < 0.0)
@@ -114,7 +112,7 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
             {
                 displacedConcrete = stressBlockProjection is double blockProjection
                     ? projection >= blockProjection ? concreteStressCap : 0.0
-                    : ConcreteStress(strain, concretePeakStrain, concreteExponent, concreteStressCap, designCode.SupportsNominalReferenceCurve);
+                    : ConcreteStress(strain, concretePeakStrain, concreteExponent, concreteStressCap, designCode.SupportsNominalReferenceCurve, useBilinear);
             }
 
             double force = (stress - displacedConcrete) * bar.AreaMm2;
@@ -126,11 +124,13 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
         return new SteelIntegration(steelN, steelMx, steelMy, maxTensionStrain, maxSteelStrain, minSteelStrain);
     }
 
-    internal static double ConcreteStress(double strain, double peakStrain, double exponent, double stressCap, bool useHognestad)
+    internal static double ConcreteStress(double strain, double peakStrain, double exponent, double stressCap, bool useHognestad, bool useBilinear = false)
     {
         if (strain <= 0.0) return 0.0;
         if (strain >= peakStrain) return stressCap;
         double r = strain / peakStrain;
+        // EC2 bilinear (Fig 3.4): linear ascending branch to εc3, then constant plateau to εcu3.
+        if (useBilinear) return stressCap * r;
         return useHognestad
             ? stressCap * (2.0 * r - SMath.Pow(r, exponent))
             : stressCap * (1.0 - SMath.Pow(1.0 - r, exponent));
