@@ -68,6 +68,17 @@ MBColumn.slnx
 MBColumn.Tooling.sln
 nunit-*.xml
 
+# Generated artifacts
+*_generated.csv
+*_debug.csv
+*_temp.json
+reports/generated/
+validation/reports/generated/
+
+# Preserve approved baselines — never ignore these
+!tests/MBColumn.Tests/Baseline/approved-results/*.json
+!validation/golden-results/**/*.json
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/

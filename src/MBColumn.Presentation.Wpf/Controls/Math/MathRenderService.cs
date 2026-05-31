@@ -76,6 +76,7 @@ public sealed class MathRenderService
 <style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;color:{{TEXT_COLOR}};font-family:"Arial","Segoe UI",sans-serif}.math-container{display:flex;align-items:center;min-height:{{MIN_HEIGHT}}px;font-size:{{FONT_SIZE}}px;line-height:1.35}.katex{color:{{TEXT_COLOR}};font-size:1em}.katex .katex-mathit,.katex .mathdefault{font-family:"Arial","Segoe UI",sans-serif;font-style:italic}.katex .mord,.katex .mop,.katex .mbin,.katex .mrel,.katex .mpunct,.katex .mopen,.katex .mclose,.katex .minner{font-family:"Arial","Segoe UI",sans-serif}.katex .mtext,.katex .text{font-family:"Arial","Segoe UI",sans-serif;font-style:normal}</style>
 </head><body><div id="math" class="math-container"></div><script>{{KATEX_JS}}</script><script>
 function report(t,p){if(window.chrome&&window.chrome.webview){window.chrome.webview.postMessage(Object.assign({type:t},p||{}));}}
+window.addEventListener('wheel',function(e){report("wheel",{deltaY:e.deltaY,deltaX:e.deltaX});},{passive:true});
 try{katex.render({{LATEX_JSON}},document.getElementById("math"),{throwOnError:false,displayMode:{{DISPLAY_MODE}},strict:"ignore"});document.fonts.ready.then(function(){report("rendered",{width:Math.ceil(document.body.scrollWidth),height:Math.ceil(document.body.scrollHeight)});});}catch(e){report("error",{message:e&&e.message?e.message:"KaTeX render failed"});}
 </script></body></html>
 """;

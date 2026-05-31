@@ -144,9 +144,9 @@
         <!-- Main content: sidebar + tabs -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" MinWidth="150" MaxWidth="320" />
+                <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="4" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
 
             <!-- Project Explorer -->
@@ -299,9 +299,8 @@
                 </DockPanel>
             </Border>
 
-            <!-- GridSplitter -->
-            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
-                          Background="{DynamicResource BorderGreyBrush}" />
+            <!-- Divider (non-resizable) -->
+            <Border Grid.Column="1" Background="{DynamicResource BorderGreyBrush}" />
 
             <!-- Tabs -->
             <TabControl Grid.Column="2" Margin="14,14,18,18"

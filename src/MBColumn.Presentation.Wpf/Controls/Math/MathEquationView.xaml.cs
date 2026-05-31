@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -55,6 +56,7 @@ public partial class MathEquationView : UserControl
                 QueueRender();
             }
         };
+        IsEnabledChanged += (_, _) => QueueRender();
     }
 
     public event EventHandler? RenderCompleted;
@@ -131,6 +133,13 @@ public partial class MathEquationView : UserControl
 
     private async Task RenderAsync()
     {
+        if (!IsEnabled)
+        {
+            ShowFallback();
+            CompleteRender();
+            return;
+        }
+
         if (!UseEnhancedMath || string.IsNullOrWhiteSpace(Latex) || !renderService.HasLocalAssets())
         {
             ShowFallback();
@@ -175,6 +184,24 @@ public partial class MathEquationView : UserControl
             string? type = doc.RootElement.TryGetProperty("type", out var typeElement)
                 ? typeElement.GetString()
                 : null;
+
+            if (type == "wheel")
+            {
+                double deltaY = doc.RootElement.TryGetProperty("deltaY", out var deltaYElement)
+                    ? deltaYElement.GetDouble()
+                    : 0.0;
+
+                var mouseWheelEventArgs = new MouseWheelEventArgs(
+                    Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    (int)-deltaY)
+                {
+                    RoutedEvent = MouseWheelEvent,
+                    Source = this
+                };
+                RaiseEvent(mouseWheelEventArgs);
+                return;
+            }
 
             if (type == "rendered")
             {

@@ -67,6 +67,13 @@
       }
     }
 
+    window.addEventListener('wheel', function (e) {
+      report("wheel", {
+        deltaY: e.deltaY,
+        deltaX: e.deltaX
+      });
+    }, { passive: true });
+
     function renderEquation(latex, displayMode) {
       try {
         katex.render(latex, document.getElementById("math"), {

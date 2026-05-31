@@ -10,6 +10,7 @@ using MBColumn.Infrastructure.Solvers;
 using MBColumn.Infrastructure.Solvers.Legacy;
 using MBColumn.Presentation.Wpf.Controls;
 using MBColumn.Presentation.Wpf.ViewModels;
+using MBColumn.Tests.Baseline;
 using MBColumn.Tests.Verification;
 using System.IO;
 using System.Linq;
@@ -19,6 +20,14 @@ if (args.Contains("--run-internal-aci-ec-comparison"))
 {
     TestInternalAciEcComparisonExport();
     Console.WriteLine("PASS internal ACI vs Eurocode comparison export");
+    return;
+}
+
+if (args.Contains("--generate-baselines"))
+{
+    Console.WriteLine("Regenerating all solver baselines...");
+    BaselineCaseRunner.GenerateAll();
+    Console.WriteLine("Baselines generated.");
     return;
 }
 
@@ -221,7 +230,13 @@ var tests = new List<(string Name, Action Test)>
     ("Irregular section shape exposed on result",                    TestIrregularResultExposesShape),
     ("Irregular section integrator boundary handled",                TestIrregularIntegratorBoundaryHandled),
     ("Rectangular equal spacing optimal distribution",               TestRectangularEqualSpacingOptimalDistribution),
-    ("Circular equal spacing and irregular ToDto mapping",           TestCircularAndIrregularToDtoMapping)
+    ("Circular equal spacing and irregular ToDto mapping",           TestCircularAndIrregularToDtoMapping),
+
+    // Solver regression baselines — generate approved-results/*.json on first run,
+    // compare against them on subsequent runs.
+    ("Solver baseline: EC2_Rectangular_650x650_20T25",  () => BaselineCaseRunner.RunAndApprove("EC2_Rectangular_650x650_20T25",  BaselineCaseRunner.BenchmarkCases[0].Input)),
+    ("Solver baseline: ACI_Rectangular_700x700_28T25",  () => BaselineCaseRunner.RunAndApprove("ACI_Rectangular_700x700_28T25",  BaselineCaseRunner.BenchmarkCases[1].Input)),
+    ("Solver baseline: EC2_Circular_D600_16T25",        () => BaselineCaseRunner.RunAndApprove("EC2_Circular_D600_16T25",        BaselineCaseRunner.BenchmarkCases[2].Input))
 };
 
 foreach (var (name, test) in tests)

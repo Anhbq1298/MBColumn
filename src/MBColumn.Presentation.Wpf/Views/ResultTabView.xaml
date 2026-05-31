@@ -65,14 +65,6 @@
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource LightBackgroundBrush}">
-        <Grid.Resources>
-            <Style x:Key="WrapRightAlignText" TargetType="TextBlock" BasedOn="{StaticResource RightAlignText}">
-                <Setter Property="TextWrapping" Value="Wrap" />
-            </Style>
-            <Style x:Key="WrapLeftAlignText" TargetType="TextBlock" BasedOn="{StaticResource LeftAlignText}">
-                <Setter Property="TextWrapping" Value="Wrap" />
-            </Style>
-        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -539,30 +531,45 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="120" MinWidth="90" ElementStyle="{StaticResource WrapLeftAlignText}" />
-                                <DataGridTextColumn Binding="{Binding PDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}">
+                                <DataGridTextColumn Header="Load Case" Binding="{Binding Name}" Width="*" MinWidth="80" ElementStyle="{StaticResource WrapLeftAlignText}" />
+                                <DataGridTextColumn Binding="{Binding PDisplay}" Width="Auto" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}">
                                     <DataGridTextColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <TextBlock><Run Text="P ("/><Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"/><Run Text=")"/></TextBlock>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                                <Run Text="P" /><LineBreak />
+                                                <Run Text="(" /><Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                            </TextBlock>
                                         </DataTemplate>
                                     </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Binding="{Binding MxDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}">
+                                <DataGridTextColumn Binding="{Binding MxDisplay}" Width="Auto" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}">
                                     <DataGridTextColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <TextBlock><Run Text="Mx ("/><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"/><Run Text=")"/></TextBlock>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                                <Run Text="Mx" /><LineBreak />
+                                                <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                            </TextBlock>
                                         </DataTemplate>
                                     </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Binding="{Binding MyDisplay}" Width="60" MinWidth="50" ElementStyle="{StaticResource WrapRightAlignText}">
+                                <DataGridTextColumn Binding="{Binding MyDisplay}" Width="Auto" MinWidth="45" ElementStyle="{StaticResource WrapRightAlignText}">
                                     <DataGridTextColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <TextBlock><Run Text="My ("/><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"/><Run Text=")"/></TextBlock>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                                <Run Text="My" /><LineBreak />
+                                                <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                            </TextBlock>
                                         </DataTemplate>
                                     </DataGridTextColumn.HeaderTemplate>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Utilization Ratio" Binding="{Binding UtilizationDisplay}" Width="120" MinWidth="100" ElementStyle="{StaticResource WrapRightAlignText}" />
-                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="75" MinWidth="65" ElementStyle="{StaticResource WrapLeftAlignText}" />
+                                <DataGridTextColumn Binding="{Binding UtilizationDisplay}" Width="Auto" MinWidth="60" ElementStyle="{StaticResource WrapRightAlignText}">
+                                    <DataGridTextColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextWrapping="Wrap" TextAlignment="Right">Utilization<LineBreak />Ratio</TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTextColumn.HeaderTemplate>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" Width="Auto" MinWidth="50" ElementStyle="{StaticResource WrapLeftAlignText}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
