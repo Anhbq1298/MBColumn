@@ -601,6 +601,7 @@ public sealed class InputViewModel : ViewModelBase
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
     public IReadOnlyList<RebarDefinition> AvailableBars => ActiveRebarDatabase.GetBars();
     public string LengthLabel => UnitSystem == UnitSystem.Metric ? "mm" : "in";
+    public string AreaLabel => UnitSystem == UnitSystem.Metric ? "mm²" : "in²";
     public string ForceLabel => UnitSystem == UnitSystem.Metric ? "kN" : "kip";
     public string MomentLabel => UnitSystem == UnitSystem.Metric ? "kN-m" : "kip-ft";
     public string StressLabel => UnitSystem == UnitSystem.Metric ? "MPa" : "ksi";
@@ -632,6 +633,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(AvailableStirrupBars));
             Raise(nameof(SelectedStirrupBar));
             Raise(nameof(LengthLabel));
+            Raise(nameof(AreaLabel));
             Raise(nameof(ForceLabel));
             Raise(nameof(MomentLabel));
             Raise(nameof(StressLabel));

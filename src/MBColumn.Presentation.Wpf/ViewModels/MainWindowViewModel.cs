@@ -80,9 +80,21 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
-        ImportFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
-        RefreshEtabsForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+
+        // ETABS commands — explicit source-differentiated versions plus legacy wrappers
+        ImportSectionsFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
+        ImportElementForcesCommand = new AsyncRelayCommand(ImportElementForcesAsync,
             () => etabsForceRefreshDialogService is not null);
+        ImportDesignForcesCommand = new AsyncRelayCommand(ImportDesignForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
+        RefreshElementForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
+        RefreshDesignForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
+            () => etabsForceRefreshDialogService is not null);
+
+        // Legacy wrappers kept for existing XAML bindings
+        ImportFromEtabsCommand = ImportSectionsFromEtabsCommand;
+        RefreshEtabsForcesCommand = RefreshElementForcesCommand;
 
         SubscribeToInputChanges();
         UpdateWindowTitle();
@@ -113,6 +125,15 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
+
+    // Explicit ETABS commands
+    public ICommand ImportSectionsFromEtabsCommand { get; }
+    public ICommand ImportElementForcesCommand { get; }
+    public ICommand ImportDesignForcesCommand { get; }
+    public ICommand RefreshElementForcesCommand { get; }
+    public ICommand RefreshDesignForcesCommand { get; }
+
+    // Legacy — kept so existing XAML bindings continue to work
     public ICommand ImportFromEtabsCommand { get; }
     public ICommand RefreshEtabsForcesCommand { get; }
 
@@ -226,8 +247,41 @@ public sealed class MainWindowViewModel : ViewModelBase
     private async Task CalculateCurrentColumnAsync()
         => await RunWithProgressAsync("Calculating this section...", async () =>
         {
-            await Task.Yield();
-            CalculateCurrentColumn();
+            try
+            {
+                ValidationMessage = "";
+                var dto = Input.ToDto();
+                var result = await Task.Run(() => calculationService.Calculate(dto));
+                
+                Input.ApplySlendernessResults(result);
+                projectSession.StoreCurrentColumnResult(result);
+                Result.Result = result;
+                IsCalculationOutdated = false;
+                if (Explorer is not null && currentColumn is not null)
+                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
+                SelectedMainTabIndex = 1;
+                RaiseResultStateProperties();
+
+                // Auto-save column input and result after successful calculation
+                if (currentColumn is not null)
+                {
+                    SaveCurrentColumnInput();
+                    projectService.SaveColumnResult(currentColumn.Id, result);
+                }
+
+                RefreshReportFromCurrentWorkspace();
+
+                // Wait for WPF rendering to complete
+                await Task.Delay(250);
+            }
+            catch (Exception ex)
+            {
+                ValidationMessage = ex.Message;
+                if (Explorer is not null && currentColumn is not null)
+                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Error);
+                RaiseStatusProperties();
+                messageService.ShowWarning(ex.Message, "Validation");
+            }
         });
 
     private async Task CalculateAllColumnsAsync()
@@ -251,40 +305,6 @@ public sealed class MainWindowViewModel : ViewModelBase
 
             CalculationStatus = "";
             IsCalculating = false;
-        }
-    }
-
-    private void CalculateCurrentColumn()
-    {
-        try
-        {
-            ValidationMessage = "";
-            var result = calculationService.Calculate(Input.ToDto());
-            Input.ApplySlendernessResults(result);
-            projectSession.StoreCurrentColumnResult(result);
-            Result.Result = result;
-            IsCalculationOutdated = false;
-            if (Explorer is not null && currentColumn is not null)
-                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
-            SelectedMainTabIndex = 1;
-            RaiseResultStateProperties();
-
-            // Auto-save column input and result after successful calculation
-            if (currentColumn is not null)
-            {
-                SaveCurrentColumnInput();
-                projectService.SaveColumnResult(currentColumn.Id, result);
-            }
-
-            RefreshReportFromCurrentWorkspace();
-        }
-        catch (Exception ex)
-        {
-            ValidationMessage = ex.Message;
-            if (Explorer is not null && currentColumn is not null)
-                Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Error);
-            RaiseStatusProperties();
-            messageService.ShowWarning(ex.Message, "Validation");
         }
     }
 
@@ -562,6 +582,48 @@ public sealed class MainWindowViewModel : ViewModelBase
         {
             IsImporting = false;
         }
+    }
+
+    private async Task ImportElementForcesAsync()
+    {
+        var bindings = GetEtabsBindings();
+        if (bindings.Count == 0)
+        {
+            messageService.ShowInformation(
+                "No ETABS-linked sections found.\nImport sections from ETABS first to create a binding, then use this command to import element forces.",
+                "Import Element Forces");
+            return;
+        }
+        // Route through the existing refresh dialog for now.
+        // A dedicated element-force import dialog will replace this in a later phase.
+        await RefreshEtabsForcesAsync();
+    }
+
+    private async Task ImportDesignForcesAsync()
+    {
+        var bindings = GetEtabsBindings();
+        if (bindings.Count == 0)
+        {
+            messageService.ShowInformation(
+                "No ETABS-linked sections found.\nImport sections from ETABS first to create a binding, then use this command to import design forces.",
+                "Import Design Forces");
+            return;
+        }
+        // Route through the existing refresh dialog for now.
+        // A dedicated design-force import dialog will replace this in a later phase.
+        await RefreshEtabsForcesAsync();
+    }
+
+    private IReadOnlyList<Application.DTOs.Etabs.EtabsSectionBinding> GetEtabsBindings()
+    {
+        var bindings = new List<Application.DTOs.Etabs.EtabsSectionBinding>();
+        foreach (var col in projectService.GetColumns())
+        {
+            var snapshot = projectService.LoadColumnInput(col.Id);
+            if (snapshot?.EtabsBinding is not null)
+                bindings.Add(snapshot.EtabsBinding);
+        }
+        return bindings;
     }
 
     private async Task RefreshEtabsForcesAsync()
@@ -892,6 +954,14 @@ public sealed class MainWindowViewModel : ViewModelBase
             calculate.RaiseCanExecuteChanged();
         if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)
             calculateAll.RaiseCanExecuteChanged();
+        if (ImportElementForcesCommand is AsyncRelayCommand importElem)
+            importElem.RaiseCanExecuteChanged();
+        if (ImportDesignForcesCommand is AsyncRelayCommand importDes)
+            importDes.RaiseCanExecuteChanged();
+        if (RefreshElementForcesCommand is AsyncRelayCommand refreshElem)
+            refreshElem.RaiseCanExecuteChanged();
+        if (RefreshDesignForcesCommand is AsyncRelayCommand refreshDes)
+            refreshDes.RaiseCanExecuteChanged();
     }
 
     private void RaiseStatusProperties()

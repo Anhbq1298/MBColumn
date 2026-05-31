@@ -56,9 +56,9 @@ public sealed class DiagramDataService
         AddBranchSpecials(result, pos, phiMin, phiMax, phiVaries);
         AddBranchSpecials(result, neg, phiMin, phiMax, phiVaries);
 
-        AddInterpolated3DSpecials(result, pos, neg, set.SpecialCapacityPoints, angleDegrees);
+        AddInterpolated3DSpecials(result, pos, neg, set.SpecialCapacityPoints, angleDegrees, phiVaries);
 
-        return result;
+        return result.OrderBy(p => p.CpNumber).ThenByDescending(p => p.X >= 0).ToList();
     }
 
     private static ControlPointDto MaxAxialCompression(IReadOnlyList<ControlPointDto> points)
@@ -92,12 +92,6 @@ public sealed class DiagramDataService
 
         if (!phiVaries)
         {
-            // phi nearly constant (EC2 etc.) — place at 1/3 and 2/3 of branch by index
-            if (branch.Count >= 3)
-            {
-                TryAddOnCurve(result, branch[branch.Count / 3],     "Balanced",        "Balanced",        4);
-                TryAddOnCurve(result, branch[2 * branch.Count / 3], "Tension Control", "TensionControl",  5);
-            }
             return;
         }
 
@@ -120,11 +114,11 @@ public sealed class DiagramDataService
         TryAddOnCurve(result, tc, "Tension Control", "TensionControl", 5);
     }
 
-    private static void AddInterpolated3DSpecials(List<ControlPointDto> result, List<ControlPointDto> pos, List<ControlPointDto> neg, IReadOnlyList<ControlPoint> special3d, double angleDegrees)
+    private static void AddInterpolated3DSpecials(List<ControlPointDto> result, List<ControlPointDto> pos, List<ControlPointDto> neg, IReadOnlyList<ControlPoint> special3d, double angleDegrees, bool phiVaries)
     {
         if (special3d.Count == 0) return;
         
-        var cpsToExtract = new[] { 2, 3 }; // Zero Tension, 50% Yield
+        var cpsToExtract = phiVaries ? new[] { 2, 3 } : new[] { 2, 3, 4, 5 };
         foreach (int cp in cpsToExtract)
         {
             var pts = special3d.Where(p => p.CpNumber == cp).OrderBy(p => p.ThetaDegrees).ToList();
@@ -191,8 +185,8 @@ public sealed class DiagramDataService
         return branch.MinBy(p => Math.Abs(p.Y - targetP));
     }
 
-    private static string GetCpLabel(int cp) => cp switch { 2 => "Zero Tension", 3 => "50% Yield", _ => "Special" };
-    private static string GetCpKey(int cp) => cp switch { 2 => "ZeroTension", 3 => "HalfYield", _ => "Special" };
+    private static string GetCpLabel(int cp) => cp switch { 2 => "Zero Tension", 3 => "50% Yield", 4 => "Balanced", 5 => "Tension Control", 6 => "Pure Bending", _ => "Special" };
+    private static string GetCpKey(int cp) => cp switch { 2 => "ZeroTension", 3 => "HalfYield", 4 => "Balanced", 5 => "TensionControl", 6 => "PureBending", _ => "Special" };
 
     private static void TryAddOnCurve(List<ControlPointDto> result, ControlPointDto? src, string label, string keyPart, int cpNumber)
     {

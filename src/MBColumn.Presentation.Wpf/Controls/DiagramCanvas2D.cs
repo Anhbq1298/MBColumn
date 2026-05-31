@@ -628,7 +628,16 @@ public class DiagramCanvas2D : FrameworkElement
             {
                 var brush = GetSpecialPointBrush(p.Label);
                 var pt = transform.ToScreen(p.X, p.Y);
-                dc.DrawEllipse(Brushes.White, new Pen(brush, 1.8), pt, 5.5, 5.5);
+                
+                var geometry = new StreamGeometry();
+                using (var ctx = geometry.Open())
+                {
+                    ctx.BeginFigure(new Point(pt.X, pt.Y - 6.5), true, true);
+                    ctx.LineTo(new Point(pt.X + 6, pt.Y + 5), true, false);
+                    ctx.LineTo(new Point(pt.X - 6, pt.Y + 5), true, false);
+                }
+                geometry.Freeze();
+                dc.DrawGeometry(brush, new Pen(Brushes.Black, 1.2), geometry);
 
                 if (ShowLabels && p.CpNumber > 0)
                 {
@@ -674,13 +683,13 @@ public class DiagramCanvas2D : FrameworkElement
     {
         var color = label switch
         {
-            "Max Compression" => Color.FromRgb(74, 20, 140),  // Purple 900
-            "Zero Tension"    => Color.FromRgb(0, 150, 136),  // Teal 500
-            "50% Yield"       => Color.FromRgb(255, 112, 67), // Deep Orange 400
-            "Max Tension"     => Color.FromRgb(93, 64, 55),   // Brown 700
-            "Balanced"        => Color.FromRgb(27, 94, 32),   // Green 900
-            "Tension Control" => Color.FromRgb(1, 87, 155),   // Light Blue 900
-            "Pure Bending"    => Color.FromRgb(245, 127, 23), // Yellow 900
+            "Max Compression" => Color.FromRgb(255, 0, 0),    // Red
+            "Zero Tension"    => Color.FromRgb(255, 165, 0),  // Orange
+            "50% Yield"       => Color.FromRgb(255, 215, 0),  // Gold
+            "Balanced"        => Color.FromRgb(0, 128, 0),    // Green
+            "Tension Control" => Color.FromRgb(0, 0, 255),    // Blue
+            "Pure Bending"    => Color.FromRgb(75, 0, 130),   // Indigo
+            "Max Tension"     => Color.FromRgb(238, 130, 238),// Violet
             _                 => Color.FromRgb(215, 107, 15)  // Default orange
         };
         return new SolidColorBrush(color);

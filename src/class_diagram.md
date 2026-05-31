@@ -87,7 +87,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsObjectBindingHealth** | Represents the EtabsObjectBindingHealth class. Key properties: SectionName, ObjectKey, Status, SuggestedRemapKey. | `EtabsBindingValidationResult.cs` |
 | `class` | **EtabsPierObjectKey** | Represents the EtabsPierObjectKey class. Key properties: Story, PierName, X1, Y1. | `EtabsPierObjectKey.cs` |
 | `record` | **EtabsPierShellSegmentDto** | Data transfer object carrying EtabsPierShellSegment data. | `EtabsPierShellSegmentDto.cs` |
-| `enum` | **EtabsResultState** | Enumeration defining states/types for EtabsResultState. | `EtabsResultState.cs` |
+| `enum` | **EtabsResultState** | /// Describes why a section result is outdated or unavailable, giving the UI /// enough context to show a specific message rather than a generic "Outdated" label. /// | `EtabsResultState.cs` |
 | `class` | **EtabsSectionBinding** | Represents the EtabsSectionBinding class. Key properties: MbColumnSectionId, MbColumnSectionName, ObjectType, ForceSource. | `EtabsSectionBinding.cs` |
 | `record` | **EtabsSectionMappingDto** | Data transfer object carrying EtabsSectionMapping data. | `EtabsSectionMappingDto.cs` |
 | `enum` | **EtabsSectionRefreshAction** | Enumeration defining states/types for EtabsSectionRefreshAction. | `EtabsSectionRefreshSummary.cs` |
@@ -100,6 +100,20 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **MbColumnSectionImport** | Represents the MbColumnSectionImport class. Key properties: SectionName, SelectedItems. | `MbColumnSectionImport.cs` |
 | `class` | **MbColumnSectionImportItem** | Represents the MbColumnSectionImportItem class. Key properties: ObjectType, Story, Label, Key. | `MbColumnSectionImportItem.cs` |
 | `enum` | **value** | Enumeration defining states/types for value. Key properties: DatabaseUnits, ColumnForces, PierForces, ColumnElementForces. | `ImportedEtabsForceDatabase.cs` |
+
+### DTOs/Etabs/Forces
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `record` | **EtabsDesignForceRowDto** | /// Raw design force row from the ETABS concrete design module. /// Already post-processed by ETABS — combo name and station/location are preserved /// as source metadata so they can be tracked through to DemandCase. /// | `EtabsDesignForceRowDto.cs` |
+| `record` | **EtabsElementForceRowDto** | /// Raw element force row from ETABS analysis output (frame/pier station forces). /// P, M2, M3, V2, V3 are in ETABS axis convention — mapping to MBColumn axes /// is done by EtabsForceComponentMapper in Infrastructure. /// | `EtabsElementForceRowDto.cs` |
+| `record` | **EtabsForceImportRequestDto** | Data transfer object carrying EtabsForceImportRequest data. | `EtabsForceImportRequestDto.cs` |
+| `record` | **EtabsForceImportResultDto** | Data transfer object carrying EtabsForceImportResult data. | `EtabsForceImportResultDto.cs` |
+| `enum` | **EtabsForceLocationType** | Enumeration defining states/types for EtabsForceLocationType. | `EtabsForceLocationType.cs` |
+| `record` | **EtabsForceSourceMetadataDto** | /// Metadata attached to each demand case that records exactly where its forces came from. /// Stored alongside DemandCase so force refresh can detect what changed. /// | `EtabsForceSourceMetadataDto.cs` |
+| `enum` | **EtabsForceSourceType** | /// Distinguishes whether forces originate from raw analysis output (element forces) /// or from the ETABS concrete design module (design forces). /// Integer values are pinned to match MbColumnForceSourceMode to prevent silent /// wrong-branch errors if code ever casts between the two types. /// | `EtabsForceSourceType.cs` |
+| `record` | **EtabsForceUnitContextDto** | Carries the unit system that the ETABS force values were read in. | `EtabsForceUnitContextDto.cs` |
+| `record` | **EtabsMappedLoadCaseDto** | /// MBColumn-ready demand row produced by the ETABS force mapper. /// This is the common output regardless of whether the source was element forces /// or design forces — source metadata is preserved so the UI and DB can display it. /// | `EtabsMappedLoadCaseDto.cs` |
 
 ### DTOs/ImportExport
 
@@ -125,6 +139,15 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `interface` | **IPmValidationReportService** | Provides service logic and operations for IPmValidationReport. | `IPmValidationReportService.cs` |
+
+### Interfaces/Etabs
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `interface` | **IEtabsDesignForceImportGateway** | Implemented in Infrastructure.Etabs — Application has no ETABSv1 dependency. | `IEtabsDesignForceImportGateway.cs` |
+| `interface` | **IEtabsElementForceImportGateway** | Implemented in Infrastructure.Etabs — Application has no ETABSv1 dependency. | `IEtabsElementForceImportGateway.cs` |
+| `interface` | **for** | Pure gateway | `IEtabsDesignForceImportGateway.cs` |
+| `interface` | **for** | Pure gateway | `IEtabsElementForceImportGateway.cs` |
 
 ### Mappers
 
@@ -177,6 +200,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportBlock.cs` |
 | `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportBlock.cs` |
 | `record` | **TableBlock** | Represents the TableBlock record. | `ReportBlock.cs` |
+
+### Root
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **DependencyInjection** | Represents the DependencyInjection class. Key methods: AddApplication. | `DependencyInjection.cs` |
 
 ### Services
 
@@ -276,6 +305,13 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **ColumnInputValidator** | Validation logic for ColumnInput. Key methods: Validate. | `ColumnInputValidator.cs` |
+| `class` | **LoadCaseValidator** | Validation logic for LoadCase. Key methods: Validate. | `LoadCaseValidator.cs` |
+| `class` | **MaterialValidator** | Validation logic for Material. Key methods: Validate. | `MaterialValidator.cs` |
+| `class` | **RebarValidator** | Validation logic for Rebar. Key methods: Validate. | `RebarValidator.cs` |
+| `class` | **SectionGeometryValidator** | Validation logic for SectionGeometry. Key methods: Validate. | `SectionGeometryValidator.cs` |
+| `class` | **SlendernessValidator** | Validation logic for Slenderness. Key methods: Validate. | `SlendernessValidator.cs` |
+| `class` | **ValidationContext** | /// Collects validation errors during a validation pass. /// Replaces the raw List&lt;string&gt; pattern so each error carries field and row context. /// Only errors are collected — warnings are not surfaced by ValidationResultDto and /// would be silently dropped, so Warning() is intentionally absent here. ///. Key methods: Error, ToResult. Key properties: Issues, HasErrors. | `ValidationContext.cs` |
+| `class` | **ValidatorHelpers** | Represents the ValidatorHelpers class. Key methods: GetActiveCasesOrFallback. | `ValidatorHelpers.cs` |
 
 ## MBColumn.Domain
 
@@ -408,6 +444,19 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ProjectService** | Provides service logic and operations for Project. Key methods: Dispose, NewProject, RenameProject, OpenProject. Key properties: CurrentFilePath, ProjectName, IsModified. | `ProjectService.cs` |
 | `class` | **ResultCacheRow** | Data structure representing a row for ResultCache. Key properties: InputHash, ResultJson. | `ProjectService.cs` |
 
+### Persistence/Migrations
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `interface` | **IDatabaseMigration** | Defines the contract for IDatabaseMigration. | `IDatabaseMigration.cs` |
+| `class` | **Migration002_SectionGroups** | Represents the Migration002_SectionGroups class. Key methods: Apply. Key properties: Version. | `Migration002_SectionGroups.cs` |
+| `class` | **Migration003_ProjectAppVersion** | Represents the Migration003_ProjectAppVersion class. Key methods: Apply. Key properties: Version. | `Migration003_ProjectAppVersion.cs` |
+| `class` | **Migration004_ResultJson** | Represents the Migration004_ResultJson class. Key methods: Apply. Key properties: Version. | `Migration004_ResultJson.cs` |
+| `class` | **Migration005_DemandCase** | Represents the Migration005_DemandCase class. Key methods: Apply. Key properties: Version. | `Migration005_DemandCase.cs` |
+| `class` | **Migration006_TopBottomMomentsAndShear** | Represents the Migration006_TopBottomMomentsAndShear class. Key methods: Apply. Key properties: Version. | `Migration006_TopBottomMomentsAndShear.cs` |
+| `class` | **Migration007_ForceSourceMetadata** | /// Adds force source traceability columns to DemandCase so each load case knows /// whether it came from ETABS element forces or design forces, and which combination/location. ///. Key methods: Apply. Key properties: Version. | `Migration007_ForceSourceMetadata.cs` |
+| `class` | **MigrationRunner** | Represents the MigrationRunner class. Key methods: Run. | `MigrationRunner.cs` |
+
 ### Rebar
 
 | Type | Name | Description | File |
@@ -446,6 +495,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **DependencyInjection** | Represents the DependencyInjection class. Key methods: AddInfrastructure. | `DependencyInjection.cs` |
 | `class` | **Program** | Represents the Program class. | `test_flow.cs` |
 
 ### Solvers
@@ -677,7 +727,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PolylineDraft** | Represents the PolylineDraft class. Key methods: Clear. Key properties: IsActive. | `PolylineDraft.cs` |
 | `enum` | **PreloadStepStatus** | Enumeration defining states/types for PreloadStepStatus. | `EtabsPreloadStep.cs` |
 | `record` | **PreviewBoundaryPoint** | Represents the PreviewBoundaryPoint record. | `PreviewBoundaryPoint.cs` |
-| `record` | **PreviewRebarPoint** | Represents the PreviewRebarPoint record. | `PreviewRebarPoint.cs` |
+| `record` | **PreviewRebarPoint** | Represents the PreviewRebarPoint record. Key properties: Area. | `PreviewRebarPoint.cs` |
 | `record` | **PreviewRebarVm** | Represents the PreviewRebarVm record. | `DxfImportViewModel.cs` |
 | `class` | **ProjectExplorerViewModel** | Represents the ProjectExplorerViewModel class. Key methods: SetSectionStatus, ClearSectionStatuses, SelectNode, SelectColumnById. Key properties: ProjectName, Nodes, SelectedNode, SelectedColumn. | `ProjectExplorerViewModel.cs` |
 | `class` | **ProjectGroupOptionViewModel** | Represents the ProjectGroupOptionViewModel class. Key properties: GroupId, GroupName, CreateGroup, DisplayName. | `EtabsImportViewModel.cs` |

@@ -787,10 +787,20 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Pt"
                                                             Binding="{Binding PtIndex, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="X"
-                                                            Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="Y"
-                                                            Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                                        <DataGridTextColumn Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock><Run Text="X ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock><Run Text="Y ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
@@ -803,8 +813,20 @@
                                       MaxHeight="200">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Pt" Binding="{Binding Index}" Width="*" />
-                                    <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
-                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding X, StringFormat=F2}" Width="*">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="X ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Y, StringFormat=F2}" Width="*">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="Y ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </StackPanel>
@@ -1162,13 +1184,28 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Index"
                                                             Binding="{Binding RebarIndex, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="X"
-                                                            Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="Y"
-                                                            Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="Area"
-                                                            Binding="{Binding AreaMm2, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                                        <DataGridTextColumn Header="Size"
+                                        <DataGridTextColumn Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock><Run Text="X ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock><Run Text="Y ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding AreaMm2, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock><Run Text="Bar Area ("/><Run Text="{Binding DataContext.AreaLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Bar Marking"
                                                             Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" Width="*" />
                                     </DataGrid.Columns>
                                 </DataGrid>
@@ -1181,9 +1218,28 @@
                                       MaxHeight="200">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*" />
-                                    <DataGridTextColumn Header="X" Binding="{Binding X, StringFormat=F2}" Width="*" />
-                                    <DataGridTextColumn Header="Y" Binding="{Binding Y, StringFormat=F2}" Width="*" />
-                                    <DataGridTextColumn Header="Size" Binding="{Binding Label}" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding X, StringFormat=F2}" Width="*">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="X ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Y, StringFormat=F2}" Width="*">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="Y ("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Area, StringFormat=F1}" Width="*">
+                                        <DataGridTextColumn.HeaderTemplate>
+                                            <DataTemplate>
+                                                <TextBlock><Run Text="Bar Area ("/><Run Text="{Binding DataContext.AreaLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTextColumn.HeaderTemplate>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Bar Marking" Binding="{Binding Label}" Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
 
