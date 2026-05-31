@@ -187,7 +187,7 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     private void AddGroup()
     {
         var defaultName = $"Group {Nodes.OfType<GroupItemViewModel>().Count() + 1}";
-        var name = promptColumnName(defaultName);
+        var name = projectNameDialogService.PromptColumnName(defaultName);
         if (name is null) return;
 
         try
