@@ -186,9 +186,9 @@
         <TabItem Header="Section &amp; Rebar">
             <Grid Margin="4,6,4,4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="20*" MinWidth="200" />
+                    <ColumnDefinition Width="18*" MinWidth="200" />
                     <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="30*" MinWidth="250" />
+                    <ColumnDefinition Width="32*" MinWidth="250" />
                     <ColumnDefinition Width="8" />
                     <ColumnDefinition Width="50*" MinWidth="400" />
                 </Grid.ColumnDefinitions>
@@ -608,8 +608,8 @@
                         </StackPanel>
                         <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="30*" />
-                            <ColumnDefinition Width="70*" />
+                            <ColumnDefinition Width="40*" />
+                            <ColumnDefinition Width="60*" />
                         </Grid.ColumnDefinitions>
                     <GroupBox Grid.Column="0"
                               Header="Section Geometry"
@@ -794,7 +794,7 @@
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="Auto" MinWidth="90">
+                                        <DataGridTextColumn Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" MinWidth="90">
                                             <DataGridTextColumn.HeaderTemplate>
                                                 <DataTemplate>
                                                     <TextBlock TextAlignment="Center" HorizontalAlignment="Center"><Run Text="Y"/><LineBreak/><Run Text="("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
@@ -820,7 +820,7 @@
                                             </DataTemplate>
                                         </DataGridTextColumn.HeaderTemplate>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Binding="{Binding Y, StringFormat=F2}" Width="Auto" MinWidth="90">
+                                    <DataGridTextColumn Binding="{Binding Y, StringFormat=F2}" Width="*" MinWidth="90">
                                         <DataGridTextColumn.HeaderTemplate>
                                             <DataTemplate>
                                                 <TextBlock TextAlignment="Center" HorizontalAlignment="Center"><Run Text="Y"/><LineBreak/><Run Text="("/><Run Text="{Binding DataContext.LengthLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=UserControl}}"/><Run Text=")"/></TextBlock>
@@ -1205,7 +1205,7 @@
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" Width="Auto" MinWidth="90">
+                                        <DataGridTextColumn Binding="{Binding BarSize, UpdateSourceTrigger=PropertyChanged}" Width="*" MinWidth="90">
                                             <DataGridTextColumn.HeaderTemplate>
                                                 <DataTemplate>
                                                     <TextBlock TextAlignment="Center" HorizontalAlignment="Center">Bar<LineBreak/>Marking</TextBlock>
@@ -1244,7 +1244,7 @@
                                             </DataTemplate>
                                         </DataGridTextColumn.HeaderTemplate>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Binding="{Binding Label}" Width="Auto" MinWidth="90">
+                                    <DataGridTextColumn Binding="{Binding Label}" Width="*" MinWidth="90">
                                         <DataGridTextColumn.HeaderTemplate>
                                             <DataTemplate>
                                                 <TextBlock TextAlignment="Center" HorizontalAlignment="Center">Bar<LineBreak/>Marking</TextBlock>

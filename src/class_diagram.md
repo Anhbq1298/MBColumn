@@ -701,11 +701,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsSectionMappingViewModel** | Represents the EtabsSectionMappingViewModel class. Key properties: SectionTypes, EtabsSectionName, UniqueSection, SectionType. | `EtabsSectionMappingViewModel.cs` |
 | `class` | **EtabsStoryOptionViewModel** | Represents the EtabsStoryOptionViewModel class. Key properties: StoryName, Elevation, SortIndex, DisplayName. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsUniqueSectionOptionViewModel** | Represents the EtabsUniqueSectionOptionViewModel class. Key properties: SectionName, SourceSectionName, ShapeType, ObjectCount. | `EtabsImportViewModel.cs` |
-| `class` | **ExplorerNodeViewModel** | Represents the ExplorerNodeViewModel class. Key properties: Id, Name, IsSelected, IsExpanded. | `ExplorerNodeViewModel.cs` |
+| `class` | **ExplorerNodeViewModel** | Represents the ExplorerNodeViewModel class. Key properties: Id, IsChecked, Name, IsSelected. | `ExplorerNodeViewModel.cs` |
 | `class` | **ExportControlPointsViewModel** | Represents the ExportControlPointsViewModel class. Key methods: RefreshPreview. Key properties: PreviewRows, RefreshPreviewCommand, ExportCsvCommand, CloseCommand. | `ExportControlPointsViewModel.cs` |
 | `class` | **GoverningChartPreviewViewModel** | Represents the GoverningChartPreviewViewModel class. Key properties: CriticalThetaDeg, UtilizationRatio, DemandP, DemandMx. | `A4ReportModels.cs` |
 | `class` | **GroupActionViewModel** | Represents the GroupActionViewModel class. Key properties: Name, Command. | `GroupActionViewModel.cs` |
-| `class` | **GroupItemViewModel** | Represents the GroupItemViewModel class. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand. | `GroupItemViewModel.cs` |
+| `class` | **GroupItemViewModel** | Represents the GroupItemViewModel class. Key methods: UpdateCheckStateFromChildren. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand. | `GroupItemViewModel.cs` |
 | `class` | **InputViewModel** | Represents the InputViewModel class. Key methods: ToDto, UpdateSectionPreview, ResetToDefaults, ApplyDxfImportResult. Key properties: UnitSystems, GenerateIrregularRebarsCommand, GenerateEqualSpacingRebarsCommand, ImportDxfCommand. | `InputViewModel.cs` |
 | `class` | **IrregularBoundaryPointViewModel** | Represents the IrregularBoundaryPointViewModel class. Key properties: PtIndex, X, Y. | `IrregularBoundaryPointViewModel.cs` |
 | `record` | **IrregularRebarModeOption** | Represents the IrregularRebarModeOption record. | `IrregularSectionInputViewModel.cs` |
@@ -755,16 +755,19 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ViewModelBase** | Represents the ViewModelBase class. | `ViewModelBase.cs` |
 | `class` | **ViewportOptionViewModel** | Represents the ViewportOptionViewModel class. Key properties: Type, DisplayName, IsSelected. | `ViewportOptionViewModel.cs` |
 | `record` | **fields** | Represents the fields record. Key methods: GenerateSectionForceRows. | `EtabsImportViewModel.cs` |
-| `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions. | `ProjectExplorerViewModel.cs` |
+| `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions, GetSelectedColumnIds. | `ProjectExplorerViewModel.cs` |
 
 ### Views
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **AddSectionDialog** | Represents the AddSectionDialog class. Key properties: SectionName, SelectedGroupId. | `AddSectionDialog.xaml.cs` |
+| `class` | **CalculationProgressWindow** | Represents the CalculationProgressWindow class. Key properties: StatusText, ProgressValue, ProgressMax. | `CalculationProgressWindow.xaml.cs` |
 | `class` | **DxfImportWindow** | Represents the DxfImportWindow class. | `DxfImportWindow.xaml.cs` |
 | `class` | **EtabsForceRefreshWindow** | Represents the EtabsForceRefreshWindow class. | `EtabsForceRefreshWindow.xaml.cs` |
 | `class` | **EtabsImportWindow** | Represents the EtabsImportWindow class. | `EtabsImportWindow.xaml.cs` |
 | `class` | **EtabsPreloadWindow** | Represents the EtabsPreloadWindow class. | `EtabsPreloadWindow.xaml.cs` |
+| `class` | **GroupOption** | Represents the GroupOption class. Key properties: Id, Name. | `AddSectionDialog.xaml.cs` |
 | `class` | **InputTabView** | Represents the InputTabView class. | `InputTabView.xaml.cs` |
 | `class` | **MM3DView** | Represents the MM3DView class. | `MM3DView.xaml.cs` |
 | `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |

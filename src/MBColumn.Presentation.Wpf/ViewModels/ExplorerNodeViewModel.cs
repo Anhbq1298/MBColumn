@@ -8,6 +8,7 @@ public abstract class ExplorerNodeViewModel : ViewModelBase
     private bool isSelected;
     private bool isRenaming;
     private string editName = "";
+    private bool? isChecked = true;
 
     // Keep project explorer nodes collapsed by default.
     // Large .mbc files may contain many groups/sections; expanding every group during load
@@ -15,6 +16,20 @@ public abstract class ExplorerNodeViewModel : ViewModelBase
     private bool isExpanded;
 
     public int Id { get; protected set; }
+
+    public bool? IsChecked
+    {
+        get => isChecked;
+        set
+        {
+            if (isChecked == value) return;
+            isChecked = value;
+            Raise();
+            OnCheckedChanged();
+        }
+    }
+
+    protected virtual void OnCheckedChanged() { }
 
     public string Name
     {

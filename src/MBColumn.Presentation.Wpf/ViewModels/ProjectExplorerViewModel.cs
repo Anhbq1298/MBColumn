@@ -14,10 +14,12 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     private readonly IProjectService projectService;
     private readonly Action<ColumnItemViewModel?> onColumnSelected;
     private readonly Action saveCurrentColumnInput;
-    private readonly Func<string, string?> promptColumnName;
+    private readonly IProjectNameDialogService projectNameDialogService;
     private readonly Func<IEnumerable<ColumnRecord>, IEnumerable<int>?> promptSelectSections;
     private readonly IMessageService messageService;
     private readonly Dictionary<int, SectionStatus> sectionStatuses = [];
+    private readonly Dictionary<int, bool> columnCheckedStates = [];
+    public event Action? SelectedColumnsChanged;
     private string projectName = "New Project";
     private ExplorerNodeViewModel? selectedNode;
     private ColumnItemViewModel? selectedColumn;
@@ -26,14 +28,14 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         IProjectService projectService,
         Action<ColumnItemViewModel?> onColumnSelected,
         Action saveCurrentColumnInput,
-        Func<string, string?> promptColumnName,
+        IProjectNameDialogService projectNameDialogService,
         Func<IEnumerable<ColumnRecord>, IEnumerable<int>?> promptSelectSections,
         IMessageService messageService)
     {
         this.projectService = projectService;
         this.onColumnSelected = onColumnSelected;
         this.saveCurrentColumnInput = saveCurrentColumnInput;
-        this.promptColumnName = promptColumnName;
+        this.projectNameDialogService = projectNameDialogService;
         this.promptSelectSections = promptSelectSections;
         this.messageService = messageService;
 
@@ -205,12 +207,14 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
     {
         var totalColumns = Nodes.OfType<ColumnItemViewModel>().Count() + Nodes.OfType<GroupItemViewModel>().SelectMany(g => g.Columns).Count();
         var defaultName = $"Section {totalColumns + 1}";
-        var name = promptColumnName(defaultName);
-        if (name is null) return;
+        
+        var availableGroups = projectService.GetGroups();
+        var result = projectNameDialogService.PromptAddSection(defaultName, availableGroups, group?.Id);
+        if (result is null) return;
 
         try
         {
-            var record = projectService.AddColumn(name, group?.Id);
+            var record = projectService.AddColumn(result.Value.Name, result.Value.GroupId);
             RefreshColumns();
             var item = FindColumn(record.Id);
             if (item is not null) SelectNode(item);
@@ -263,6 +267,8 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
 
         projectService.DeleteColumn(item.Id);
         sectionStatuses.Remove(item.Id);
+        columnCheckedStates.Remove(item.Id);
+        SelectedColumnsChanged?.Invoke();
     }
 
     private void DeleteGroup(GroupItemViewModel group)
@@ -275,9 +281,13 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
             SelectNode(Nodes.FirstOrDefault(n => n != group && (n is not ColumnItemViewModel c || c.GroupId != group.Id)));
 
         foreach (var col in group.Columns)
+        {
             sectionStatuses.Remove(col.Id);
+            columnCheckedStates.Remove(col.Id);
+        }
 
         projectService.DeleteGroup(group.Id);
+        SelectedColumnsChanged?.Invoke();
     }
 
     private void RefreshColumns()
@@ -407,6 +417,29 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         var item = new ColumnItemViewModel(record, SelectNode, DuplicateColumn, DeleteColumn);
         if (sectionStatuses.TryGetValue(record.Id, out var status))
             item.Status = status;
+
+        if (columnCheckedStates.TryGetValue(record.Id, out var chk))
+        {
+            item.IsChecked = chk;
+        }
+        else
+        {
+            item.IsChecked = true;
+            columnCheckedStates[record.Id] = true;
+        }
+
+        item.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(ColumnItemViewModel.IsChecked))
+            {
+                if (item.IsChecked.HasValue)
+                {
+                    columnCheckedStates[item.Id] = item.IsChecked.Value;
+                }
+                SelectedColumnsChanged?.Invoke();
+            }
+        };
+
         return item;
     }
 
@@ -457,5 +490,27 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
             item.MoveToGroupOptions.Add(
                 new GroupActionViewModel(targetGroupName, () => MoveColumn(item.Id, targetGroupId)));
         }
+     }
+
+    public List<int> GetSelectedColumnIds()
+    {
+        var selectedIds = new List<int>();
+        foreach (var node in Nodes)
+        {
+            if (node is ColumnItemViewModel c)
+            {
+                if (c.IsChecked == true)
+                    selectedIds.Add(c.Id);
+            }
+            else if (node is GroupItemViewModel g)
+            {
+                foreach (var child in g.Columns)
+                {
+                    if (child.IsChecked == true)
+                        selectedIds.Add(child.Id);
+                }
+            }
+        }
+        return selectedIds;
     }
 }
