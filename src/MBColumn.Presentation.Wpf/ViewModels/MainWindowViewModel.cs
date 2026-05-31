@@ -3,6 +3,7 @@ using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.Views;
+using System.Windows;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -82,6 +83,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
+        PrintReportCommand = new RelayCommand(OpenPrintReportWindow, () => HasSections);
 
         // ETABS commands — explicit source-differentiated versions plus legacy wrappers
         ImportSectionsFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
@@ -135,6 +137,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
+    public ICommand PrintReportCommand { get; }
 
     // Explicit ETABS commands
     public ICommand ImportSectionsFromEtabsCommand { get; }
@@ -595,6 +598,17 @@ public sealed class MainWindowViewModel : ViewModelBase
         RefreshReportFromCurrentWorkspace();
         SelectedMainTabIndex = 1;
         RaiseResultStateProperties();
+    }
+
+    private void OpenPrintReportWindow()
+    {
+        SaveCurrentColumnInput();
+        var vm = new PrintReportViewModel(projectService);
+        var window = new PrintReportWindow(vm)
+        {
+            Owner = Application.Current?.MainWindow
+        };
+        window.ShowDialog();
     }
 
     private void NewProject()
@@ -1152,6 +1166,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void RaiseCommandStates()
     {
+        (PrintReportCommand as RelayCommand)?.RaiseCanExecuteChanged();
         if (CalculateCommand is AsyncRelayCommand calculate)
             calculate.RaiseCanExecuteChanged();
         if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)

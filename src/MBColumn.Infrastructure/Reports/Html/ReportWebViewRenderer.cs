@@ -1,5 +1,7 @@
+using MBColumn.Application.DTOs;
 using MBColumn.Application.Reports.Models;
 using MBColumn.Infrastructure.Reports.Graphics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using SystemMath = System.Math;
@@ -8,28 +10,26 @@ namespace MBColumn.Infrastructure.Reports.Html;
 
 /// <summary>
 /// Builds a self-contained HTML string for the WebView2 report preview.
-/// KaTeX CSS and JS are embedded inline so the page works without network access.
+/// Inter font, KaTeX and all SVGs are embedded inline.
 /// </summary>
 public sealed class ReportWebViewRenderer
 {
-    private static readonly object KatexLock  = new();
-    private static string?         _katexCss;
-    private static string?         _katexJs;
-    private static bool            _assetsChecked;
-    private static bool            _hasAssets;
+    private static readonly object Lock = new();
+    private static string? _katexCss, _katexJs, _fontFaceCss;
+    private static bool _assetsChecked, _hasAssets;
 
     public bool CanRender()
     {
         if (_assetsChecked) return _hasAssets;
-        lock (KatexLock)
+        lock (Lock)
         {
             if (_assetsChecked) return _hasAssets;
             _assetsChecked = true;
             try
             {
-                string root = KatexRoot();
-                _hasAssets = File.Exists(Path.Combine(root, "katex.min.css"))
-                          && File.Exists(Path.Combine(root, "katex.min.js"));
+                string katexRoot = KatexRoot();
+                _hasAssets = File.Exists(Path.Combine(katexRoot, "katex.min.css"))
+                          && File.Exists(Path.Combine(katexRoot, "katex.min.js"));
             }
             catch { _hasAssets = false; }
             return _hasAssets;
@@ -41,81 +41,81 @@ public sealed class ReportWebViewRenderer
 
     public string BuildHtml(ReportData data, IEnumerable<ReportSection> visibleSections)
     {
-        (string css, string js) = LoadKatex();
+        LoadAssets();
+        var sb = new StringBuilder(131072);
 
-        var sb = new StringBuilder(65536);
-        sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html lang='en'><head><meta charset='utf-8'/>");
-        sb.AppendLine("<meta name='viewport' content='width=device-width,initial-scale=1'/>");
+        sb.Append("<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/>");
+        sb.Append("<meta name='viewport' content='width=device-width,initial-scale=1'/>");
 
-        // KaTeX CSS (inline)
-        if (!string.IsNullOrEmpty(css))
+        if (!string.IsNullOrEmpty(_fontFaceCss))
         {
-            sb.AppendLine("<style>");
-            sb.AppendLine(css);
-            sb.AppendLine("</style>");
+            sb.Append("<style>");
+            sb.Append(_fontFaceCss);
+            sb.Append("</style>");
         }
 
-        sb.AppendLine("<style>");
-        sb.AppendLine(PageStyles());
-        sb.AppendLine("</style>");
-        sb.AppendLine("</head><body>");
+        if (!string.IsNullOrEmpty(_katexCss))
+        {
+            sb.Append("<style>");
+            sb.Append(_katexCss);
+            sb.Append("</style>");
+        }
+
+        sb.Append("<style>");
+        sb.Append(PageStyles());
+        sb.Append("</style></head><body>");
 
         // Cover header
-        sb.AppendLine("<div class='cover'>");
-        sb.AppendLine("<h1>MB Column — Calculation Report</h1>");
+        sb.Append("<div class='cover'>");
+        sb.Append("<div class='cover-title'>MB Column — Calculation Report</div>");
         if (!string.IsNullOrEmpty(data.ProjectName))
-            sb.AppendLine($"<p><strong>Project:</strong> {H(data.ProjectName)}</p>");
+            sb.Append($"<div class='cover-meta'><span class='cover-label'>Project</span>{H(data.ProjectName)}</div>");
         if (!string.IsNullOrEmpty(data.GroupName))
-            sb.AppendLine($"<p><strong>Group:</strong> {H(data.GroupName)}</p>");
+            sb.Append($"<div class='cover-meta'><span class='cover-label'>Group</span>{H(data.GroupName)}</div>");
         if (!string.IsNullOrEmpty(data.DesignTierName))
-            sb.AppendLine($"<p><strong>Section:</strong> {H(data.DesignTierName)}</p>");
-        sb.AppendLine($"<p class='generated'>Generated: {H(data.GeneratedAt)}</p>");
-        sb.AppendLine("</div>");
+            sb.Append($"<div class='cover-meta'><span class='cover-label'>Section</span>{H(data.DesignTierName)}</div>");
+        sb.Append($"<div class='cover-generated'>Generated: {H(data.GeneratedAt)}</div>");
+        sb.Append("</div>");
 
         foreach (var section in visibleSections)
         {
             string anchorId = $"sec-{section.Number.Replace(".", "-")}";
-            sb.AppendLine($"<section id='{anchorId}'>");
-            sb.AppendLine($"<div class='section-header'><span class='sec-num'>{H(section.Number)}</span>&ensp;{H(section.Title)}</div>");
+            sb.Append($"<section id='{anchorId}'>");
+            sb.Append($"<div class='sec-header'><span class='sec-num'>{H(section.Number)}</span>&ensp;{H(section.Title)}</div>");
+            sb.Append("<div class='sec-body'>");
             foreach (var block in section.Blocks)
                 RenderBlock(sb, block);
-            sb.AppendLine("</section>");
+            sb.Append("</div></section>");
         }
 
-        // KaTeX auto-render script (inline)
-        if (!string.IsNullOrEmpty(js))
+        if (!string.IsNullOrEmpty(_katexJs))
         {
-            sb.AppendLine("<script>");
-            sb.AppendLine(js);
-            sb.AppendLine("</script>");
+            sb.Append("<script>");
+            sb.Append(_katexJs);
+            sb.Append("</script>");
         }
 
-        // Trigger auto-rendering of all .katex-formula spans after DOM load
-        sb.AppendLine("<script>");
-        sb.AppendLine("""
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.katex-formula').forEach(function(el) {
-    var latex  = el.getAttribute('data-latex') || '';
-    var disp   = el.getAttribute('data-display') === 'true';
-    if (typeof katex !== 'undefined') {
-      try {
-        katex.render(latex, el, { throwOnError: false, displayMode: disp, strict: 'ignore' });
-      } catch(e) {
-        el.textContent = latex;
-      }
-    } else {
-      el.textContent = latex;
-    }
+        // Auto-render all .kf spans after DOM load
+        sb.Append("""
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.kf').forEach(function(el){
+    var latex=el.getAttribute('data-latex')||'';
+    var disp=el.getAttribute('data-display')==='true';
+    if(!latex.trim())return;
+    if(typeof katex!=='undefined'){
+      try{ katex.render(latex,el,{throwOnError:false,displayMode:disp,strict:'ignore'}); }
+      catch(e){ el.textContent=latex; }
+    } else { el.textContent=latex; }
   });
 });
+</script>
 """);
-        sb.AppendLine("</script>");
-        sb.AppendLine("</body></html>");
+        sb.Append("</body></html>");
         return sb.ToString();
     }
 
-    // ── Block rendering ───────────────────────────────────────────────────────
+    // ── Block dispatch ────────────────────────────────────────────────────────
 
     private static void RenderBlock(StringBuilder sb, ReportBlock block)
     {
@@ -123,19 +123,19 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             case HeadingBlock h:
                 int lvl = SystemMath.Clamp(h.Level + 1, 2, 6);
-                sb.AppendLine($"<h{lvl} class='sub-heading'>{H(h.Text)}</h{lvl}>");
+                sb.Append($"<h{lvl} class='sub-heading'>{H(h.Text)}</h{lvl}>");
                 break;
 
             case ParagraphBlock p:
-                sb.AppendLine($"<p class='body-text'>{H(p.Text)}</p>");
+                sb.Append($"<p class='body-text'>{H(p.Text)}</p>");
                 break;
 
             case NoteBlock n:
-                sb.AppendLine($"<div class='note'>{H(n.Text)}</div>");
+                sb.Append($"<div class='note'>{H(n.Text)}</div>");
                 break;
 
             case FormulaBlock fb:
-                RenderFormulaBlock(sb, fb);
+                RenderFormulaBlock(sb, fb.Title, fb.LatexFormula, fb.SubstitutionLatex, fb.ResultLatex);
                 break;
 
             case TableBlock t:
@@ -147,131 +147,225 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
 
             case ImageBlock img:
-                sb.AppendLine("<div class='svg-wrap'>");
-                sb.AppendLine(img.SvgContent);
-                if (!string.IsNullOrEmpty(img.Caption))
-                    sb.AppendLine($"<p class='fig-caption'>{H(img.Caption)}</p>");
-                sb.AppendLine("</div>");
+                sb.Append("<div class='svg-wrap'>");
+                sb.Append(img.SvgContent);
+                if (!string.IsNullOrWhiteSpace(img.Caption))
+                    sb.Append($"<p class='fig-caption'>{H(img.Caption)}</p>");
+                sb.Append("</div>");
                 break;
 
             case DiagramBlock diag:
                 try
                 {
-                    string diagSvg = InteractionDiagramSvgRenderer.RenderDiagram(diag, 600, 420);
-                    sb.AppendLine("<div class='svg-wrap'>");
-                    sb.AppendLine(diagSvg);
-                    if (!string.IsNullOrEmpty(diag.Caption))
-                        sb.AppendLine($"<p class='fig-caption'>{H(diag.Caption)}</p>");
-                    sb.AppendLine("</div>");
+                    string svg = InteractionDiagramSvgRenderer.RenderDiagram(diag, 620, 430);
+                    sb.Append("<div class='svg-wrap'>");
+                    sb.Append(svg);
+                    if (!string.IsNullOrWhiteSpace(diag.Caption))
+                        sb.Append($"<p class='fig-caption'>{H(diag.Caption)}</p>");
+                    sb.Append("</div>");
                 }
                 catch
                 {
-                    sb.AppendLine($"<div class='diagram-placeholder'>[Diagram unavailable — {H(diag.Caption)}]</div>");
+                    sb.Append($"<div class='diagram-placeholder'>{H(diag.Caption)}</div>");
                 }
                 break;
 
             case SummaryBoxBlock sum:
-                bool fail = sum.Ratio > 1.0;
-                sb.AppendLine($"<div class='summary-box {(fail ? "fail" : "pass")}'>");
-                sb.AppendLine($"<div class='summary-title'>{H(sum.Title)}</div>");
-                sb.AppendLine("<div class='summary-entries'>");
-                foreach (var (label, value) in sum.Entries)
-                    sb.AppendLine($"<div class='summary-row'><span class='s-label'>{H(label)}</span><span class='s-value'>{H(value)}</span></div>");
-                sb.AppendLine("</div></div>");
+                RenderSummaryBox(sb, sum);
                 break;
 
             case DividerBlock:
-                sb.AppendLine("<hr class='divider'/>");
+                sb.Append("<hr class='divider'/>");
                 break;
 
             case PageBreakBlock:
-                sb.AppendLine("<div style='page-break-after:always'></div>");
+                sb.Append("<div style='page-break-after:always'></div>");
                 break;
 
             case SectionPreviewBlock sp:
-                sb.AppendLine("<div class='svg-wrap'>");
-                sb.AppendLine(sp.SvgContent);
-                sb.AppendLine("</div>");
+                sb.Append("<div class='svg-wrap'>");
+                sb.Append(sp.SvgContent);
+                sb.Append("</div>");
+                break;
+
+            case Ec2ShearDetailBlock shear:
+                foreach (var b in Ec2ShearLatexBuilder.BuildShearBlocks(shear.Shear, shear.ForceUnit))
+                    RenderBlock(sb, b);
+                break;
+
+            case Ec2SlendernessDetailBlock sl:
+                foreach (var b in BuildSlendernessBlocks(sl))
+                    RenderBlock(sb, b);
                 break;
         }
     }
 
-    private static void RenderFormulaBlock(StringBuilder sb, FormulaBlock fb)
+    // ── Slenderness step-by-step blocks (inline, no separate class needed) ───
+
+    private static IEnumerable<ReportBlock> BuildSlendernessBlocks(Ec2SlendernessDetailBlock sl)
     {
-        sb.AppendLine("<div class='formula-block'>");
-        if (!string.IsNullOrWhiteSpace(fb.Title))
-            sb.AppendLine($"<div class='formula-title'>{H(fb.Title)}</div>");
+        var lc    = sl.LoadCase;
+        var batch = sl.Batch;
+        double mScale = sl.IsMetric ? 1e-6 : 1e-6 / 1.356;
 
-        if (!string.IsNullOrWhiteSpace(fb.LatexFormula))
+        // Properties table
+        if (batch.SectionValues is { } sv)
+            yield return new TableBlock("Table – Section stiffness properties",
+                ["Property", "Symbol", "Value"],
+                [
+                    ["Gross concrete area",  "Ac",  $"{sv.AcMm2:0.#} mm²"],
+                    ["2nd moment  (X)",      "Ixx", $"{sv.IxxMm4:0.3e} mm⁴"],
+                    ["2nd moment  (Y)",      "Iyy", $"{sv.IyyMm4:0.3e} mm⁴"],
+                    ["Total steel area",     "As",  $"{sv.AsTotalMm2:0.#} mm²"],
+                    ["Mech. reinf. ratio",   "ω",   $"{sv.Omega:0.4f}"],
+                    ["Ecm",                  "MPa", $"{sv.EcmMpa:0.#}"],
+                    ["fcd",                  "MPa", $"{sv.FcdMpa:0.##}"],
+                ]);
+
+        foreach (var (axis, ax) in new[] { ("X", lc.X), ("Y", lc.Y) })
         {
-            sb.AppendLine("<div class='formula-row formula-main'>");
-            sb.AppendLine($"<span class='katex-formula' data-latex='{XmlAttr(NormLatex(fb.LatexFormula))}' data-display='true'></span>");
-            sb.AppendLine("</div>");
+            if (ax is null) continue;
+            double l0 = axis == "X" ? (batch.L0xMm ?? 0) : (batch.L0yMm ?? 0);
+            bool slender = ax.IsSlender;
+
+            yield return new HeadingBlock($"{axis}-axis bending", 3);
+
+            // Slenderness check formula
+            yield return new FormulaBlock(
+                "Slenderness limit  (EC2 §5.8.3.1)",
+                @"\lambda_{lim} = \frac{20 \cdot A \cdot B \cdot C}{\sqrt{n}}",
+                $@"n=\frac{{N_{{Ed}}}}{{A_c f_{{cd}}}}={F(ax.FactorN,4)},\quad A={F(ax.FactorA,4)},\quad B={F(ax.FactorB,4)},\quad C={F(ax.FactorC,4)}",
+                $@"\lambda_{{lim}}={F(ax.LambdaLimit,1)},\quad \lambda={F(ax.Lambda,1)}\;\Rightarrow\;{(slender ? @"\lambda>\lambda_{lim}\;\text{— 2nd-order applied}" : @"\lambda\leq\lambda_{lim}\;\text{— 1st-order sufficient}")}");
+
+            if (!slender) continue;
+
+            // Nominal curvature
+            yield return new FormulaBlock(
+                "Nominal curvature  (EC2 §5.8.8.3)",
+                @"\frac{1}{r} = K_r K_\varphi \frac{\varepsilon_{yd}}{0.45\,d}",
+                $@"1/r = {ax.NominalCurvature1PerMm:F4e+0}\;\mathrm{{mm}}^{{-1}}",
+                "");
+
+            // Deflection
+            yield return new FormulaBlock(
+                "Deflection  e₂",
+                @"e_2 = \frac{1}{r} \cdot \frac{L_0^2}{c}",
+                $@"e_2 = {ax.NominalCurvature1PerMm:F4e+0} \times \frac{{{F(l0,0)}^2}}{{10}} = {F(ax.E2Mm,1)}\;\mathrm{{mm}}",
+                "");
+
+            // Moments
+            yield return new FormulaBlock(
+                "Design moments",
+                @"M_{Ed,used} = \max\!\left(M_{0e} + N_{Ed}\,e_2,\;M_{02},\;N_{Ed}\cdot e_0\right)",
+                $@"M_{{01}}={F(ax.M01Nmm*mScale,2)}\;{sl.MomentUnit},\quad M_{{02}}={F(ax.M02Nmm*mScale,2)}\;{sl.MomentUnit},\quad M_{{0e}}={F(ax.M0eNmm*mScale,2)}\;{sl.MomentUnit}",
+                $@"M_2=N_{{Ed}}\cdot e_2={F(ax.M2Nmm*mScale,2)}\;{sl.MomentUnit},\quad M_{{Ed,used}}={F(ax.MUsedNmm*mScale,2)}\;{sl.MomentUnit}");
         }
 
-        if (!string.IsNullOrWhiteSpace(fb.SubstitutionLatex))
-        {
-            sb.AppendLine("<div class='formula-row formula-sub'>");
-            sb.AppendLine($"<span class='katex-formula' data-latex='{XmlAttr(NormLatex(fb.SubstitutionLatex))}' data-display='false'></span>");
-            sb.AppendLine("</div>");
-        }
-
-        if (!string.IsNullOrWhiteSpace(fb.ResultLatex))
-        {
-            sb.AppendLine("<div class='formula-row formula-result'>");
-            sb.AppendLine($"<span class='katex-formula' data-latex='{XmlAttr(NormLatex(fb.ResultLatex))}' data-display='false'></span>");
-            sb.AppendLine("</div>");
-        }
-
-        sb.AppendLine("</div>");
+        foreach (var w in lc.Warnings)
+            yield return new NoteBlock(w);
     }
+
+    // ── Formula block ─────────────────────────────────────────────────────────
+
+    private static void RenderFormulaBlock(
+        StringBuilder sb,
+        string title, string main, string sub, string result)
+    {
+        bool hasMain   = !string.IsNullOrWhiteSpace(main);
+        bool hasSub    = !string.IsNullOrWhiteSpace(sub);
+        bool hasResult = !string.IsNullOrWhiteSpace(result);
+        if (!hasMain && !hasSub && !hasResult && string.IsNullOrWhiteSpace(title)) return;
+
+        sb.Append("<div class='formula-panel'>");
+        if (!string.IsNullOrWhiteSpace(title))
+            sb.Append($"<div class='formula-title'>{H(title)}</div>");
+        if (hasMain)
+            sb.Append($"<div class='formula-main'><span class='kf' data-latex='{XA(Norm(main))}' data-display='true'></span></div>");
+        if (hasSub)
+            sb.Append($"<div class='formula-sub'><span class='kf' data-latex='{XA(Norm(sub))}' data-display='false'></span></div>");
+        if (hasResult)
+            sb.Append($"<div class='formula-result'><span class='kf' data-latex='{XA(Norm(result))}' data-display='false'></span></div>");
+        sb.Append("</div>");
+    }
+
+    // ── Summary box ───────────────────────────────────────────────────────────
+
+    private static void RenderSummaryBox(StringBuilder sb, SummaryBoxBlock sum)
+    {
+        bool fail  = sum.Ratio > 1.0;
+        string cls = fail ? "summary-box fail" : "summary-box pass";
+        sb.Append($"<div class='{cls}'>");
+        sb.Append($"<div class='summary-title'>{H(sum.Title)}</div>");
+        if (sum.Entries.Count > 0)
+        {
+            sb.Append("<div class='summary-entries'>");
+            foreach (var (label, value) in sum.Entries)
+                sb.Append($"<div class='summary-row'><span class='s-lbl'>{H(label)}</span><span class='s-val'>{H(value)}</span></div>");
+            sb.Append("</div>");
+        }
+        sb.Append("</div>");
+    }
+
+    // ── Table ─────────────────────────────────────────────────────────────────
 
     private static void RenderTable(StringBuilder sb, string caption, string[] headers, string[][] rows)
     {
-        if (!string.IsNullOrEmpty(caption))
-            sb.AppendLine($"<p class='tbl-caption'>{H(caption)}</p>");
-        sb.AppendLine("<div class='tbl-wrap'><table>");
-        sb.AppendLine("<thead><tr>");
-        foreach (var h in headers)
-            sb.AppendLine($"<th>{H(h)}</th>");
-        sb.AppendLine("</tr></thead><tbody>");
-        int rowIdx = 0;
+        if (!string.IsNullOrWhiteSpace(caption))
+            sb.Append($"<p class='tbl-caption'>{H(caption)}</p>");
+        sb.Append("<div class='tbl-wrap'><table><thead><tr>");
+        foreach (var h in headers) sb.Append($"<th>{H(h)}</th>");
+        sb.Append("</tr></thead><tbody>");
+        int idx = 0;
         foreach (var row in rows)
         {
-            sb.AppendLine($"<tr class='{(rowIdx % 2 == 0 ? "even" : "odd")}'>");
-            foreach (var cell in row) sb.AppendLine($"<td>{H(cell)}</td>");
-            sb.AppendLine("</tr>");
-            rowIdx++;
+            sb.Append($"<tr class='{(idx++ % 2 == 0 ? "even" : "odd")}'>");
+            foreach (var cell in row) sb.Append($"<td>{H(cell)}</td>");
+            sb.Append("</tr>");
         }
-        sb.AppendLine("</tbody></table></div>");
+        sb.Append("</tbody></table></div>");
     }
 
-    // ── KaTeX loading ─────────────────────────────────────────────────────────
+    // ── Asset loading ─────────────────────────────────────────────────────────
 
-    private static (string css, string js) LoadKatex()
+    private static void LoadAssets()
     {
-        if (_katexCss is not null) return (_katexCss, _katexJs ?? "");
-
-        lock (KatexLock)
+        if (_katexCss is not null) return;
+        lock (Lock)
         {
-            if (_katexCss is not null) return (_katexCss, _katexJs ?? "");
+            if (_katexCss is not null) return;
             try
             {
-                string root = KatexRoot();
-                string fontsUri = new Uri(Path.Combine(root, "fonts") + Path.DirectorySeparatorChar).AbsoluteUri;
-
-                _katexCss = File.ReadAllText(Path.Combine(root, "katex.min.css"))
+                string kRoot = KatexRoot();
+                string fontsUri = new Uri(Path.Combine(kRoot, "fonts") + Path.DirectorySeparatorChar).AbsoluteUri;
+                _katexCss = File.ReadAllText(Path.Combine(kRoot, "katex.min.css"))
                     .Replace("url(fonts/", "url(" + fontsUri, StringComparison.Ordinal);
-                _katexJs = File.ReadAllText(Path.Combine(root, "katex.min.js"))
+                _katexJs = File.ReadAllText(Path.Combine(kRoot, "katex.min.js"))
                     .Replace("</script", "<\\/script", StringComparison.OrdinalIgnoreCase);
             }
-            catch
-            {
-                _katexCss = "";
-                _katexJs  = "";
-            }
+            catch { _katexCss = ""; _katexJs = ""; }
+
+            _fontFaceCss = BuildFontFaceCss();
         }
-        return (_katexCss, _katexJs ?? "");
+    }
+
+    private static string BuildFontFaceCss()
+    {
+        string fontsDir = Path.Combine(AppContext.BaseDirectory, "Resources", "Fonts");
+        var sb = new StringBuilder();
+        foreach (var (weight, file) in new[]
+        {
+            ("400", "Inter-Regular.ttf"),
+            ("500", "Inter-Medium.ttf"),
+            ("600", "Inter-SemiBold.ttf"),
+            ("700", "Inter-Bold.ttf"),
+        })
+        {
+            string path = Path.Combine(fontsDir, file);
+            if (!File.Exists(path)) continue;
+            string uri = new Uri(path).AbsoluteUri;
+            sb.Append($"@font-face{{font-family:'Inter';font-weight:{weight};src:url('{uri}') format('truetype');}}");
+        }
+        return sb.ToString();
     }
 
     private static string KatexRoot()
@@ -282,162 +376,111 @@ document.addEventListener('DOMContentLoaded', function() {
     private static string H(string? s)
         => s is null ? "" : System.Net.WebUtility.HtmlEncode(s);
 
-    private static string XmlAttr(string? s)
+    private static string XA(string? s)
         => s is null ? "" : s.Replace("&", "&amp;").Replace("'", "&#39;").Replace("\"", "&quot;");
 
-    private static string NormLatex(string s)
+    private static string Norm(string s)
         => (s ?? "").Replace(@"\\", @"\", StringComparison.Ordinal);
 
-    private static int SystemMath_Clamp(int v, int lo, int hi)
-        => v < lo ? lo : v > hi ? hi : v;
+    private static string F(double v, int d)
+        => v.ToString($"F{d}", CultureInfo.InvariantCulture);
 
     // ── CSS ───────────────────────────────────────────────────────────────────
 
     private static string PageStyles() => """
-        :root {
-          --navy: #1A3A5C;
-          --navy-light: #2E5F8A;
-          --pass: #1E8449;
-          --fail: #C0392B;
-          --bg-alt: #F5F7FA;
-          --border: #DDDDDD;
-          --note-bg: #EBF5FB;
-          --note-border: #AED6F1;
-          --formula-bg: #FAFAFA;
+        :root{
+          --navy:#1A3A5C; --navy-lt:#2E5F8A;
+          --pass:#1E8449; --pass-bg:#EAFAF1; --pass-border:#27AE60;
+          --fail:#C0392B; --fail-bg:#FDEDEC; --fail-border:#E74C3C;
+          --border:#DDE6EF; --alt:#F5F7FA; --muted:#6B7A8D;
+          --formula-bg:#F8FAFC; --formula-border:#DDE6EF;
+          --note-bg:#EBF5FB; --note-border:#AED6F1;
         }
-        * { box-sizing: border-box; }
-        body {
-          font-family: 'Segoe UI', Arial, sans-serif;
-          font-size: 11pt;
-          color: #222;
-          margin: 0;
-          padding: 16px 32px 32px;
-          background: #F0F0F0;
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{
+          font-family:'Inter','Segoe UI',Arial,sans-serif;
+          font-size:11pt;line-height:1.55;color:#1A1A2E;
+          background:#EAECF0;padding:20px 28px 40px;
         }
-        .cover {
-          background: var(--navy);
-          color: white;
-          padding: 20px 24px 16px;
-          margin-bottom: 20px;
-          border-radius: 4px;
-        }
-        .cover h1 { margin: 0 0 8px; font-size: 16pt; }
-        .cover p  { margin: 3px 0; font-size: 10pt; }
-        .cover .generated { margin-top: 10px; font-size: 9pt; opacity: 0.7; }
 
-        section {
-          background: white;
-          margin-bottom: 16px;
-          border-radius: 3px;
-          box-shadow: 0 1px 3px rgba(0,0,0,.12);
-          padding: 0 0 16px;
+        /* Cover */
+        .cover{
+          background:var(--navy);color:#fff;
+          border-radius:6px;padding:20px 24px 16px;margin-bottom:20px;
         }
-        .section-header {
-          background: var(--navy);
-          color: white;
-          padding: 8px 16px;
-          font-size: 12pt;
-          font-weight: 600;
-          border-radius: 3px 3px 0 0;
-          margin-bottom: 14px;
+        .cover-title{font-size:16pt;font-weight:700;margin-bottom:10px;}
+        .cover-meta{font-size:10pt;margin:3px 0;display:flex;gap:8px;}
+        .cover-label{font-weight:600;opacity:.65;min-width:70px;}
+        .cover-generated{font-size:9pt;opacity:.55;margin-top:10px;}
+
+        /* Sections */
+        section{
+          background:#fff;border-radius:5px;margin-bottom:14px;
+          box-shadow:0 1px 4px rgba(0,0,0,.10);overflow:hidden;
         }
-        .sec-num { opacity: 0.8; }
-
-        section > *:not(.section-header) { padding-left: 16px; padding-right: 16px; }
-        section > .tbl-wrap,
-        section > .svg-wrap    { padding-left: 16px; padding-right: 16px; }
-
-        h2, h3, h4, h5, h6 {
-          color: var(--navy);
-          margin: 12px 0 4px;
+        .sec-header{
+          background:var(--navy);color:#fff;padding:9px 16px;
+          font-size:12pt;font-weight:600;
         }
-        .sub-heading { font-size: 10.5pt; border-bottom: 1px solid #DDE6F0; padding-bottom: 2px; }
+        .sec-num{opacity:.75;}
+        .sec-body{padding:14px 16px 16px;}
 
-        .body-text { margin: 4px 0; line-height: 1.55; }
+        /* Typography */
+        h2.sub-heading{font-size:11.5pt;color:var(--navy);font-weight:600;
+          border-bottom:1px solid var(--border);padding-bottom:3px;margin:12px 0 6px;}
+        h3.sub-heading{font-size:10.5pt;color:var(--navy);font-weight:600;margin:10px 0 4px;}
+        h4.sub-heading,h5.sub-heading,h6.sub-heading{font-size:10pt;color:var(--navy-lt);font-weight:600;margin:8px 0 3px;}
+        .body-text{margin:4px 0;font-size:10.5pt;}
 
-        .note {
-          background: var(--note-bg);
-          border-left: 3px solid var(--note-border);
-          padding: 6px 10px;
-          margin: 8px 0;
-          font-size: 10pt;
-          color: #1A5276;
-          font-style: italic;
-          border-radius: 0 2px 2px 0;
+        /* Note */
+        .note{
+          background:var(--note-bg);border-left:3px solid var(--note-border);
+          padding:6px 10px;margin:8px 0;font-size:10pt;
+          color:#1A5276;font-style:italic;border-radius:0 3px 3px 0;
         }
 
         /* Tables */
-        .tbl-wrap { overflow-x: auto; margin: 8px 0; }
-        table { border-collapse: collapse; width: 100%; font-size: 9.5pt; }
-        th {
-          background: var(--navy);
-          color: white;
-          padding: 5px 8px;
-          text-align: left;
-          font-weight: 600;
-        }
-        td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
-        tr.odd  td { background: var(--bg-alt); }
-        tr.even td { background: white; }
-        .tbl-caption {
-          font-size: 9pt; color: #555; margin: 4px 0 2px;
-          font-style: italic;
-        }
+        .tbl-wrap{overflow-x:auto;margin:8px 0;}
+        table{border-collapse:collapse;width:100%;font-size:9.5pt;}
+        th{background:var(--navy);color:#fff;padding:5px 8px;text-align:left;font-weight:600;}
+        td{padding:4px 8px;border-bottom:1px solid var(--border);font-size:9.5pt;}
+        tr.odd td{background:var(--alt);}
+        tr.even td{background:#fff;}
+        .tbl-caption{font-size:9pt;color:var(--muted);margin:4px 0 2px;font-style:italic;}
 
-        /* Formula blocks */
-        .formula-block {
-          background: var(--formula-bg);
-          border: 1px solid var(--border);
-          border-radius: 3px;
-          padding: 8px 12px;
-          margin: 8px 0;
+        /* Formula panel — matches FormulaPanelStyle in ShearDetailView.xaml */
+        .formula-panel{
+          background:var(--formula-bg);border:1px solid var(--formula-border);
+          border-radius:5px;padding:10px 14px;margin:8px 0;
         }
-        .formula-title { font-size: 9.5pt; color: #555; font-weight: 600; margin-bottom: 6px; }
-        .formula-row   { margin: 4px 0; }
-        .formula-main  .katex-formula { font-size: 14pt; color: var(--navy); }
-        .formula-sub   .katex-formula { font-size: 11pt; color: #444; }
-        .formula-result .katex-formula { font-size: 11pt; color: var(--navy-light); font-weight: 600; }
+        .formula-title{
+          font-size:9.5pt;color:var(--muted);font-weight:600;
+          margin-bottom:7px;
+        }
+        .formula-main{margin:4px 0 4px 0;font-size:13pt;}
+        .formula-sub{margin:3px 0 3px 10px;font-size:11pt;color:#333;}
+        .formula-result{margin:3px 0 0 10px;font-size:11pt;font-weight:600;color:var(--navy-lt);}
 
         /* Summary box */
-        .summary-box {
-          border: 2px solid;
-          border-radius: 4px;
-          padding: 12px 16px;
-          margin: 10px 0;
-        }
-        .summary-box.pass { background: #EAFAF1; border-color: #27AE60; }
-        .summary-box.fail { background: #FDEDEC; border-color: #E74C3C; }
-        .summary-title {
-          font-size: 13pt;
-          font-weight: 700;
-          margin-bottom: 8px;
-        }
-        .summary-box.pass .summary-title { color: var(--pass); }
-        .summary-box.fail .summary-title { color: var(--fail); }
-        .summary-row { display: flex; gap: 12px; font-size: 10pt; margin: 2px 0; }
-        .s-label { color: #555; min-width: 140px; }
-        .s-value { font-weight: 600; }
+        .summary-box{border:2px solid;border-radius:5px;padding:12px 16px;margin:10px 0;}
+        .summary-box.pass{background:var(--pass-bg);border-color:var(--pass-border);}
+        .summary-box.fail{background:var(--fail-bg);border-color:var(--fail-border);}
+        .summary-title{font-size:13pt;font-weight:700;margin-bottom:8px;}
+        .summary-box.pass .summary-title{color:var(--pass);}
+        .summary-box.fail .summary-title{color:var(--fail);}
+        .summary-entries{display:flex;flex-direction:column;gap:3px;}
+        .summary-row{display:flex;gap:10px;font-size:10pt;}
+        .s-lbl{color:var(--muted);min-width:160px;flex-shrink:0;}
+        .s-val{font-weight:600;}
 
         /* SVG / figures */
-        .svg-wrap { text-align: center; margin: 10px 0; }
-        .svg-wrap svg { max-width: 100%; height: auto; }
-        .fig-caption { font-size: 9pt; color: #555; font-style: italic; margin: 4px 0 0; text-align: center; }
+        .svg-wrap{text-align:center;margin:10px 0;}
+        .svg-wrap svg{max-width:100%;height:auto;}
+        .fig-caption{font-size:9pt;color:var(--muted);font-style:italic;margin:4px 0 0;text-align:center;}
+        .diagram-placeholder{border:1px dashed #AAA;padding:20px;text-align:center;
+          color:#888;margin:8px 0;font-size:9.5pt;font-style:italic;}
 
-        .diagram-placeholder {
-          border: 1px dashed #AAA;
-          padding: 20px;
-          text-align: center;
-          color: #888;
-          margin: 8px 0;
-          font-size: 9.5pt;
-          font-style: italic;
-        }
-
-        hr.divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
-
-        @media print {
-          body { background: white; padding: 0; }
-          section { box-shadow: none; }
-        }
+        hr.divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+        @media print{body{background:#fff;padding:0;}section{box-shadow:none;}}
         """;
 }

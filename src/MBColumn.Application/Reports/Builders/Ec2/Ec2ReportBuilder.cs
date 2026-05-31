@@ -225,7 +225,7 @@ internal sealed class Ec2ReportBuilder
             ["Load Case", $"NEd ({fUnit})", $"MEd,x,used ({mUnit})", $"MEd,y,used ({mUnit})", "Slend. Status"],
             factored));
 
-        // 4.3  Governing case detail
+        // 4.3  Governing case step-by-step detail (rich block, rendered by HTML renderer)
         var govLc = r.LoadCaseResults
             .Where(lc => double.IsFinite(lc.PmmRatio))
             .OrderByDescending(lc => lc.PmmRatio)
@@ -235,64 +235,14 @@ internal sealed class Ec2ReportBuilder
         {
             var govSl = sl.LoadCases.FirstOrDefault(c => c.LoadCaseId == govLc.LoadCaseId);
             if (govSl is not null)
-                blocks.AddRange(SlendernessDetail(govSl, sl, isMetric, mUnit, mScale));
+            {
+                blocks.Add(new HeadingBlock(
+                    $"EC2 §5.8 — Governing load case: {govSl.CaseName}", 2));
+                blocks.Add(new Ec2SlendernessDetailBlock(govSl, sl, isMetric, mUnit));
+            }
         }
 
         return new("4", "Demand Cases & EC2 §5.8 Slenderness", blocks);
-    }
-
-    private static IEnumerable<ReportBlock> SlendernessDetail(
-        Ec2SlendernessLoadCaseResultDto lc,
-        Ec2SlendernessBatchResultDto batch,
-        bool isMetric, string mUnit, double mScale)
-    {
-        yield return new HeadingBlock(
-            $"EC2 §5.8 — Governing load case: {lc.CaseName}", 2);
-
-        if (batch.SectionValues is { } sv)
-            yield return new TableBlock("Table 4.3 – Stiffness properties for slenderness",
-                ["Property", "Symbol", "Value"],
-                [
-                    ["Gross concrete area",   "Ac",  $"{sv.AcMm2:0.#} mm²"],
-                    ["Second moment (X-axis)","Ic,xx",$"{sv.IxxMm4:0.3e} mm⁴"],
-                    ["Second moment (Y-axis)","Ic,yy",$"{sv.IyyMm4:0.3e} mm⁴"],
-                    ["Total steel area",      "As",  $"{sv.AsTotalMm2:0.#} mm²"],
-                    ["Mech. reinf. ratio",    "ω",   $"{sv.Omega:0.4f}"],
-                    ["Concrete modulus",      "Ecm", $"{sv.EcmMpa:0.#} MPa"],
-                    ["Design concr. strength","fcd", $"{sv.FcdMpa:0.##} MPa"],
-                ]);
-
-        foreach (var (axis, ax) in new[] { ("X", lc.X), ("Y", lc.Y) })
-        {
-            if (ax is null) continue;
-            double l0 = axis == "X" ? (batch.L0xMm ?? 0) : (batch.L0yMm ?? 0);
-            int tblIdx = axis == "X" ? 4 : 5;
-
-            yield return new TableBlock(
-                $"Table 4.{tblIdx} – EC2 §5.8 slenderness detail — {axis}-axis bending",
-                ["Parameter", "Symbol", "Value"],
-                [
-                    ["Effective length",                "L0",      $"{l0:0.#} mm"],
-                    ["Slenderness ratio  L0/i",         "λ",       $"{ax.Lambda:0.#}"],
-                    ["Slenderness limit  20·A·B·C/√n",  "λ_lim",  $"{ax.LambdaLimit:0.#}"],
-                    ["Slender?",                        "",        ax.IsSlender ? "Yes — 2nd-order applied" : "No — 1st-order sufficient"],
-                    ["Relative axial force  NEd/(Ac·fcd)","n",      $"{ax.FactorN:0.4f}"],
-                    ["Factor A  (eff. creep)",           "A",      $"{ax.FactorA:0.4f}"],
-                    ["Factor B  (reinf.)",               "B",      $"{ax.FactorB:0.4f}"],
-                    ["Factor C  (moment shape)",         "C",      $"{ax.FactorC:0.4f}"],
-                    ["Smaller first-order moment",       "M01",    $"{ax.M01Nmm * mScale:0.##} {mUnit}"],
-                    ["Larger first-order moment",        "M02",    $"{ax.M02Nmm * mScale:0.##} {mUnit}"],
-                    ["Moment ratio",                     "rm = M01/M02", $"{ax.Rm:0.3f}"],
-                    ["Equivalent first-order moment",    "M0e",    $"{ax.M0eNmm * mScale:0.##} {mUnit}"],
-                    ["Nominal curvature  (§5.8.8)",      "1/r",    $"{ax.NominalCurvature1PerMm:0.3e} mm⁻¹"],
-                    ["Deflection  e2 = (1/r)·L0²/c",    "e2",     $"{ax.E2Mm:0.#} mm"],
-                    ["Second-order moment  NEd · e2",    "M2",     $"{ax.M2Nmm * mScale:0.##} {mUnit}"],
-                    ["Design moment used",               "MEd,used",$"{ax.MUsedNmm * mScale:0.##} {mUnit}"],
-                ]);
-        }
-
-        foreach (var w in lc.Warnings)
-            yield return new NoteBlock(w);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -387,53 +337,10 @@ internal sealed class Ec2ReportBuilder
     // ─────────────────────────────────────────────────────────────────────────
 
     private static ReportSection S52_ShearDetails(ShearResultDto s, string fUnit)
-    {
-        var blocks = new List<ReportBlock>
-        {
-            new NoteBlock(
-                "Shear capacity per EC2 §6.2. " +
-                "VRdc = concrete contribution; VRds = link contribution; VRdmax = strut crushing limit."),
-
-            new TableBlock($"Table 5.2.1 – Shear demand and capacity  [{fUnit}]",
-                ["Dir", $"VEd ({fUnit})", $"VRdc ({fUnit})", $"VRds ({fUnit})", $"VRd,max ({fUnit})", $"VRd ({fUnit})", "UR", "Status"],
-                [
-                    ["X", $"{s.VEdXDisplay:0.##}", $"{s.VRdcXDisplay:0.##}", $"{s.VRdsXDisplay:0.##}",
-                           $"{s.VRdMaxXDisplay:0.##}", $"{s.VRdXDisplay:0.##}", $"{s.UtilisationX:0.###}", s.StatusX.ToString()],
-                    ["Y", $"{s.VEdYDisplay:0.##}", $"{s.VRdcYDisplay:0.##}", $"{s.VRdsYDisplay:0.##}",
-                           $"{s.VRdMaxYDisplay:0.##}", $"{s.VRdYDisplay:0.##}", $"{s.UtilisationY:0.###}", s.StatusY.ToString()],
-                ]),
-
-            new TableBlock("Table 5.2.2 – Shear intermediate values  (EC2 §6.2.2, §6.2.3)",
-                ["Parameter", "Symbol", "X-direction", "Y-direction"],
-                [
-                    ["Web width",                  "bw (mm)",  $"{s.BwXMm:0.#}",     $"{s.BwYMm:0.#}"],
-                    ["Effective depth",             "deff (mm)",$"{s.DEffXMm:0.#}",    $"{s.DEffYMm:0.#}"],
-                    ["Size factor  1+√(200/d)",    "k",        $"{s.KFactorX:0.###}",  $"{s.KFactorY:0.###}"],
-                    ["Long. reinf. ratio",          "ρl",       $"{s.RhoLX:0.4f}",    $"{s.RhoLY:0.4f}"],
-                    ["Axial stress",                "σcp (MPa)",$"{s.SigCpMpa:0.##}",  "—"],
-                    ["Links required?",             "",         s.LinksRequiredX ? "Yes" : "No", s.LinksRequiredY ? "Yes" : "No"],
-                ]),
-        };
-
-        if (s.HasLinks)
-            blocks.Add(new TableBlock("Table 5.2.3 – Link design  (EC2 §6.2.3, §9.2.2)",
-                ["Parameter", "Symbol", "X-direction", "Y-direction"],
-                [
-                    ["Inner lever arm",            "z (mm)",       $"{s.ZXMm:0.#}",   $"{s.ZYMm:0.#}"],
-                    ["Strut inclination",           "cot θ",        $"{s.CotThetaX:0.###}", $"{s.CotThetaY:0.###}"],
-                    ["Link design strength",        "fywd (MPa)",   $"{s.FywdMpa:0.#}", "—"],
-                    ["Required Asw/s",              "mm²/mm",       $"{s.AswSX:0.###}", $"{s.AswSY:0.###}"],
-                    ["Min Asw/s  (§9.2.2(5))",     "mm²/mm",       $"{s.AswSMinRequiredX:0.3f}", $"{s.AswSMinRequiredY:0.3f}"],
-                    ["Min pass",                    "",             s.AswSMinPassX ? "✓" : "✗", s.AswSMinPassY ? "✓" : "✗"],
-                ]));
-
-        if (s.AnyStruttingCritical)
-            blocks.Add(new NoteBlock(
-                "CRITICAL: Strut crushing governs in one or both directions. " +
-                "Adding more links will NOT resolve the failure. Increase the section size."));
-
-        return new("5.2", "Shear — Details  (EC2 §6.2)", blocks);
-    }
+        => new("5.2", "Shear — Details  (EC2 §6.2)",
+        [
+            new Ec2ShearDetailBlock(s, fUnit),
+        ]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // 6 · Code Compliance Check  (EC2 §9.5)
