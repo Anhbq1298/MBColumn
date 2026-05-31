@@ -51,6 +51,9 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     /// </summary>
     public double ConcreteRectangularUltimateStrain(double fckMpa) => ConcreteUltimateStrain(fckMpa);
 
+    /// <summary>EC2 follows the Fig 6.1 strain-domain pivot toward uniform εc3 near pure compression.</summary>
+    public bool UseEc2CompressionDomain => true;
+
     /// <summary>εc3: strain at onset of the uniform plateau for the rectangular block.</summary>
     public double ConcreteRectangularPeakStrain(double fckMpa)
     {

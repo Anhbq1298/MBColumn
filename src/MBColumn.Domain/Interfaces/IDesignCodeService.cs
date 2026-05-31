@@ -22,6 +22,25 @@ public interface IDesignCodeService
     /// </summary>
     double ConcreteParabolicExponent(double fckMpa);
 
+    /// <summary>
+    /// εcu3: ultimate strain for the bilinear / simplified-rectangular concrete model.
+    /// EC2 Table 3.1: equals εcu2 at each fck breakpoint. ACI: same as <see cref="ConcreteUltimateStrain"/>.
+    /// </summary>
+    double ConcreteRectangularUltimateStrain(double fckMpa);
+
+    /// <summary>
+    /// εc3: plateau-onset strain for the bilinear / simplified-rectangular concrete model.
+    /// EC2 Table 3.1: 0.00175 for fck ≤ 50 MPa, fck-dependent above. ACI: not used.
+    /// </summary>
+    double ConcreteRectangularPeakStrain(double fckMpa);
+
+    /// <summary>
+    /// True for codes that follow the EC2 strain-domain pivot (EC2 Fig 6.1): near pure
+    /// compression the strain plane pivots toward uniform εc3 instead of holding εcu3,
+    /// and the concrete stress law is the bilinear (εc3, εcu3) idealisation. ACI: false.
+    /// </summary>
+    bool UseEc2CompressionDomain { get; }
+
     // --- Rectangular stress block ---
 
     /// <summary>
