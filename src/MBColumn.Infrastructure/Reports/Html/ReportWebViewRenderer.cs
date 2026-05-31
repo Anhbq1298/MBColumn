@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded',function(){
                     ["2nd moment  (X)",      "Ixx", $"{sv.IxxMm4:0.3e} mm⁴"],
                     ["2nd moment  (Y)",      "Iyy", $"{sv.IyyMm4:0.3e} mm⁴"],
                     ["Total steel area",     "As",  $"{sv.AsTotalMm2:0.#} mm²"],
-                    ["Mech. reinf. ratio",   "ω",   $"{sv.Omega:0.4f}"],
+                    ["Mech. reinf. ratio",   "ω",   $"{sv.Omega:F4}"],
                     ["Ecm",                  "MPa", $"{sv.EcmMpa:0.#}"],
                     ["fcd",                  "MPa", $"{sv.FcdMpa:0.##}"],
                 ]);

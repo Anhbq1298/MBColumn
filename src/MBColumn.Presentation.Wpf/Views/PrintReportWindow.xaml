@@ -250,7 +250,7 @@
                         <ProgressBar Height="10"
                                      Minimum="0"
                                      Maximum="{Binding ProgressMax}"
-                                     Value="{Binding ProgressValue}"
+                                     Value="{Binding ProgressValue, Mode=OneWay}"
                                      Foreground="{DynamicResource ActionBlueBrush}"
                                      Background="{DynamicResource PanelBackgroundBrush}"
                                      BorderThickness="0" />

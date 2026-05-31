@@ -73,7 +73,7 @@ internal static class Ec2ShearLatexBuilder
         {
             blocks.Add(new FormulaBlock("Circular hoop area",
                 @"A_h=\frac{\pi\,\phi_h^2}{4}",
-                $@"A_h=\frac{{\pi({F(Math.Sqrt(4.0*s.LinkAhMm2/Math.PI),1)})^2}}{{4}}={F(s.LinkAhMm2,2)}\;\mathrm{{mm^2}}",
+                $@"A_h=\frac{{\pi({F(SystemMath.Sqrt(4.0*s.LinkAhMm2/SystemMath.PI),1)})^2}}{{4}}={F(s.LinkAhMm2,2)}\;\mathrm{{mm^2}}",
                 ""));
 
             blocks.Add(new FormulaBlock("Circular hoop model  (Orr-Bath)",
@@ -187,7 +187,7 @@ internal static class Ec2ShearLatexBuilder
 
     private static string BuildStep1UtilSubLatex(ShearResultDto s, bool isX, string fUnit)
     {
-        double vEd  = Math.Abs(isX ? s.VEdXDisplay  : s.VEdYDisplay);
+        double vEd  = SystemMath.Abs(isX ? s.VEdXDisplay  : s.VEdYDisplay);
         double vRdc = isX ? s.VRdcXDisplay : s.VRdcYDisplay;
         double util = vRdc > 0 ? vEd / vRdc : 0;
         string dir  = isX ? "x" : "y";
@@ -196,7 +196,7 @@ internal static class Ec2ShearLatexBuilder
 
     private static string BuildStep2UtilSubLatex(ShearResultDto s, bool isX)
     {
-        double vEd  = Math.Abs(isX ? s.VEdXDisplay  : s.VEdYDisplay);
+        double vEd  = SystemMath.Abs(isX ? s.VEdXDisplay  : s.VEdYDisplay);
         double vRds = isX ? s.VRdsXDisplay : s.VRdsYDisplay;
         double util = vRds > 0 ? vEd / vRds : 0;
         string dir  = isX ? "x" : "y";
@@ -205,7 +205,7 @@ internal static class Ec2ShearLatexBuilder
 
     private static string BuildUtilSubLatex(ShearResultDto s, bool isX, string fUnit)
     {
-        double vEd  = Math.Abs(isX ? s.VEdXDisplay : s.VEdYDisplay);
+        double vEd  = SystemMath.Abs(isX ? s.VEdXDisplay : s.VEdYDisplay);
         double vRd  = isX ? s.VRdXDisplay : s.VRdYDisplay;
         double util = isX ? s.UtilisationX : s.UtilisationY;
         string dir  = isX ? "x" : "y";

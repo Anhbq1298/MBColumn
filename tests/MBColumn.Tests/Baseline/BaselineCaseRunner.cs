@@ -7,6 +7,7 @@ using MBColumn.Infrastructure.Solvers;
 using MBColumn.Infrastructure.Solvers.StrainPoints;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.IO;
 
 namespace MBColumn.Tests.Baseline;
 

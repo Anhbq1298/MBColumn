@@ -109,8 +109,8 @@ internal sealed class AciReportBuilder
                 [
                     ["Specified compressive strength",  "f'c",          $"{r.FcMpa:0.#} MPa"],
                     ["Modulus of elasticity",            "Ec = 4700√f'c",$"{ecm:0.#} MPa"],
-                    ["Ultimate strain",                  "εcu = 0.003",  $"{ecu:0.4f}"],
-                    ["Whitney block factor  (§22.2.2.4)","β1",          $"{beta1:0.4f}"],
+                    ["Ultimate strain",                  "εcu = 0.003",  $"{ecu:F4}"],
+                    ["Whitney block factor  (§22.2.2.4)","β1",          $"{beta1:F4}"],
                     ["Concrete block stress",            "0.85·f'c",     $"{0.85 * r.FcMpa:0.##} MPa"],
                 ]),
 
@@ -119,7 +119,7 @@ internal sealed class AciReportBuilder
                 [
                     ["Specified yield strength", "fy",           $"{r.FyMpa:0.#} MPa"],
                     ["Elastic modulus",           "Es = 200,000", $"{r.EsMpa:0.#} MPa"],
-                    ["Yield strain",              "εy = fy/Es",   $"{ey:0.5f}"],
+                    ["Yield strain",              "εy = fy/Es",   $"{ey:F5}"],
                 ]),
         ]);
     }
@@ -159,7 +159,7 @@ internal sealed class AciReportBuilder
             [
                 ["Total bars",                    r.RebarCoordinates.Count.ToString()],
                 ["Total Ast",                     $"{ast:0.#} mm²"],
-                ["ρg = Ast/Ag",                   $"{ast / ag:0.4f}"],
+                ["ρg = Ast/Ag",                   $"{ast / ag:F4}"],
                 ["Min ρg  (ACI §10.6.1.1)",       "0.01"],
                 ["Max ρg  (ACI §10.6.1.1)",       "0.08"],
             ]));
@@ -446,9 +446,9 @@ internal sealed class AciReportBuilder
             report.Rows.Select(row => new[]
             {
                 row.ControlPointId, row.ControlPointName,
-                $"{row.HandPnDisplay:0.##}", $"{row.HandMxDisplay:0.##}",
-                $"{row.SolverPnDisplay:0.##}", $"{row.SolverMxDisplay:0.##}",
-                $"{row.DifferencePPercent:0.#}%", $"{row.DifferenceMPercent:0.1f}%",
+                $"{row.HandPnDisplay:F2}", $"{row.HandMxDisplay:F2}",
+                $"{row.SolverPnDisplay:F2}", $"{row.SolverMxDisplay:F2}",
+                $"{row.DifferencePPercent:F1}%", $"{row.DifferenceMPercent:F1}%",
                 row.Status,
             }).ToArray()));
 

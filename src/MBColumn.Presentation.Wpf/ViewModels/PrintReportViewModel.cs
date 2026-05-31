@@ -11,7 +11,6 @@ using MBColumn.Infrastructure.Reports.Pdf;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -228,14 +227,13 @@ public sealed class PrintReportViewModel : ViewModelBase
 
     private void BrowseOutputFolder()
     {
-        using var dialog = new FolderBrowserDialog
+        var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Description = "Select output folder for reports",
-            UseDescriptionForTitle = true,
-            SelectedPath = Directory.Exists(_outputFolderPath) ? _outputFolderPath : ""
+            Title = "Select output folder for reports",
+            InitialDirectory = Directory.Exists(_outputFolderPath) ? _outputFolderPath : ""
         };
-        if (dialog.ShowDialog() == DialogResult.OK)
-            OutputFolderPath = dialog.SelectedPath;
+        if (dialog.ShowDialog() == true)
+            OutputFolderPath = dialog.FolderName;
     }
 
     private bool CanPrint() => !_isBusy && !string.IsNullOrWhiteSpace(_outputFolderPath);
@@ -418,7 +416,7 @@ public sealed class PrintReportViewModel : ViewModelBase
         string? sectionSvg = null;
         try
         {
-            sectionSvg = SectionGeometryRenderer.RenderSection(
+            sectionSvg = InteractionDiagramSvgRenderer.SectionGeometryRenderer.RenderSection(
                 result.SectionShape,
                 result.SectionWidthMm, result.SectionHeightMm,
                 result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,

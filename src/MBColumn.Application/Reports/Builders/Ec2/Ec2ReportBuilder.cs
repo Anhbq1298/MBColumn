@@ -110,8 +110,8 @@ internal sealed class Ec2ReportBuilder
                     ["Char. cylinder strength",        "fck",           $"{r.FcMpa:0.#} MPa"],
                     ["Mean cylinder strength",         "fcm = fck + 8", $"{r.FcMpa + 8:0.#} MPa"],
                     ["Secant modulus",                 "Ecm",           $"{ecm:0.#} MPa"],
-                    ["Ultimate compressive strain",    "εcu2",          $"{ecu2:0.4f}"],
-                    ["Strain at peak stress",          "εc2",           $"{ec2:0.4f}"],
+                    ["Ultimate compressive strain",    "εcu2",          $"{ecu2:F4}"],
+                    ["Strain at peak stress",          "εc2",           $"{ec2:F4}"],
                     ["Strength coeff.  (NA value)",    "αcc",           $"{r.AlphaCc:0.##}"],
                     ["Concrete partial factor",        "γc",            "1.50"],
                     ["Design strength  αcc·fck/γc",   "fcd",           $"{fcd:0.##} MPa"],
@@ -126,7 +126,7 @@ internal sealed class Ec2ReportBuilder
                     ["Elastic modulus",                "Es",           $"{r.EsMpa:0.#} MPa"],
                     ["Steel partial factor",           "γs",           "1.15"],
                     ["Design yield strength  fyk/γs", "fyd",          $"{fyd:0.##} MPa"],
-                    ["Design yield strain    fyd/Es", "εyd",          $"{eyd:0.5f}"],
+                    ["Design yield strain    fyd/Es", "εyd",          $"{eyd:F5}"],
                     ["Design tensile strain limit",   "εud = 0.9 εuk","0.045 0  (class B/C, NA)"],
                 ]),
         ]);
@@ -167,7 +167,7 @@ internal sealed class Ec2ReportBuilder
             [
                 ["Total bars",              r.RebarCoordinates.Count.ToString()],
                 ["Total As",                $"{ast:0.#} mm²"],
-                ["Ratio  ρ = As/Ac",        $"{ast / ag:0.4f}"],
+                ["Ratio  ρ = As/Ac",        $"{ast / ag:F4}"],
                 ["Min  ρ_min (EC2 §9.5.2)", "0.002  (check in Annex A)"],
                 ["Max  ρ_max (EC2 §9.5.2)", "0.040"],
             ]));

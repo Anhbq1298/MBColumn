@@ -1,0 +1,14 @@
+{
+  "CaseName": "ACI_Rectangular_700x700_28T25",
+  "GeneratedAt": "2026-05-31",
+  "MaxNominalCompressionKN": 17108.96,
+  "MinNominalTensionKN": -5774.16,
+  "MaxDesignCompressionKN": 11120.82,
+  "MinDesignTensionKN": -5196.74,
+  "MaxNominalMnxKNm": 2036.2,
+  "MaxNominalMnyKNm": 2036.2,
+  "SampleRatio": 0.3748,
+  "SurfaceAngleCount": 36,
+  "SurfaceDepthCount": 100,
+  "PmSurfacePointCount": 7202
+}

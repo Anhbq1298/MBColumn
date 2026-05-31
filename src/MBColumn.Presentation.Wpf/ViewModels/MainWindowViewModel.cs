@@ -606,7 +606,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         var vm = new PrintReportViewModel(projectService);
         var window = new PrintReportWindow(vm)
         {
-            Owner = Application.Current?.MainWindow
+            Owner = System.Windows.Application.Current?.MainWindow
         };
         window.ShowDialog();
     }
