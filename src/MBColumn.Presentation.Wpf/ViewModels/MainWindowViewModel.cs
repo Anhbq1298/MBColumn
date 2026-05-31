@@ -3,13 +3,6 @@ using MBColumn.Application.Services;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.Views;
-using MBColumn.Domain.Interfaces;
-using MBColumn.Application.Reports.Builders;
-using MBColumn.Application.Reports.Models;
-using MBColumn.Infrastructure.Reports.Pdf;
-using MBColumn.Infrastructure.DesignCodes;
-using MBColumn.Infrastructure.Math;
-using System.IO;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -89,9 +82,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
-        BatchPrintCommand = new RelayCommand(OpenBatchPrintWindow);
-        PrintGroupReportsCommand = new RelayCommand<GroupItemViewModel>(PrintGroupReports);
-        PrintSingleReportCommand = new RelayCommand<ColumnItemViewModel>(async (col) => await PrintSingleReportAsync(col));
 
         // ETABS commands — explicit source-differentiated versions plus legacy wrappers
         ImportSectionsFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
@@ -145,9 +135,6 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
-    public ICommand BatchPrintCommand { get; }
-    public ICommand PrintGroupReportsCommand { get; }
-    public ICommand PrintSingleReportCommand { get; }
 
     // Explicit ETABS commands
     public ICommand ImportSectionsFromEtabsCommand { get; }
@@ -757,6 +744,17 @@ public sealed class MainWindowViewModel : ViewModelBase
         RaiseResultStateProperties();
     }
 
+    private void OpenPrintReportWindow()
+    {
+        SaveCurrentColumnInput();
+        var vm = new PrintReportViewModel(projectService);
+        var window = new PrintReportWindow(vm)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+        window.ShowDialog();
+    }
+
     private void NewProject()
     {
         if (!ConfirmDiscardChanges()) return;
@@ -1312,6 +1310,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void RaiseCommandStates()
     {
+        (PrintReportCommand as RelayCommand)?.RaiseCanExecuteChanged();
         if (CalculateCommand is AsyncRelayCommand calculate)
             calculate.RaiseCanExecuteChanged();
         if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)

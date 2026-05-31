@@ -1,0 +1,14 @@
+{
+  "CaseName": "EC2_Circular_D600_16T25",
+  "GeneratedAt": "2026-05-31",
+  "MaxNominalCompressionKN": 8201.53,
+  "MinNominalTensionKN": -3415.65,
+  "MaxDesignCompressionKN": 8201.53,
+  "MinDesignTensionKN": -3415.65,
+  "MaxNominalMnxKNm": 746.29,
+  "MaxNominalMnyKNm": 746.29,
+  "SampleRatio": 0.5274,
+  "SurfaceAngleCount": 36,
+  "SurfaceDepthCount": 100,
+  "PmSurfacePointCount": 3602
+}

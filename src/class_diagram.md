@@ -159,7 +159,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **CalculationReportBuilder** | /// Builds a complete ReportData with all 10 report sections /// from project metadata and a CalculationResultDto. ///. Key methods: Build. | `CalculationReportBuilder.cs` |
+| `class` | **CalculationReportBuilder** | /// Entry point for report generation. Routes to the appropriate code-specific /// builder based on DesignCode. ///. Key methods: Build. | `CalculationReportBuilder.cs` |
 | `class` | **CircularSevenPointBuilder** | /// Generates the 7-point independent verification for circular sections /// using the circular compression segment method. /// Correct centroid formula: ybar = (2/3)(R²-y_a²)^(3/2) / Aseg ///. Key methods: Build. | `CircularSevenPointBuilder.cs` |
 | `class` | **ConclusionSectionBuilder** | Represents the ConclusionSectionBuilder class. Key methods: Build. | `ConclusionSectionBuilder.cs` |
 | `class` | **DemandCaseSectionBuilder** | Represents the DemandCaseSectionBuilder class. Key methods: BuildAppliedDemand, BuildDemandResults. | `DemandCaseSectionBuilder.cs` |
@@ -171,6 +171,19 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **RebarComplianceSectionBuilder** | /// Builds Section 3 — "Reinforcement Code Compliance" — covering: /// EC2 EN 1992-1-1:2004 §9.5.1/9.5.2 — longitudinal reinforcement limits /// EC2 EN 1992-1-1:2004 §9.5.3 — transverse link detailing /// ACI 318-19 §10.6/§25.7.2 — stub (TODO) ///. Key methods: Build. | `RebarComplianceSectionBuilder.cs` |
 | `class` | **RectangularSevenPointBuilder** | Represents the RectangularSevenPointBuilder class. Key methods: BuildTheta0, BuildTheta90. | `RectangularSevenPointBuilder.cs` |
 | `class` | **ShearCheckSectionBuilder** | /// Builds Section 6 — "Shear Check (EC2 §6.2)" — following the two-step flow /// from the EC2 column design procedure (analogous to ACI §22.5 / §22.6). ///. Key methods: Build. | `ShearCheckSectionBuilder.cs` |
+
+### Reports/Builders/Aci
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **AciReportBuilder** | /// Builds the calculation report for the ACI 318 design code. /// Sections marked [PLACEHOLDER] contain stub content pending full ACI implementation. /// | `AciReportBuilder.cs` |
+
+### Reports/Builders/Ec2
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **B** | Represents the B class. | `Ec2ReportBuilder.cs` |
+| `class` | **Ec2ReportBuilder** | /// Builds the full calculation report for the EC2 (EN 1992-1-1) design code. /// | `Ec2ReportBuilder.cs` |
 
 ### Reports/Interfaces
 
@@ -184,22 +197,39 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `record` | **DiagramBlock** | Represents the DiagramBlock record. | `ReportBlock.cs` |
+| `record` | **DiagramBlock** | Represents the DiagramBlock record. | `ReportModels.cs` |
 | `record` | **DividerBlock** | Represents the DividerBlock record. | `ReportBlock.cs` |
+| `record` | **DividerBlock** | Represents the DividerBlock record. | `ReportModels.cs` |
+| `record` | **Ec2ShearDetailBlock** | /// Carries the raw ShearResultDto so the HTML renderer can build /// the full step-by-step KaTeX shear block matching the Results tab visual. /// | `ReportModels.cs` |
+| `record` | **Ec2SlendernessDetailBlock** | /// Carries a single EC2 slenderness load-case result and batch metadata so /// the HTML renderer can build the step-by-step slenderness KaTeX block. /// | `ReportModels.cs` |
 | `record` | **FormulaBlock** | Represents the FormulaBlock record. | `ReportBlock.cs` |
+| `record` | **FormulaBlock** | Represents the FormulaBlock record. | `ReportModels.cs` |
 | `record` | **FormulaStep** | Represents the FormulaStep record. | `FormulaStep.cs` |
 | `record` | **HeadingBlock** | Represents the HeadingBlock record. | `ReportBlock.cs` |
+| `record` | **HeadingBlock** | Represents the HeadingBlock record. | `ReportModels.cs` |
 | `record` | **ImageBlock** | Represents the ImageBlock record. | `ReportBlock.cs` |
+| `record` | **ImageBlock** | Represents the ImageBlock record. | `ReportModels.cs` |
 | `record` | **NoteBlock** | Represents the NoteBlock record. | `ReportBlock.cs` |
+| `record` | **NoteBlock** | Represents the NoteBlock record. | `ReportModels.cs` |
 | `record` | **PageBreakBlock** | Represents the PageBreakBlock record. | `ReportBlock.cs` |
+| `record` | **PageBreakBlock** | Represents the PageBreakBlock record. | `ReportModels.cs` |
 | `record` | **ParagraphBlock** | Represents the ParagraphBlock record. | `ReportBlock.cs` |
+| `record` | **ParagraphBlock** | Represents the ParagraphBlock record. | `ReportModels.cs` |
 | `record` | **RebarContributionRow** | Data structure representing a row for RebarContribution. | `RebarContributionRow.cs` |
 | `record` | **ReportBlock** | Represents the ReportBlock record. Key properties: KeepTogether, CanSplitByRows, EstimatedHeight. | `ReportBlock.cs` |
+| `record` | **ReportBlock** | Represents the ReportBlock record. | `ReportModels.cs` |
 | `record` | **ReportData** | Represents the ReportData record. Key properties: ProjectName, GroupName, DesignTierName, GeneratedAt. | `ReportData.cs` |
+| `class` | **ReportData** | Represents the ReportData class. Key properties: ProjectName, GroupName, DesignTierName, GeneratedAt. | `ReportModels.cs` |
+| `class` | **ReportSection** | Represents the ReportSection class. Key properties: Number, Title, Blocks. | `ReportModels.cs` |
 | `record` | **ReportSection** | Represents the ReportSection record. | `ReportSection.cs` |
+| `record` | **SectionPreviewBlock** | Represents the SectionPreviewBlock record. | `ReportModels.cs` |
 | `record` | **SectionPreviewBlock** | Represents the SectionPreviewBlock record. Key properties: SectionWidth, SectionHeight, Cover, UnitSystem. | `SectionPreviewBlock.cs` |
 | `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportBlock.cs` |
+| `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportModels.cs` |
 | `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportBlock.cs` |
+| `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportModels.cs` |
 | `record` | **TableBlock** | Represents the TableBlock record. | `ReportBlock.cs` |
+| `record` | **TableBlock** | Represents the TableBlock record. | `ReportModels.cs` |
 
 ### Root
 
@@ -383,12 +413,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteEffectiveStrengthFactor. Key properties: ConcreteStressBlockFactor, AlphaCc, UseLetterControlPoints, SupportsNominalReferenceCurve. | `Aci318DesignCodeService.cs` |
+| `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: UseEc2CompressionDomain, ConcreteStressBlockFactor, AlphaCc, UseLetterControlPoints. | `Aci318DesignCodeService.cs` |
 | `class` | **Aci318ShearDesignService** | ACI 318-19 shear capacity check — PLACEHOLDER. Key methods: Check. | `Aci318ShearDesignService.cs` |
 | `record` | **CircularShearInput** | Represents the CircularShearInput record. | `EurocodeCircularColumnShearCalculator.cs` |
 | `record` | **CircularShearResult** | Encapsulates the result of CircularShear operations. | `EurocodeCircularColumnShearCalculator.cs` |
 | `class` | **DesignCodeServiceFactory** | Represents the DesignCodeServiceFactory class. Key methods: Get. | `DesignCodeServiceFactory.cs` |
-| `class` | **Ec2DesignCodeService** | /// Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. /// Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). /// Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). /// Concrete strain limits and parabolic parameters follow Table 3.1 with /// piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. ///. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: ConcreteStressBlockFactor, EpsilonUd, AlphaCc, UseLetterControlPoints. | `Ec2DesignCodeService.cs` |
+| `class` | **Ec2DesignCodeService** | /// Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. /// Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). /// Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). /// Concrete strain limits and parabolic parameters follow Table 3.1 with /// piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. ///. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: UseEc2CompressionDomain, ConcreteStressBlockFactor, EpsilonUd, AlphaCc. | `Ec2DesignCodeService.cs` |
 | `class` | **Ec2ShearDesignService** | /// Effective depth (Fix 1 — from real geometry, not a fixed 60 mm): d_eff = section_dim − cover_nominal − link_dia − main_bar_dia / 2 /// Sign convention (b × h section): VEdX → bw = h, d = b − cover_eff, legs = TotalLegsX VEdY → bw = b, d = h − cover_eff, legs = TotalLegsY /// Circular: Caller passes bMm = 0.8 D for VRd,c/VRd,max and hMm = D. VRd,s uses the Orr-Bath circular hoop model: VRd,s = (π/2) · (Ah/s) · D' · fywd · cot θ. Internal diameter ties are ignored in VRd,s. Key methods: Check. | `Ec2ShearDesignService.cs` |
 | `class` | **EurocodeCircularColumnShearCalculator** | Represents the EurocodeCircularColumnShearCalculator class. Key methods: Calculate. | `EurocodeCircularColumnShearCalculator.cs` |
 | `class` | **ShearDesignServiceFactory** | Represents the ShearDesignServiceFactory class. Key methods: Get. | `ShearDesignServiceFactory.cs` |
@@ -469,22 +499,27 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **ApproxEqualityComparer** | Represents the ApproxEqualityComparer class. Key methods: Equals, GetHashCode. | `SectionGeometryRenderer.cs` |
-| `class` | **InteractionDiagramSvgRenderer** | /// Renders P-M and Mx-My interaction diagrams as standalone SVG strings. ///. Key methods: RenderPmDiagram, RenderMmDiagram. | `InteractionDiagramSvgRenderer.cs` |
+| `class` | **InteractionDiagramSvgRenderer** | /// Renders section geometry and interaction diagrams as inline SVG strings. /// The nested SectionGeometryRenderer is importable via /// using static MBColumn.Infrastructure.Reports.Graphics.InteractionDiagramSvgRenderer; ///. Key methods: RenderDiagram. | `InteractionDiagramSvgRenderer.cs` |
+| `class` | **SectionGeometryRenderer** | Represents the SectionGeometryRenderer class. Key methods: RenderSection. | `InteractionDiagramSvgRenderer.cs` |
 | `class` | **SectionGeometryRenderer** | /// Generates SVG diagrams for section geometry and rebar layout. /// All coordinates in mm; SVG output is scaled to fit a fixed viewport. ///. Key methods: RenderRectangularSection, RenderCircularSection, RenderSection. | `SectionGeometryRenderer.cs` |
 
 ### Reports/Html
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **HtmlCalculationReportRenderer** | /// Generates a self-contained HTML calculation report with inline CSS, /// embedded SVG, and print-friendly A4 page styling. ///. Key methods: RenderToFile, RenderToBytes. | `HtmlCalculationReportRenderer.cs` |
-| `class` | **ReportWebViewRenderer** | /// Generates a single self-contained HTML string for the in-app WebView2 preview. /// Embeds KaTeX inline so every formula field renders as proper math. ///. Key methods: CanRender, BuildHtml. | `ReportWebViewRenderer.cs` |
+| `class` | **Ec2ShearLatexBuilder** | /// Builds KaTeX formula blocks for EC2 §6.2 shear, mirroring the LaTeX /// generated by ShearResultViewModel in the WPF results tab. /// | `Ec2ShearLatexBuilder.cs` |
+| `class` | **HtmlCalculationReportRenderer** | Represents the HtmlCalculationReportRenderer class. Key methods: RenderToFile. | `HtmlCalculationReportRenderer.cs` |
+| `class` | **ReportWebViewRenderer** | /// Builds a self-contained HTML string for the WebView2 report preview. /// Inter font, KaTeX and all SVGs are embedded inline. ///. Key methods: CanRender, BuildHtml. | `ReportWebViewRenderer.cs` |
+| `class` | **needed** | Represents the needed class. | `ReportWebViewRenderer.cs` |
 
 ### Reports/Pdf
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **BatchPdfReportRenderer** | /// Renders column reports to individual files or a combined PDF with nested PDF outline bookmarks. /// | `BatchPdfReportRenderer.cs` |
+| `record` | **ColumnEntry** | Represents the ColumnEntry record. Key methods: RenderIndividual, RenderCombined. | `BatchPdfReportRenderer.cs` |
 | `class` | **PdfMergeUtility** | Represents the PdfMergeUtility class. Key methods: MergePdfDocuments. | `PdfMergeUtility.cs` |
-| `class` | **QuestPdfCalculationReportRenderer** | /// Renders a ReportData to an A4 PDF using QuestPDF. /// No content is clipped. Formula blocks keep together. Tables split by complete rows only. ///. Key methods: RenderToFile, RenderToBytes, AddBookmarks. | `QuestPdfCalculationReportRenderer.cs` |
+| `class` | **QuestPdfCalculationReportRenderer** | Represents the QuestPdfCalculationReportRenderer class. Key methods: RenderToFile. | `QuestPdfCalculationReportRenderer.cs` |
 
 ### Reports/Svg
 
@@ -513,13 +548,13 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `interface` | **ISectionIntegrator** | Defines the contract for ISectionIntegrator. | `PmmModels.cs` |
 | `interface` | **ISweepStrategy** | Defines the contract for ISweepStrategy. | `PmmModels.cs` |
 | `class` | **InteractionSolverFactory** | Represents the InteractionSolverFactory class. Key methods: Get, GetLegacy, GetCircular, GetIrregular. | `InteractionSolverFactory.cs` |
-| `record` | **NeutralAxisState** | Represents the NeutralAxisState record. Key properties: DepthIndex, AngleIndex, ThetaRad, NeutralAxisDepth. | `PmmModels.cs` |
-| `class` | **NeutralAxisSweepStrategy** | Represents the NeutralAxisSweepStrategy class. Key methods: GenerateStates, ProjectExtreme. | `NeutralAxisSweepStrategy.cs` |
+| `record` | **NeutralAxisState** | Represents the NeutralAxisState record. Key methods: GetStrainAtProjection. Key properties: DepthIndex, AngleIndex, ThetaRad, NeutralAxisDepth. | `PmmModels.cs` |
+| `class` | **NeutralAxisSweepStrategy** | Represents the NeutralAxisSweepStrategy class. Key methods: GenerateStates, ProjectExtreme, ProjectMin. | `NeutralAxisSweepStrategy.cs` |
 | `record` | **PmmInput** | Represents the PmmInput record. | `PmmModels.cs` |
 | `class` | **PmmInteractionSolver** | Represents the PmmInteractionSolver class. Key methods: Solve. Key properties: AngleStepDegrees, NeutralAxisSamples, RectangularFiberCountX, RectangularFiberCountY. | `PmmInteractionSolver.cs` |
 | `record` | **PmmResult** | Encapsulates the result of Pmm operations. | `PmmModels.cs` |
 | `class` | **PmmSolver** | Represents the PmmSolver class. Key methods: Solve. | `PmmSolver.cs` |
-| `record` | **SectionIntegrationResult** | Encapsulates the result of SectionIntegration operations. Key properties: NominalP, NominalMx, NominalMy, ConcreteForce. | `PmmModels.cs` |
+| `record` | **SectionIntegrationResult** | compression (c &gt; hθ) it pivots toward uniform εc3 (EC2 Fig 6.1). </remarks>. Key properties: NominalP, NominalMx, NominalMy, ConcreteForce. | `PmmModels.cs` |
 | `record` | **SolverSettings** | Represents the SolverSettings record. Key properties: AngleStepDegrees, NeutralAxisSamples, RectangularFiberCountX, RectangularFiberCountY. | `PmmModels.cs` |
 | `record` | **struct** | Represents the struct record. | `PmmModels.cs` |
 
@@ -731,6 +766,10 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **PreviewBoundaryPoint** | Represents the PreviewBoundaryPoint record. | `PreviewBoundaryPoint.cs` |
 | `record` | **PreviewRebarPoint** | Represents the PreviewRebarPoint record. Key properties: Area. | `PreviewRebarPoint.cs` |
 | `record` | **PreviewRebarVm** | Represents the PreviewRebarVm record. | `DxfImportViewModel.cs` |
+| `class` | **PrintColumnNode** | Represents the PrintColumnNode class. Key properties: Id, GroupId, Name, HasResult. | `PrintReportViewModel.cs` |
+| `class` | **PrintGroupNode** | Represents the PrintGroupNode class. Key methods: RefreshCheckedState. Key properties: Id, Name, Columns, IsChecked. | `PrintReportViewModel.cs` |
+| `enum` | **PrintMode** | Enumeration defining states/types for PrintMode. | `PrintReportViewModel.cs` |
+| `class` | **PrintReportViewModel** | Represents the PrintReportViewModel class. Key properties: ExplorerNodes, OutputFolderPath, PrintMode, IsPrintModeIndividual. | `PrintReportViewModel.cs` |
 | `class` | **ProjectExplorerViewModel** | Represents the ProjectExplorerViewModel class. Key methods: SetSectionStatus, ClearSectionStatuses, SelectNode, SelectColumnById. Key properties: ProjectName, Nodes, SelectedNode, SelectedColumn. | `ProjectExplorerViewModel.cs` |
 | `class` | **ProjectGroupOptionViewModel** | Represents the ProjectGroupOptionViewModel class. Key properties: GroupId, GroupName, CreateGroup, DisplayName. | `EtabsImportViewModel.cs` |
 | `class` | **RebarComplianceViewModel** | /// Exposes the rebar code-compliance check results for the Results tab sidebar panel. ///. Key methods: Load. Key properties: HasResult, AllPass, HasFails, StatusText. | `RebarComplianceViewModel.cs` |
@@ -777,6 +816,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
+| `class` | **PrintReportWindow** | Represents the PrintReportWindow class. | `PrintReportWindow.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
 | `class` | **RebarComplianceDetailView** | Represents the RebarComplianceDetailView class. | `RebarComplianceDetailView.xaml.cs` |
 | `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |

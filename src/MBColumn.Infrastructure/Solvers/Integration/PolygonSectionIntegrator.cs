@@ -43,7 +43,7 @@ public sealed class PolygonSectionIntegrator : ISectionIntegrator
             concreteStress);
 
         var concreteStrains = boundary
-            .Select(p => neutralAxis.ExtremeCompressionStrain * ((p.X * nx + p.Y * ny) - neutralAxis.NeutralAxisOffset) / neutralAxis.NeutralAxisDepth)
+            .Select(p => neutralAxis.GetStrainAtProjection(p.X * nx + p.Y * ny))
             .ToList();
 
         return new SectionIntegrationResult

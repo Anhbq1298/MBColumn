@@ -232,6 +232,13 @@ var tests = new List<(string Name, Action Test)>
     ("Rectangular equal spacing optimal distribution",               TestRectangularEqualSpacingOptimalDistribution),
     ("Circular equal spacing and irregular ToDto mapping",           TestCircularAndIrregularToDtoMapping),
 
+    // EC2 strain-domain (Fig 6.1) — pivot from εcu3 (flexure) toward uniform εc3 (pure compression).
+    ("EC2 strain domain: pure compression converges to εc3",         TestEc2StrainDomainPureCompression),
+    ("EC2 strain domain: boundary state εcu3 / far = 0",             TestEc2StrainDomainBoundary),
+    ("EC2 strain domain: flexure far fibre in tension",              TestEc2StrainDomainFlexure),
+    ("EC2 strain domain: projection consistency",                    TestEc2StrainDomainProjectionConsistency),
+    ("ACI legacy strain plane unchanged",                            TestAciLegacyStrainPlaneUnchanged),
+
     // Solver regression baselines — generate approved-results/*.json on first run,
     // compare against them on subsequent runs.
     ("Solver baseline: EC2_Rectangular_650x650_20T25",  () => BaselineCaseRunner.RunAndApprove("EC2_Rectangular_650x650_20T25",  BaselineCaseRunner.BenchmarkCases[0].Input)),
@@ -1247,6 +1254,91 @@ static void TestPmPolylineValidation()
             foreach (var d in defects) Console.WriteLine($"  - {d}");
         }
         IsTrue(defects.Count == 0);
+    }
+}
+
+// ── EC2 strain-domain (Fig 6.1) helpers & tests ─────────────────────────────────────
+// 600 mm square, fck = 30 MPa: at θ = 0 the section depth along the normal is hθ = 600 mm
+// and cMax = 10 × 600 = 6000 mm. Rebar is irrelevant to NeutralAxisSweepStrategy.
+static (IReadOnlyList<NeutralAxisState> States, double CMax, IDesignCodeService Code) BuildSweepStates(
+    DesignCodeType codeType = DesignCodeType.Ec2, int samples = 100)
+{
+    IDesignCodeService code = codeType == DesignCodeType.Ec2
+        ? new Ec2DesignCodeService()
+        : new Aci318DesignCodeService();
+    var layout = new RebarLayout("Perimeter bars", "T25", 50.0, new List<Rebar>());
+    var section = new RectangularSection(600.0, 600.0, layout);
+    var concrete = new ConcreteMaterial("C30/37", 30.0);
+    var steel = new SteelMaterial("B500", 500.0, 200_000.0);
+    var settings = new SolverSettings { AngleStepDegrees = 90.0, NeutralAxisSamples = samples };
+    var input = new PmmInput(section, concrete, steel, code, codeType, settings);
+    double cMax = 10.0 * Math.Max(section.WidthMm, section.HeightMm);
+    return (new NeutralAxisSweepStrategy().GenerateStates(input), cMax, code);
+}
+
+// Test 1 — at c = cMax the strain plane converges to uniform εc3 (EC2 pure compression).
+static void TestEc2StrainDomainPureCompression()
+{
+    var (states, cMax, code) = BuildSweepStates(samples: 100);
+    double epsC3 = code.ConcreteRectangularPeakStrain(30.0);
+    var pure = states.First(s => s.DepthIndex == 99 && s.AngleIndex == 0);
+    AreClose(cMax, pure.NeutralAxisDepth, 1e-6);
+    AreClose(epsC3, pure.ExtremeCompressionStrain, 1e-9);
+    AreClose(epsC3, pure.FarFiberStrain, 1e-9);
+}
+
+// Test 2 — the far-fibre strain crosses zero exactly at the boundary c = hθ, with the
+// extreme fibre held at εcu3 throughout the flexural domain.
+static void TestEc2StrainDomainBoundary()
+{
+    var (states, _, code) = BuildSweepStates(samples: 200);
+    var slice = states.Where(s => s.AngleIndex == 0).OrderBy(s => s.NeutralAxisDepth).ToList();
+    double hTheta = slice[0].SectionDepthAlongNormal;
+    var lastFlexure = slice.Last(s => s.NeutralAxisDepth < hTheta);
+    var firstCompression = slice.First(s => s.NeutralAxisDepth > hTheta);
+    IsTrue(lastFlexure.FarFiberStrain < 0.0);        // c < hθ → far fibre in tension
+    IsTrue(firstCompression.FarFiberStrain >= 0.0);  // c > hθ → far fibre in compression
+    AreClose(code.ConcreteRectangularUltimateStrain(30.0), lastFlexure.ExtremeCompressionStrain, 1e-9);
+}
+
+// Test 3 — shallow neutral axis (c ≪ hθ) is flexure: far fibre in tension, extreme at εcu3.
+static void TestEc2StrainDomainFlexure()
+{
+    var (states, _, code) = BuildSweepStates();
+    var shallow = states.First(s => s.DepthIndex == 0 && s.AngleIndex == 0); // c = 0.1
+    IsTrue(shallow.NeutralAxisDepth < shallow.SectionDepthAlongNormal);
+    IsTrue(shallow.FarFiberStrain < 0.0);
+    AreClose(code.ConcreteRectangularUltimateStrain(30.0), shallow.ExtremeCompressionStrain, 1e-9);
+}
+
+// Test 4 — GetStrainAtProjection returns the extreme/far strains at the extreme/far fibres.
+static void TestEc2StrainDomainProjectionConsistency()
+{
+    var (states, _, _) = BuildSweepStates();
+    var samples = new[]
+    {
+        states.First(s => s.DepthIndex == 0 && s.AngleIndex == 0),   // flexure
+        states.First(s => s.DepthIndex == 99 && s.AngleIndex == 0)   // pure compression
+    };
+    foreach (var s in samples)
+    {
+        AreClose(s.ExtremeCompressionStrain, s.GetStrainAtProjection(s.MaxProjection), 1e-12);
+        AreClose(s.FarFiberStrain, s.GetStrainAtProjection(s.MinProjection), 1e-12);
+    }
+}
+
+// Regression guard — ACI keeps the original linear εcu plane through the neutral axis.
+static void TestAciLegacyStrainPlaneUnchanged()
+{
+    var (states, _, code) = BuildSweepStates(DesignCodeType.Aci318Style);
+    double ecu = code.ConcreteUltimateStrain(30.0);
+    foreach (var s in states.Where(x => x.AngleIndex == 0).Take(5))
+    {
+        IsFalse(s.UseEc2CompressionDomain);
+        AreClose(ecu, s.ExtremeCompressionStrain, 1e-12);
+        const double proj = 123.0;
+        double expected = ecu * (proj - s.NeutralAxisOffset) / s.NeutralAxisDepth;
+        AreClose(expected, s.GetStrainAtProjection(proj), 1e-12);
     }
 }
 

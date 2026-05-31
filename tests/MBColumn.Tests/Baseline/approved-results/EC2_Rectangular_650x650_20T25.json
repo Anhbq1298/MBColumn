@@ -1,0 +1,14 @@
+{
+  "CaseName": "EC2_Rectangular_650x650_20T25",
+  "GeneratedAt": "2026-05-31",
+  "MaxNominalCompressionKN": 11621.82,
+  "MinNominalTensionKN": -4269.57,
+  "MaxDesignCompressionKN": 11621.82,
+  "MinDesignTensionKN": -4269.57,
+  "MaxNominalMnxKNm": 1378.57,
+  "MaxNominalMnyKNm": 1378.57,
+  "SampleRatio": 0.3951,
+  "SurfaceAngleCount": 36,
+  "SurfaceDepthCount": 100,
+  "PmSurfacePointCount": 3602
+}
