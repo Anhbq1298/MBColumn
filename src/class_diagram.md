@@ -197,39 +197,24 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `record` | **DiagramBlock** | Represents the DiagramBlock record. | `ReportBlock.cs` |
-| `record` | **DiagramBlock** | Represents the DiagramBlock record. | `ReportModels.cs` |
 | `record` | **DividerBlock** | Represents the DividerBlock record. | `ReportBlock.cs` |
-| `record` | **DividerBlock** | Represents the DividerBlock record. | `ReportModels.cs` |
 | `record` | **Ec2ShearDetailBlock** | /// Carries the raw ShearResultDto so the HTML renderer can build /// the full step-by-step KaTeX shear block matching the Results tab visual. /// | `ReportModels.cs` |
 | `record` | **Ec2SlendernessDetailBlock** | /// Carries a single EC2 slenderness load-case result and batch metadata so /// the HTML renderer can build the step-by-step slenderness KaTeX block. /// | `ReportModels.cs` |
 | `record` | **FormulaBlock** | Represents the FormulaBlock record. | `ReportBlock.cs` |
-| `record` | **FormulaBlock** | Represents the FormulaBlock record. | `ReportModels.cs` |
 | `record` | **FormulaStep** | Represents the FormulaStep record. | `FormulaStep.cs` |
 | `record` | **HeadingBlock** | Represents the HeadingBlock record. | `ReportBlock.cs` |
-| `record` | **HeadingBlock** | Represents the HeadingBlock record. | `ReportModels.cs` |
 | `record` | **ImageBlock** | Represents the ImageBlock record. | `ReportBlock.cs` |
-| `record` | **ImageBlock** | Represents the ImageBlock record. | `ReportModels.cs` |
 | `record` | **NoteBlock** | Represents the NoteBlock record. | `ReportBlock.cs` |
-| `record` | **NoteBlock** | Represents the NoteBlock record. | `ReportModels.cs` |
 | `record` | **PageBreakBlock** | Represents the PageBreakBlock record. | `ReportBlock.cs` |
-| `record` | **PageBreakBlock** | Represents the PageBreakBlock record. | `ReportModels.cs` |
 | `record` | **ParagraphBlock** | Represents the ParagraphBlock record. | `ReportBlock.cs` |
-| `record` | **ParagraphBlock** | Represents the ParagraphBlock record. | `ReportModels.cs` |
 | `record` | **RebarContributionRow** | Data structure representing a row for RebarContribution. | `RebarContributionRow.cs` |
 | `record` | **ReportBlock** | Represents the ReportBlock record. Key properties: KeepTogether, CanSplitByRows, EstimatedHeight. | `ReportBlock.cs` |
-| `record` | **ReportBlock** | Represents the ReportBlock record. | `ReportModels.cs` |
 | `record` | **ReportData** | Represents the ReportData record. Key properties: ProjectName, GroupName, DesignTierName, GeneratedAt. | `ReportData.cs` |
-| `class` | **ReportData** | Represents the ReportData class. Key properties: ProjectName, GroupName, DesignTierName, GeneratedAt. | `ReportModels.cs` |
-| `class` | **ReportSection** | Represents the ReportSection class. Key properties: Number, Title, Blocks. | `ReportModels.cs` |
 | `record` | **ReportSection** | Represents the ReportSection record. | `ReportSection.cs` |
-| `record` | **SectionPreviewBlock** | Represents the SectionPreviewBlock record. | `ReportModels.cs` |
 | `record` | **SectionPreviewBlock** | Represents the SectionPreviewBlock record. Key properties: SectionWidth, SectionHeight, Cover, UnitSystem. | `SectionPreviewBlock.cs` |
 | `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportBlock.cs` |
-| `record` | **SteelTableBlock** | Represents the SteelTableBlock record. | `ReportModels.cs` |
 | `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportBlock.cs` |
-| `record` | **SummaryBoxBlock** | Represents the SummaryBoxBlock record. | `ReportModels.cs` |
 | `record` | **TableBlock** | Represents the TableBlock record. | `ReportBlock.cs` |
-| `record` | **TableBlock** | Represents the TableBlock record. | `ReportModels.cs` |
 
 ### Root
 
@@ -516,10 +501,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **BatchPdfReportRenderer** | /// Renders column reports to individual files or a combined PDF with nested PDF outline bookmarks. /// | `BatchPdfReportRenderer.cs` |
-| `record` | **ColumnEntry** | Represents the ColumnEntry record. Key methods: RenderIndividual, RenderCombined. | `BatchPdfReportRenderer.cs` |
-| `class` | **PdfMergeUtility** | Represents the PdfMergeUtility class. Key methods: MergePdfDocuments. | `PdfMergeUtility.cs` |
-| `class` | **QuestPdfCalculationReportRenderer** | Represents the QuestPdfCalculationReportRenderer class. Key methods: RenderToFile. | `QuestPdfCalculationReportRenderer.cs` |
+| `class` | **PdfMergeUtility** | /// Merges multiple individual column PDFs into a single compiled document /// with a two-level Group → Column bookmark outline tree, with section /// sub-bookmarks under each column. ///. Key methods: MergePdfDocuments. | `PdfMergeUtility.cs` |
+| `class` | **QuestPdfCalculationReportRenderer** | Represents the QuestPdfCalculationReportRenderer class. Key methods: RenderToFile, AddBookmarks. | `QuestPdfCalculationReportRenderer.cs` |
 
 ### Reports/Svg
 
@@ -712,7 +695,10 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **A4ReportPageViewModel** | Represents the A4ReportPageViewModel class. Key properties: PageNumber, PageWidthMm, PageHeightMm, MarginMm. | `A4ReportModels.cs` |
-| `class` | **BatchPrintWindowViewModel** | Represents the BatchPrintWindowViewModel class. Key properties: Nodes, OutputPath, KeepProjectStructure, FlatFiles. | `BatchPrintWindowViewModel.cs` |
+| `class` | **BatchColumnNode** | Represents the BatchColumnNode class. Key properties: Id, GroupId, Name, ParentGroup. | `BatchPrintWindowViewModel.cs` |
+| `class` | **BatchGroupNode** | Represents the BatchGroupNode class. Key methods: RefreshFromChildren. Key properties: Id, Name, Columns, IsChecked. | `BatchPrintWindowViewModel.cs` |
+| `enum` | **BatchPrintMode** | Enumeration defining states/types for BatchPrintMode. | `BatchPrintWindowViewModel.cs` |
+| `class` | **BatchPrintWindowViewModel** | Represents the BatchPrintWindowViewModel class. Key methods: CheckOnlyGroup. Key properties: Groups, BrowseFolderCommand, PrintSelectedCommand, PrintAllCommand. | `BatchPrintWindowViewModel.cs` |
 | `class` | **CadPointViewModel** | Represents the CadPointViewModel class. Key properties: X, Y. | `CadPointViewModel.cs` |
 | `class` | **CadRebarViewModel** | Represents the CadRebarViewModel class. Key properties: X, Y, BarSize, AreaMm2. | `CadRebarViewModel.cs` |
 | `class` | **CadSnapService** | Provides service logic and operations for CadSnap. Key methods: Snap. | `CadSnapService.cs` |
@@ -766,10 +752,6 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **PreviewBoundaryPoint** | Represents the PreviewBoundaryPoint record. | `PreviewBoundaryPoint.cs` |
 | `record` | **PreviewRebarPoint** | Represents the PreviewRebarPoint record. Key properties: Area. | `PreviewRebarPoint.cs` |
 | `record` | **PreviewRebarVm** | Represents the PreviewRebarVm record. | `DxfImportViewModel.cs` |
-| `class` | **PrintColumnNode** | Represents the PrintColumnNode class. Key properties: Id, GroupId, Name, HasResult. | `PrintReportViewModel.cs` |
-| `class` | **PrintGroupNode** | Represents the PrintGroupNode class. Key methods: RefreshCheckedState. Key properties: Id, Name, Columns, IsChecked. | `PrintReportViewModel.cs` |
-| `enum` | **PrintMode** | Enumeration defining states/types for PrintMode. | `PrintReportViewModel.cs` |
-| `class` | **PrintReportViewModel** | Represents the PrintReportViewModel class. Key properties: ExplorerNodes, OutputFolderPath, PrintMode, IsPrintModeIndividual. | `PrintReportViewModel.cs` |
 | `class` | **ProjectExplorerViewModel** | Represents the ProjectExplorerViewModel class. Key methods: SetSectionStatus, ClearSectionStatuses, SelectNode, SelectColumnById. Key properties: ProjectName, Nodes, SelectedNode, SelectedColumn. | `ProjectExplorerViewModel.cs` |
 | `class` | **ProjectGroupOptionViewModel** | Represents the ProjectGroupOptionViewModel class. Key properties: GroupId, GroupName, CreateGroup, DisplayName. | `EtabsImportViewModel.cs` |
 | `class` | **RebarComplianceViewModel** | /// Exposes the rebar code-compliance check results for the Results tab sidebar panel. ///. Key methods: Load. Key properties: HasResult, AllPass, HasFails, StatusText. | `RebarComplianceViewModel.cs` |
@@ -816,7 +798,6 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
-| `class` | **PrintReportWindow** | Represents the PrintReportWindow class. | `PrintReportWindow.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
 | `class` | **RebarComplianceDetailView** | Represents the RebarComplianceDetailView class. | `RebarComplianceDetailView.xaml.cs` |
 | `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |

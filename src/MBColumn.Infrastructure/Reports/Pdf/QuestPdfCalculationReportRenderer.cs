@@ -52,7 +52,7 @@ public sealed class QuestPdfCalculationReportRenderer
             });
             row.ConstantItem(120).AlignRight().Column(col =>
             {
-                col.Item().Text(data.GeneratedAt).FontSize(8).FontColor("#888888");
+                col.Item().Text(data.GeneratedAt.ToString("yyyy-MM-dd HH:mm")).FontSize(8).FontColor("#888888");
             });
         });
     }
@@ -98,11 +98,11 @@ public sealed class QuestPdfCalculationReportRenderer
                 break;
 
             case TableBlock t:
-                RenderTable(col, t.Caption, t.Headers, t.Rows);
+                RenderTable(col, null, t.Headers, t.Rows);
                 break;
 
             case SteelTableBlock st:
-                RenderTable(col, st.Caption, st.Headers, st.Rows);
+                RenderSteelTable(col, st);
                 break;
 
             case ImageBlock img:
@@ -118,13 +118,14 @@ public sealed class QuestPdfCalculationReportRenderer
                 break;
 
             case SummaryBoxBlock sum:
-                col.Item().PaddingTop(6).Background("#F0F4FF").Border(1).BorderColor("#1A3A5C").Padding(8)
+                col.Item().PaddingTop(6).Background(sum.IsPass ? "#EAFAF1" : "#FDEDEC")
+                    .Border(1).BorderColor(sum.IsPass ? "#27AE60" : "#E74C3C").Padding(8)
                     .Column(inner =>
                     {
-                        inner.Item().Text(sum.Title).Bold().FontSize(11);
-                        inner.Item().Text($"Status: {sum.Status}   UR: {sum.Ratio:0.###}").FontSize(10);
-                        foreach (var (label, value) in sum.Entries)
-                            inner.Item().Text($"  {label}: {value}").FontSize(9);
+                        inner.Item().Text(sum.Label).Bold().FontSize(11)
+                            .FontColor(sum.IsPass ? "#1E8449" : "#C0392B");
+                        if (!string.IsNullOrWhiteSpace(sum.Value))
+                            inner.Item().Text(sum.Value).FontSize(10);
                     });
                 break;
 
@@ -138,7 +139,16 @@ public sealed class QuestPdfCalculationReportRenderer
         }
     }
 
-    private static void RenderTable(ColumnDescriptor col, string caption, string[] headers, string[][] rows)
+    private static void RenderSteelTable(ColumnDescriptor col, SteelTableBlock st)
+    {
+        string[] headers = ["#", "x (mm)", "y (mm)", "d (mm)", "εs", "fs (MPa)", "As (mm²)", "Fs (kN)", "Fs·y (kN·m)", "Fs·x (kN·m)"];
+        var rows = st.Rows.Select(r => new[] { r.Index.ToString(), r.XMm, r.YMm, r.DMm, r.EpsilonS, r.FsMpa, r.AsMm2, r.FsKn, r.FsYKnm, r.FsXKnm }).ToArray();
+        RenderTable(col, null, headers, rows);
+        if (!string.IsNullOrEmpty(st.SumFs))
+            col.Item().PaddingTop(2).Text($"ΣFs = {st.SumFs} kN   ΣFs·y = {st.SumFsY} kN·m   ΣFs·x = {st.SumFsX} kN·m").FontSize(9).Italic();
+    }
+
+    private static void RenderTable(ColumnDescriptor col, string? caption, string[] headers, string[][] rows)
     {
         if (!string.IsNullOrEmpty(caption))
             col.Item().PaddingTop(6).Text(caption).FontSize(9).Italic().FontColor("#555");

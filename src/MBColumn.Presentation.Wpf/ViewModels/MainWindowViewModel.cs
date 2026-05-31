@@ -1,5 +1,11 @@
 using MBColumn.Application.DTOs.Persistence;
+using MBColumn.Application.Reports.Builders;
+using MBColumn.Application.Reports.Models;
 using MBColumn.Application.Services;
+using MBColumn.Domain.Interfaces;
+using MBColumn.Infrastructure.DesignCodes;
+using MBColumn.Infrastructure.Math;
+using MBColumn.Infrastructure.Reports.Pdf;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.Views;
@@ -146,6 +152,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     // Legacy — kept so existing XAML bindings continue to work
     public ICommand ImportFromEtabsCommand { get; }
     public ICommand RefreshEtabsForcesCommand { get; }
+
 
     public string ValidationMessage { get => validationMessage; set => Set(ref validationMessage, value); }
     public string WindowTitle { get => windowTitle; private set => Set(ref windowTitle, value); }
@@ -440,33 +447,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         RaiseResultStateProperties();
     }
 
-    private void OpenBatchPrintWindow()
-    {
-        var vm = new BatchPrintWindowViewModel(
-            projectService,
-            projectSession,
-            calculationService,
-            messageService,
-            Explorer,
-            inputFactory);
-        
-        var win = new BatchPrintWindow(vm);
-        win.ShowDialog();
-    }
-
-    private void PrintGroupReports(GroupItemViewModel? group)
-    {
-        if (group is null) return;
-
-        foreach (var node in Explorer.Nodes)
-        {
-            node.IsChecked = false;
-        }
-        group.IsChecked = true;
-
-        OpenBatchPrintWindow();
-    }
-
     private async Task PrintSingleReportAsync(ColumnItemViewModel? column)
     {
         if (column is null) return;
@@ -742,17 +722,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         RefreshReportFromCurrentWorkspace();
         SelectedMainTabIndex = 1;
         RaiseResultStateProperties();
-    }
-
-    private void OpenPrintReportWindow()
-    {
-        SaveCurrentColumnInput();
-        var vm = new PrintReportViewModel(projectService);
-        var window = new PrintReportWindow(vm)
-        {
-            Owner = System.Windows.Application.Current?.MainWindow
-        };
-        window.ShowDialog();
     }
 
     private void NewProject()
@@ -1310,15 +1279,12 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void RaiseCommandStates()
     {
-        (PrintReportCommand as RelayCommand)?.RaiseCanExecuteChanged();
         if (CalculateCommand is AsyncRelayCommand calculate)
             calculate.RaiseCanExecuteChanged();
         if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)
             calculateAll.RaiseCanExecuteChanged();
         if (CalculateSelectedColumnsCommand is AsyncRelayCommand calculateSelected)
             calculateSelected.RaiseCanExecuteChanged();
-        if (BatchPrintCommand is RelayCommand batchPrint)
-            batchPrint.RaiseCanExecuteChanged();
         if (ImportElementForcesCommand is AsyncRelayCommand importElem)
             importElem.RaiseCanExecuteChanged();
         if (ImportDesignForcesCommand is AsyncRelayCommand importDes)

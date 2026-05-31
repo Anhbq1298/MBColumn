@@ -4,237 +4,166 @@
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              MinHeight="560">
 
-    <UserControl.Resources>
-
-        <!-- ── Layout helpers ─────────────────────────────────────────────── -->
-
-        <Style x:Key="A4PageStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="Width"      Value="830"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="Padding"    Value="36,32"/>
-            <Setter Property="Margin"     Value="0,0,0,20"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="8" ShadowDepth="3" Opacity="0.18"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-    </UserControl.Resources>
-
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="12"/>
-            <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="260" MinWidth="220" MaxWidth="300"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ═══════════════════════════════════════════════════════════
-             Left: settings + export panel
-             ═══════════════════════════════════════════════════════ -->
+        <!-- ═══ Left: control panel ════════════════════════════════════ -->
         <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="16">
-                    <TextBlock Text="Calculation Report"
+            <DockPanel>
+
+                <!-- Top: title + actions -->
+                <StackPanel DockPanel.Dock="Top" Margin="14,14,14,0">
+
+                    <TextBlock Text="Report"
                                Style="{StaticResource SectionTitleTextStyle}"
                                FontSize="{StaticResource FontSizeSection}"/>
 
-                    <!-- Status -->
-                    <Border Background="#F0F4F8" BorderBrush="#CCD6E0" BorderThickness="1"
-                            CornerRadius="2" Padding="8,6" Margin="0,12,0,0">
-                        <StackPanel>
-                            <TextBlock Text="{Binding ResultStatusText}"
-                                       FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextMutedBrush}"/>
-                            <TextBlock Text="{Binding ReportPreviewStatusText}"
-                                       FontSize="10" Foreground="#555"
-                                       Margin="0,3,0,0"/>
-                        </StackPanel>
-                    </Border>
-
                     <!-- Outdated warning -->
                     <Border Background="#FFF7E6" BorderBrush="#C98600" BorderThickness="1"
-                            CornerRadius="2" Padding="8,6" Margin="0,8,0,0"
+                            CornerRadius="2" Padding="7,5" Margin="0,10,0,0"
                             Visibility="{Binding IsOutdated,
                                 Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock TextWrapping="Wrap" FontSize="10"
                                    Text="Result outdated — recalculate before exporting."/>
                     </Border>
 
-                    <Button Content="Show Preview"
+                    <!-- "Generate Report" — shown when report not yet built -->
+                    <Button Content="Generate Report"
                             Command="{Binding RevealReportPreviewCommand}"
                             Style="{StaticResource PrimaryButtonStyle}"
-                            Margin="0,14,0,0"
+                            Margin="0,12,0,0"
                             Visibility="{Binding ShowRevealReportPreviewButton,
                                 Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <Button Content="Hide Preview"
-                            Command="{Binding HideReportPreviewCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Margin="0,14,0,0"
-                            Visibility="{Binding ShowHideReportPreviewButton,
-                                Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <!-- Generating spinner text -->
+                    <TextBlock Text="Rendering report…"
+                               FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,12,0,0"
+                               Visibility="{Binding IsGeneratingReport,
+                                   Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <Button Content="Save as PDF"
-                            Command="{Binding SaveAsPdfCommand}"
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            Margin="0,14,0,0"
-                            ToolTip="Save the full calculation report as PDF"/>
-
-                    <Button Content="Save as HTML"
-                            Command="{Binding SaveAsHtmlCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Margin="0,6,0,0"
-                            ToolTip="Save as a self-contained HTML file"/>
-
-                    <!-- ── Section visibility ─────────────────────────── -->
-                    <StackPanel Margin="0,16,0,0"
-                                Visibility="{Binding HasSectionToggles,
+                    <!-- Export buttons — shown once report is ready -->
+                    <StackPanel Margin="0,12,0,0"
+                                Visibility="{Binding ShowReportContent,
                                     Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button Content="Save as PDF"
+                                Command="{Binding SaveAsPdfCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                ToolTip="Save the full calculation report as PDF"/>
+                        <Button Content="Save as HTML"
+                                Command="{Binding SaveAsHtmlCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Margin="0,6,0,0"
+                                ToolTip="Save as a self-contained HTML file"/>
+                    </StackPanel>
+
+                    <!-- No-result placeholder -->
+                    <TextBlock FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                               TextWrapping="Wrap" Margin="0,10,0,0"
+                               Text="{Binding ReportPreviewStatusText}"
+                               Visibility="{Binding ShowReportPreviewPlaceholder,
+                                   Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <!-- Sections header row -->
+                    <DockPanel Margin="0,18,0,6"
+                               Visibility="{Binding HasSectionToggles,
+                                   Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock Text="Sections"
                                    Style="{StaticResource FieldLabelTextStyle}"
-                                   Margin="0,0,0,6"/>
-                        <DockPanel Margin="0,0,0,6">
+                                   VerticalAlignment="Center"/>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
                             <Button Content="All"
                                     Command="{Binding SelectAllSectionsCommand}"
                                     Style="{StaticResource CompactButtonStyle}"
-                                    Padding="8,2" FontSize="10"
+                                    Padding="6,1" FontSize="10"
                                     Margin="0,0,4,0"/>
                             <Button Content="None"
                                     Command="{Binding DeselectAllSectionsCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="8,2" FontSize="10"/>
-                        </DockPanel>
-                        <Border BorderBrush="{DynamicResource BorderGreyBrush}"
-                                BorderThickness="1" CornerRadius="3" Padding="4">
-                            <TreeView ItemsSource="{Binding ReportTreeNodes}"
-                                      Background="Transparent"
-                                      BorderThickness="0"
-                                      Padding="0">
-                                <TreeView.Resources>
-                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
-                                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
-                                </TreeView.Resources>
-                                <TreeView.ItemContainerStyle>
-                                    <Style TargetType="TreeViewItem">
-                                        <Setter Property="IsExpanded" Value="True"/>
-                                        <Setter Property="Padding" Value="0,2"/>
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Style.Resources>
-                                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
-                                        </Style.Resources>
-                                    </Style>
-                                </TreeView.ItemContainerStyle>
-                                <TreeView.ItemTemplate>
-                                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-                                        <Grid Margin="2,2">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <CheckBox Grid.Column="0"
-                                                      IsThreeState="True"
-                                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                      VerticalAlignment="Center"
-                                                      Margin="2,2,4,0"/>
-                                            
-                                            <ContentControl Grid.Column="1" VerticalAlignment="Center">
-                                                <ContentControl.Style>
-                                                    <Style TargetType="ContentControl">
-                                                        <Setter Property="ContentTemplate">
-                                                            <Setter.Value>
-                                                                <DataTemplate>
-                                                                    <Button Command="{Binding DataContext.ScrollToSectionCommand,
-                                                                                  RelativeSource={RelativeSource AncestorType=TreeView}}"
-                                                                            CommandParameter="{Binding SectionNumber}"
-                                                                            BorderThickness="0"
-                                                                            Padding="4,2"
-                                                                            Cursor="Hand"
-                                                                            HorizontalContentAlignment="Left"
-                                                                            HorizontalAlignment="Stretch">
-                                                                        <Button.Style>
-                                                                            <Style TargetType="Button">
-                                                                                <Setter Property="Background" Value="Transparent"/>
-                                                                                <Style.Triggers>
-                                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                                        <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}"/>
-                                                                                    </Trigger>
-                                                                                    <Trigger Property="IsPressed" Value="True">
-                                                                                        <Setter Property="Background" Value="{DynamicResource BorderSoftBrush}"/>
-                                                                                    </Trigger>
-                                                                                </Style.Triggers>
-                                                                            </Style>
-                                                                        </Button.Style>
-                                                                        <TextBlock Text="{Binding Title}"
-                                                                                   TextWrapping="Wrap"
-                                                                                   FontSize="{StaticResource FontSizeBody}"
-                                                                                   Foreground="{DynamicResource TextDarkBrush}"/>
-                                                                    </Button>
-                                                                </DataTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasChildren}" Value="True">
-                                                                <Setter Property="ContentTemplate">
-                                                                    <Setter.Value>
-                                                                        <DataTemplate>
-                                                                            <TextBlock Text="{Binding Title}"
-                                                                                       FontWeight="Bold"
-                                                                                       FontSize="{StaticResource FontSizeBody}"
-                                                                                       Foreground="{DynamicResource PrimaryNavyBrush}"
-                                                                                       Padding="4,2"
-                                                                                       VerticalAlignment="Center"/>
-                                                                        </DataTemplate>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </ContentControl.Style>
-                                            </ContentControl>
-                                        </Grid>
-                                    </HierarchicalDataTemplate>
-                                </TreeView.ItemTemplate>
-                            </TreeView>
-                        </Border>
-                    </StackPanel>
+                                    Padding="6,1" FontSize="10"/>
+                        </StackPanel>
+                    </DockPanel>
 
                 </StackPanel>
-            </ScrollViewer>
+
+                <!-- Section list (scrollable, fills remaining space) -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Margin="8,0,8,10"
+                              Visibility="{Binding HasSectionToggles,
+                                  Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ItemsControl ItemsSource="{Binding SectionToggles}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="2,1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0"
+                                              IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                              VerticalAlignment="Top"
+                                              Margin="2,3,6,0"/>
+                                    <Button Grid.Column="1"
+                                            Command="{Binding DataContext.ScrollToSectionCommand,
+                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding SectionNumber}"
+                                            BorderThickness="0" Padding="2,2"
+                                            Cursor="Hand"
+                                            HorizontalContentAlignment="Left"
+                                            HorizontalAlignment="Stretch">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <TextBlock Text="{Binding Title}"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="{StaticResource FontSizeBody}"
+                                                   Foreground="{DynamicResource TextDarkBrush}"/>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+            </DockPanel>
         </Border>
 
-        <!-- ═══════════════════════════════════════════════════════════
-             Right: report preview (single WebView2)
-             ═══════════════════════════════════════════════════════ -->
-        <Grid Grid.Column="2" Background="#CCCCCC">
+        <!-- ═══ Right: report preview ═══════════════════════════════════ -->
+        <Grid Grid.Column="1" Background="#CCCCCC">
 
-            <!-- Placeholder — shown when no content yet -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Auto"
-                          Visibility="{Binding ShowReportPreviewPlaceholder,
-                              Converter={StaticResource BoolToVisibilityConverter}}">
-                <Border Style="{StaticResource A4PageStyle}" Margin="24,24,24,40" HorizontalAlignment="Left">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,60">
-                        <TextBlock Text="{Binding ReportPreviewPlaceholderTitle}"
-                                   FontSize="18" FontWeight="Bold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Margin="0,16,0,0" FontSize="{StaticResource FontSizeBody}" Foreground="#888"
-                                   HorizontalAlignment="Center"
-                                   Text="{Binding ResultStatusText, StringFormat='Status: {0}'}"/>
-                        <TextBlock Margin="0,8,0,0" FontSize="{StaticResource FontSizeBody}" Foreground="#888"
-                                   HorizontalAlignment="Center"
-                                   Text="{Binding ReportPreviewPlaceholderText}"/>
-                        <Button Content="Show Preview"
-                                Command="{Binding RevealReportPreviewCommand}"
-                                Style="{StaticResource PrimaryButtonStyle}"
-                                Margin="0,18,0,0"
-                                Visibility="{Binding ShowRevealReportPreviewButton,
-                                    Converter={StaticResource BoolToVisibilityConverter}}"/>
-                    </StackPanel>
-                </Border>
-            </ScrollViewer>
+            <!-- Placeholder — shown when no report content -->
+            <Border VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Visibility="{Binding ShowReportPreviewPlaceholder,
+                        Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding ReportPreviewPlaceholderTitle}"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Margin="0,10,0,0" FontSize="{StaticResource FontSizeBody}"
+                               Foreground="#888" HorizontalAlignment="Center"
+                               Text="{Binding ReportPreviewPlaceholderText}"/>
+                    <Button Content="Generate Report"
+                            Command="{Binding RevealReportPreviewCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            HorizontalAlignment="Center"
+                            Margin="0,16,0,0"
+                            Visibility="{Binding ShowRevealReportPreviewButton,
+                                Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </Border>
 
             <!-- WebView2 — renders the full KaTeX HTML report -->
             <wv2:WebView2 x:Name="ReportWebView"

@@ -61,7 +61,7 @@ internal sealed class Ec2ReportBuilder
             ProjectName    = projectName,
             GroupName      = groupName,
             DesignTierName = designTierName,
-            GeneratedAt    = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            GeneratedAt    = DateTime.Now,
             Sections       = sections,
         };
     }
@@ -74,7 +74,7 @@ internal sealed class Ec2ReportBuilder
         string proj, string grp, string tier, CalculationResultDto r)
         => new("1", "Project Information",
         [
-            new TableBlock("",
+            new TableBlock(
                 ["Field", "Value"],
                 [
                     ["Project",     Dash(proj)],
@@ -104,7 +104,7 @@ internal sealed class Ec2ReportBuilder
 
         return new("2", "Material Properties",
         [
-            new TableBlock("Table 2.1 – Concrete  (EC2 §3.1, Table 3.1)",
+            new TableBlock(
                 ["Property", "Symbol", "Value"],
                 [
                     ["Char. cylinder strength",        "fck",           $"{r.FcMpa:0.#} MPa"],
@@ -119,7 +119,7 @@ internal sealed class Ec2ReportBuilder
                     ["Stress-block depth factor",      "λ",             $"{lambda:0.###}"],
                 ]),
 
-            new TableBlock("Table 2.2 – Reinforcing steel  (EC2 §3.2)",
+            new TableBlock(
                 ["Property", "Symbol", "Value"],
                 [
                     ["Char. yield strength",           "fyk",          $"{r.FyMpa:0.#} MPa"],
@@ -140,7 +140,7 @@ internal sealed class Ec2ReportBuilder
     {
         var blocks = new List<ReportBlock>();
         if (!string.IsNullOrWhiteSpace(svg))
-            blocks.Add(new ImageBlock(svg, "Figure 3.1 – Cross-section geometry"));
+            blocks.Add(new ImageBlock(svg, Caption: "Figure 3.1 – Cross-section geometry"));
 
         string dims = r.SectionShape switch
         {
@@ -153,7 +153,7 @@ internal sealed class Ec2ReportBuilder
                      : r.SectionWidthMm * r.SectionHeightMm;
         double ast = r.RebarCoordinates.Sum(b => b.Area);
 
-        blocks.Add(new TableBlock("Table 3.1 – Geometry",
+        blocks.Add(new TableBlock(
             ["Property", "Value"],
             [
                 ["Shape",          r.SectionShape.ToString()],
@@ -162,7 +162,7 @@ internal sealed class Ec2ReportBuilder
                 ["Gross area  Ac", $"{ag:0.#} mm²"],
             ]));
 
-        blocks.Add(new TableBlock("Table 3.2 – Reinforcement",
+        blocks.Add(new TableBlock(
             ["Property", "Value"],
             [
                 ["Total bars",              r.RebarCoordinates.Count.ToString()],
@@ -199,7 +199,6 @@ internal sealed class Ec2ReportBuilder
             }).ToArray();
 
         blocks.Add(new TableBlock(
-            $"Table 4.1 – First-order demand cases  [{fUnit}, {mUnit}]",
             ["Load Case", $"NEd ({fUnit})", $"MEd,x ({mUnit})", $"MEd,y ({mUnit})", "UR", "Status"],
             rows));
 
@@ -221,7 +220,6 @@ internal sealed class Ec2ReportBuilder
             }).ToArray();
 
         blocks.Add(new TableBlock(
-            $"Table 4.2 – Design moments after EC2 §5.8 second-order amplification  [{fUnit}, {mUnit}]",
             ["Load Case", $"NEd ({fUnit})", $"MEd,x,used ({mUnit})", $"MEd,y,used ({mUnit})", "Slend. Status"],
             factored));
 
@@ -270,14 +268,8 @@ internal sealed class Ec2ReportBuilder
             new SummaryBoxBlock(
                 allPass ? "ALL CHECKS PASS" : "ONE OR MORE CHECKS FAIL",
                 allPass ? "Pass" : "Fail",
-                Math.Max(r.Ratio, shear?.GoverningUtilisation ?? 0),
-                [
-                    ("PMM  UR",      $"{r.Ratio:0.###}  →  {(pmmPass ? "Pass" : "Fail")}"),
-                    .. (hasShear && shear is not null
-                        ? new (string, string)[] { ("Shear  UR", $"{shear.GoverningUtilisation:0.###}  →  {(shearPass ? "Pass" : "Fail")}") }
-                        : Array.Empty<(string, string)>()),
-                ]),
-            new TableBlock("Table 5.1 – Check summary",
+                allPass),
+            new TableBlock(
                 ["Check", "UR", "Result"],
                 [.. rows]),
         ]);
@@ -303,7 +295,7 @@ internal sealed class Ec2ReportBuilder
 
         var blocks = new List<ReportBlock>
         {
-            new TableBlock("Table 5.1.1 – Governing section capacity",
+            new TableBlock(
                 ["Property", "Nominal  Rn", "Design  Rd = Rn/γ"],
                 [
                     [$"Axial   NRd ({fUnit})", $"{r.NominalPnDisplay:0.##}", $"{r.DesignPnDisplay:0.##}"],
@@ -311,7 +303,7 @@ internal sealed class Ec2ReportBuilder
                     [$"MRd,y   ({mUnit})",     $"{r.NominalMyDisplay:0.##}", $"{r.DesignMyDisplay:0.##}"],
                 ]),
 
-            new TableBlock("Table 5.1.2 – Governing demand",
+            new TableBlock(
                 ["Property", "Value"],
                 [
                     [$"NEd ({fUnit})",     $"{r.PuDisplay:0.##}"],
@@ -321,7 +313,7 @@ internal sealed class Ec2ReportBuilder
                     ["Utilization UR",     $"{r.Ratio:0.###}"],
                 ]),
 
-            new TableBlock($"Table 5.1.3 – PMM results per load case  [{fUnit}, {mUnit}]",
+            new TableBlock(
                 ["Load Case", "NEd", "MEd,x", "MEd,y", "NRd", "MRd,x", "MRd,y", "UR", "Status"],
                 lcRows),
         };
@@ -359,15 +351,9 @@ internal sealed class Ec2ReportBuilder
                 c.AllPass ? "All compliance checks PASS"
                           : $"{c.FailCount} compliance check(s) FAIL",
                 c.AllPass ? "Pass" : "Fail",
-                c.AllPass ? 0.0 : 1.5,
-                [
-                    ("Design code",   "EC2  EN 1992-1-1"),
-                    ("Section shape", c.SectionShape.ToString()),
-                    ("Total checks",  c.Checks.Count.ToString()),
-                    ("Failures",      c.FailCount.ToString()),
-                ]),
+                c.AllPass),
 
-            new TableBlock("Table 6.1 – EC2 §9.5 reinforcement checks",
+            new TableBlock(
                 ["Reference", "Description", "Requirement", "Provided", "Limit", "Result"],
                 rows),
         ]);
@@ -409,7 +395,7 @@ internal sealed class Ec2ReportBuilder
                 $"Coordinates from section centroid. Positive X rightward, positive Y upward. " +
                 $"Total: {r.RebarCoordinates.Count} bars,  As = {r.RebarCoordinates.Sum(b => b.Area):0.#} mm²."));
 
-            blocks.Add(new TableBlock("Table A.1 – Rebar coordinates",
+            blocks.Add(new TableBlock(
                 ["#", "Bar", "X (mm)", "Y (mm)", "d (mm)", "As (mm²)", "Side"],
                 r.RebarCoordinates
                     .Select((b, i) => new[]
@@ -423,7 +409,7 @@ internal sealed class Ec2ReportBuilder
         if (r.SectionShape == SectionShapeType.Irregular
             && r.IrregularSectionBoundaryPoints.Count > 0)
         {
-            blocks.Add(new TableBlock("Table A.2 – Irregular section boundary vertices",
+            blocks.Add(new TableBlock(
                 ["#", "X (mm)", "Y (mm)"],
                 r.IrregularSectionBoundaryPoints
                     .Select((p, i) => new[] { (i + 1).ToString(), $"{p.X:0.##}", $"{p.Y:0.##}" })
@@ -524,7 +510,7 @@ internal sealed class Ec2ReportBuilder
         string fLbl = report.Rows.FirstOrDefault()?.ForceUnitLabel  ?? "kN";
         string mLbl = report.Rows.FirstOrDefault()?.MomentUnitLabel ?? "kN·m";
 
-        blocks.Add(new TableBlock("Table C.1 – Control point summary",
+        blocks.Add(new TableBlock(
             ["CP", "Name",
              $"Hand  P ({fLbl})", $"Hand  M ({mLbl})",
              $"Solver P ({fLbl})", $"Solver M ({mLbl})",

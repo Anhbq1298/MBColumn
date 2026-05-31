@@ -153,16 +153,6 @@
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
-                <Button Command="{Binding BatchPrintCommand}"
-                        ToolTip="Batch Print PDF reports for checked sections"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        MinHeight="30" Padding="12,4"
-                        Margin="6,0,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE749;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Batch Print" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
-                    </StackPanel>
-                </Button>
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="10,0,0,0"

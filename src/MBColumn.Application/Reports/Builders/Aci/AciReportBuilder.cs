@@ -60,7 +60,7 @@ internal sealed class AciReportBuilder
             ProjectName    = projectName,
             GroupName      = groupName,
             DesignTierName = designTierName,
-            GeneratedAt    = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+            GeneratedAt    = DateTime.Now,
             Sections       = sections,
         };
     }
@@ -78,7 +78,7 @@ internal sealed class AciReportBuilder
         string proj, string grp, string tier, CalculationResultDto r)
         => new("1", "Project Information",
         [
-            new TableBlock("",
+            new TableBlock(
                 ["Field", "Value"],
                 [
                     ["Project",     Dash(proj)],
@@ -104,7 +104,7 @@ internal sealed class AciReportBuilder
 
         return new("2", "Material Properties",
         [
-            new TableBlock("Table 2.1 – Concrete  (ACI 318-19 §19)",
+            new TableBlock(
                 ["Property", "Symbol", "Value"],
                 [
                     ["Specified compressive strength",  "f'c",          $"{r.FcMpa:0.#} MPa"],
@@ -114,7 +114,7 @@ internal sealed class AciReportBuilder
                     ["Concrete block stress",            "0.85·f'c",     $"{0.85 * r.FcMpa:0.##} MPa"],
                 ]),
 
-            new TableBlock("Table 2.2 – Reinforcing steel  (ACI 318-19 §20)",
+            new TableBlock(
                 ["Property", "Symbol", "Value"],
                 [
                     ["Specified yield strength", "fy",           $"{r.FyMpa:0.#} MPa"],
@@ -132,7 +132,7 @@ internal sealed class AciReportBuilder
     {
         var blocks = new List<ReportBlock>();
         if (!string.IsNullOrWhiteSpace(svg))
-            blocks.Add(new ImageBlock(svg, "Figure 3.1 – Cross-section geometry"));
+            blocks.Add(new ImageBlock(svg, Caption: "Figure 3.1 – Cross-section geometry"));
 
         string dims = r.SectionShape switch
         {
@@ -145,7 +145,7 @@ internal sealed class AciReportBuilder
                      : r.SectionWidthMm * r.SectionHeightMm;
         double ast = r.RebarCoordinates.Sum(b => b.Area);
 
-        blocks.Add(new TableBlock("Table 3.1 – Geometry",
+        blocks.Add(new TableBlock(
             ["Property", "Value"],
             [
                 ["Shape",       r.SectionShape.ToString()],
@@ -154,7 +154,7 @@ internal sealed class AciReportBuilder
                 ["Gross area Ag",$"{ag:0.#} mm²"],
             ]));
 
-        blocks.Add(new TableBlock("Table 3.2 – Reinforcement",
+        blocks.Add(new TableBlock(
             ["Property", "Value"],
             [
                 ["Total bars",                    r.RebarCoordinates.Count.ToString()],
@@ -186,7 +186,6 @@ internal sealed class AciReportBuilder
         return new("4", "Demand Cases",
         [
             new TableBlock(
-                $"Table 4.1 – Factored demand cases  [{fUnit}, {mUnit}]",
                 ["Load Case", $"Pu ({fUnit})", $"Mux ({mUnit})", $"Muy ({mUnit})", "UR", "Status"],
                 rows),
 
@@ -222,14 +221,8 @@ internal sealed class AciReportBuilder
             new SummaryBoxBlock(
                 allPass ? "ALL CHECKS PASS" : "ONE OR MORE CHECKS FAIL",
                 allPass ? "Pass" : "Fail",
-                Math.Max(r.Ratio, shear?.GoverningUtilisation ?? 0),
-                [
-                    ("PMM  UR", $"{r.Ratio:0.###}  →  {(pmmPass ? "Pass" : "Fail")}"),
-                    .. (hasShear && shear is not null
-                        ? new (string, string)[] { ("Shear  UR", $"{shear.GoverningUtilisation:0.###}  →  {(shearPass ? "Pass" : "Fail")}") }
-                        : Array.Empty<(string, string)>()),
-                ]),
-            new TableBlock("Table 5.1 – Check summary",
+                allPass),
+            new TableBlock(
                 ["Check", "UR", "Result"],
                 [.. rows]),
         ]);
@@ -255,7 +248,7 @@ internal sealed class AciReportBuilder
 
         var blocks = new List<ReportBlock>
         {
-            new TableBlock("Table 5.1.1 – Governing section capacity  (ACI 318-19)",
+            new TableBlock(
                 ["Property", "Nominal  Rn", "Design  φRn"],
                 [
                     [$"Axial   φPn ({fUnit})", $"{r.NominalPnDisplay:0.##}", $"{r.DesignPnDisplay:0.##}"],
@@ -263,7 +256,7 @@ internal sealed class AciReportBuilder
                     [$"φMny  ({mUnit})",        $"{r.NominalMyDisplay:0.##}", $"{r.DesignMyDisplay:0.##}"],
                 ]),
 
-            new TableBlock("Table 5.1.2 – Governing demand",
+            new TableBlock(
                 ["Property", "Value"],
                 [
                     [$"Pu ({fUnit})",     $"{r.PuDisplay:0.##}"],
@@ -274,7 +267,7 @@ internal sealed class AciReportBuilder
                     ["UR",               $"{r.Ratio:0.###}"],
                 ]),
 
-            new TableBlock($"Table 5.1.3 – PMM per load case  [{fUnit}, {mUnit}]",
+            new TableBlock(
                 ["Load Case", "Pu", "Mux", "Muy", "φPn", "φMnx", "φMny", "UR", "Status"],
                 lcRows),
         };
@@ -317,7 +310,7 @@ internal sealed class AciReportBuilder
                 "Items below are flagged by the solver; detailed ACI reference citations " +
                 "and formulae will be expanded in a future release."),
 
-            new TableBlock("Table 6.1 – Reinforcement compliance checks",
+            new TableBlock(
                 ["Reference", "Description", "Requirement", "Provided", "Limit", "Result"],
                 rows),
         ]);
@@ -359,7 +352,7 @@ internal sealed class AciReportBuilder
                 $"Coordinates from section centroid. Positive X rightward, positive Y upward. " +
                 $"Total: {r.RebarCoordinates.Count} bars,  Ast = {r.RebarCoordinates.Sum(b => b.Area):0.#} mm²."));
 
-            blocks.Add(new TableBlock("Table A.1 – Rebar coordinates",
+            blocks.Add(new TableBlock(
                 ["#", "Bar", "X (mm)", "Y (mm)", "d (mm)", "Ast (mm²)", "Side"],
                 r.RebarCoordinates
                     .Select((b, i) => new[]
@@ -373,7 +366,7 @@ internal sealed class AciReportBuilder
         if (r.SectionShape == Domain.Enums.SectionShapeType.Irregular
             && r.IrregularSectionBoundaryPoints.Count > 0)
         {
-            blocks.Add(new TableBlock("Table A.2 – Irregular section boundary vertices",
+            blocks.Add(new TableBlock(
                 ["#", "X (mm)", "Y (mm)"],
                 r.IrregularSectionBoundaryPoints
                     .Select((p, i) => new[] { (i + 1).ToString(), $"{p.X:0.##}", $"{p.Y:0.##}" })
@@ -438,7 +431,7 @@ internal sealed class AciReportBuilder
         string fLbl = report.Rows.FirstOrDefault()?.ForceUnitLabel  ?? "kip";
         string mLbl = report.Rows.FirstOrDefault()?.MomentUnitLabel ?? "kip-ft";
 
-        blocks.Add(new TableBlock("Table C.1 – Control point summary",
+        blocks.Add(new TableBlock(
             ["CP", "Name",
              $"Hand  P ({fLbl})", $"Hand  M ({mLbl})",
              $"Solver P ({fLbl})", $"Solver M ({mLbl})",

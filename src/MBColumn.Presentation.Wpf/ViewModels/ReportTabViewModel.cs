@@ -8,7 +8,6 @@ using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Infrastructure.Reports.Html;
-using static MBColumn.Infrastructure.Reports.Graphics.InteractionDiagramSvgRenderer;
 using MBColumn.Presentation.Wpf.Commands;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;

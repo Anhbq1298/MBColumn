@@ -109,8 +109,8 @@ public static class InteractionDiagramSvgRenderer
         double midX = paddingLeft + plotW / 2.0;
         double midY = paddingTop  + plotH / 2.0;
 
-        sb.Append($"<text x='{midX:F0}' y='{svgHeight - 6}' text-anchor='middle' font-size='11' fill='#444'>{EscapeXml(block.XLabel)}</text>");
-        sb.Append($"<text x='13' y='{midY:F0}' text-anchor='middle' font-size='11' fill='#444' transform='rotate(-90 13 {midY:F0})'>{EscapeXml(block.YLabel)}</text>");
+        sb.Append($"<text x='{midX:F0}' y='{svgHeight - 6}' text-anchor='middle' font-size='11' fill='#444'>{EscapeXml(block.XAxisLabel)}</text>");
+        sb.Append($"<text x='13' y='{midY:F0}' text-anchor='middle' font-size='11' fill='#444' transform='rotate(-90 13 {midY:F0})'>{EscapeXml(block.YAxisLabel)}</text>");
 
         // Axis tick values
         AppendAxisTicks(sb, xMin, xMax, paddingLeft, paddingTop + plotH + 4, plotW, isX: true);

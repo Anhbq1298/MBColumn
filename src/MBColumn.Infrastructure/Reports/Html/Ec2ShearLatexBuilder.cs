@@ -16,15 +16,12 @@ internal static class Ec2ShearLatexBuilder
         var blocks = new List<ReportBlock>();
 
         // ── Status badge ──────────────────────────────────────────────────────
+        bool pass = s.GoverningStatus == Domain.Enums.CapacityStatus.Pass;
         blocks.Add(new SummaryBoxBlock(
-            s.GoverningStatus == Domain.Enums.CapacityStatus.Pass
-                ? $"PASS  —  UR = {s.GoverningUtilisation:0.###}"
-                : $"FAIL  —  UR = {s.GoverningUtilisation:0.###}",
-            s.GoverningStatus.ToString(), s.GoverningUtilisation,
-            [
-                ("X-direction", $"VEd = {s.VEdXDisplay:F1} {fUnit},  VRd = {s.VRdXDisplay:F1} {fUnit},  UR = {s.UtilisationX:F3}  →  {(s.StatusX == Domain.Enums.CapacityStatus.Pass ? "Pass" : "Fail")}"),
-                ("Y-direction", $"VEd = {s.VEdYDisplay:F1} {fUnit},  VRd = {s.VRdYDisplay:F1} {fUnit},  UR = {s.UtilisationY:F3}  →  {(s.StatusY == Domain.Enums.CapacityStatus.Pass ? "Pass" : "Fail")}"),
-            ]));
+            pass ? $"PASS  —  UR = {s.GoverningUtilisation:0.###}"
+                 : $"FAIL  —  UR = {s.GoverningUtilisation:0.###}",
+            $"X: UR={s.UtilisationX:F3}  Y: UR={s.UtilisationY:F3}",
+            pass));
 
         // ── Step 1: Concrete contribution VRd,c ──────────────────────────────
         blocks.Add(new HeadingBlock("Step 1  —  Concrete shear capacity  VRd,c  (EC2 §6.2.2)", 3));

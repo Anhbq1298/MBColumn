@@ -74,7 +74,7 @@ public sealed class ReportWebViewRenderer
             sb.Append($"<div class='cover-meta'><span class='cover-label'>Group</span>{H(data.GroupName)}</div>");
         if (!string.IsNullOrEmpty(data.DesignTierName))
             sb.Append($"<div class='cover-meta'><span class='cover-label'>Section</span>{H(data.DesignTierName)}</div>");
-        sb.Append($"<div class='cover-generated'>Generated: {H(data.GeneratedAt)}</div>");
+        sb.Append($"<div class='cover-generated'>Generated: {H(data.GeneratedAt.ToString("yyyy-MM-dd HH:mm"))}</div>");
         sb.Append("</div>");
 
         foreach (var section in visibleSections)
@@ -135,15 +135,15 @@ document.addEventListener('DOMContentLoaded',function(){
                 break;
 
             case FormulaBlock fb:
-                RenderFormulaBlock(sb, fb.Title, fb.LatexFormula, fb.SubstitutionLatex, fb.ResultLatex);
+                RenderFormulaBlock(sb, fb.Title, fb.LatexFormula, fb.SubstitutionText, fb.ResultText);
                 break;
 
             case TableBlock t:
-                RenderTable(sb, t.Caption, t.Headers, t.Rows);
+                RenderTable(sb, null, t.Headers, t.Rows);
                 break;
 
             case SteelTableBlock st:
-                RenderTable(sb, st.Caption, st.Headers, st.Rows);
+                RenderSteelTable(sb, st);
                 break;
 
             case ImageBlock img:
@@ -183,9 +183,12 @@ document.addEventListener('DOMContentLoaded',function(){
                 break;
 
             case SectionPreviewBlock sp:
-                sb.Append("<div class='svg-wrap'>");
-                sb.Append(sp.SvgContent);
-                sb.Append("</div>");
+                if (!string.IsNullOrWhiteSpace(sp.SvgFallback))
+                {
+                    sb.Append("<div class='svg-wrap'>");
+                    sb.Append(sp.SvgFallback);
+                    sb.Append("</div>");
+                }
                 break;
 
             case Ec2ShearDetailBlock shear:
@@ -210,7 +213,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
         // Properties table
         if (batch.SectionValues is { } sv)
-            yield return new TableBlock("Table – Section stiffness properties",
+            yield return new TableBlock(
                 ["Property", "Symbol", "Value"],
                 [
                     ["Gross concrete area",  "Ac",  $"{sv.AcMm2:0.#} mm²"],
@@ -292,23 +295,34 @@ document.addEventListener('DOMContentLoaded',function(){
 
     private static void RenderSummaryBox(StringBuilder sb, SummaryBoxBlock sum)
     {
-        bool fail  = sum.Ratio > 1.0;
-        string cls = fail ? "summary-box fail" : "summary-box pass";
+        string cls = sum.IsPass ? "summary-box pass" : "summary-box fail";
         sb.Append($"<div class='{cls}'>");
-        sb.Append($"<div class='summary-title'>{H(sum.Title)}</div>");
-        if (sum.Entries.Count > 0)
+        sb.Append($"<div class='summary-title'>{H(sum.Label)}</div>");
+        if (!string.IsNullOrWhiteSpace(sum.Value))
         {
             sb.Append("<div class='summary-entries'>");
-            foreach (var (label, value) in sum.Entries)
-                sb.Append($"<div class='summary-row'><span class='s-lbl'>{H(label)}</span><span class='s-val'>{H(value)}</span></div>");
+            sb.Append($"<div class='summary-row'><span class='s-val'>{H(sum.Value)}</span></div>");
             sb.Append("</div>");
         }
         sb.Append("</div>");
     }
 
+    // ── Steel table ───────────────────────────────────────────────────────────
+
+    private static void RenderSteelTable(StringBuilder sb, SteelTableBlock st)
+    {
+        string[] headers = ["#", "x (mm)", "y (mm)", "d (mm)", "εs", "fs (MPa)", "As (mm²)", "Fs (kN)", "Fs·y (kN·m)", "Fs·x (kN·m)"];
+        var rows = st.Rows.Select(r => new[] { r.Index.ToString(), r.XMm, r.YMm, r.DMm, r.EpsilonS, r.FsMpa, r.AsMm2, r.FsKn, r.FsYKnm, r.FsXKnm }).ToArray();
+        RenderTable(sb, null, headers, rows);
+        if (!string.IsNullOrEmpty(st.SumFs))
+        {
+            sb.Append($"<p class='tbl-caption'>ΣFs = {H(st.SumFs)} kN&emsp; ΣFs·y = {H(st.SumFsY)} kN·m&emsp; ΣFs·x = {H(st.SumFsX)} kN·m</p>");
+        }
+    }
+
     // ── Table ─────────────────────────────────────────────────────────────────
 
-    private static void RenderTable(StringBuilder sb, string caption, string[] headers, string[][] rows)
+    private static void RenderTable(StringBuilder sb, string? caption, string[] headers, string[][] rows)
     {
         if (!string.IsNullOrWhiteSpace(caption))
             sb.Append($"<p class='tbl-caption'>{H(caption)}</p>");
