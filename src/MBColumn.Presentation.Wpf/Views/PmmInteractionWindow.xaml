@@ -310,12 +310,12 @@
                       HorizontalAlignment="Stretch"
                       Background="{DynamicResource LightBackgroundBrush}" />
 
-        <!-- Right: Charts area (65% 2D + 35% 3D) -->
+        <!-- Right: Charts area (55% 2D + 45% 3D) -->
         <Grid Grid.Column="2" Margin="8,8,8,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="65*" />
+                <ColumnDefinition Width="55*" />
                 <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="35*" />
+                <ColumnDefinition Width="45*" />
             </Grid.ColumnDefinitions>
 
             <!-- Left column: PM 2D + Mx-My 2D stacked -->
@@ -372,20 +372,20 @@
                                             Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
                                     <TextBlock Text="Nominal" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2"
                                                Visibility="{Binding IsAciCode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Red" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-01" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Orange" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-02" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Gold" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-03" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Green" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-04" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Blue" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-05" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Indigo" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-06" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
-                                    <Path Data="M 0,-5.5 L 5.5,5 L -5.5,5 Z" Fill="Violet" Stroke="Black" StrokeThickness="1" VerticalAlignment="Center" Margin="0,0,4,2" />
-                                    <TextBlock Text="CP-07" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,8,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Red" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[0]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Orange" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[1]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Gold" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[2]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Green" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[3]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Blue" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[4]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Indigo" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[5]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
+                                    <Path Data="M 0,-6.5 L 6.5,5.5 L -6.5,5.5 Z" Fill="Violet" Stroke="White" StrokeThickness="2" VerticalAlignment="Center" Margin="0,0,4,2" />
+                                    <TextBlock Text="{Binding CpDescriptions[6]}" Style="{StaticResource ChartConfigLabelStyle}" Margin="0,0,10,2" />
                                 </StackPanel>
                             </WrapPanel>
                         </Border>

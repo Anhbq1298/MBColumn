@@ -23,6 +23,7 @@
         </Style>
     </UserControl.Resources>
 
+    <Grid x:Name="ResultRoot">
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled"
                   Background="{DynamicResource LightBackgroundBrush}">
@@ -294,4 +295,11 @@
             </Border>
         </StackPanel>
     </ScrollViewer>
+
+    <!-- Backdrop shown while PMM details window is open -->
+    <Border x:Name="PmmDetailsBackdrop"
+            Background="#990B1220"
+            Visibility="Collapsed"
+            IsHitTestVisible="True" />
+    </Grid>
 </UserControl>

@@ -17,7 +17,9 @@ public partial class ResultTabView : UserControl
         {
             Owner = Window.GetWindow(this)
         };
-        window.Show();
+        PmmDetailsBackdrop.Visibility = Visibility.Visible;
+        window.ShowDialog();
+        PmmDetailsBackdrop.Visibility = Visibility.Collapsed;
     }
 
     private void OpenShearDetails_Click(object sender, RoutedEventArgs e)

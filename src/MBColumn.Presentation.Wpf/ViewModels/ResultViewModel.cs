@@ -207,6 +207,7 @@ public sealed class ResultViewModel : ViewModelBase
             )).ToList() ?? [];
             Raise(nameof(SevenPointValidationRows));
             Raise(nameof(HasSevenPointValidation));
+            Raise(nameof(CpDescriptions));
 
             Raise(nameof(LoadCaseRows));
             Raise(nameof(HasLoadCaseRows));
@@ -279,6 +280,9 @@ public sealed class ResultViewModel : ViewModelBase
     public bool HasResult => Result is not null;
     public bool HasLoadCaseRows => loadCaseRows.Count > 0;
     public bool HasSevenPointValidation => sevenPointValidationRows.Count > 0;
+    public string[] CpDescriptions => sevenPointValidationRows.Count == 7
+        ? sevenPointValidationRows.Select((r, i) => $"CP-{i + 1:D2}  {r.PointName}").ToArray()
+        : ["CP-01  Pure Compression", "CP-02  Strain Zero", "CP-03  Half Yield", "CP-04  Balanced", "CP-05  Transition", "CP-06  Strain Cap", "CP-07  Pure Tension"];
     public string StatusText => Result is null ? "Not calculated" : Result.Status == CapacityStatus.Pass ? "PASS" : "FAIL";
 
     public string OverallStatusText

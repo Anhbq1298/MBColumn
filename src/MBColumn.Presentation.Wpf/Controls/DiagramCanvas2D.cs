@@ -632,12 +632,17 @@ public class DiagramCanvas2D : FrameworkElement
                 var geometry = new StreamGeometry();
                 using (var ctx = geometry.Open())
                 {
-                    ctx.BeginFigure(new Point(pt.X, pt.Y - 6.5), true, true);
-                    ctx.LineTo(new Point(pt.X + 6, pt.Y + 5), true, false);
-                    ctx.LineTo(new Point(pt.X - 6, pt.Y + 5), true, false);
+                    ctx.BeginFigure(new Point(pt.X, pt.Y - 7.5), true, true);
+                    ctx.LineTo(new Point(pt.X + 7, pt.Y + 6), true, false);
+                    ctx.LineTo(new Point(pt.X - 7, pt.Y + 6), true, false);
                 }
                 geometry.Freeze();
-                dc.DrawGeometry(brush, new Pen(Brushes.Black, 1.2), geometry);
+                var haloPen = new Pen(Brushes.White, 3.0) { LineJoin = PenLineJoin.Round };
+                haloPen.Freeze();
+                dc.DrawGeometry(brush, haloPen, geometry);
+                var outlinePen = new Pen(new SolidColorBrush(Color.FromArgb(130, 20, 20, 20)), 0.7);
+                outlinePen.Freeze();
+                dc.DrawGeometry(null, outlinePen, geometry);
 
                 if (ShowLabels && p.CpNumber > 0)
                 {
