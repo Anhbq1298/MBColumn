@@ -117,15 +117,14 @@
                         <TextBlock Text="Save As" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
                     </StackPanel>
                 </Button>
-                <Button Command="{Binding PrintReportCommand}"
-                        IsEnabled="{Binding HasSections}"
-                        ToolTip="Print report to PDF"
+                <Button Command="{Binding BatchPrintCommand}"
+                        ToolTip="Batch print PDF reports for multiple sections"
                         Style="{StaticResource SecondaryButtonStyle}"
                         MinHeight="30" Padding="10,4"
-                        Margin="0,0,2,0">
+                        Margin="4,0,2,0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE749;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Print Report" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
+                        <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="Batch Print" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
                     </StackPanel>
                 </Button>
                 <Separator Margin="0,4,12,4" />

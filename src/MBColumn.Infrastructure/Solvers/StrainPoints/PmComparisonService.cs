@@ -132,7 +132,7 @@ public sealed class PmComparisonService
             var res = new PmComparisonPointResult
             {
                 PointName = pt.PointName,
-                TargetStrainState = $"es = {pt.TargetTensileSteelStrain:F5}",
+                TargetStrainState = pt.CodeName == "Eurocode 2" ? $"εs,t = {pt.TargetTensileSteelStrain:F5}" : $"es = {pt.TargetTensileSteelStrain:F5}",
                 NeutralAxisDepth = c,
                 NeutralAxisAngle = angleDegrees,
                 Pn_7Point = pt.NominalAxialForceN,

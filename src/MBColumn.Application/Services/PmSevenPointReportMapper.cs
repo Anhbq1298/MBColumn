@@ -41,6 +41,28 @@ public sealed class PmSevenPointReportMapper
         var forceUnit = isMetric ? ForceUnit.kN : ForceUnit.Kip;
         var momentUnit = isMetric ? MomentUnit.kNm : MomentUnit.KipFt;
 
+        bool isEc2 = rows.Any(r => r.PointName.Contains("εs,t") || r.PointName.Contains("N = 0"));
+
+        var strains = isEc2 ? new[]
+        {
+            "All steel in compression, εs,t ≤ 0",
+            "Neutral axis at extreme tension steel (εs,t = 0)",
+            "Tension steel at half design yield strain (εs,t = 0.5εyd)",
+            "Balanced condition – tension steel yields (εs,t = εyd)",
+            "Pure bending condition (axial force N = 0)",
+            "Steel strain reaches design ultimate limit (εs,t = εud)",
+            "All steel at full yield, no concrete contribution"
+        } : new[]
+        {
+            "All steel in compression, es ≤ 0",
+            "Neutral axis at extreme tension steel (es = 0)",
+            "Tension steel at half yield strain (es = 0.5ey)",
+            "Balanced condition – tension steel yields (es = ey)",
+            "Post-yield transition point (es = Transition)",
+            "Steel strain reaches ultimate limit (es = Strain Cap)",
+            "All steel at full yield, no concrete contribution"
+        };
+
         var result = new List<ReportVerificationPointRow>(rows.Count);
         for (int i = 0; i < rows.Count; i++)
         {
@@ -49,8 +71,8 @@ public sealed class PmSevenPointReportMapper
             {
                 Index = i + 1,
                 PointCode = i < Codes.Length ? Codes[i] : $"CP-{i + 1:D2}",
-                PointName = i < Names.Length ? Names[i] : row.PointName,
-                StrainDescription = i < Strains.Length ? Strains[i] : row.HandCalcState,
+                PointName = row.PointName,
+                StrainDescription = i < strains.Length ? strains[i] : row.HandCalcState,
                 HandCalcAxialForce = Safe(units.ForceFromN(row.HandCalcPn, forceUnit)),
                 HandCalcMoment = Safe(units.MomentFromNmm(row.HandCalcMn, momentUnit)),
                 SolverAxialForce = Safe(units.ForceFromN(row.SolverPn, forceUnit)),

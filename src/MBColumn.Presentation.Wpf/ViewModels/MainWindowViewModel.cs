@@ -104,6 +104,12 @@ public sealed class MainWindowViewModel : ViewModelBase
         ImportFromEtabsCommand = ImportSectionsFromEtabsCommand;
         RefreshEtabsForcesCommand = RefreshElementForcesCommand;
 
+        PrintSingleReportCommand = new AsyncRelayCommand(
+            () => PrintSingleReportAsync(currentColumn), () => !IsCalculating && HasCurrentSection);
+
+        BatchPrintCommand        = new RelayCommand(() => OpenBatchPrintWindow(), () => HasSections);
+        PrintGroupReportsCommand = new RelayCommand<GroupItemViewModel>(OpenBatchPrintForGroup);
+
         SubscribeToInputChanges();
         UpdateWindowTitle();
 
@@ -152,6 +158,10 @@ public sealed class MainWindowViewModel : ViewModelBase
     // Legacy — kept so existing XAML bindings continue to work
     public ICommand ImportFromEtabsCommand { get; }
     public ICommand RefreshEtabsForcesCommand { get; }
+
+    public ICommand PrintSingleReportCommand  { get; }
+    public ICommand BatchPrintCommand         { get; }
+    public ICommand PrintGroupReportsCommand  { get; }
 
 
     public string ValidationMessage { get => validationMessage; set => Set(ref validationMessage, value); }
@@ -446,6 +456,24 @@ public sealed class MainWindowViewModel : ViewModelBase
         SelectedMainTabIndex = 1;
         RaiseResultStateProperties();
     }
+
+    private void OpenBatchPrintWindow(GroupItemViewModel? preselectedGroup = null)
+    {
+        var vm = new BatchPrintWindowViewModel(
+            projectService, calculationService, inputFactory, messageService, projectSession);
+
+        if (preselectedGroup is not null)
+            vm.CheckOnlyGroup(preselectedGroup.Id);
+
+        var win = new BatchPrintWindow(vm)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+        win.ShowDialog();
+    }
+
+    private void OpenBatchPrintForGroup(GroupItemViewModel? group)
+        => OpenBatchPrintWindow(group);
 
     private async Task PrintSingleReportAsync(ColumnItemViewModel? column)
     {
@@ -1279,6 +1307,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void RaiseCommandStates()
     {
+        if (PrintSingleReportCommand is AsyncRelayCommand printSingle)
+            printSingle.RaiseCanExecuteChanged();
+        (BatchPrintCommand as RelayCommand)?.RaiseCanExecuteChanged();
         if (CalculateCommand is AsyncRelayCommand calculate)
             calculate.RaiseCanExecuteChanged();
         if (CalculateAllColumnsCommand is AsyncRelayCommand calculateAll)

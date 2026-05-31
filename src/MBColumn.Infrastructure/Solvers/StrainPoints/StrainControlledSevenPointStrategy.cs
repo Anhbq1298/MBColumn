@@ -36,16 +36,33 @@ public sealed class StrainControlledSevenPointStrategy
         // Transition strain for ACI is ey + 0.003, for EC2 is 0.005. We use max of 2*ey and ey+0.003 as a safe "tension controlled" point
         double transitionStrain = SMath.Max(2.0 * ey, ey + 0.003);
 
-        var definitions = new List<StrainPointDefinition>
+        List<StrainPointDefinition> definitions;
+        if (_codeAdapter.CodeName == "Eurocode 2")
         {
-            new() { PointName = "Pure Compression", PointType = StrainPointType.PureCompression },
-            new() { PointName = "es = 0", PointType = StrainPointType.ExtremeTensionStrainZero, TargetTensileSteelStrain = 0.0 },
-            new() { PointName = "es = 0.5ey", PointType = StrainPointType.HalfYieldStrain, TargetTensileSteelStrain = 0.5 * ey },
-            new() { PointName = "es = ey (Balanced)", PointType = StrainPointType.BalancedYieldStrain, TargetTensileSteelStrain = ey },
-            new() { PointName = "es = Transition", PointType = StrainPointType.TensionControlled, TargetTensileSteelStrain = transitionStrain },
-            new() { PointName = "es = Strain Cap", PointType = StrainPointType.StrainCapLimit, TargetTensileSteelStrain = cap },
-            new() { PointName = "Pure Tension", PointType = StrainPointType.PureTension }
-        };
+            definitions = new List<StrainPointDefinition>
+            {
+                new() { PointName = "Pure Compression", PointType = StrainPointType.PureCompression },
+                new() { PointName = "εs,t = 0", PointType = StrainPointType.ExtremeTensionStrainZero, TargetTensileSteelStrain = 0.0 },
+                new() { PointName = "εs,t = 0.5εyd", PointType = StrainPointType.HalfYieldStrain, TargetTensileSteelStrain = 0.5 * ey },
+                new() { PointName = "εs,t = εyd (Balanced)", PointType = StrainPointType.BalancedYieldStrain, TargetTensileSteelStrain = ey },
+                new() { PointName = "N = 0 (Pure Bending)", PointType = StrainPointType.PureBending },
+                new() { PointName = "εs,t = εud (Strain Cap)", PointType = StrainPointType.StrainCapLimit, TargetTensileSteelStrain = cap },
+                new() { PointName = "Pure Tension", PointType = StrainPointType.PureTension }
+            };
+        }
+        else
+        {
+            definitions = new List<StrainPointDefinition>
+            {
+                new() { PointName = "Pure Compression", PointType = StrainPointType.PureCompression },
+                new() { PointName = "es = 0", PointType = StrainPointType.ExtremeTensionStrainZero, TargetTensileSteelStrain = 0.0 },
+                new() { PointName = "es = 0.5ey", PointType = StrainPointType.HalfYieldStrain, TargetTensileSteelStrain = 0.5 * ey },
+                new() { PointName = "es = ey (Balanced)", PointType = StrainPointType.BalancedYieldStrain, TargetTensileSteelStrain = ey },
+                new() { PointName = "es = Transition", PointType = StrainPointType.TensionControlled, TargetTensileSteelStrain = transitionStrain },
+                new() { PointName = "es = Strain Cap", PointType = StrainPointType.StrainCapLimit, TargetTensileSteelStrain = cap },
+                new() { PointName = "Pure Tension", PointType = StrainPointType.PureTension }
+            };
+        }
 
         var results = new List<StrainControlledPmPointResult>(definitions.Count);
 
@@ -78,6 +95,10 @@ public sealed class StrainControlledSevenPointStrategy
             else if (def.PointType == StrainPointType.PureTension)
             {
                 results.Add(CalculatePureTension(section, steel, def, nx, ny));
+            }
+            else if (def.PointType == StrainPointType.PureBending)
+            {
+                results.Add(CalculatePureBending(section, concrete, steel, def, nx, ny, theta, maxProjection, dt, ecu, angleDegrees, settings));
             }
             else
             {
@@ -270,5 +291,87 @@ public sealed class StrainControlledSevenPointStrategy
             });
         }
         return results;
+    }
+
+    private StrainControlledPmPointResult CalculatePureBending(
+        ColumnSection section,
+        ConcreteMaterial concrete,
+        SteelMaterial steel,
+        StrainPointDefinition def,
+        double nx, double ny, double theta,
+        double maxProjection, double dt,
+        double ecu, double angleDegrees,
+        SolverSettings settings)
+    {
+        // Bisection search for c where Pn = 0
+        double cLow = 1e-3;
+        double cHigh = 10.0 * SMath.Max(10.0, maxProjection);
+        double c = (cLow + cHigh) / 2.0;
+
+        SectionIntegrationResult nomResult = null!;
+        for (int i = 0; i < 100; i++)
+        {
+            double na = maxProjection - c;
+            var state = new NeutralAxisState
+            {
+                AngleIndex = 0,
+                DepthIndex = 0,
+                CompressionNormal = new Vector2D(nx, ny),
+                ThetaRad = theta,
+                ExtremeCompressionStrain = ecu,
+                NeutralAxisDepth = c,
+                NeutralAxisOffset = na
+            };
+
+            nomResult = _integrator.Integrate(section, concrete, steel, _baseService, state, settings);
+            double Pn = nomResult.NominalP;
+
+            if (SMath.Abs(Pn) < 1e-1)
+                break;
+
+            if (Pn > 0)
+                cHigh = c;
+            else
+                cLow = c;
+
+            c = (cLow + cHigh) / 2.0;
+        }
+
+        double convergedNa = maxProjection - c;
+        var convergedState = new NeutralAxisState
+        {
+            AngleIndex = 0,
+            DepthIndex = 0,
+            CompressionNormal = new Vector2D(nx, ny),
+            ThetaRad = theta,
+            ExtremeCompressionStrain = ecu,
+            NeutralAxisDepth = c,
+            NeutralAxisOffset = convergedNa
+        };
+
+        var reduction = _codeAdapter.GetStrengthReductionFactor(nomResult.MaxTensionSteelStrain, steel, nomResult.NominalP);
+
+        return new StrainControlledPmPointResult
+        {
+            CodeName = _codeAdapter.CodeName,
+            PointName = def.PointName,
+            TargetTensileSteelStrain = nomResult.MaxTensionSteelStrain,
+            NeutralAxisDepthMm = c,
+            NeutralAxisAngleDegrees = angleDegrees,
+            NominalAxialForceN = nomResult.NominalP,
+            NominalMomentMxNmm = nomResult.NominalMx,
+            NominalMomentMyNmm = nomResult.NominalMy,
+            DesignAxialForceN = nomResult.NominalP * reduction.Phi,
+            DesignMomentMxNmm = nomResult.NominalMx * reduction.Phi,
+            DesignMomentMyNmm = nomResult.NominalMy * reduction.Phi,
+            FailureRegion = reduction.Classification,
+            StrainState = new StrainStateResult
+            {
+                ExtremeCompressionStrain = nomResult.MaxConcreteStrain,
+                ExtremeTensionSteelStrain = nomResult.MaxTensionSteelStrain,
+                RegionClassification = reduction.Classification
+            },
+            RebarResults = ExtractRebarResults(section, convergedState, ecu, c, convergedNa, steel)
+        };
     }
 }

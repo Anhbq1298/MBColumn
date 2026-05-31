@@ -3614,6 +3614,8 @@ static void TestStrainControlledSevenPointAci()
     IsTrue(points[0].PointName == "Pure Compression");
     IsTrue(points[1].TargetTensileSteelStrain == 0.0);
     IsTrue(points[3].TargetTensileSteelStrain == steel.FyMpa / steel.EsMpa); // balanced
+    IsTrue(points[4].PointName == "es = Transition");
+    IsTrue(points[5].PointName == "es = Strain Cap");
     IsTrue(points[6].PointName == "Pure Tension");
     
     IsFalse(points.Any(p => double.IsNaN(p.NominalAxialForceN)));
@@ -3644,6 +3646,9 @@ static void TestStrainControlledSevenPointEc2()
     IsTrue(points[0].PointName == "Pure Compression");
     IsTrue(points[1].TargetTensileSteelStrain == 0.0);
     IsTrue(points[3].TargetTensileSteelStrain == steel.FyMpa / steel.EsMpa); // balanced
+    IsTrue(points[4].PointName == "N = 0 (Pure Bending)");
+    AreClose(0.0, points[4].NominalAxialForceN, 1e-1);
+    IsTrue(points[5].PointName == "εs,t = εud (Strain Cap)");
     IsTrue(points[6].PointName == "Pure Tension");
     
     IsFalse(points.Any(p => double.IsNaN(p.NominalAxialForceN)));

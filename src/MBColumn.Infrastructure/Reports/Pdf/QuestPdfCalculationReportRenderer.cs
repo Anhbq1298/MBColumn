@@ -1,4 +1,6 @@
 using MBColumn.Application.Reports.Models;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -37,6 +39,28 @@ public sealed class QuestPdfCalculationReportRenderer
         doc.GeneratePdf(filePath);
     }
 
+    /// <summary>
+    /// Injects a column-level bookmark with section sub-bookmarks into an
+    /// already-generated PDF using PDFsharp. Call after RenderToFile().
+    /// Page positions are estimated proportionally (one section per page assumed).
+    /// </summary>
+    public void AddBookmarks(string pdfPath, ReportData data, string columnName)
+    {
+        using var doc = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Modify);
+        if (doc.PageCount == 0) return;
+
+        var colOutline = doc.Outlines.Add(columnName, doc.Pages[0], true);
+        for (int i = 0; i < data.Sections.Count; i++)
+        {
+            var section = data.Sections[i];
+            int pageIdx = System.Math.Min(i, doc.PageCount - 1);
+            colOutline.Outlines.Add(
+                $"{section.Number}  {section.Title}", doc.Pages[pageIdx], true);
+        }
+
+        doc.Save(pdfPath);
+    }
+
     private static void RenderHeader(IContainer container, ReportData data)
     {
         container.BorderBottom(1).BorderColor("#1A3A5C").PaddingBottom(4).Row(row =>
@@ -61,8 +85,12 @@ public sealed class QuestPdfCalculationReportRenderer
     {
         container.Column(col =>
         {
+            bool first = true;
             foreach (var section in data.Sections)
             {
+                if (!first) col.Item().PageBreak();
+                first = false;
+
                 col.Item().PaddingTop(10).Column(secCol =>
                 {
                     secCol.Item()

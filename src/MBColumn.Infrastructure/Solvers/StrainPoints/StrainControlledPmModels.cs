@@ -10,8 +10,9 @@ public enum StrainPointType
     HalfYieldStrain,
     BalancedYieldStrain,
     TensionControlled,
-    StrainCapLimit,
-    PureTension
+    PureBending,
+    PureTension,
+    StrainCapLimit
 }
 
 public sealed class StrainPointDefinition
