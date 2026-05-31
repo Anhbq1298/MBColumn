@@ -376,8 +376,22 @@
                          Background="{DynamicResource PanelBackgroundBrush}"
                          Foreground="{DynamicResource TextDarkBrush}">
                     <Grid Margin="0,12,0,0">
-                        <views:ResultTabView DataContext="{Binding Result}"
-                                             Visibility="{Binding DataContext.ShowResultContent, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        <!-- Combined Results summary + Report side-by-side -->
+                        <Grid Visibility="{Binding ShowResultContent, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="340" MinWidth="280" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" MinWidth="400" />
+                            </Grid.ColumnDefinitions>
+                            <views:ResultTabView Grid.Column="0"
+                                                 DataContext="{Binding Result}" />
+                            <GridSplitter Grid.Column="1"
+                                          Width="8"
+                                          HorizontalAlignment="Stretch"
+                                          Background="{DynamicResource LightBackgroundBrush}" />
+                            <views:ReportTabView Grid.Column="2"
+                                                 DataContext="{Binding Report}" />
+                        </Grid>
 
                         <Border Style="{StaticResource EmptyStateCardStyle}"
                                 Visibility="{Binding ShowNoSectionResultEmptyState, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -432,32 +446,6 @@
                                            Margin="0,10,0,18" />
                                 <Button Content="Recalculate"
                                         Command="{Binding CalculateCurrentColumnCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </TabItem>
-                <TabItem Header="Report"
-                         Background="{DynamicResource PanelBackgroundBrush}"
-                         Foreground="{DynamicResource TextDarkBrush}">
-                    <Grid Margin="0,12,0,0">
-                        <views:ReportTabView DataContext="{Binding Report}"
-                                             Visibility="{Binding DataContext.HasCurrentSection, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibilityConverter}}" />
-                        <Border Style="{StaticResource EmptyStateCardStyle}"
-                                Visibility="{Binding ShowInputEmptyState, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <StackPanel>
-                                <TextBlock Text="No section selected."
-                                           Style="{StaticResource SectionTitleTextStyle}"
-                                           FontSize="18"
-                                           TextAlignment="Center" />
-                                <TextBlock Text="Create or select a design tier from the Project Explorer to preview a report."
-                                           Style="{StaticResource HelperTextStyle}"
-                                           TextAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           Margin="0,10,0,18" />
-                                <Button Content="Add Section"
-                                        Command="{Binding Explorer.AddColumnCommand}"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         HorizontalAlignment="Center" />
                             </StackPanel>

@@ -798,6 +798,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
+| `class` | **PmmInteractionWindow** | Represents the PmmInteractionWindow class. | `PmmInteractionWindow.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
 | `class` | **RebarComplianceDetailView** | Represents the RebarComplianceDetailView class. | `RebarComplianceDetailView.xaml.cs` |
 | `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |

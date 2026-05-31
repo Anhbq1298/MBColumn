@@ -10,15 +10,20 @@ public partial class ResultTabView : UserControl
 
     private void OpenPmmDetails_Click(object sender, RoutedEventArgs e)
     {
-        PmmDetailsBorder.BringIntoView();
+        if (DataContext is not ResultViewModel vm || !vm.HasResult)
+            return;
+
+        var window = new PmmInteractionWindow(vm)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        window.Show();
     }
 
     private void OpenShearDetails_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ResultViewModel vm || !vm.Shear.HasResult)
-        {
             return;
-        }
 
         ShowDetails("Shear Check in Details (EC2 6.2)", new ShearDetailView(), vm.Shear);
     }
@@ -26,9 +31,7 @@ public partial class ResultTabView : UserControl
     private void OpenRebarComplianceDetails_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ResultViewModel vm || !vm.RebarCompliance.HasResult)
-        {
             return;
-        }
 
         ShowDetails("Reinforcement Code Compliance in Details", new RebarComplianceDetailView(), vm.RebarCompliance);
     }
