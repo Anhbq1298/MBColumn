@@ -7,7 +7,8 @@
         Title="{Binding WindowTitle}"
         Icon="Resources/desktop-icon.png"
         Height="960" Width="1680" MinHeight="800" MinWidth="1400"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
     <Window.Resources>
         <Style x:Key="EmptyStateCardStyle" TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
             <Setter Property="MaxWidth" Value="520" />
@@ -290,19 +291,23 @@
                                 <DataTemplate DataType="{x:Type vm:ColumnItemViewModel}">
                                     <Grid>
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="False" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                            <TextBlock Text="📄 " VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                                            <Border Margin="6,0,0,0"
-                                                    VerticalAlignment="Center">
-                                                <Border.Style>
-                                                    <Style TargetType="Border" BasedOn="{StaticResource ExplorerStatusBadgeStyle}" />
-                                                </Border.Style>
-                                                <TextBlock Text="{Binding StatusText}"
-                                                           FontSize="9"
-                                                           FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource TextDarkBrush}" />
-                                            </Border>
+                                            <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="False" VerticalAlignment="Top" Margin="0,3,6,0" />
+                                            <StackPanel Orientation="Vertical">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="📄 " VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                                <Border Margin="0,2,0,0"
+                                                        HorizontalAlignment="Left">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border" BasedOn="{StaticResource ExplorerStatusBadgeStyle}" />
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding StatusText}"
+                                                               FontSize="9"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource TextDarkBrush}" />
+                                                </Border>
+                                            </StackPanel>
                                             <StackPanel.ContextMenu>
                                                 <ContextMenu Opened="ColumnContextMenu_Opened">
                                                     <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
@@ -376,12 +381,12 @@
                          Background="{DynamicResource PanelBackgroundBrush}"
                          Foreground="{DynamicResource TextDarkBrush}">
                     <Grid Margin="0,12,0,0">
-                        <!-- Combined Results summary + Report side-by-side -->
+                        <!-- Combined Results summary + Report side-by-side (30 / 50 / 20) -->
                         <Grid Visibility="{Binding ShowResultContent, Converter={StaticResource BoolToVisibilityConverter}}">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="340" MinWidth="280" />
+                                <ColumnDefinition Width="3*" MinWidth="240" />
                                 <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" MinWidth="400" />
+                                <ColumnDefinition Width="7*" MinWidth="480" />
                             </Grid.ColumnDefinitions>
                             <views:ResultTabView Grid.Column="0"
                                                  DataContext="{Binding Result}" />

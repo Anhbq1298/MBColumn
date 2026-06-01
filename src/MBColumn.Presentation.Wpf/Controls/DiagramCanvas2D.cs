@@ -31,6 +31,7 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty HighlightedDemandLabelProperty = DependencyProperty.Register(nameof(HighlightedDemandLabel), typeof(string), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowSpecialPointsProperty = DependencyProperty.Register(nameof(ShowSpecialPoints), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowDemandLabelProperty = DependencyProperty.Register(nameof(ShowDemandLabel), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ShowCpLabelsProperty = DependencyProperty.Register(nameof(ShowCpLabels), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
     private const double HitTolerance = 10.0;
     private const double MinZoom = 0.35;
@@ -78,6 +79,7 @@ public class DiagramCanvas2D : FrameworkElement
     public string? HighlightedDemandLabel { get => (string?)GetValue(HighlightedDemandLabelProperty); set => SetValue(HighlightedDemandLabelProperty, value); }
     public bool ShowSpecialPoints { get => (bool)GetValue(ShowSpecialPointsProperty); set => SetValue(ShowSpecialPointsProperty, value); }
     public bool ShowDemandLabel   { get => (bool)GetValue(ShowDemandLabelProperty);   set => SetValue(ShowDemandLabelProperty, value); }
+    public bool ShowCpLabels      { get => (bool)GetValue(ShowCpLabelsProperty);      set => SetValue(ShowCpLabelsProperty, value); }
 
     public void ResetView()
     {
@@ -644,7 +646,7 @@ public class DiagramCanvas2D : FrameworkElement
                 outlinePen.Freeze();
                 dc.DrawGeometry(null, outlinePen, geometry);
 
-                if (ShowLabels && p.CpNumber > 0)
+                if (ShowCpLabels && p.CpNumber > 0)
                 {
                     string cpLabel = $"CP-{p.CpNumber:D2}";
                     var ft = CreateText(cpLabel, 10, brush, FontWeights.SemiBold);

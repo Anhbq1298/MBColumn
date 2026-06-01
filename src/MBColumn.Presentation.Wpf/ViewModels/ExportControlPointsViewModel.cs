@@ -63,7 +63,16 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
     public string CurrentViewDescription => $"Current view theta = {CurrentThetaDegrees:F1}\u00b0";
     public string CurrentViewScopeDescription => $"Export only \u03b8 = {CurrentThetaDegrees:F1}\u00b0";
     public string StrainSignConventionNote => "Strain sign: + tension, - compression.";
-    public string ColumnHeaderNote => "Column headers: θ = Bending angle, P = Axial force, Mx/My = Moments about x/y axes, Mθ = Moment about θ axis, c = Neutral axis depth, εs = Steel strain, φ = Strength reduction factor.";
+    public string ColumnHeaderNote =>
+        "Column headers:\n" +
+        "θ  = Bending angle\n" +
+        "P  = Axial force\n" +
+        "Mx/My = Moments about x/y axes\n" +
+        "Mθ = Moment about θ axis\n" +
+        "c  = Neutral axis depth\n" +
+        "εt = Extreme tension steel fiber strain\n" +
+        "εc = Extreme compression concrete fiber strain\n" +
+        "φ  = Strength reduction factor";
     public string PreviewSummary { get => previewSummary; private set => Set(ref previewSummary, value); }
     public string EmptyStateMessage { get => emptyStateMessage; private set => Set(ref emptyStateMessage, value); }
     public string ThetaValidationMessage { get => thetaValidationMessage; private set => Set(ref thetaValidationMessage, value); }

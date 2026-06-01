@@ -8,9 +8,9 @@ namespace MBColumn.Presentation.Wpf.Controls;
 
 public sealed class InteractionViewport3D : FrameworkElement
 {
-    private const double DefaultYaw = 0;
-    private const double DefaultPitch = 0;
-    private const double DefaultZoom = 1.12;
+    private const double DefaultYaw = 30;
+    private const double DefaultPitch = 25;
+    private const double DefaultZoom = 1.05;
 
     private double yaw = DefaultYaw;
     private double pitch = DefaultPitch;
@@ -37,6 +37,7 @@ public sealed class InteractionViewport3D : FrameworkElement
     public static readonly DependencyProperty ShowSlicePlaneProperty = DependencyProperty.Register(nameof(ShowSlicePlane), typeof(bool), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowAxialLoadSliceProperty = DependencyProperty.Register(nameof(ShowAxialLoadSlice), typeof(bool), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty SpecialCapacityPointsProperty = DependencyProperty.Register(nameof(SpecialCapacityPoints), typeof(IEnumerable<ControlPointDto>), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ShowCpLabelsProperty = DependencyProperty.Register(nameof(ShowCpLabels), typeof(bool), typeof(InteractionViewport3D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public InteractionViewport3D()
     {
@@ -65,6 +66,7 @@ public sealed class InteractionViewport3D : FrameworkElement
     public bool ShowSlicePlane { get => (bool)GetValue(ShowSlicePlaneProperty); set => SetValue(ShowSlicePlaneProperty, value); }
     public bool ShowAxialLoadSlice { get => (bool)GetValue(ShowAxialLoadSliceProperty); set => SetValue(ShowAxialLoadSliceProperty, value); }
     public IEnumerable<ControlPointDto>? SpecialCapacityPoints { get => (IEnumerable<ControlPointDto>?)GetValue(SpecialCapacityPointsProperty); set => SetValue(SpecialCapacityPointsProperty, value); }
+    public bool ShowCpLabels { get => (bool)GetValue(ShowCpLabelsProperty); set => SetValue(ShowCpLabelsProperty, value); }
 
     public void ResetCamera()
     {
@@ -91,9 +93,9 @@ public sealed class InteractionViewport3D : FrameworkElement
         var scene = cachedScene;
         Func<double, double, double, ProjectedPoint> proj = (x, y, z) => Project(x, y, z, scene.Bounds);
 
+        if (ShowGrid) DrawGrid(dc, scene, proj);
         if (ShowSlicePlane) DrawPmAngleSlicePlane(dc, scene, proj);
         if (ShowAxialLoadSlice) DrawAxialLoadSlicePlane(dc, scene, proj);
-        if (ShowGrid) DrawGrid(dc, scene, proj);
         if (ShowWireframe) DrawNominalWireframe(dc, scene, proj);
         if (ShowSurface) DrawDesignSurface(dc, scene, proj);
         if (ShowWireframe)
@@ -372,15 +374,42 @@ public sealed class InteractionViewport3D : FrameworkElement
     private void DrawGrid(DrawingContext dc, CachedScene scene, Func<double, double, double, ProjectedPoint> proj)
     {
         var b = scene.Bounds;
-        var pen = new Pen(new SolidColorBrush(Color.FromArgb(42, 180, 190, 210)), 0.55);
-        pen.Freeze();
-        for (int i = 0; i <= 8; i++)
+        double floorZ = b.MinZ;
+        double ext = scene.SliceExtent * 1.18;
+
+        var v0 = proj(-ext, -ext, floorZ);
+        var v1 = proj( ext, -ext, floorZ);
+        var v2 = proj( ext,  ext, floorZ);
+        var v3 = proj(-ext,  ext, floorZ);
+        if (!IsFinite(v0.Screen) || !IsFinite(v1.Screen) || !IsFinite(v2.Screen) || !IsFinite(v3.Screen)) return;
+
+        var fill = new SolidColorBrush(Color.FromArgb(52, 185, 210, 232));
+        fill.Freeze();
+        var edge = new Pen(new SolidColorBrush(Color.FromArgb(70, 125, 155, 195)), 0.65);
+        edge.Freeze();
+        var geo = new StreamGeometry();
+        using (var ctx = geo.Open())
         {
-            double t = i / 8.0;
-            double x = b.MinX + (b.MaxX - b.MinX) * t;
-            double y = b.MinY + (b.MaxY - b.MinY) * t;
-            dc.DrawLine(pen, proj(x, b.MinY, 0).Screen, proj(x, b.MaxY, 0).Screen);
-            dc.DrawLine(pen, proj(b.MinX, y, 0).Screen, proj(b.MaxX, y, 0).Screen);
+            ctx.BeginFigure(v0.Screen, true, true);
+            ctx.LineTo(v1.Screen, false, false);
+            ctx.LineTo(v2.Screen, false, false);
+            ctx.LineTo(v3.Screen, false, false);
+        }
+        geo.Freeze();
+        dc.DrawGeometry(fill, edge, geo);
+
+        var gridPen = new Pen(new SolidColorBrush(Color.FromArgb(50, 140, 168, 208)), 0.48);
+        gridPen.Freeze();
+        const int n = 8;
+        for (int i = 0; i <= n; i++)
+        {
+            double t = -ext + 2.0 * ext * i / n;
+            var a1 = proj(t, -ext, floorZ).Screen;
+            var b1 = proj(t,  ext, floorZ).Screen;
+            var a2 = proj(-ext, t, floorZ).Screen;
+            var b2 = proj( ext, t, floorZ).Screen;
+            if (IsFinite(a1) && IsFinite(b1)) dc.DrawLine(gridPen, a1, b1);
+            if (IsFinite(a2) && IsFinite(b2)) dc.DrawLine(gridPen, a2, b2);
         }
     }
 
@@ -428,15 +457,16 @@ public sealed class InteractionViewport3D : FrameworkElement
         double xExt = xSpan * axisExtend;
         double yExt = ySpan * axisExtend;
         double zExt = zSpan * axisExtend;
+        double floorZ = b.MinZ;
 
         return new AxisDefinitions(
-            new Point3(b.MinX - xExt, 0, 0),
-            new Point3(b.MaxX + xExt, 0, 0),
-            new Point3(0, b.MinY - yExt, 0),
-            new Point3(0, b.MaxY + yExt, 0),
-            new Point3(0, 0, Math.Min(0, b.MinZ) - zExt),
+            new Point3(b.MinX - xExt, 0, floorZ),
+            new Point3(b.MaxX + xExt, 0, floorZ),
+            new Point3(0, b.MinY - yExt, floorZ),
+            new Point3(0, b.MaxY + yExt, floorZ),
+            new Point3(0, 0, floorZ - zExt),
             new Point3(0, 0, b.MaxZ + zExt),
-            new Point3(0, 0, 0));
+            new Point3(0, 0, floorZ));
     }
 
     private static void DrawArrow(DrawingContext dc, Point start, Point tip, Pen pen, bool isMoment)
@@ -570,7 +600,7 @@ public sealed class InteractionViewport3D : FrameworkElement
         double radius = isHighlighted ? 6.5 : 4.0;
         dc.DrawEllipse(brush, new Pen(Brushes.White, isHighlighted ? 1.5 : 1.0), p, radius, radius);
         
-        if (ShowLabels && !string.IsNullOrEmpty(label)) 
+        if (ShowCpLabels && !string.IsNullOrEmpty(label))
         {
             DrawText(dc, label, isHighlighted ? 12 : 11, brush, new Point(p.X + radius + 2, p.Y - 12));
         }

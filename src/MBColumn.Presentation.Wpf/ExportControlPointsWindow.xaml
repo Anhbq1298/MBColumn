@@ -282,7 +282,7 @@
                                     <DataGridTextColumn.HeaderTemplate>
                                         <DataTemplate>
                                             <StackPanel MinWidth="58">
-                                                <TextBlock Text="&#x03B5;s" Style="{StaticResource PreviewHeaderTitleText}" />
+                                                <TextBlock Text="&#x03B5;t" Style="{StaticResource PreviewHeaderTitleText}" />
                                                 <TextBlock Text="{Binding DataContext.StrainUnitHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}" Style="{StaticResource PreviewHeaderUnitText}" />
                                             </StackPanel>
                                         </DataTemplate>

@@ -6,12 +6,13 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260" MinWidth="220" MaxWidth="300"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="5*" MinWidth="300"/>
+            <ColumnDefinition Width="8"/>
+            <ColumnDefinition Width="2*" MinWidth="180" MaxWidth="340"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ═══ Left: control panel ════════════════════════════════════ -->
-        <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}">
+        <!-- ═══ Right: control panel ═══════════════════════════════════ -->
+        <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}">
             <DockPanel>
 
                 <!-- Top: title + actions -->
@@ -140,8 +141,13 @@
             </DockPanel>
         </Border>
 
-        <!-- ═══ Right: report preview ═══════════════════════════════════ -->
-        <Grid Grid.Column="1" Background="#CCCCCC">
+        <GridSplitter Grid.Column="1"
+                      Width="8"
+                      HorizontalAlignment="Stretch"
+                      Background="{DynamicResource LightBackgroundBrush}" />
+
+        <!-- ═══ Left: report preview ════════════════════════════════════ -->
+        <Grid Grid.Column="0" Background="#CCCCCC">
 
             <!-- Placeholder — shown when no report content -->
             <Border VerticalAlignment="Center" HorizontalAlignment="Center"

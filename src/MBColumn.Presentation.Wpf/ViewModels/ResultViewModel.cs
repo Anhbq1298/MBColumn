@@ -77,7 +77,8 @@ public sealed class ResultViewModel : ViewModelBase
     private bool showSurface3D = true;
     private bool showWireframe3D = true;
     private bool showNominalCurve = true;
-    private bool useEqualAspectForMM = true;
+    private bool showCpLabels = true;
+    private bool useEqualAspectForMM = false;
     private ControlPointDto? selectedChartPoint;
     private IReadOnlyList<ControlPointDto> pmAnglePoints = [];
     private IReadOnlyList<ControlPointDto> mxMyPoints = [];
@@ -598,6 +599,7 @@ public sealed class ResultViewModel : ViewModelBase
     public bool ShowSurface3D { get => showSurface3D; set { Set(ref showSurface3D, value); PropagateDisplaySettings(); } }
     public bool ShowWireframe3D { get => showWireframe3D; set { Set(ref showWireframe3D, value); PropagateDisplaySettings(); } }
     public bool ShowNominalCurve { get => showNominalCurve; set => Set(ref showNominalCurve, value); }
+    public bool ShowCpLabels { get => showCpLabels; set => Set(ref showCpLabels, value); }
     public bool UseEqualAspectForMM { get => useEqualAspectForMM; set => Set(ref useEqualAspectForMM, value); }
     public double PStep { get => pmPGridStep; set => Set(ref pmPGridStep, SanitizeGridStep(value)); }
     public double MStep { get => pmMGridStep; set => Set(ref pmMGridStep, SanitizeGridStep(value)); }
