@@ -230,8 +230,8 @@
                     <controls:DiagramCanvas2D x:Name="MmCanvas" ShowInteractionHint="False" Points="{Binding MxMyPoints}"
                                               XAxisLabel="{Binding MM.XAxisLabel}"
                                               YAxisLabel="{Binding MM.YAxisLabel}"
-                                              ShowGrid="True"
-                                              ShowLabels="True"
+                                              ShowGrid="{Binding MM.ShowGrid}"
+                                              ShowLabels="{Binding MM.ShowLabels}"
                                               ShowSpecialPoints="{Binding ShowCpLabels}"
                                               ShowCpLabels="{Binding ShowCpLabels}"
                                               ShowDemandPoint="True"
@@ -269,14 +269,23 @@
                             </Button>
                             <Separator Margin="2,3" Background="#20000000" Height="1" />
                             <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show grid"
-                                          IsChecked="{Binding DataContext.ShowGrid, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                          IsChecked="{Binding MM.ShowGrid}">
                                 <TextBlock Text="▦" FontSize="14" />
                             </ToggleButton>
                             <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show axes labels"
-                                          IsChecked="{Binding DataContext.ShowLabels, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          IsChecked="{Binding MM.ShowLabels}"
                                           Margin="0,2,0,0">
                                 <TextBlock Text="┼" FontSize="13" FontWeight="SemiBold" />
                             </ToggleButton>
+                            <Separator Margin="2,3" Background="#20000000" Height="1" />
+                            <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Toggle control points"
+                                          IsChecked="{Binding ShowCpLabels}">
+                                <TextBlock Text="🎯" FontSize="14" />
+                            </ToggleButton>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Export PNG"
+                                    Margin="0,2,0,0" Click="ExportMmChart_Click">
+                                <TextBlock Text="📷" FontSize="14" />
+                            </Button>
                         </StackPanel>
                     </Border>
 
@@ -294,22 +303,6 @@
                             <TextBox Text="{Binding MStepY, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}"
                                      Style="{StaticResource ChartConfigInputStyle}" />
                         </WrapPanel>
-                    </Border>
-                    <!-- Toolbar overlay — bottom-right -->
-                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
-                            Margin="0,0,6,6"
-                            Background="{DynamicResource PanelBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderSoftBrush}"
-                            BorderThickness="1" CornerRadius="4" Padding="4,3">
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton Content="Control Pts"
-                                          IsChecked="{Binding ShowCpLabels}"
-                                          Style="{StaticResource ChartToolbarToggleStyle}" />
-                            <Button Content="Export PNG"
-                                    Style="{StaticResource ChartToolbarButtonStyle}"
-                                    Margin="0"
-                                    Click="ExportMmChart_Click" />
-                        </StackPanel>
                     </Border>
                 </Grid>
             </Grid>
@@ -332,8 +325,8 @@
                                               ReferenceLines="{Binding PmReferenceLines}"
                                               XAxisLabel="{Binding PM.XAxisLabel}"
                                               YAxisLabel="{Binding PM.YAxisLabel}"
-                                              ShowGrid="True"
-                                              ShowLabels="True"
+                                              ShowGrid="{Binding PM.ShowGrid}"
+                                              ShowLabels="{Binding PM.ShowLabels}"
                                               ShowSpecialPoints="{Binding ShowCpLabels}"
                                               ShowCpLabels="{Binding ShowCpLabels}"
                                               ShowDemandPoint="True"
@@ -381,14 +374,23 @@
                             </Button>
                             <Separator Margin="2,3" Background="#20000000" Height="1" />
                             <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show grid"
-                                          IsChecked="{Binding DataContext.ShowGrid, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                          IsChecked="{Binding PM.ShowGrid}">
                                 <TextBlock Text="▦" FontSize="14" />
                             </ToggleButton>
                             <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show axes labels"
-                                          IsChecked="{Binding DataContext.ShowLabels, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          IsChecked="{Binding PM.ShowLabels}"
                                           Margin="0,2,0,0">
                                 <TextBlock Text="┼" FontSize="13" FontWeight="SemiBold" />
                             </ToggleButton>
+                            <Separator Margin="2,3" Background="#20000000" Height="1" />
+                            <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Toggle control points"
+                                          IsChecked="{Binding ShowCpLabels}">
+                                <TextBlock Text="🎯" FontSize="14" />
+                            </ToggleButton>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Export PNG"
+                                    Margin="0,2,0,0" Click="ExportPmChart_Click">
+                                <TextBlock Text="📷" FontSize="14" />
+                            </Button>
                         </StackPanel>
                     </Border>
 
@@ -407,22 +409,6 @@
                             <TextBox Text="{Binding MStep, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}"
                                      Style="{StaticResource ChartConfigInputStyle}" />
                         </WrapPanel>
-                    </Border>
-                    <!-- Toolbar overlay — bottom-right -->
-                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
-                            Margin="0,0,6,6"
-                            Background="{DynamicResource PanelBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderSoftBrush}"
-                            BorderThickness="1" CornerRadius="4" Padding="4,3">
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton Content="Control Pts"
-                                          IsChecked="{Binding ShowCpLabels}"
-                                          Style="{StaticResource ChartToolbarToggleStyle}" />
-                            <Button Content="Export PNG"
-                                    Style="{StaticResource ChartToolbarButtonStyle}"
-                                    Margin="0"
-                                    Click="ExportPmChart_Click" />
-                        </StackPanel>
                     </Border>
                 </Grid>
             </Grid>
@@ -633,19 +619,36 @@
                         <DataGridTextColumn Binding="{Binding PnSolverDisplay}" Width="Auto">
                             <DataGridTextColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <TextBlock>
-                                        <Run Text="P (" />
+                                    <TextBlock TextAlignment="Center">
+                                        <Run Text="P" />
+                                        <LineBreak />
+                                        <Run Text="(" />
                                         <Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
                                         <Run Text=")" />
                                     </TextBlock>
                                 </DataTemplate>
                             </DataGridTextColumn.HeaderTemplate>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Binding="{Binding MnSolverDisplay}" Width="Auto">
+                        <DataGridTextColumn Binding="{Binding MNegDisplay}" Width="Auto">
                             <DataGridTextColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <TextBlock>
-                                        <Run Text="M (" />
+                                    <TextBlock TextAlignment="Center">
+                                        <Run Text="Mθ(-)" />
+                                        <LineBreak />
+                                        <Run Text="(" />
+                                        <Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding MPosDisplay}" Width="Auto">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextAlignment="Center">
+                                        <Run Text="Mθ(+)" />
+                                        <LineBreak />
+                                        <Run Text="(" />
                                         <Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
                                         <Run Text=")" />
                                     </TextBlock>

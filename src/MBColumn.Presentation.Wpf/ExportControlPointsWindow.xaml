@@ -99,6 +99,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <DockPanel Margin="14,14,14,10">
@@ -345,6 +346,37 @@
                                        TextAlignment="Center" />
                         </Border>
                     </Grid>
+
+                    <!-- Active Design Strain Limits -->
+                    <Border Grid.Row="2" Margin="14,0,14,14" Padding="12,8"
+                            Background="#06000000" BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="1" CornerRadius="6">
+                        <DockPanel>
+                            <TextBlock Text="Active Design Strain Limits:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Border Background="#103B82F6" CornerRadius="4" Padding="8,4" Margin="6,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Concrete Limit (" Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding ConcreteUltimateStrainLabel}" Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Text="): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding EpsilonCu2, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF3B82F6" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#1010B981" CornerRadius="4" Padding="8,4" Margin="12,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Steel Yield (&#x03B5;yd): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding EpsilonYd, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF10B981" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#10F59E0B" CornerRadius="4" Padding="8,4" Margin="12,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Steel Max Tension (&#x03B5;ud): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding EpsilonUd, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FFF59E0B" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

@@ -19,13 +19,17 @@ public sealed record SevenPointValidationRowViewModel(
     double PnSolver,
     double MnSolver,
     double DeviationP,
-    double DeviationM)
+    double DeviationM,
+    double MNeg = 0.0,
+    double MPos = 0.0)
 {
     public string CDisplay => C > 10000 ? "∞" : $"{C:F1}";
     public string Pn7Display => $"{Pn7 / 1000.0:F1}";
     public string Mn7Display => $"{Mn7 / 1000000.0:F1}";
     public string PnSolverDisplay => $"{PnSolver / 1000.0:F1}";
     public string MnSolverDisplay => $"{MnSolver / 1000000.0:F1}";
+    public string MNegDisplay => $"{MNeg / 1000000.0:F1}";
+    public string MPosDisplay => $"{MPos / 1000000.0:F1}";
     public string DevPDisplay => $"{DeviationP:F2}%";
     public string DevMDisplay => $"{DeviationM:F2}%";
 }
@@ -216,7 +220,8 @@ public sealed class ResultViewModel : ViewModelBase
             SevenPointValidationRows = value?.SevenPointValidationRows?.Select((r, i) => new SevenPointValidationRowViewModel(
                 $"CP-0{i + 1}",
                 r.PointName, r.HandCalcState, r.HandCalcC, r.HandCalcPn, r.HandCalcMn,
-                r.SolverPn, r.SolverMn, r.PnDeviationPercent, r.MnDeviationPercent
+                r.SolverPn, r.SolverMn, r.PnDeviationPercent, r.MnDeviationPercent,
+                r.SolverMn, r.SolverMn
             )).ToList() ?? [];
             Raise(nameof(SevenPointValidationRows));
             Raise(nameof(HasSevenPointValidation));
@@ -384,6 +389,44 @@ public sealed class ResultViewModel : ViewModelBase
             PmReferenceLines = pmDiagram.ReferenceLines;
             PM.LoadPmAngle(pmDiagramWithDemand, Result.Ratio);
 
+            // Dynamically update the Special Control Points table to match the active chart slice exactly
+            SevenPointValidationRows = pmDiagram.SpecialCapacityPoints
+                .GroupBy(p => p.CpNumber)
+                .OrderBy(g => g.Key)
+                .Select(g =>
+                {
+                    var posPoint = g.FirstOrDefault(pt => pt.X >= -1e-6);
+                    var negPoint = g.FirstOrDefault(pt => pt.X < -1e-6);
+                    posPoint ??= g.First();
+                    negPoint ??= g.First();
+                    
+                    var uniqueName = $"CP-0{posPoint.CpNumber}";
+                    var desc = posPoint.Label;
+                    double cVal = posPoint.CpNumber == 1 ? 999999.0 : posPoint.NeutralAxisDepth;
+                    
+                    // posPoint.P and posPoint.X/negPoint.X are already in display units (kN and kN-m).
+                    // We multiply them by 1000.0 and 1000000.0 respectively to match the base units (N and N-mm)
+                    // that SevenPointValidationRowViewModel expects and will scale back down for display.
+                    double pVal = posPoint.P * 1000.0;
+                    double mPos = Math.Abs(posPoint.X) * 1000000.0;
+                    double mNeg = Math.Abs(negPoint.X) * 1000000.0;
+                    
+                    return new SevenPointValidationRowViewModel(
+                        uniqueName,
+                        desc,
+                        desc,
+                        cVal,
+                        pVal,
+                        mPos,
+                        pVal,
+                        mPos,
+                        0.0,
+                        0.0,
+                        mNeg,
+                        mPos
+                    );
+                }).ToList();
+
             UpdateSharedPmBoundsFromAnglePoints(pmDiagramWithDemand.Points);
 
             var mmDiagram = diagramService.BuildMxMyDiagramDataAtDisplayP(Result.ControlPoints, Result.UnitSystem, SelectedAxialLoad);
@@ -402,6 +445,7 @@ public sealed class ResultViewModel : ViewModelBase
             MM.Load(null, 0);
             PM3D.DemandPoints = [];
             SharedPmBounds = null;
+            SevenPointValidationRows = [];
         }
 
         UpdatePmChartInset();

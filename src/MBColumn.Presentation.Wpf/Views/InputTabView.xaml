@@ -294,6 +294,12 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="0"
@@ -433,6 +439,37 @@
                                          Grid.ColumnSpan="2"
                                          IsEnabled="{Binding AreMaterialInputsEnabled}"
                                          Text="{Binding Es, UpdateSourceTrigger=PropertyChanged}" />
+                            
+                                 <TextBlock Grid.Row="22"
+                                            Grid.Column="0"
+                                            Text="{Binding ConcreteUltimateStrainLabel}"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0" />
+                                 <TextBox Grid.Row="23"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonCu2, Mode=OneWay, StringFormat=F5}" />
+                                 <TextBlock Grid.Row="24"
+                                            Grid.Column="0"
+                                            Text="&#x03B5;yd"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0" />
+                                 <TextBox Grid.Row="25"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonYd, Mode=OneWay, StringFormat=F5}" />
+                                 <TextBlock Grid.Row="26"
+                                            Grid.Column="0"
+                                            Text="&#x03B5;ud"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0" />
+                                 <TextBox Grid.Row="27"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonUd, Mode=OneWay, StringFormat=F5}" />
                             </Grid>
                         </GroupBox>
                     </StackPanel>

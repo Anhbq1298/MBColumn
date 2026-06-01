@@ -305,6 +305,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(FyLabel));
             Raise(nameof(ShowEc2SolverOption));
             Raise(nameof(ShowAlphaCcOption));
+            RaiseMaterialDerivedProperties();
         }
     }
     public string FcLabel => selectedDesignCode == DesignCodeType.Ec2 ? "fck" : "f'c";
@@ -950,6 +951,52 @@ public sealed class InputViewModel : ViewModelBase
     public string FcdDisplayText => Fc > 0 && GammaC > 0 ? $"{AlphaCc * StressInputToMpa(Fc) / GammaC:F2}" : "auto";
     public string FcmDisplayText => Fc > 0 ? $"{StressInputToMpa(Fc) + 8.0:F2}" : "auto";
     public string EcmDisplayText => Fc > 0 ? $"{22000.0 * Math.Pow((StressInputToMpa(Fc) + 8.0) / 10.0, 0.3):F0}" : "auto";
+
+    public bool IsEc2 => SelectedDesignCode == DesignCodeType.Ec2;
+    public string ConcreteUltimateStrainLabel => IsEc2 ? "\u03b5cu2" : "\u03b5cu";
+    public double EpsilonCu2
+    {
+        get
+        {
+            if (IsEc2)
+            {
+                double fck = StressInputToMpa(Fc);
+                if (fck <= 50.0) return 0.0035;
+                if (fck >= 90.0) return 0.0026;
+                
+                var table = new (double X, double Y)[] { (50, 0.0035), (55, 0.0031), (60, 0.0029), (70, 0.0027), (80, 0.0026), (90, 0.0026) };
+                for (int i = 0; i < table.Length - 1; i++)
+                {
+                    var (x0, y0) = table[i];
+                    var (x1, y1) = table[i + 1];
+                    if (fck >= x0 && fck <= x1)
+                    {
+                        double t = (fck - x0) / (x1 - x0);
+                        return y0 + t * (y1 - y0);
+                    }
+                }
+                return 0.0035;
+            }
+            return 0.003;
+        }
+    }
+
+    public double EpsilonYd
+    {
+        get
+        {
+            double esVal = StressInputToMpa(Es);
+            if (esVal <= 0.0) return 0.0;
+            if (IsEc2)
+            {
+                double fyd = StressInputToMpa(Fy) / 1.15;
+                return fyd / esVal;
+            }
+            return StressInputToMpa(Fy) / esVal;
+        }
+    }
+
+    public double EpsilonUd => IsEc2 ? 0.045 : 0.08;
 
     public ForceUnit CurrentForceUnit => UnitSystem == UnitSystem.Metric ? ForceUnit.kN : ForceUnit.Kip;
     public MomentUnit CurrentMomentUnit => UnitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt;
@@ -2896,6 +2943,11 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(PreviewFydText));
         Raise(nameof(PreviewEcmText));
         Raise(nameof(PreviewOmegaText));
+        Raise(nameof(IsEc2));
+        Raise(nameof(ConcreteUltimateStrainLabel));
+        Raise(nameof(EpsilonCu2));
+        Raise(nameof(EpsilonYd));
+        Raise(nameof(EpsilonUd));
     }
 
     private double StressInputToMpa(double value)

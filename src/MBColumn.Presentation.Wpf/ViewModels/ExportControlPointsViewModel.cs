@@ -79,6 +79,71 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
     public bool HasPreviewRows => PreviewRows.Count > 0;
     public bool HasEmptyState => !HasPreviewRows && !string.IsNullOrWhiteSpace(EmptyStateMessage);
 
+    public bool IsEc2 => result.DesignCode == DesignCodeType.Ec2;
+
+    public string ConcreteUltimateStrainLabel => IsEc2 ? "\u03b5cu2" : "\u03b5cu";
+
+    public double EpsilonCu2
+    {
+        get
+        {
+            if (IsEc2)
+            {
+                double fck = result.FcMpa;
+                if (fck <= 50.0) return 0.0035;
+                if (fck >= 90.0) return 0.0026;
+                
+                var table = new (double X, double Y)[] { (50, 0.0035), (55, 0.0031), (60, 0.0029), (70, 0.0027), (80, 0.0026), (90, 0.0026) };
+                for (int i = 0; i < table.Length - 1; i++)
+                {
+                    var (x0, y0) = table[i];
+                    var (x1, y1) = table[i + 1];
+                    if (fck >= x0 && fck <= x1)
+                    {
+                        double t = (fck - x0) / (x1 - x0);
+                        return y0 + t * (y1 - y0);
+                    }
+                }
+                return 0.0035;
+            }
+            else
+            {
+                return 0.003;
+            }
+        }
+    }
+
+    public double EpsilonYd
+    {
+        get
+        {
+            if (IsEc2)
+            {
+                double fyd = result.FyMpa / 1.15;
+                return result.EsMpa > 0 ? fyd / result.EsMpa : 0.0;
+            }
+            else
+            {
+                return result.EsMpa > 0 ? result.FyMpa / result.EsMpa : 0.0;
+            }
+        }
+    }
+
+    public double EpsilonUd
+    {
+        get
+        {
+            if (IsEc2)
+            {
+                return 0.045;
+            }
+            else
+            {
+                return 0.08;
+            }
+        }
+    }
+
     public bool IsCurrentViewSelected
     {
         get => SelectedThetaMode == ControlPointThetaSelectionMode.CurrentView;
