@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <style>
+{{FONT_FACE_CSS}}
+  </style>
+  <style>
 {{KATEX_CSS}}
   </style>
   <style>
@@ -12,7 +15,7 @@
       background: transparent;
       overflow: hidden;
       color: {{TEXT_COLOR}};
-      font-family: "Segoe UI Variable Text", "Segoe UI", "Aptos", "Arial", sans-serif;
+      font-family: "Inter", "Segoe UI", sans-serif;
     }
 
     .math-container {
@@ -31,7 +34,7 @@
       font-size: 1em;
     }
 
-    /* Use sans-serif for all math-mode characters */
+    /* Override KaTeX math-mode characters to Inter */
     .katex .katex-mathit,
     .katex .mathdefault,
     .katex .mord,
@@ -42,7 +45,7 @@
     .katex .mopen,
     .katex .mclose,
     .katex .minner {
-      font-family: "Arial", "Segoe UI", sans-serif;
+      font-family: "Inter", "Segoe UI", sans-serif;
     }
     .katex .katex-mathit,
     .katex .mathdefault {
@@ -50,7 +53,7 @@
     }
     .katex .mtext,
     .katex .text {
-      font-family: "Arial", "Segoe UI", sans-serif;
+      font-family: "Inter", "Segoe UI", sans-serif;
       font-style: normal;
     }
   </style>
@@ -82,8 +85,6 @@
           strict: "ignore"
         });
 
-        // Wait for KaTeX fonts to finish loading before reporting dimensions,
-        // so the host knows the equation is truly fully rendered.
         document.fonts.ready.then(function () {
           report("rendered", {
             width: Math.ceil(document.body.scrollWidth),

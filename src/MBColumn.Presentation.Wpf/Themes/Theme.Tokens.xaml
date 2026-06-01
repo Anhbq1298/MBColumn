@@ -20,7 +20,7 @@
     <sys:Double x:Key="FontSizeHelper">12</sys:Double>
     <sys:Double x:Key="FontSizeBody">12</sys:Double>
     <sys:Double x:Key="FontSizeSection">14</sys:Double>
-    <sys:Double x:Key="FontSizeFormula">12</sys:Double>
+    <sys:Double x:Key="FontSizeFormula">14</sys:Double>
     <sys:Double x:Key="FontSizeDialogTitle">16</sys:Double>
     <sys:Double x:Key="FontSizeWindowTitle">22</sys:Double>
 </ResourceDictionary>

@@ -9,7 +9,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="5*" MinWidth="300"/>
             <ColumnDefinition Width="8"/>
-            <ColumnDefinition Width="2*" MinWidth="180" MaxWidth="340"/>
+            <ColumnDefinition Width="2*" MinWidth="220" MaxWidth="440"/>
         </Grid.ColumnDefinitions>
 
         <!-- ═══ Right: control panel ═══════════════════════════════════ -->
@@ -93,11 +93,14 @@
                 </StackPanel>
 
                 <!-- Section list (scrollable, fills remaining space) -->
-                <TreeView ItemsSource="{Binding ReportTreeNodes}"
+                <TreeView x:Name="SectionTreeView"
+                          ItemsSource="{Binding ReportTreeNodes}"
                           BorderThickness="0" Background="Transparent"
                           Margin="8,0,8,10"
+                          HorizontalAlignment="Stretch"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          VirtualizingStackPanel.IsVirtualizing="False"
                           Visibility="{Binding HasSectionToggles,
                               Converter={StaticResource BoolToVisibilityConverter}}">
                     <TreeView.ItemContainerStyle>
@@ -112,7 +115,8 @@
                     <TreeView.Resources>
                         <!-- HierarchicalDataTemplate for ReportTreeItemViewModel -->
                         <HierarchicalDataTemplate DataType="{x:Type vm:ReportTreeItemViewModel}" ItemsSource="{Binding Children}">
-                            <Grid Margin="2,1">
+                            <Grid Margin="2,1"
+                                  MaxWidth="{Binding ActualWidth, ElementName=SectionTreeView}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>

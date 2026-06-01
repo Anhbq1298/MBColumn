@@ -29,6 +29,7 @@ public sealed class MathRenderService
         string js = LoadKatexJs(resourcesRoot);
 
         string html = template
+            .Replace("{{FONT_FACE_CSS}}", BuildInterFontFaceCss(), StringComparison.Ordinal)
             .Replace("{{KATEX_CSS}}", css, StringComparison.Ordinal)
             .Replace("{{KATEX_JS}}", js, StringComparison.Ordinal)
             .Replace("{{TEXT_COLOR}}", textColor, StringComparison.Ordinal)
@@ -61,6 +62,26 @@ public sealed class MathRenderService
             .Replace(@"\\", @"\", StringComparison.Ordinal)
             .Replace(@"\ ", @"\;", StringComparison.Ordinal);
 
+    private static string BuildInterFontFaceCss()
+    {
+        string fontsDir = Path.Combine(AppContext.BaseDirectory, "Resources", "Fonts");
+        var sb = new System.Text.StringBuilder();
+        foreach (var (weight, file) in new[]
+        {
+            ("400", "Inter-Regular.ttf"),
+            ("500", "Inter-Medium.ttf"),
+            ("600", "Inter-SemiBold.ttf"),
+            ("700", "Inter-Bold.ttf"),
+        })
+        {
+            string path = Path.Combine(fontsDir, file);
+            if (!File.Exists(path)) continue;
+            string uri = new Uri(path).AbsoluteUri;
+            sb.Append($"@font-face{{font-family:'Inter';font-weight:{weight};src:url('{uri}') format('truetype');}}");
+        }
+        return sb.ToString();
+    }
+
     private static string LoadTemplate()
     {
         string templatePath = Path.Combine(AppContext.BaseDirectory, "Resources", "Math", "katex-template.html");
@@ -72,8 +93,9 @@ public sealed class MathRenderService
         Debug.WriteLine("KaTeX template is missing. Using inline fallback template.");
         return """
 <!DOCTYPE html><html><head><meta charset="utf-8" />
+<style>{{FONT_FACE_CSS}}</style>
 <style>{{KATEX_CSS}}</style>
-<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;color:{{TEXT_COLOR}};font-family:"Arial","Segoe UI",sans-serif}.math-container{display:flex;align-items:center;min-height:{{MIN_HEIGHT}}px;font-size:{{FONT_SIZE}}px;line-height:1.35}.katex{color:{{TEXT_COLOR}};font-size:1em}.katex .katex-mathit,.katex .mathdefault{font-family:"Arial","Segoe UI",sans-serif;font-style:italic}.katex .mord,.katex .mop,.katex .mbin,.katex .mrel,.katex .mpunct,.katex .mopen,.katex .mclose,.katex .minner{font-family:"Arial","Segoe UI",sans-serif}.katex .mtext,.katex .text{font-family:"Arial","Segoe UI",sans-serif;font-style:normal}</style>
+<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;color:{{TEXT_COLOR}};font-family:"Inter","Segoe UI",sans-serif}.math-container{display:flex;align-items:center;min-height:{{MIN_HEIGHT}}px;font-size:{{FONT_SIZE}}px;line-height:1.35}.katex{color:{{TEXT_COLOR}};font-size:1em}.katex .katex-mathit,.katex .mathdefault{font-family:"Inter","Segoe UI",sans-serif;font-style:italic}.katex .mord,.katex .mop,.katex .mbin,.katex .mrel,.katex .mpunct,.katex .mopen,.katex .mclose,.katex .minner{font-family:"Inter","Segoe UI",sans-serif}.katex .mtext,.katex .text{font-family:"Inter","Segoe UI",sans-serif;font-style:normal}</style>
 </head><body><div id="math" class="math-container"></div><script>{{KATEX_JS}}</script><script>
 function report(t,p){if(window.chrome&&window.chrome.webview){window.chrome.webview.postMessage(Object.assign({type:t},p||{}));}}
 window.addEventListener('wheel',function(e){report("wheel",{deltaY:e.deltaY,deltaX:e.deltaX});},{passive:true});
