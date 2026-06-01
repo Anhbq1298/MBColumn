@@ -21,7 +21,7 @@ public sealed class SectionStateInsetCanvas : FrameworkElement
         set => SetValue(InsetFigureProperty, value);
     }
 
-    private const double LegendHeight = 46.0;
+    private const double LegendHeight = 0.0;
     private const double Padding = 16.0;
 
     protected override void OnRender(DrawingContext dc)
@@ -98,31 +98,10 @@ public sealed class SectionStateInsetCanvas : FrameworkElement
             dc.DrawEllipse(barBrush, new Pen(Brushes.White, 0.7), pt, 2.7, 2.7);
         }
 
-        DrawLegend(dc, inset, compressionFill, tensionFill, sketchHeight);
-
         dc.Pop();
     }
 
-    private void DrawLegend(DrawingContext dc, PmChartInsetFigureDto inset, Brush compressionFill, Brush tensionFill, double sketchHeight)
-    {
-        var textBrush = new SolidColorBrush(Color.FromRgb(71, 85, 105));
-        double left = 8.0;
-        double y = sketchHeight + 2.0;
 
-        string caption = string.IsNullOrWhiteSpace(inset.SelectedLoadCaseName)
-            ? $"θ = {inset.ThetaDegrees:0.#}°"
-            : $"{inset.SelectedLoadCaseName}  θ = {inset.ThetaDegrees:0.#}°";
-        DrawText(dc, caption, 7.5, textBrush, new Point(left, y), FontWeights.Normal);
-        DrawLegendItem(dc, new Point(left, y + 14.0), compressionFill, "Concrete in compression", textBrush);
-        DrawLegendItem(dc, new Point(left, y + 27.0), tensionFill, "Concrete in tension (ignored)", textBrush);
-    }
-
-    private static void DrawLegendItem(DrawingContext dc, Point origin, Brush fill, string label, Brush textBrush)
-    {
-        dc.DrawRectangle(fill, new Pen(new SolidColorBrush(Color.FromArgb(160, 71, 85, 105)), 0.5),
-            new Rect(origin.X, origin.Y + 2.0, 8.0, 6.0));
-        DrawText(dc, label, 6.8, textBrush, new Point(origin.X + 12.0, origin.Y - 1.0), FontWeights.Normal);
-    }
 
     private static Rect GetContentBounds(IReadOnlyList<InsetPointDto> points)
     {

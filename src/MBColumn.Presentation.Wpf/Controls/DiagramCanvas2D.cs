@@ -22,6 +22,7 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty ResetVersionProperty = DependencyProperty.Register(nameof(ResetVersion), typeof(int), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(0, OnResetChanged));
     public static readonly DependencyProperty ShowNominalCurveProperty = DependencyProperty.Register(nameof(ShowNominalCurve), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowCapacityControlPointsProperty = DependencyProperty.Register(nameof(ShowCapacityControlPoints), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ShowInteractionHintProperty = DependencyProperty.Register(nameof(ShowInteractionHint), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty SelectedPointProperty = DependencyProperty.Register(nameof(SelectedPoint), typeof(ControlPointDto), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
     public static readonly DependencyProperty BoundsOverrideProperty = DependencyProperty.Register(nameof(BoundsOverride), typeof(Rect?), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty UseEqualAspectProperty = DependencyProperty.Register(nameof(UseEqualAspect), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -70,6 +71,7 @@ public class DiagramCanvas2D : FrameworkElement
     public int ResetVersion { get => (int)GetValue(ResetVersionProperty); set => SetValue(ResetVersionProperty, value); }
     public bool ShowNominalCurve { get => (bool)GetValue(ShowNominalCurveProperty); set => SetValue(ShowNominalCurveProperty, value); }
     public bool ShowCapacityControlPoints { get => (bool)GetValue(ShowCapacityControlPointsProperty); set => SetValue(ShowCapacityControlPointsProperty, value); }
+    public bool ShowInteractionHint { get => (bool)GetValue(ShowInteractionHintProperty); set => SetValue(ShowInteractionHintProperty, value); }
     public ControlPointDto? SelectedPoint { get => (ControlPointDto?)GetValue(SelectedPointProperty); set => SetValue(SelectedPointProperty, value); }
     public Rect? BoundsOverride { get => (Rect?)GetValue(BoundsOverrideProperty); set => SetValue(BoundsOverrideProperty, value); }
     public bool UseEqualAspect { get => (bool)GetValue(UseEqualAspectProperty); set => SetValue(UseEqualAspectProperty, value); }
@@ -117,7 +119,7 @@ public class DiagramCanvas2D : FrameworkElement
         DrawSelectedPoint(dc, transform);
         DrawHoverOverlay(dc, transform, plot);
         DrawInsetFigure(dc, plot);
-        DrawInteractionHint(dc);
+        if (ShowInteractionHint) DrawInteractionHint(dc);
         dc.Pop();
     }
 

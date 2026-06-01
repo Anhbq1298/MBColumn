@@ -70,6 +70,8 @@ public sealed class ResultViewModel : ViewModelBase
     private RelayCommand showControlPointsCommand = null!;
     private RelayCommand exportAllPointsCommand = null!;
     private RelayCommand openPmmDetailsCommand = null!;
+    private RelayCommand setTheta0Command = null!;
+    private RelayCommand setTheta90Command = null!;
     private bool isPmmDetailsOpen;
     private bool showGrid = true;
     private bool showLabels = false;
@@ -80,7 +82,7 @@ public sealed class ResultViewModel : ViewModelBase
     private bool showWireframe3D = true;
     private bool showNominalCurve = true;
     private bool showCpLabels = true;
-    private bool useEqualAspectForMM = false;
+    private bool useEqualAspectForMM = true;
     private ControlPointDto? selectedChartPoint;
     private IReadOnlyList<ControlPointDto> pmAnglePoints = [];
     private IReadOnlyList<ControlPointDto> mxMyPoints = [];
@@ -133,9 +135,13 @@ public sealed class ResultViewModel : ViewModelBase
         ShowControlPointsCommand = showControlPointsCommand;
         exportAllPointsCommand = new RelayCommand(ExportAllPoints, () => HasResult);
         ExportAllPointsCommand = exportAllPointsCommand;
-        openPmmDetailsCommand = new RelayCommand(() => IsPmmDetailsOpen = true, () => HasResult);
+        openPmmDetailsCommand = new RelayCommand(() => { IsPmmDetailsOpen = true; ResetToGoverningLoadCase(); }, () => HasResult);
         OpenPmmDetailsCommand = openPmmDetailsCommand;
         ClosePmmDetailsCommand = new RelayCommand(() => IsPmmDetailsOpen = false);
+        setTheta0Command = new RelayCommand(() => SelectedSliceAngleDegrees = 0, () => HasResult);
+        SetTheta0Command = setTheta0Command;
+        setTheta90Command = new RelayCommand(() => SelectedSliceAngleDegrees = 90, () => HasResult);
+        SetTheta90Command = setTheta90Command;
 
         // Viewport options
         ViewportOptions = new ObservableCollection<ViewportOptionViewModel>
@@ -172,8 +178,9 @@ public sealed class ResultViewModel : ViewModelBase
                 
                 PStep = CalculateNiceStep(pRange);
                 MStep = CalculateNiceStep(Math.Max(mxMax * 2, myMax * 2));
-                MStepX = CalculateNiceStep(mxMax * 2);
-                MStepY = CalculateNiceStep(myMax * 2);
+                var mmStep = CalculateNiceStep(Math.Max(mxMax, myMax) * 2);
+                MStepX = mmStep;
+                MStepY = mmStep;
             }
             
             showPmaxPmin = false;
@@ -220,13 +227,14 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(GoverningLoadCaseName));
             Raise(nameof(CriticalLoadCaseName));
             Raise(nameof(MaxUtilization));
-            SelectedLoadCaseRow = loadCaseRows.FirstOrDefault(r => r.IsCritical);
-            ApplyNavigation();
+            ResetToGoverningLoadCase();
             SelectedChartPoint = null;
             Raise(nameof(HasResult));
             showControlPointsCommand.RaiseCanExecuteChanged();
             exportAllPointsCommand.RaiseCanExecuteChanged();
             openPmmDetailsCommand.RaiseCanExecuteChanged();
+            setTheta0Command.RaiseCanExecuteChanged();
+            setTheta90Command.RaiseCanExecuteChanged();
             Raise(nameof(StatusText));
             Raise(nameof(OverallStatusText));
             Raise(nameof(IsOverallFail));
@@ -402,6 +410,21 @@ public sealed class ResultViewModel : ViewModelBase
         RaiseNavigationLabels();
     }
 
+    private void ResetToGoverningLoadCase()
+    {
+        if (Result is null) return;
+        var criticalCase = loadCaseRows.FirstOrDefault(r => r.IsCritical) ?? loadCaseRows.OrderByDescending(r => r.Utilization).FirstOrDefault();
+        if (criticalCase is not null)
+        {
+            SelectedLoadCaseRow = criticalCase;
+        }
+        else
+        {
+            SelectedSliceAngleDegrees = Result.GoverningThetaDegrees;
+            SelectedAxialLoad = Result.PuDisplay;
+        }
+    }
+
     private void ClearExplicitInspectionState()
     {
         if (selectedLoadCaseRow is not null)
@@ -513,6 +536,8 @@ public sealed class ResultViewModel : ViewModelBase
     public ICommand ExportAllPointsCommand { get; }
     public ICommand OpenPmmDetailsCommand { get; }
     public ICommand ClosePmmDetailsCommand { get; }
+    public ICommand SetTheta0Command { get; }
+    public ICommand SetTheta90Command { get; }
     public bool IsPmmDetailsOpen { get => isPmmDetailsOpen; set => Set(ref isPmmDetailsOpen, value); }
 
     private void RaiseSelectedPointProperties()

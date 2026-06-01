@@ -54,10 +54,137 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="0,0,8,0" />
         </Style>
+        <!-- Local font overrides — smaller/consistent for this compact view -->
+        <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style x:Key="PmmSectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
+        </Style>
+        <Style x:Key="FieldLabelTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="HelperTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="UnitTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Chart icon toolbar styles — muted/subtle -->
+        <Style x:Key="ChartIconHintStyle" TargetType="Border">
+            <Setter Property="Background" Value="#B8FFFFFF" />
+            <Setter Property="BorderBrush" Value="#30000000" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="5,4" />
+            <Setter Property="Cursor" Value="Arrow" />
+        </Style>
+        <Style x:Key="ChartIconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#80505050" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#20000000" />
+                                <Setter Property="Foreground" Value="#C0303030" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#35000000" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ChartIconToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#80505050" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#20000000" />
+                                <Setter Property="Foreground" Value="#C0303030" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ChartToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource CompactButtonStyle}">
+            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+        </Style>
+        <Style x:Key="ChartToolbarToggleStyle" TargetType="ToggleButton">
+            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
+            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryNavyBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryNavyBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <!-- 3-column grid: col0=2D MM/section-info, col1=2D PM/tables, col2=3D PMM/tables -->
-    <Grid Margin="4">
+    <Grid Margin="4" TextElement.FontSize="11">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
@@ -66,8 +193,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />       <!-- Row 0: Header -->
             <RowDefinition Height="3*" MinHeight="140" />  <!-- Row 1: Info / Tables -->
-            <RowDefinition Height="Auto" />       <!-- Row 2: Settings -->
-            <RowDefinition Height="5*" MinHeight="180" />  <!-- Row 3: Charts -->
+            <RowDefinition Height="5*" MinHeight="180" />  <!-- Row 2: Charts -->
         </Grid.RowDefinitions>
 
         <!-- ═══ ROW 0: Header ═══ -->
@@ -90,7 +216,7 @@
         <!-- ═══ ROW 3: Charts ═══ -->
 
         <!-- Col 0: 2D MM (Mx-My diagram) -->
-        <Border Grid.Row="3" Grid.Column="0"
+        <Border Grid.Row="2" Grid.Column="0"
                 Style="{StaticResource ResultChartCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -100,8 +226,8 @@
                 <TextBlock Text="2D MM Diagram"
                            Style="{StaticResource SectionTitleTextStyle}"
                            Margin="0,0,0,4" />
-                <Grid Grid.Row="1">
-                    <controls:DiagramCanvas2D Points="{Binding MxMyPoints}"
+                <Grid Grid.Row="1" x:Name="MmChartArea">
+                    <controls:DiagramCanvas2D x:Name="MmCanvas" ShowInteractionHint="False" Points="{Binding MxMyPoints}"
                                               XAxisLabel="{Binding MM.XAxisLabel}"
                                               YAxisLabel="{Binding MM.YAxisLabel}"
                                               ShowGrid="True"
@@ -118,6 +244,42 @@
                                               HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
                                               Ratio="{Binding MM.Ratio}"
                                               ResetVersion="{Binding MM.ResetVersion}" />
+                    <!-- Zoom & Pan Hint — top-left corner -->
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Left"
+                            Margin="6,6,0,0"
+                            Style="{StaticResource ChartIconHintStyle}">
+                        <StackPanel Orientation="Horizontal" Margin="2,0">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Wheel zoom" IsHitTestVisible="False">
+                                <TextBlock Text="🔍" />
+                            </Button>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Drag pan" IsHitTestVisible="False" Margin="4,0,0,0">
+                                <TextBlock Text="✋" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Icon toolbar — left side -->
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Left"
+                            Margin="6,0,0,0"
+                            Style="{StaticResource ChartIconHintStyle}">
+                        <StackPanel Orientation="Vertical" Margin="0,2">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Reset view"
+                                    Click="ResetMmChart_Click">
+                                <TextBlock Text="↺" FontSize="15" />
+                            </Button>
+                            <Separator Margin="2,3" Background="#20000000" Height="1" />
+                            <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show grid"
+                                          IsChecked="{Binding DataContext.ShowGrid, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <TextBlock Text="▦" FontSize="14" />
+                            </ToggleButton>
+                            <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show axes labels"
+                                          IsChecked="{Binding DataContext.ShowLabels, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          Margin="0,2,0,0">
+                                <TextBlock Text="┼" FontSize="13" FontWeight="SemiBold" />
+                            </ToggleButton>
+                        </StackPanel>
+                    </Border>
+
                     <!-- X/Y step overlay — bottom-left -->
                     <Border VerticalAlignment="Bottom" HorizontalAlignment="Left"
                             Margin="6,0,0,6"
@@ -125,20 +287,36 @@
                             BorderBrush="{DynamicResource BorderSoftBrush}"
                             BorderThickness="1" CornerRadius="4" Padding="5,3">
                         <WrapPanel>
-                            <TextBlock Text="X step" Style="{StaticResource ChartConfigLabelStyle}" />
+                            <TextBlock Text="Mx step" Style="{StaticResource ChartConfigLabelStyle}" />
                             <TextBox Text="{Binding MStepX, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}"
                                      Style="{StaticResource ChartConfigInputStyle}" />
-                            <TextBlock Text="Y step" Style="{StaticResource ChartConfigLabelStyle}" Margin="4,0,4,0" />
+                            <TextBlock Text="My step" Style="{StaticResource ChartConfigLabelStyle}" Margin="4,0,4,0" />
                             <TextBox Text="{Binding MStepY, UpdateSourceTrigger=PropertyChanged, Delay=500, StringFormat=F2}"
                                      Style="{StaticResource ChartConfigInputStyle}" />
                         </WrapPanel>
+                    </Border>
+                    <!-- Toolbar overlay — bottom-right -->
+                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                            Margin="0,0,6,6"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="1" CornerRadius="4" Padding="4,3">
+                        <StackPanel Orientation="Horizontal">
+                            <ToggleButton Content="Control Pts"
+                                          IsChecked="{Binding ShowCpLabels}"
+                                          Style="{StaticResource ChartToolbarToggleStyle}" />
+                            <Button Content="Export PNG"
+                                    Style="{StaticResource ChartToolbarButtonStyle}"
+                                    Margin="0"
+                                    Click="ExportMmChart_Click" />
+                        </StackPanel>
                     </Border>
                 </Grid>
             </Grid>
         </Border>
 
         <!-- Col 1: 2D PM (PM-angle diagram) -->
-        <Border Grid.Row="3" Grid.Column="1"
+        <Border Grid.Row="2" Grid.Column="1"
                 Style="{StaticResource ResultChartCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -149,8 +327,8 @@
                            Style="{StaticResource SectionTitleTextStyle}"
                            Margin="0,0,0,4"
                            ToolTip="{Binding PM.DiagramTitle}" />
-                <Grid Grid.Row="1">
-                    <controls:DiagramCanvas2D Points="{Binding PmAnglePoints}"
+                <Grid Grid.Row="1" x:Name="PmChartArea">
+                    <controls:DiagramCanvas2D x:Name="PmCanvas" ShowInteractionHint="False" Points="{Binding PmAnglePoints}"
                                               ReferenceLines="{Binding PmReferenceLines}"
                                               XAxisLabel="{Binding PM.XAxisLabel}"
                                               YAxisLabel="{Binding PM.YAxisLabel}"
@@ -169,6 +347,51 @@
                                               HighlightedDemandLabel="{Binding HighlightedDemandLabel}"
                                               Ratio="{Binding PM.Ratio}"
                                               ResetVersion="{Binding PM.ResetVersion}" />
+                    <!-- Zoom & Pan Hint — top-left corner -->
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Left"
+                            Margin="6,6,0,0"
+                            Style="{StaticResource ChartIconHintStyle}">
+                        <StackPanel Orientation="Horizontal" Margin="2,0">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Wheel zoom" IsHitTestVisible="False">
+                                <TextBlock Text="🔍" />
+                            </Button>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Drag pan" IsHitTestVisible="False" Margin="4,0,0,0">
+                                <TextBlock Text="✋" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Icon toolbar — left side -->
+                    <Border VerticalAlignment="Center" HorizontalAlignment="Left"
+                            Margin="6,0,0,0"
+                            Style="{StaticResource ChartIconHintStyle}">
+                        <StackPanel Orientation="Vertical" Margin="0,2">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Reset view"
+                                    Click="ResetPmChart_Click">
+                                <TextBlock Text="↺" FontSize="15" />
+                            </Button>
+                            <Separator Margin="2,3" Background="#20000000" Height="1" />
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="PM at θ = 0°"
+                                    Command="{Binding SetTheta0Command}">
+                                <TextBlock Text="0°" FontSize="10" FontWeight="SemiBold" />
+                            </Button>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="PM at θ = 90°"
+                                    Margin="0,2,0,0" Command="{Binding SetTheta90Command}">
+                                <TextBlock Text="90°" FontSize="9" FontWeight="SemiBold" />
+                            </Button>
+                            <Separator Margin="2,3" Background="#20000000" Height="1" />
+                            <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show grid"
+                                          IsChecked="{Binding DataContext.ShowGrid, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <TextBlock Text="▦" FontSize="14" />
+                            </ToggleButton>
+                            <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show axes labels"
+                                          IsChecked="{Binding DataContext.ShowLabels, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          Margin="0,2,0,0">
+                                <TextBlock Text="┼" FontSize="13" FontWeight="SemiBold" />
+                            </ToggleButton>
+                        </StackPanel>
+                    </Border>
+
                     <!-- P/M step overlay — bottom-left corner of chart -->
                     <Border VerticalAlignment="Bottom" HorizontalAlignment="Left"
                             Margin="6,0,0,6"
@@ -185,12 +408,28 @@
                                      Style="{StaticResource ChartConfigInputStyle}" />
                         </WrapPanel>
                     </Border>
+                    <!-- Toolbar overlay — bottom-right -->
+                    <Border VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                            Margin="0,0,6,6"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                            BorderThickness="1" CornerRadius="4" Padding="4,3">
+                        <StackPanel Orientation="Horizontal">
+                            <ToggleButton Content="Control Pts"
+                                          IsChecked="{Binding ShowCpLabels}"
+                                          Style="{StaticResource ChartToolbarToggleStyle}" />
+                            <Button Content="Export PNG"
+                                    Style="{StaticResource ChartToolbarButtonStyle}"
+                                    Margin="0"
+                                    Click="ExportPmChart_Click" />
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Grid>
         </Border>
 
         <!-- Col 2: 3D PMM -->
-        <Border Grid.Row="3" Grid.Column="2"
+        <Border Grid.Row="2" Grid.Column="2"
                 Style="{StaticResource ResultChartCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -200,96 +439,73 @@
                 <TextBlock Text="3D PMM View"
                            Style="{StaticResource SectionTitleTextStyle}"
                            Margin="0,0,0,4" />
-                <controls:InteractionViewport3D Grid.Row="1"
-                                               Points="{Binding PM3D.SurfacePoints}"
-                                               DemandPoint="{Binding PM3D.DemandPoint}"
-                                               DemandPoints="{Binding PM3D.DemandPoints}"
-                                               ShowGrid="{Binding PM3D.ShowGrid}"
-                                               ShowWireframe="{Binding ShowWireframe3D}"
-                                               ShowSurface="{Binding ShowSurface3D}"
-                                               ShowLabels="{Binding PM3D.ShowLabels}"
-                                               ShowDemandPoint="{Binding ShowDemandPoint}"
-                                               UnitLabels="{Binding PM3D.UnitLabels}"
-                                               SelectedPmAngle="{Binding PM3D.SelectedPmAngle}"
-                                               SelectedAxialLoad="{Binding PM3D.SelectedAxialLoad}"
-                                               ShowSlicePlane="{Binding PM3D.ShowSlicePlane}"
-                                               ShowAxialLoadSlice="{Binding PM3D.ShowAxialLoadSlice}"
-                                               SpecialCapacityPoints="{Binding PM3D.SpecialCapacityPoints}"
-                                               ShowCpLabels="{Binding ShowCpLabels}"
-                                               ResetVersion="{Binding PM3D.ResetVersion}" />
+                <Grid Grid.Row="1">
+                    <controls:InteractionViewport3D Points="{Binding PM3D.SurfacePoints}"
+                                                   DemandPoint="{Binding PM3D.DemandPoint}"
+                                                   DemandPoints="{Binding PM3D.DemandPoints}"
+                                                   ShowGrid="True"
+                                                   ShowWireframe="True"
+                                                   ShowSurface="True"
+                                                   ShowLabels="True"
+                                                   ShowDemandPoint="True"
+                                                   UnitLabels="{Binding PM3D.UnitLabels}"
+                                                   SelectedPmAngle="{Binding PM3D.SelectedPmAngle}"
+                                                   SelectedAxialLoad="{Binding PM3D.SelectedAxialLoad}"
+                                                   ShowSlicePlane="True"
+                                                   ShowAxialLoadSlice="True"
+                                                   SpecialCapacityPoints="{Binding PM3D.SpecialCapacityPoints}"
+                                                   ShowCpLabels="{Binding ShowCpLabels}"
+                                                   ResetVersion="{Binding PM3D.ResetVersion}" />
+                </Grid>
             </Grid>
-        </Border>
-
-        <!-- ═══ ROW 2: Settings ═══ -->
-
-        <!-- Col 2: 3D Settings -->
-        <Border Grid.Row="2" Grid.Column="2"
-                Style="{StaticResource ChartInlineSettingsStyle}"
-                Margin="2,4,4,4">
-            <StackPanel>
-                <TextBlock Text="3D Settings" Style="{StaticResource SettingsSectionLabelStyle}" Margin="0,0,0,3" />
-                <WrapPanel>
-                    <CheckBox Content="Surface" IsChecked="{Binding ShowSurface3D}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <CheckBox Content="Wire" IsChecked="{Binding ShowWireframe3D}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <CheckBox Content="Demand" IsChecked="{Binding ShowDemandPoint}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <CheckBox Content="Grid" IsChecked="{Binding PM3D.ShowGrid}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <CheckBox Content="Labels" IsChecked="{Binding PM3D.ShowLabels}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <CheckBox Content="Theta slice" IsChecked="{Binding PM3D.ShowSlicePlane}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <CheckBox Content="P slice" IsChecked="{Binding PM3D.ShowAxialLoadSlice}" Style="{StaticResource ChartConfigCheckBoxStyle}" />
-                    <Button Content="Reset"
-                            Command="{Binding PM3D.ResetCameraCommand}"
-                            Style="{StaticResource CompactButtonStyle}"
-                            MinHeight="20"
-                            Padding="6,1"
-                            Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding PM3D.SelectedPmAngleLabel}"
-                               Style="{StaticResource ChartConfigLabelStyle}"
-                               Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding PM3D.SelectedAxialLoadLabel}"
-                               Style="{StaticResource ChartConfigLabelStyle}" />
-                </WrapPanel>
-            </StackPanel>
         </Border>
 
         <!-- ═══ ROW 1: Info / Tables ═══ -->
 
-        <!-- Col 0: Section Size + Rebar Config, Theta Slice, P Level, Governing Load Case -->
-        <ScrollViewer Grid.Row="1" Grid.Column="0"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="4,4,4,4">
+        <!-- Col 0: Section preview (left) + θ Slice / P Level controls (right) -->
+        <Grid Grid.Row="1" Grid.Column="0" Margin="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-                <!-- Section Size + Rebar Config -->
-                <Border BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Padding="8"
-                        Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="Section Size + Rebar Config"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                   FontSize="{StaticResource FontSizeBody}"
-                                   Margin="0,0,0,6" />
-                        <controls:SectionStateInsetCanvas
-                            InsetFigure="{Binding PmChartInset}"
-                            Height="160" />
-                    </StackPanel>
-                </Border>
+            <!-- Left: Section canvas -->
+            <Border Grid.Column="0"
+                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                    BorderThickness="1" CornerRadius="4" Padding="6">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Section + Rebar"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                               Style="{StaticResource PmmSectionHeaderStyle}"
+                               Margin="0,0,0,6" />
+                    <controls:SectionStateInsetCanvas Grid.Row="1"
+                                                      InsetFigure="{Binding PmChartInset}" />
+                </Grid>
+            </Border>
 
-                <!-- Theta Slice -->
-                <TextBlock Text="Theta Slice"
+            <!-- Right: θ Slice + P Level -->
+            <StackPanel Grid.Column="2" VerticalAlignment="Top" Margin="0,4,0,0">
+
+                <!-- θ Slice -->
+                <TextBlock Text="θ Slice"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
-                           FontSize="{StaticResource FontSizeBody}"
-                           Margin="0,0,0,4" />
-                <Grid Margin="0,0,0,2">
+                           Style="{StaticResource PmmSectionHeaderStyle}"
+                           Margin="0,0,0,6" />
+                <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="92" />
-                        <ColumnDefinition Width="44" />
+                        <ColumnDefinition Width="72" />
+                        <ColumnDefinition Width="30" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Angle theta (Mx, My)"
+                    <TextBlock Text="Angle θ"
                                Style="{StaticResource FieldLabelTextStyle}"
                                VerticalAlignment="Center" />
                     <TextBox Grid.Column="1"
@@ -297,22 +513,23 @@
                              HorizontalContentAlignment="Right" />
                     <TextBlock Grid.Column="2" Text="deg"
                                Style="{StaticResource UnitTextStyle}"
-                               Margin="6,0,0,10" />
+                               Margin="4,0,0,0" />
                 </Grid>
-                <TextBlock Text="{Binding PmSliceLabel}" Style="{StaticResource HelperTextStyle}" />
-                <TextBlock Text="{Binding MxMySliceLabel}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,10" />
+                <TextBlock Text="{Binding PmSliceLabel}"
+                           Style="{StaticResource HelperTextStyle}"
+                           Margin="0,0,0,16" />
 
                 <!-- P Level -->
                 <TextBlock Text="P Level"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
-                           FontSize="{StaticResource FontSizeBody}"
-                           Margin="0,0,0,4" />
-                <Grid Margin="0,0,0,10">
+                           Style="{StaticResource PmmSectionHeaderStyle}"
+                           Margin="0,0,0,6" />
+                <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="92" />
-                        <ColumnDefinition Width="44" />
+                        <ColumnDefinition Width="72" />
+                        <ColumnDefinition Width="30" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Axial load"
                                Style="{StaticResource FieldLabelTextStyle}"
@@ -323,176 +540,219 @@
                     <TextBlock Grid.Column="2"
                                Text="{Binding ForceUnitLabel}"
                                Style="{StaticResource UnitTextStyle}"
-                               Margin="6,0,0,10" />
+                               Margin="4,0,0,0" />
                 </Grid>
+                <TextBlock Text="{Binding MxMySliceLabel}"
+                           Style="{StaticResource HelperTextStyle}" />
 
-                <!-- Governing Load Case -->
-                <TextBlock Text="Governing Load Case"
+                <!-- Legend Card -->
+                <TextBlock Text="Section Capacity Legend"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource PrimaryNavyBrush}"
-                           FontSize="{StaticResource FontSizeBody}"
-                           Margin="0,0,0,4" />
-                <TextBlock Text="{Binding DemandSourceSummary}" Style="{StaticResource HelperTextStyle}" />
-                <TextBlock Text="{Binding DemandSourceDetail}" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,0" />
+                           Style="{StaticResource PmmSectionHeaderStyle}"
+                           Margin="0,16,0,6" />
+                <Border BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="1" CornerRadius="4" Padding="8"
+                        Background="{DynamicResource PanelBackgroundBrush}">
+                    <StackPanel>
+                        <!-- Active Loadcase & Angle Info -->
+                        <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6">
+                            <Run Text="{Binding SelectedLoadCaseRow.Name, FallbackValue=''}" />
+                            <Run Text=" θ = " />
+                            <Run Text="{Binding SelectedSliceAngleDegrees, StringFormat=F1}" />
+                            <Run Text="°" />
+                        </TextBlock>
+
+                        <!-- Concrete in Compression -->
+                        <Grid Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="12" Height="12" CornerRadius="2"
+                                    Background="#5CF59E0B"
+                                    BorderBrush="#A0475569" BorderThickness="0.5"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Concrete in compression"
+                                       Style="{StaticResource HelperTextStyle}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+
+                        <!-- Concrete in Tension (ignored) -->
+                        <Grid Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="12" Height="12" CornerRadius="2"
+                                    Background="#3A64748B"
+                                    BorderBrush="#A0475569" BorderThickness="0.5"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="Concrete in tension (ignored)"
+                                       Style="{StaticResource HelperTextStyle}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
             </StackPanel>
-        </ScrollViewer>
+        </Grid>
 
-        <!-- Col 1-2: Special Control Points + Demand/Capacity Summary Table -->
-        <ScrollViewer Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Margin="4,4,4,4">
-            <StackPanel>
+        <!-- Col 1: Special Control Points -->
+        <Border Grid.Row="1" Grid.Column="1"
+                Style="{StaticResource ChartCardStyle}"
+                Padding="8" Margin="4,4,2,4"
+                Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="Special Control Points (7 Points)"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           Style="{StaticResource PmmSectionHeaderStyle}"
+                           Margin="0,0,0,6" />
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding SevenPointValidationRows}"
+                          IsReadOnly="True"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeColumns="True"
+                          CanUserResizeRows="False"
+                          CanUserSortColumns="False"
+                          ColumnWidth="Auto"
+                          HeadersVisibility="Column"
+                          HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Point" Binding="{Binding UniqueName}" Width="Auto" />
+                        <DataGridTextColumn Header="Description" Binding="{Binding PointName}" Width="*" />
+                        <DataGridTextColumn Header="c (mm)" Binding="{Binding CDisplay}" Width="Auto" />
+                        <DataGridTextColumn Binding="{Binding PnSolverDisplay}" Width="Auto">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <Run Text="P (" />
+                                        <Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding MnSolverDisplay}" Width="Auto">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <Run Text="M (" />
+                                        <Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                                        <Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
 
-            <!-- 1. Special Control Points Information (7 Points) -->
-            <Border Style="{StaticResource ChartCardStyle}"
-                    Padding="8"
-                    Margin="0,0,0,6"
-                    Visibility="{Binding HasSevenPointValidation, Converter={StaticResource BoolToVisibilityConverter}}">
-                <StackPanel>
-                    <TextBlock Text="1. Special Control Points Information (7 Points)"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryNavyBrush}"
-                               FontSize="{StaticResource FontSizeBody}"
-                               Margin="0,0,0,6" />
-                    <DataGrid ItemsSource="{Binding SevenPointValidationRows}"
-                              IsReadOnly="True"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              CanUserResizeColumns="True"
-                              CanUserResizeRows="False"
-                              CanUserSortColumns="False"
-                              ColumnWidth="Auto"
-                              HeadersVisibility="Column"
-                              MaxHeight="240"
-                              HorizontalScrollBarVisibility="Disabled"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Point" Binding="{Binding UniqueName}" Width="Auto" />
-                            <DataGridTextColumn Header="Description" Binding="{Binding PointName}" Width="*" />
-                            <DataGridTextColumn Header="c (mm)" Binding="{Binding CDisplay}" Width="Auto" />
-                            <DataGridTextColumn Binding="{Binding PnSolverDisplay}" Width="Auto">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock>
-                                            <Run Text="P (" />
-                                            <Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            <Run Text=")" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding MnSolverDisplay}" Width="Auto">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock>
-                                            <Run Text="M (" />
-                                            <Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
-                                            <Run Text=")" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-            </Border>
-
-            <!-- 2. Demand / Capacity Summary Table -->
-            <Border Style="{StaticResource ChartCardStyle}"
-                    Padding="8">
-                <StackPanel>
-                    <TextBlock Text="2. Demand / Capacity Summary Table"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryNavyBrush}"
-                               FontSize="{StaticResource FontSizeBody}"
-                               Margin="0,0,0,6" />
-                    <DataGrid ItemsSource="{Binding LoadCaseRows}"
-                              SelectedItem="{Binding SelectedLoadCaseRow}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              CanUserResizeColumns="True"
-                              CanUserResizeRows="False"
-                              CanUserSortColumns="False"
-                              IsReadOnly="True"
-                              ColumnWidth="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto">
-                        <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsCritical}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
-                                        <Setter Property="FontWeight" Value="SemiBold" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsFailing}" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
-                                        <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGrid.RowStyle>
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="LC Name" Binding="{Binding Name}"
-                                                Width="*" MinWidth="80"
-                                                ElementStyle="{StaticResource WrapLeftAlignText}" />
-                            <DataGridTextColumn Binding="{Binding PDisplay}"
-                                                Width="Auto" MinWidth="45"
-                                                ElementStyle="{StaticResource WrapRightAlignText}">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock TextWrapping="Wrap" TextAlignment="Right">
-                                            <Run Text="P" /><LineBreak />
-                                            <Run Text="(" /><Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding MxDisplay}"
-                                                Width="Auto" MinWidth="45"
-                                                ElementStyle="{StaticResource WrapRightAlignText}">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock TextWrapping="Wrap" TextAlignment="Right">
-                                            <Run Text="Mx" /><LineBreak />
-                                            <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding MyDisplay}"
-                                                Width="Auto" MinWidth="45"
-                                                ElementStyle="{StaticResource WrapRightAlignText}">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock TextWrapping="Wrap" TextAlignment="Right">
-                                            <Run Text="My" /><LineBreak />
-                                            <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Binding="{Binding UtilizationDisplay}"
-                                                Width="Auto" MinWidth="40"
-                                                ElementStyle="{StaticResource WrapRightAlignText}">
-                                <DataGridTextColumn.HeaderTemplate>
-                                    <DataTemplate>
-                                        <TextBlock TextWrapping="Wrap" TextAlignment="Right">UR</TextBlock>
-                                    </DataTemplate>
-                                </DataGridTextColumn.HeaderTemplate>
-                            </DataGridTextColumn>
-                            <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}"
-                                                Width="Auto" MinWidth="50"
-                                                ElementStyle="{StaticResource WrapLeftAlignText}" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-            </Border>
-
-            </StackPanel>
-        </ScrollViewer>
+        <!-- Col 2: Demand / Capacity Summary Table -->
+        <Border Grid.Row="1" Grid.Column="2"
+                Style="{StaticResource ChartCardStyle}"
+                Padding="8" Margin="2,4,4,4">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="Demand / Capacity Summary"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                           Style="{StaticResource PmmSectionHeaderStyle}"
+                           Margin="0,0,0,6" />
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding LoadCaseRows}"
+                          SelectedItem="{Binding SelectedLoadCaseRow}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeColumns="True"
+                          CanUserResizeRows="False"
+                          CanUserSortColumns="False"
+                          IsReadOnly="True"
+                          ColumnWidth="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsCritical}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsFailing}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource DangerRedSoftBrush}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="LC Name" Binding="{Binding Name}"
+                                            Width="*" MinWidth="80"
+                                            ElementStyle="{StaticResource WrapLeftAlignText}" />
+                        <DataGridTextColumn Binding="{Binding PDisplay}"
+                                            Width="Auto" MinWidth="45"
+                                            ElementStyle="{StaticResource WrapRightAlignText}">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                        <Run Text="P" /><LineBreak />
+                                        <Run Text="(" /><Run Text="{Binding DataContext.ForceUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding MxDisplay}"
+                                            Width="Auto" MinWidth="45"
+                                            ElementStyle="{StaticResource WrapRightAlignText}">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                        <Run Text="Mx" /><LineBreak />
+                                        <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding MyDisplay}"
+                                            Width="Auto" MinWidth="45"
+                                            ElementStyle="{StaticResource WrapRightAlignText}">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextWrapping="Wrap" TextAlignment="Right">
+                                        <Run Text="My" /><LineBreak />
+                                        <Run Text="(" /><Run Text="{Binding DataContext.MomentUnitLabel, Mode=OneWay, RelativeSource={RelativeSource AncestorType=DataGrid}}" /><Run Text=")" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding UtilizationDisplay}"
+                                            Width="Auto" MinWidth="40"
+                                            ElementStyle="{StaticResource WrapRightAlignText}">
+                            <DataGridTextColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock TextWrapping="Wrap" TextAlignment="Right">UR</TextBlock>
+                                </DataTemplate>
+                            </DataGridTextColumn.HeaderTemplate>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}"
+                                            Width="Auto" MinWidth="50"
+                                            ElementStyle="{StaticResource WrapLeftAlignText}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
