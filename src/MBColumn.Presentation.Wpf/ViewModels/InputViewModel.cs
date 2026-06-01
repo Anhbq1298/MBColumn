@@ -602,16 +602,26 @@ public sealed class InputViewModel : ViewModelBase
     public string Ec2AswsXLatex { get => ec2AswsXLatex; private set => Set(ref ec2AswsXLatex, value); }
     public string Ec2AswsYLatex { get => ec2AswsYLatex; private set => Set(ref ec2AswsYLatex, value); }
 
-    public IReadOnlyList<SectionIntegrationMethodOption> SectionIntegrationMethodOptions { get; } =
+    private static readonly IReadOnlyList<SectionIntegrationMethodOption> FiberOnlyIntegrationMethodOptions =
+    [
+        new(SectionIntegrationMethod.Fiber, "Fiber Integration")
+    ];
+
+    private static readonly IReadOnlyList<SectionIntegrationMethodOption> AllIntegrationMethodOptions =
     [
         new(SectionIntegrationMethod.Fiber, "Fiber Integration"),
         new(SectionIntegrationMethod.Polygon, "Polygon Integration")
     ];
 
+    public IReadOnlyList<SectionIntegrationMethodOption> SectionIntegrationMethodOptions =>
+        UsesFiberOnlyIntegration(selectedSectionShape)
+            ? FiberOnlyIntegrationMethodOptions
+            : AllIntegrationMethodOptions;
+
     public SectionIntegrationMethod SelectedIntegrationMethod
     {
         get => selectedIntegrationMethod;
-        set => Set(ref selectedIntegrationMethod, value);
+        set => Set(ref selectedIntegrationMethod, CoerceIntegrationMethodForShape(value, selectedSectionShape));
     }
 
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes =>
@@ -682,8 +692,11 @@ public sealed class InputViewModel : ViewModelBase
             isDxfImportedSection = false;
             
             ResetShapeDefaults(value);
+            CoerceSelectedIntegrationMethodForCurrentShape();
 
             Raise();
+            Raise(nameof(SectionIntegrationMethodOptions));
+            Raise(nameof(SelectedIntegrationMethod));
             Raise(nameof(IsRectangularSection));
             Raise(nameof(IsCircularSection));
             Raise(nameof(IsIrregularSection));
@@ -730,6 +743,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         else if (shape == SectionShapeType.Circular)
         {
+            CoerceSelectedIntegrationMethodForShape(shape);
             if (diameter <= 0) diameter = isMetric ? 700 : 28;
             if (cover <= 0) cover = isMetric ? 55 : 2.2;
             if (string.IsNullOrEmpty(barSize)) barSize = DefaultMainBarName(selectedRebarSetLibrary);
@@ -742,6 +756,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         else if (shape == SectionShapeType.Irregular)
         {
+            CoerceSelectedIntegrationMethodForShape(shape);
             if (cover <= 0) cover = isMetric ? 55 : 2.2;
             if (string.IsNullOrEmpty(IrregularInput.BarSize)) IrregularInput.BarSize = DefaultMainBarName(selectedRebarSetLibrary);
             if (IrregularInput.Spacing <= 0) IrregularInput.Spacing = isMetric ? 150 : 6;
@@ -784,6 +799,20 @@ public sealed class InputViewModel : ViewModelBase
 
         return layoutType;
     }
+
+    private static bool UsesFiberOnlyIntegration(SectionShapeType shape)
+        => shape == SectionShapeType.Circular || shape == SectionShapeType.Irregular;
+
+    private static SectionIntegrationMethod CoerceIntegrationMethodForShape(
+        SectionIntegrationMethod method,
+        SectionShapeType shape)
+        => UsesFiberOnlyIntegration(shape) ? SectionIntegrationMethod.Fiber : method;
+
+    private void CoerceSelectedIntegrationMethodForShape(SectionShapeType shape)
+        => selectedIntegrationMethod = CoerceIntegrationMethodForShape(selectedIntegrationMethod, shape);
+
+    private void CoerceSelectedIntegrationMethodForCurrentShape()
+        => CoerceSelectedIntegrationMethodForShape(selectedSectionShape);
 
     private static string RebarLayoutDisplayName(RebarLayoutType layoutType)
         => layoutType switch
@@ -1066,7 +1095,7 @@ public sealed class InputViewModel : ViewModelBase
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
                 EurocodeConcreteStrainProfile = SelectedEurocodeConcreteStrainProfile,
-                IntegrationMethod = SectionIntegrationMethod.Polygon,
+                IntegrationMethod = SectionIntegrationMethod.Fiber,
                 AlphaCc = AlphaCc,
                 GammaC = GammaC,
                 IncludeEc2Slenderness = IncludeEc2Slenderness,
@@ -1127,7 +1156,7 @@ public sealed class InputViewModel : ViewModelBase
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
                 EurocodeConcreteStrainProfile = SelectedEurocodeConcreteStrainProfile,
-                IntegrationMethod = SelectedIntegrationMethod,
+                IntegrationMethod = SectionIntegrationMethod.Fiber,
                 AlphaCc = AlphaCc,
                 GammaC = GammaC,
                 IncludeEc2Slenderness = IncludeEc2Slenderness,
@@ -2231,7 +2260,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(RebarLayoutTypes)); Raise(nameof(SelectedRebarLayoutType));
         Raise(nameof(IsEqualSpacingLayout)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(IsRectangularEqualSpacingLayout));
         Raise(nameof(ShowTotalBarsInput)); Raise(nameof(IsCustomRebarCoordinates)); Raise(nameof(IsRebarCoordinatesEditable));
-        Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedEurocodeConcreteStrainProfile)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
+        Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedEurocodeConcreteStrainProfile)); Raise(nameof(SectionIntegrationMethodOptions)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(GammaC)); Raise(nameof(ShowAlphaCcOption));
         Raise(nameof(MemberLengthL)); Raise(nameof(IncludeEc2Slenderness)); Raise(nameof(Kx)); Raise(nameof(Ky)); Raise(nameof(PhiEff));
         Raise(nameof(UseDefaultAWhenPhiEffUnknown)); Raise(nameof(DemandInputModeText)); Raise(nameof(L0xText)); Raise(nameof(L0yText));
@@ -3139,6 +3168,7 @@ public sealed class InputViewModel : ViewModelBase
         alphaCc = s.AlphaCc;
         gammaC = s.GammaC > 0 ? s.GammaC : 1.50;
         selectedSectionShape = Enum.TryParse<SectionShapeType>(s.SectionShape, out var ss) ? ss : SectionShapeType.Rectangular;
+        CoerceSelectedIntegrationMethodForCurrentShape();
         width = s.Width; height = s.Height; diameter = s.Diameter; cover = s.Cover;
         memberLengthL = s.MemberLengthL;
         fc = s.Fc; fy = s.Fy; es = s.Es;

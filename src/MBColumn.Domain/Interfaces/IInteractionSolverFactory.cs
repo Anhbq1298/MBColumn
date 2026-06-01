@@ -15,5 +15,5 @@ public interface IInteractionSolverFactory
 
     IIrregularInteractionSolver GetIrregular(
         DesignCodeType code,
-        SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Polygon);
+        SectionIntegrationMethod integrationMethod = SectionIntegrationMethod.Fiber);
 }

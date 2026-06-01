@@ -1230,7 +1230,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             UnitSystem = targetUnitSystem.ToString(),
             DesignCode = DesignCodeType.Aci318Style.ToString(),
             Ec2Solver = Ec2SolverType.Fiber.ToString(),
-            IntegrationMethod = SectionIntegrationMethod.Polygon.ToString(),
+            IntegrationMethod = (mapping.IsRectangular ? SectionIntegrationMethod.Polygon : SectionIntegrationMethod.Fiber).ToString(),
             AlphaCc = 0.85,
             SectionShape = mapping.IsRectangular ? SectionShapeType.Rectangular.ToString()
                          : mapping.IsCircular    ? SectionShapeType.Circular.ToString()
@@ -2173,7 +2173,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             UnitSystem = targetUnitSystem.ToString(),
             DesignCode = DesignCodeType.Aci318Style.ToString(),
             Ec2Solver = Ec2SolverType.Fiber.ToString(),
-            IntegrationMethod = SectionIntegrationMethod.Polygon.ToString(),
+            IntegrationMethod = (mapping.IsRectangular ? SectionIntegrationMethod.Polygon : SectionIntegrationMethod.Fiber).ToString(),
             AlphaCc = 0.85,
             SectionShape = mapping.IsRectangular ? SectionShapeType.Rectangular.ToString()
                          : mapping.IsCircular    ? SectionShapeType.Circular.ToString()

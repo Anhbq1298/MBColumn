@@ -83,8 +83,7 @@ public sealed class ColumnCalculationService(
                 throw new InvalidOperationException(msg);
             }
 
-            // Irregular section currently only supports polygon integration.
-            var irregularSolver = solverFactory.GetIrregular(input.DesignCode, SectionIntegrationMethod.Polygon);
+            var irregularSolver = solverFactory.GetIrregular(input.DesignCode, SectionIntegrationMethod.Fiber);
             section = irregular;
             surface = irregularSolver.Solve(irregular, concrete, steel);
             // Use centroid-shifted coordinates from the solver layout so that the inset
@@ -104,7 +103,8 @@ public sealed class ColumnCalculationService(
                 .ToList();
             double widthMm = irregular.BoundingBoxMm.Width;
             double heightMm = irregular.BoundingBoxMm.Height;
-            return BuildResult(input, section, surface, rebarDtoList, widthMm, heightMm, concrete, steel, codeService)
+            var effectiveInput = input with { IntegrationMethod = SectionIntegrationMethod.Fiber };
+            return BuildResult(effectiveInput, section, surface, rebarDtoList, widthMm, heightMm, concrete, steel, codeService)
                 with { IrregularSectionBoundaryPoints = irregularBoundary };
         }
         else if (input.SectionShape == SectionShapeType.Circular)
@@ -115,10 +115,11 @@ public sealed class ColumnCalculationService(
             var bars = coordinateList.Select(b => new Rebar(b.BarSizeLabel, b.Diameter, b.Area, b.X, b.Y)).ToList();
             var layout = new RebarLayout(input.RebarLayoutPreset, input.BarSize, coverMm, bars);
             section = new CircularSection(diameterMm, layout);
-            var circularSolver = solverFactory.GetCircular(input.DesignCode, input.IntegrationMethod);
+            var circularSolver = solverFactory.GetCircular(input.DesignCode, SectionIntegrationMethod.Fiber);
             surface = circularSolver.Solve((CircularSection)section, concrete, steel);
 
-            return BuildResult(input, section, surface, coordinateList, diameterMm, diameterMm, concrete, steel, codeService);
+            var effectiveInput = input with { IntegrationMethod = SectionIntegrationMethod.Fiber };
+            return BuildResult(effectiveInput, section, surface, coordinateList, diameterMm, diameterMm, concrete, steel, codeService);
         }
         else
         {

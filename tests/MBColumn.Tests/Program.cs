@@ -157,7 +157,7 @@ var tests = new List<(string Name, Action Test)>
     ("Control points dt equals NA depth at fs=0", TestControlPointsDtEqualsFsZeroNa),
     ("Control points tension control epsilon near 0.005", TestControlPointsTensionControlEpsilon),
     ("Section integration method selection propagates", TestSectionIntegrationSelectionPropagates),
-    ("Polygon integration supports circular section", TestPolygonIntegrationCircularSection),
+    ("Circular section forces fiber integration", TestCircularSectionForcesFiberIntegration),
     ("Control point export includes integration metadata", TestControlPointExportIntegrationMetadata),
     ("ACI fiber pure compression close to conventional", TestAciFiberPureCompressionCloseToConventional),
     ("ACI fiber pure tension matches conventional", TestAciFiberPureTensionMatchesConventional),
@@ -221,7 +221,7 @@ var tests = new List<(string Name, Action Test)>
     ("Irregular equal spacing generated rebars satisfy cover",        TestIrregularEqualSpacingGeneratedRebarsSatisfyCover),
     ("Irregular equal spacing ToDto refreshes stale rebars",          TestIrregularEqualSpacingToDtoRefreshesStaleRebars),
     ("Irregular custom mode clears stale rebar message",              TestIrregularCustomModeClearsStaleRebarMessage),
-    ("Irregular section solves with Polygon integration",            TestIrregularPolygonIntegrationSolves),
+    ("Irregular section solves with Fiber integration",              TestIrregularFiberIntegrationSolves),
     ("Irregular section PMM surface has no NaN/Infinity",            TestIrregularPmmNoNan),
     ("Irregular section pure compression positive",                  TestIrregularPureCompressionPositive),
     ("Irregular section pure tension negative",                      TestIrregularPureTensionNegative),
@@ -2184,6 +2184,9 @@ static void TestCircularAndIrregularToDtoMapping()
     // Expected bar count = Math.Max(4, Math.Round(1570.796 / 150)) = 10 bars.
     IsTrue(dtoCircular.BarCount == 10);
     IsTrue(dtoCircular.RebarCoordinates != null && dtoCircular.RebarCoordinates.Count == 10);
+    IsTrue(dtoCircular.IntegrationMethod == SectionIntegrationMethod.Fiber);
+    IsTrue(vmCircular.SectionIntegrationMethodOptions.Count == 1);
+    IsTrue(vmCircular.SectionIntegrationMethodOptions[0].Method == SectionIntegrationMethod.Fiber);
     
     // Test Irregular DTO mapping
     var vmIrregular = new InputViewModel(metric, imperial)
@@ -2196,6 +2199,9 @@ static void TestCircularAndIrregularToDtoMapping()
     int expectedCount = vmIrregular.IrregularInput.Rebars.Count;
     IsTrue(dtoIrregular.BarCount == expectedCount);
     IsTrue(dtoIrregular.Irregular != null && dtoIrregular.Irregular.Rebars.Count == expectedCount);
+    IsTrue(dtoIrregular.IntegrationMethod == SectionIntegrationMethod.Fiber);
+    IsTrue(vmIrregular.SectionIntegrationMethodOptions.Count == 1);
+    IsTrue(vmIrregular.SectionIntegrationMethodOptions[0].Method == SectionIntegrationMethod.Fiber);
 }
 
 static (StrainCompatibilityInteractionSolver Conv, AciFiberInteractionSolver Fiber, RectangularSection Section, ConcreteMaterial Concrete, SteelMaterial Steel) AciSolverFixtures()
@@ -2222,7 +2228,7 @@ static void TestSectionIntegrationSelectionPropagates()
         double.IsNaN(p.Mny) || double.IsInfinity(p.Mny)));
 }
 
-static void TestPolygonIntegrationCircularSection()
+static void TestCircularSectionForcesFiberIntegration()
 {
     var input = MetricInput() with
     {
@@ -2233,7 +2239,7 @@ static void TestPolygonIntegrationCircularSection()
     var result = Service().Calculate(input);
 
     IsTrue(result.SectionShape == SectionShapeType.Circular);
-    IsTrue(result.IntegrationMethod == SectionIntegrationMethod.Polygon);
+    IsTrue(result.IntegrationMethod == SectionIntegrationMethod.Fiber);
     IsTrue(result.Surface.AngleCount == 36);
     IsFalse(result.Surface.Points.Any(p =>
         double.IsNaN(p.Pn) || double.IsInfinity(p.Pn) ||
@@ -3195,7 +3201,7 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     var snapshot = imported.Snapshot;
 
     IsTrue(snapshot.SectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular.ToString());
-    IsTrue(snapshot.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Polygon.ToString());
+    IsTrue(snapshot.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Fiber.ToString());
     IsTrue(snapshot.RebarLayoutType == MBColumn.Application.DTOs.RebarLayoutType.CustomCoordinates.ToString());
     IsTrue(snapshot.IrregularRebarMode == MBColumn.Application.DTOs.IrregularRebarModeType.CustomCoordinates.ToString());
     IsTrue(snapshot.BoundaryPoints.Count == 32);
@@ -3402,10 +3408,11 @@ static MBColumn.Application.DTOs.ColumnInputDto IrregularMetricInput(double pu =
     };
 }
 
-static void TestIrregularPolygonIntegrationSolves()
+static void TestIrregularFiberIntegrationSolves()
 {
     var result = Service().Calculate(IrregularMetricInput());
     IsTrue(result.Surface.Points.Count > 0);
+    IsTrue(result.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Fiber);
 }
 
 static void TestIrregularPmmNoNan()
@@ -3475,7 +3482,7 @@ static void TestIrregularResultExposesShape()
 {
     var result = Service().Calculate(IrregularMetricInput());
     IsTrue(result.SectionShape == MBColumn.Domain.Enums.SectionShapeType.Irregular);
-    IsTrue(result.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Polygon);
+    IsTrue(result.IntegrationMethod == MBColumn.Domain.Enums.SectionIntegrationMethod.Fiber);
 }
 
 static void TestIrregularIntegratorBoundaryHandled()

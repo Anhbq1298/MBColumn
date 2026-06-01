@@ -140,6 +140,7 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
         {
             RectangularSection r => $"R:{r.WidthMm:G17}:{r.HeightMm:G17}:{settings.RectangularFiberCountX}:{settings.RectangularFiberCountY}",
             CircularSection c => $"C:{c.DiameterMm:G17}:{settings.CircularRadialFiberCount}:{settings.CircularAngularFiberCount}",
+            IrregularSection i => $"I:{settings.RectangularFiberCountX}:{settings.RectangularFiberCountY}:{string.Join(";", i.BoundaryPoints.Select(p => $"{p.X:G17},{p.Y:G17}"))}",
             _ => $"{section.Shape}:{section.WidthMm:G17}:{section.HeightMm:G17}:{settings.RectangularFiberCountX}:{settings.RectangularFiberCountY}"
         };
 
@@ -148,9 +149,12 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
             return cached;
         }
 
-        var fibers = section is CircularSection circular
-            ? BuildCircularFibers(circular, settings.CircularRadialFiberCount, settings.CircularAngularFiberCount)
-            : BuildRectangularFibers(section, settings.RectangularFiberCountX, settings.RectangularFiberCountY);
+        var fibers = section switch
+        {
+            CircularSection circular => BuildCircularFibers(circular, settings.CircularRadialFiberCount, settings.CircularAngularFiberCount),
+            IrregularSection irregular => BuildIrregularFibers(irregular, settings.RectangularFiberCountX, settings.RectangularFiberCountY),
+            _ => BuildRectangularFibers(section, settings.RectangularFiberCountX, settings.RectangularFiberCountY)
+        };
         fiberCache[key] = fibers;
         return fibers;
     }
@@ -200,6 +204,69 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
         }
 
         return fibers.ToArray();
+    }
+
+    private static ConcreteFiber[] BuildIrregularFibers(IrregularSection section, int countX, int countY)
+    {
+        int nx = SMath.Max(8, countX);
+        int ny = SMath.Max(8, countY);
+        double dx = section.BoundingBoxMm.Width / nx;
+        double dy = section.BoundingBoxMm.Height / ny;
+        double area = dx * dy;
+        double x0 = section.BoundingBoxMm.MinX + dx / 2.0;
+        double y0 = section.BoundingBoxMm.MinY + dy / 2.0;
+        var fibers = new List<ConcreteFiber>(nx * ny);
+
+        for (int ix = 0; ix < nx; ix++)
+        {
+            double x = x0 + ix * dx;
+            for (int iy = 0; iy < ny; iy++)
+            {
+                double y = y0 + iy * dy;
+                if (PointInPolygon(section.BoundaryPoints, x, y))
+                {
+                    fibers.Add(new ConcreteFiber(x, y, area));
+                }
+            }
+        }
+
+        return fibers.ToArray();
+    }
+
+    private static bool PointInPolygon(IReadOnlyList<Point2D> polygon, double x, double y)
+    {
+        bool inside = false;
+        for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+        {
+            var pi = polygon[i];
+            var pj = polygon[j];
+            if (IsPointOnSegment(pj, pi, x, y))
+            {
+                return true;
+            }
+
+            bool intersects = (pi.Y > y) != (pj.Y > y) &&
+                x < (pj.X - pi.X) * (y - pi.Y) / (pj.Y - pi.Y) + pi.X;
+            if (intersects)
+            {
+                inside = !inside;
+            }
+        }
+
+        return inside;
+    }
+
+    private static bool IsPointOnSegment(Point2D a, Point2D b, double x, double y)
+    {
+        const double tolerance = 1e-9;
+        double cross = (x - a.X) * (b.Y - a.Y) - (y - a.Y) * (b.X - a.X);
+        if (SMath.Abs(cross) > tolerance)
+        {
+            return false;
+        }
+
+        double dot = (x - a.X) * (x - b.X) + (y - a.Y) * (y - b.Y);
+        return dot <= tolerance;
     }
 
     private static double NormalizeExtreme(double value)
