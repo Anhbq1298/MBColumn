@@ -69,6 +69,8 @@ public sealed class ResultViewModel : ViewModelBase
     private CalculationResultDto? result;
     private RelayCommand showControlPointsCommand = null!;
     private RelayCommand exportAllPointsCommand = null!;
+    private RelayCommand openPmmDetailsCommand = null!;
+    private bool isPmmDetailsOpen;
     private bool showGrid = true;
     private bool showLabels = false;
     private bool showLegend = true;
@@ -131,6 +133,9 @@ public sealed class ResultViewModel : ViewModelBase
         ShowControlPointsCommand = showControlPointsCommand;
         exportAllPointsCommand = new RelayCommand(ExportAllPoints, () => HasResult);
         ExportAllPointsCommand = exportAllPointsCommand;
+        openPmmDetailsCommand = new RelayCommand(() => IsPmmDetailsOpen = true, () => HasResult);
+        OpenPmmDetailsCommand = openPmmDetailsCommand;
+        ClosePmmDetailsCommand = new RelayCommand(() => IsPmmDetailsOpen = false);
 
         // Viewport options
         ViewportOptions = new ObservableCollection<ViewportOptionViewModel>
@@ -221,6 +226,7 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(HasResult));
             showControlPointsCommand.RaiseCanExecuteChanged();
             exportAllPointsCommand.RaiseCanExecuteChanged();
+            openPmmDetailsCommand.RaiseCanExecuteChanged();
             Raise(nameof(StatusText));
             Raise(nameof(OverallStatusText));
             Raise(nameof(IsOverallFail));
@@ -505,6 +511,9 @@ public sealed class ResultViewModel : ViewModelBase
     public ICommand ClearSelectedChartPointCommand { get; }
     public ICommand ShowControlPointsCommand { get; }
     public ICommand ExportAllPointsCommand { get; }
+    public ICommand OpenPmmDetailsCommand { get; }
+    public ICommand ClosePmmDetailsCommand { get; }
+    public bool IsPmmDetailsOpen { get => isPmmDetailsOpen; set => Set(ref isPmmDetailsOpen, value); }
 
     private void RaiseSelectedPointProperties()
     {

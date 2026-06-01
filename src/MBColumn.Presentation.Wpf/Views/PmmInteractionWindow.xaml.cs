@@ -1,13 +1,8 @@
-using System.Windows;
-using MBColumn.Presentation.Wpf.ViewModels;
+using System.Windows.Controls;
 
 namespace MBColumn.Presentation.Wpf.Views;
 
-public partial class PmmInteractionWindow : Window
+public partial class PmmInteractionWindow : UserControl
 {
-    public PmmInteractionWindow(ResultViewModel viewModel)
-    {
-        InitializeComponent();
-        DataContext = viewModel;
-    }
+    public PmmInteractionWindow() => InitializeComponent();
 }

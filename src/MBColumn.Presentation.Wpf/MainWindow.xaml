@@ -396,6 +396,20 @@
                                           Background="{DynamicResource LightBackgroundBrush}" />
                             <views:ReportTabView Grid.Column="2"
                                                  DataContext="{Binding Report}" />
+
+                            <!-- PMM details overlay — phủ toàn bộ Results tab -->
+                            <Border Grid.Column="0" Grid.ColumnSpan="3"
+                                    Background="#990B1220"
+                                    Visibility="{Binding Result.IsPmmDetailsOpen, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    IsHitTestVisible="True">
+                                <Border Style="{StaticResource CardBorderStyle}"
+                                        Padding="0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Margin="16">
+                                    <views:PmmInteractionWindow DataContext="{Binding Result}" />
+                                </Border>
+                            </Border>
                         </Grid>
 
                         <Border Style="{StaticResource EmptyStateCardStyle}"

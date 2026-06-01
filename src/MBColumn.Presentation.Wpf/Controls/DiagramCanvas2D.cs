@@ -108,7 +108,7 @@ public class DiagramCanvas2D : FrameworkElement
 
         var transform = BuildTransform(points, plot);
         DrawPlotSurface(dc, plot);
-        AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid, XGridStep, YGridStep);
+        AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid, XGridStep, YGridStep, ShowLabels);
         DrawCapacity(dc, transform, allFinitePoints);
         DrawCapacityControlPoints(dc, transform, points);
         DrawReferences(dc, transform, points);

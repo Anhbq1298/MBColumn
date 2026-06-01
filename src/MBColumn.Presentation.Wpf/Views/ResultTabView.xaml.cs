@@ -8,20 +8,6 @@ public partial class ResultTabView : UserControl
 {
     public ResultTabView() => InitializeComponent();
 
-    private void OpenPmmDetails_Click(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not ResultViewModel vm || !vm.HasResult)
-            return;
-
-        var window = new PmmInteractionWindow(vm)
-        {
-            Owner = Window.GetWindow(this)
-        };
-        PmmDetailsBackdrop.Visibility = Visibility.Visible;
-        window.ShowDialog();
-        PmmDetailsBackdrop.Visibility = Visibility.Collapsed;
-    }
-
     private void OpenShearDetails_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not ResultViewModel vm || !vm.Shear.HasResult)

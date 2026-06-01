@@ -14,7 +14,7 @@ public static class AxisRenderer2D
     private static readonly Brush PAxisLabelBrush = new SolidColorBrush(Color.FromRgb(37, 99, 235));   // blue for P (vertical) axis
     private static readonly Brush MAxisLabelBrush = new SolidColorBrush(Color.FromRgb(220, 38, 38));   // red for M (horizontal) axis
 
-    public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0)
+    public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0, bool showLabels = true)
     {
         var gridPen = new Pen(GridBrush, 0.6);
         var minorGridPen = new Pen(MinorGridBrush, 0.3);
@@ -102,11 +102,14 @@ public static class AxisRenderer2D
         dc.DrawLine(Math.Abs(transform.AxisYValue) < 1e-9 ? zeroAxisPen : axisPen, yAxis0, yAxis1);
         
         // Titles — anchored to the axis ends so they track the actual axis lines
-        var yft = CreateFormattedText(yLabel, 12, FontWeights.SemiBold, PAxisLabelBrush);
-        dc.DrawText(yft, new Point(yAxis1.X - yft.Width / 2, yAxis1.Y - yft.Height - 6));
+        if (showLabels)
+        {
+            var yft = CreateFormattedText(yLabel, 12, FontWeights.SemiBold, PAxisLabelBrush);
+            dc.DrawText(yft, new Point(yAxis1.X - yft.Width / 2, yAxis1.Y - yft.Height - 6));
 
-        var xft = CreateFormattedText(xLabel, 12, FontWeights.SemiBold, MAxisLabelBrush);
-        dc.DrawText(xft, new Point(xAxis1.X + 6, xAxis1.Y - xft.Height / 2));
+            var xft = CreateFormattedText(xLabel, 12, FontWeights.SemiBold, MAxisLabelBrush);
+            dc.DrawText(xft, new Point(xAxis1.X + 6, xAxis1.Y - xft.Height / 2));
+        }
     }
 
     private static void DrawText(DrawingContext dc, string text, double size, Point point, FontWeight? weight = null)
