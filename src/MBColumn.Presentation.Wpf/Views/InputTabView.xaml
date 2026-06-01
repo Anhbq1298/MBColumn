@@ -345,8 +345,6 @@
                                           SelectedItem="{Binding SelectedSteelGrade}" />
                                 <TextBlock Grid.Row="6"
                                            Grid.Column="0"
-                                            
-                                            Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
@@ -363,7 +361,6 @@
                                  </TextBlock>
                                  <TextBlock Grid.Row="6"
                                             Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
@@ -462,8 +459,7 @@
                                           Content="Override Ecm manually"
                                           Margin="0,6,0,0" />
                                  <TextBlock Grid.Row="18"
-                                            Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}">
+                                            Grid.Column="0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
                                              <Setter Property="Visibility" Value="Collapsed"/>
@@ -478,8 +474,7 @@
                                      <Run Text="yk" FontSize="9" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="18"
-                                            Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}">
+                                            Grid.Column="0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
                                              <Setter Property="Visibility" Value="Collapsed"/>
@@ -521,7 +516,6 @@
                                  <!-- Concrete Ultimate Strain -->
                                  <TextBlock Grid.Row="22"
                                             Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
@@ -538,7 +532,6 @@
                                  </TextBlock>
                                  <TextBlock Grid.Row="22"
                                             Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
@@ -562,7 +555,6 @@
                                  <!-- Concrete Peak Strain -->
                                  <TextBlock Grid.Row="24"
                                             Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
@@ -579,7 +571,6 @@
                                  </TextBlock>
                                  <TextBlock Grid.Row="24"
                                             Grid.Column="0"
-                                            Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <TextBlock.Style>
                                          <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">

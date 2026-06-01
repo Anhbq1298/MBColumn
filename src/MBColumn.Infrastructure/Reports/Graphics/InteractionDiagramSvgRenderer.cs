@@ -52,7 +52,7 @@ public static class InteractionDiagramSvgRenderer
 
         // ── Build SVG ────────────────────────────────────────────────────────
         var sb = new System.Text.StringBuilder();
-        sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgWidth}' height='{svgHeight}' viewBox='0 0 {svgWidth} {svgHeight}'>");
+        sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgWidth}' height='{svgHeight}' viewBox='0 0 {svgWidth} {svgHeight}' font-family='Inter, Segoe UI, sans-serif'>");
         sb.Append($"<rect width='{svgWidth}' height='{svgHeight}' fill='white'/>");
 
         // Plot area background
@@ -116,9 +116,10 @@ public static class InteractionDiagramSvgRenderer
         AppendAxisTicks(sb, xMin, xMax, paddingLeft, paddingTop + plotH + 4, plotW, isX: true);
         AppendAxisTicks(sb, yMin, yMax, paddingLeft - 4, paddingTop, plotH, isX: false);
 
-        // Caption
-        if (!string.IsNullOrEmpty(block.Caption))
-            sb.Append($"<text x='{midX:F0}' y='{svgHeight - 24}' text-anchor='middle' font-size='9' fill='#666' font-style='italic'>{EscapeXml(block.Caption)}</text>");
+        // Caption rendering inside SVG is commented out to avoid overlap/duplication.
+        // The caption is rendered much cleaner below the SVG via HTML in ReportWebViewRenderer.cs.
+        // if (!string.IsNullOrEmpty(block.Caption))
+        //     sb.Append($"<text x='{midX:F0}' y='{svgHeight - 24}' text-anchor='middle' font-size='9' fill='#666' font-style='italic'>{EscapeXml(block.Caption)}</text>");
 
         sb.Append("</svg>");
         return sb.ToString();
@@ -199,7 +200,7 @@ public static class InteractionDiagramSvgRenderer
             double oy = (svgSize - heightMm * scale) / 2;
 
             var sb = new System.Text.StringBuilder();
-            sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgSize}' height='{svgSize}' viewBox='0 0 {svgSize} {svgSize}'>");
+            sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgSize}' height='{svgSize}' viewBox='0 0 {svgSize} {svgSize}' font-family='Inter, Segoe UI, sans-serif'>");
             sb.Append($"<rect x='0' y='0' width='{svgSize}' height='{svgSize}' fill='white'/>");
 
             double bw = widthMm * scale;
@@ -233,7 +234,7 @@ public static class InteractionDiagramSvgRenderer
             double svgCoverR = (r - coverMm) * scale;
 
             var sb = new System.Text.StringBuilder();
-            sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgSize}' height='{svgSize}' viewBox='0 0 {svgSize} {svgSize}'>");
+            sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgSize}' height='{svgSize}' viewBox='0 0 {svgSize} {svgSize}' font-family='Inter, Segoe UI, sans-serif'>");
             sb.Append($"<rect x='0' y='0' width='{svgSize}' height='{svgSize}' fill='white'/>");
             sb.Append($"<circle cx='{cx:F1}' cy='{cy:F1}' r='{svgR:F1}' fill='#E0E0E0' stroke='#333' stroke-width='1.5'/>");
             sb.Append($"<circle cx='{cx:F1}' cy='{cy:F1}' r='{svgCoverR:F1}' fill='none' stroke='#999' stroke-width='0.5' stroke-dasharray='3,2'/>");
@@ -254,7 +255,7 @@ public static class InteractionDiagramSvgRenderer
         {
             const double svgSize = 200;
             var sb = new System.Text.StringBuilder();
-            sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgSize}' height='{svgSize}' viewBox='0 0 {svgSize} {svgSize}'>");
+            sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{svgSize}' height='{svgSize}' viewBox='0 0 {svgSize} {svgSize}' font-family='Inter, Segoe UI, sans-serif'>");
             sb.Append($"<rect x='0' y='0' width='{svgSize}' height='{svgSize}' fill='white'/>");
             sb.Append("<text x='100' y='100' text-anchor='middle' font-size='12' fill='#555'>Irregular section</text>");
             sb.Append("</svg>");

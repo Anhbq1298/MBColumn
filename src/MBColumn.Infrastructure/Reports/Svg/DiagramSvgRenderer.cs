@@ -53,15 +53,15 @@ public static class DiagramSvgRenderer
         double TransformY(double y) => height - (y - minY) * scaleY;
 
         var sb = new StringBuilder();
-        sb.AppendLine($@"<svg width=""{width}"" height=""{height}"" viewBox=""0 0 {width} {height}"" xmlns=""http://www.w3.org/2000/svg"">");
+        sb.AppendLine($@"<svg width=""{width}"" height=""{height}"" viewBox=""0 0 {width} {height}"" xmlns=""http://www.w3.org/2000/svg"" font-family=""Inter, Segoe UI, sans-serif"">");
 
         // Grid lines (simplified, just origin for now)
         sb.AppendLine($@"<line x1=""0"" y1=""{F(TransformY(0))}"" x2=""{width}"" y2=""{F(TransformY(0))}"" stroke=""#888"" stroke-width=""1"" />");
         sb.AppendLine($@"<line x1=""{F(TransformX(0))}"" y1=""0"" x2=""{F(TransformX(0))}"" y2=""{height}"" stroke=""#888"" stroke-width=""1"" />");
 
         // Axis labels
-        sb.AppendLine($@"<text x=""{width - 10}"" y=""{F(TransformY(0) - 10)}"" font-family=""Arial, sans-serif"" font-size=""12"" fill=""#555"" text-anchor=""end"">{diag.XAxisLabel}</text>");
-        sb.AppendLine($@"<text x=""{F(TransformX(0) + 10)}"" y=""20"" font-family=""Arial, sans-serif"" font-size=""12"" fill=""#555"">{diag.YAxisLabel}</text>");
+        sb.AppendLine($@"<text x=""{width - 10}"" y=""{F(TransformY(0) - 10)}"" font-family=""Inter, Segoe UI, sans-serif"" font-size=""12"" fill=""#555"" text-anchor=""end"">{diag.XAxisLabel}</text>");
+        sb.AppendLine($@"<text x=""{F(TransformX(0) + 10)}"" y=""20"" font-family=""Inter, Segoe UI, sans-serif"" font-size=""12"" fill=""#555"">{diag.YAxisLabel}</text>");
 
         // Capacity Envelopes
         foreach (var group in diag.Points.Where(p => !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsSpecialPoint).GroupBy(p => p.GroupKey))

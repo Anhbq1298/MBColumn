@@ -53,8 +53,9 @@ internal sealed class Ec2ReportBuilder
             r.FcMpa, r.FyMpa, r.EsMpa, r.RebarCoordinates,
             r.ControlPointTable, code, units, r.UnitSystem, r.DesignCode);
 
-        if (handCalc.IsSupported)
-            sections.Add(AnnexC_HandCalc(handCalc));
+        // Annex C removed per user request
+        // if (handCalc.IsSupported)
+        //     sections.Add(AnnexC_HandCalc(handCalc));
 
         return new ReportData
         {

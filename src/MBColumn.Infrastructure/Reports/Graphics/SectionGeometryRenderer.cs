@@ -49,7 +49,7 @@ public static class SectionGeometryRenderer
         string sub      = bars.Count > 0 ? $"{bars.Count}-{barLabel}  (ρ = {D(rho, 2)}%)" : "";
 
         var sb = new StringBuilder();
-        sb.AppendLine($@"<svg xmlns=""http://www.w3.org/2000/svg"" width=""{ViewW}"" height=""{ViewH}"" viewBox=""0 0 {ViewW} {ViewH}"" font-family=""Segoe UI,Arial"" font-size=""10"">");
+        sb.AppendLine($@"<svg xmlns=""http://www.w3.org/2000/svg"" width=""{ViewW}"" height=""{ViewH}"" viewBox=""0 0 {ViewW} {ViewH}"" font-family=""Inter, Segoe UI, sans-serif"" font-size=""10"">");
 
         // ── Title block ────────────────────────────────────────────────────────
         sb.AppendLine($@"  <text x=""{D(cx)}"" y=""14"" text-anchor=""middle"" font-weight=""bold"" font-size=""12"" fill=""#1A3A5C"">{title}</text>");
@@ -139,7 +139,7 @@ public static class SectionGeometryRenderer
         string sub      = bars.Count > 0 ? $"{bars.Count}-{barLabel}  (ρ = {D(rho, 2)}%)" : "";
 
         var sb = new StringBuilder();
-        sb.AppendLine($@"<svg xmlns=""http://www.w3.org/2000/svg"" width=""{ViewW}"" height=""{ViewH}"" viewBox=""0 0 {ViewW} {ViewH}"" font-family=""Segoe UI,Arial"" font-size=""10"">");
+        sb.AppendLine($@"<svg xmlns=""http://www.w3.org/2000/svg"" width=""{ViewW}"" height=""{ViewH}"" viewBox=""0 0 {ViewW} {ViewH}"" font-family=""Inter, Segoe UI, sans-serif"" font-size=""10"">");
 
         sb.AppendLine($@"  <text x=""{D(cx)}"" y=""14"" text-anchor=""middle"" font-weight=""bold"" font-size=""12"" fill=""#1A3A5C"">{title}</text>");
         if (!string.IsNullOrEmpty(sub))

@@ -721,8 +721,8 @@ public sealed class ReportTabViewModel : ViewModelBase
     {
         ReportTreeNodes.Clear();
 
-        var mainReportRoot = new ReportTreeItemViewModel { Title = "Main Report" };
-        var appendixRoot = new ReportTreeItemViewModel { Title = "Appendix" };
+        var mainReportRoot = new ReportTreeItemViewModel { Title = "Main report" };
+        var appendixRoot = new ReportTreeItemViewModel { Title = "Annex" };
 
         foreach (var toggle in SectionToggles)
         {
