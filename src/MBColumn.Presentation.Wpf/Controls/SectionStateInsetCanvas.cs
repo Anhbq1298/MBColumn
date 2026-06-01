@@ -22,7 +22,7 @@ public sealed class SectionStateInsetCanvas : FrameworkElement
     }
 
     private const double LegendHeight = 0.0;
-    private const double Padding = 16.0;
+    private const double Padding = 28.0;
 
     protected override void OnRender(DrawingContext dc)
     {
@@ -38,7 +38,7 @@ public sealed class SectionStateInsetCanvas : FrameworkElement
             return;
         }
 
-        var sectionBounds = GetContentBounds(inset.SectionBoundaryPoints);
+        var sectionBounds = GetContentBounds(GetDrawableBoundsPoints(inset));
         if (sectionBounds.Width <= 0 || sectionBounds.Height <= 0) return;
 
         double sketchHeight = Math.Max(40.0, ActualHeight - LegendHeight);
@@ -47,8 +47,11 @@ public sealed class SectionStateInsetCanvas : FrameworkElement
         double scale = Math.Min(availW / sectionBounds.Width, availH / sectionBounds.Height);
         if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0) return;
 
+        var contentCenter = new InsetPointDto(
+            sectionBounds.X + sectionBounds.Width / 2.0,
+            sectionBounds.Y + sectionBounds.Height / 2.0);
         var center = new Point(ActualWidth / 2.0, Padding + (sketchHeight - 2 * Padding) / 2.0);
-        Point Map(InsetPointDto p) => new(center.X + p.X * scale, center.Y - p.Y * scale);
+        Point Map(InsetPointDto p) => new(center.X + (p.X - contentCenter.X) * scale, center.Y - (p.Y - contentCenter.Y) * scale);
 
         dc.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight), 6, 6));
 
@@ -102,6 +105,27 @@ public sealed class SectionStateInsetCanvas : FrameworkElement
     }
 
 
+
+    private static IReadOnlyList<InsetPointDto> GetDrawableBoundsPoints(PmChartInsetFigureDto inset)
+    {
+        var points = new List<InsetPointDto>(inset.SectionBoundaryPoints);
+        points.AddRange(inset.CoverBoundaryPoints);
+        points.AddRange(inset.RebarPoints);
+        points.Add(inset.XAxisLine.Start);
+        points.Add(inset.XAxisLine.End);
+        points.Add(inset.YAxisLine.Start);
+        points.Add(inset.YAxisLine.End);
+        points.Add(inset.ThetaLine.Start);
+        points.Add(inset.ThetaLine.End);
+
+        if (inset.NeutralAxisLine is not null)
+        {
+            points.Add(inset.NeutralAxisLine.Start);
+            points.Add(inset.NeutralAxisLine.End);
+        }
+
+        return points;
+    }
 
     private static Rect GetContentBounds(IReadOnlyList<InsetPointDto> points)
     {

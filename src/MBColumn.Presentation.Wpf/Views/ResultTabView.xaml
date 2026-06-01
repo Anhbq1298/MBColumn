@@ -106,7 +106,7 @@
                                 <Button Content="View Details"
                                         Style="{StaticResource DetailEllipsisButtonStyle}"
                                         Margin="8,0,0,0"
-                                        Command="{Binding OpenPmmDetailsCommand}" />
+                                        Click="OpenPmmDetails_Click" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                 <TextBlock Text="Max Util.: " Style="{StaticResource MetricLabelStyle}" Margin="0" />
