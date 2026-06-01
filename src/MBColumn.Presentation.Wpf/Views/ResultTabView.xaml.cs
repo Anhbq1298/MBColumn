@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using MBColumn.Presentation.Wpf.ViewModels;
 
 namespace MBColumn.Presentation.Wpf.Views;
@@ -56,8 +57,9 @@ public partial class ResultTabView : UserControl
 
     private void ApplyResultTabSize(Window window)
     {
-        double width = ActualWidth > 0 ? ActualWidth : RenderSize.Width;
-        double height = ActualHeight > 0 ? ActualHeight : RenderSize.Height;
+        var resultTabContent = FindResultTabContentElement();
+        double width = GetElementWidth(resultTabContent);
+        double height = GetElementHeight(resultTabContent);
 
         if (width <= 0 && window.Owner is not null)
             width = window.Owner.ActualWidth;
@@ -76,4 +78,18 @@ public partial class ResultTabView : UserControl
         window.MaxHeight = height;
         window.ResizeMode = ResizeMode.NoResize;
     }
+
+    private FrameworkElement FindResultTabContentElement()
+    {
+        var parent = VisualTreeHelper.GetParent(this) as FrameworkElement;
+        return parent is not null && GetElementWidth(parent) > GetElementWidth(this)
+            ? parent
+            : this;
+    }
+
+    private static double GetElementWidth(FrameworkElement element)
+        => element.ActualWidth > 0 ? element.ActualWidth : element.RenderSize.Width;
+
+    private static double GetElementHeight(FrameworkElement element)
+        => element.ActualHeight > 0 ? element.ActualHeight : element.RenderSize.Height;
 }

@@ -689,6 +689,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ProjectNameDialogService** | Provides service logic and operations for ProjectNameDialog. Key methods: PromptProjectName, PromptColumnName, PromptSelectSections. | `IProjectNameDialogService.cs` |
 | `class` | **ProjectSession** | Represents the ProjectSession class. Key methods: SelectColumn, StoreCurrentColumnResult, StoreColumnResult, TryGetCurrentColumnResult. Key properties: CurrentColumnId. | `ProjectSession.cs` |
 | `class` | **RecentProjectsService** | Provides service logic and operations for RecentProjects. Key methods: GetRecent, ClearRecent, AddRecent. | `RecentProjectsService.cs` |
+| `class` | **ReportDiagramPngRenderer** | Represents the ReportDiagramPngRenderer class. Key methods: RenderDataUri. | `ReportDiagramPngRenderer.cs` |
 
 ### ViewModels
 

@@ -10,29 +10,6 @@
         ResizeMode="CanResize"
         Background="{DynamicResource LightBackgroundBrush}">
     <Grid Margin="10">
-        <ContentControl x:Name="DetailHost"
-                        Opacity="0" />
-
-        <Border x:Name="LoadingOverlay"
-                Background="{DynamicResource LightBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderSoftBrush}"
-                BorderThickness="1"
-                CornerRadius="6"
-                Padding="24"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                MinWidth="260">
-            <StackPanel>
-                <TextBlock Text="Rendering equations..."
-                           FontSize="{StaticResource FontSizeBody}"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource PrimaryNavyBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,10" />
-                <ProgressBar Height="6"
-                             IsIndeterminate="True"
-                             MinWidth="220" />
-            </StackPanel>
-        </Border>
+        <ContentControl x:Name="DetailHost" />
     </Grid>
 </Window>

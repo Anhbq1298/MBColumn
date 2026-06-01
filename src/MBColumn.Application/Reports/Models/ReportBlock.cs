@@ -51,7 +51,8 @@ public sealed record DiagramBlock(
     double Ratio,
     bool UseEqualAspect = false,
     double WidthPct = 90,
-    string Caption = "") : ReportBlock;
+    string Caption = "",
+    string PngDataUri = "") : ReportBlock;
 
 public sealed record DividerBlock() : ReportBlock;
 

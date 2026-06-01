@@ -9,6 +9,7 @@ using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Infrastructure.Reports.Html;
 using MBColumn.Presentation.Wpf.Commands;
+using MBColumn.Presentation.Wpf.Services;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -491,6 +492,8 @@ public sealed class ReportTabViewModel : ViewModelBase
             var grpName   = _cachedGroupName;
             var tierName  = _cachedDesignTierName;
 
+            var (pmDiagramBlock, mmDiagramBlock) = BuildReportDiagramBlocks(result, withPng: true);
+
             var (reportData, reportHtml) = await Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
@@ -510,27 +513,6 @@ public sealed class ReportTabViewModel : ViewModelBase
                 catch { }
 
                 ct.ThrowIfCancellationRequested();
-
-                DiagramBlock? pmDiagramBlock = null, mmDiagramBlock = null;
-                try
-                {
-                    var diag = new DiagramDataService();
-                    double theta = result.GoverningThetaDegrees;
-                    var pmData   = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
-                    var pmAll    = pmData.Points.Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta)).Concat(pmData.SpecialCapacityPoints).ToList();
-                    pmDiagramBlock = new DiagramBlock(pmAll, pmData.ReferenceLines,
-                        $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", result.Ratio,
-                        UseEqualAspect: false, WidthPct: 90,
-                        Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
-
-                    var mmData  = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
-                    var mmAll   = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
-                    mmDiagramBlock = new DiagramBlock(mmAll, [],
-                        $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", result.Ratio,
-                        UseEqualAspect: true, WidthPct: 80,
-                        Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
-                }
-                catch { }
 
                 ct.ThrowIfCancellationRequested();
 
@@ -685,26 +667,7 @@ public sealed class ReportTabViewModel : ViewModelBase
             result.CoverMm, result.RebarCoordinates); }
         catch { }
 
-        DiagramBlock? pmDiagramBlock = null, mmDiagramBlock = null;
-        try
-        {
-            var diag = new DiagramDataService();
-            double theta = result.GoverningThetaDegrees;
-            var pmData   = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
-            var pmAll    = pmData.Points.Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta)).Concat(pmData.SpecialCapacityPoints).ToList();
-            pmDiagramBlock = new DiagramBlock(pmAll, pmData.ReferenceLines,
-                $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", result.Ratio,
-                UseEqualAspect: false, WidthPct: 90,
-                Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
-
-            var mmData  = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
-            var mmAll   = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
-            mmDiagramBlock = new DiagramBlock(mmAll, [],
-                $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", result.Ratio,
-                UseEqualAspect: true, WidthPct: 80,
-                Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
-        }
-        catch { }
+        var (pmDiagramBlock, mmDiagramBlock) = BuildReportDiagramBlocks(result, withPng: true);
 
         IDesignCodeService codeService = result.DesignCode == DesignCodeType.Aci318Style
             ? new Aci318DesignCodeService()
@@ -715,6 +678,45 @@ public sealed class ReportTabViewModel : ViewModelBase
         return builder.Build(_cachedProjectName, _cachedGroupName, _cachedDesignTierName,
                              result, codeService, unitService, sectionSvg,
                              pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
+    }
+
+    private static (DiagramBlock? Pm, DiagramBlock? Mm) BuildReportDiagramBlocks(CalculationResultDto result, bool withPng)
+    {
+        try
+        {
+            var diag = new DiagramDataService();
+            double theta = result.GoverningThetaDegrees;
+            var pmData = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
+            var pmAll = pmData.Points
+                .Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta))
+                .Concat(pmData.SpecialCapacityPoints)
+                .ToList();
+
+            var pm = new DiagramBlock(pmAll, pmData.ReferenceLines,
+                $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", result.Ratio,
+                UseEqualAspect: false, WidthPct: 90,
+                Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
+
+            var mmData = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
+            var mmAll = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
+            var mm = new DiagramBlock(mmAll, [],
+                $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", result.Ratio,
+                UseEqualAspect: true, WidthPct: 80,
+                Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
+
+            if (!withPng)
+            {
+                return (pm, mm);
+            }
+
+            pm = pm with { PngDataUri = ReportDiagramPngRenderer.RenderDataUri(pm) };
+            mm = mm with { PngDataUri = ReportDiagramPngRenderer.RenderDataUri(mm) };
+            return (pm, mm);
+        }
+        catch
+        {
+            return (null, null);
+        }
     }
 
     private void BuildReportTree()

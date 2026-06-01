@@ -157,9 +157,17 @@ document.addEventListener('DOMContentLoaded',function(){
             case DiagramBlock diag:
                 try
                 {
-                    string svg = InteractionDiagramSvgRenderer.RenderDiagram(diag, 620, 430);
-                    sb.Append("<div class='svg-wrap'>");
-                    sb.Append(svg);
+                    sb.Append("<div class='diagram-wrap'>");
+                    if (!string.IsNullOrWhiteSpace(diag.PngDataUri))
+                    {
+                        sb.Append($"<img class='diagram-img' src='{XA(diag.PngDataUri)}' alt='{XA(diag.Caption)}' style='width:{diag.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'/>");
+                    }
+                    else
+                    {
+                        string svg = InteractionDiagramSvgRenderer.RenderDiagram(diag, 620, 430);
+                        sb.Append(svg);
+                    }
+
                     if (!string.IsNullOrWhiteSpace(diag.Caption))
                         sb.Append($"<p class='fig-caption'>{H(diag.Caption)}</p>");
                     sb.Append("</div>");
@@ -490,6 +498,9 @@ document.addEventListener('DOMContentLoaded',function(){
         /* SVG / figures */
         .svg-wrap{text-align:center;margin:10px 0;}
         .svg-wrap svg{max-width:100%;height:auto;}
+        .diagram-wrap{text-align:center;margin:10px 0;}
+        .diagram-wrap svg{max-width:100%;height:auto;}
+        .diagram-img{max-width:100%;height:auto;display:block;margin:0 auto;}
         .fig-caption{font-size:9pt;color:var(--muted);font-style:italic;margin:4px 0 0;text-align:center;}
         .diagram-placeholder{border:1px dashed #AAA;padding:20px;text-align:center;
           color:#888;margin:8px 0;font-size:9.5pt;font-style:italic;}
