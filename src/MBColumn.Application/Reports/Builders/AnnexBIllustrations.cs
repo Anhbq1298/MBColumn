@@ -20,12 +20,14 @@ internal static class AnnexBIllustrations
         => NaY1 + (NaY2 - NaY1) / (NaX2 - NaX1) * (x - NaX1);
 
     // ── Rebar positions (inside section) ─────────────────────────────────────
+    // Section: x[110..410], y[40..260]. Cover 20px → rebar zone x[130..390], y[60..240].
+    // Top/bottom: 6 bars, step 52. Left/right interior: 3 bars, step 45.
     private static readonly (double x, double y)[] Rebars =
     [
-        (130, 62), (170, 58), (210, 56), (250, 56), (290, 58), (330, 62), (370, 68),
-        (370, 110), (370, 152), (370, 196), (370, 238),
-        (330, 244), (290, 246), (250, 248), (210, 248), (170, 246), (130, 242),
-        (110, 200), (110, 158), (110, 116), (110, 72),
+        (130, 60), (182, 60), (234, 60), (286, 60), (338, 60), (390, 60),
+        (390, 105), (390, 150), (390, 195),
+        (390, 240), (338, 240), (286, 240), (234, 240), (182, 240), (130, 240),
+        (130, 195), (130, 150), (130, 105),
     ];
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -212,8 +214,7 @@ internal static class AnnexBIllustrations
     private static void DrawNA(StringBuilder sb)
     {
         sb.Append($"<line x1='{NaX1}' y1='{NaY1}' x2='{NaX2}' y2='{NaY2}' stroke='#DC2626' stroke-width='2.2' stroke-dasharray='10,5'/>");
-        sb.Append($"<text x='{NaX2 + 5}' y='{NaY2 + 4}' font-size='11' fill='#DC2626' font-family='Segoe UI,sans-serif' font-weight='600'>NA</text>");
-        sb.Append($"<text x='{NaX2 + 5}' y='{NaY2 + 16}' font-size='9' fill='#DC2626' font-family='Segoe UI,sans-serif'>(θ = 25°)</text>");
+        sb.Append($"<text x='{NaX2 + 5}' y='{NaY2 + 8}' font-size='11' fill='#DC2626' font-family='Segoe UI,sans-serif' font-weight='600'>NA</text>");
     }
 
     private static void Label(StringBuilder sb, string text, double x, double y, string color, double size = 10)

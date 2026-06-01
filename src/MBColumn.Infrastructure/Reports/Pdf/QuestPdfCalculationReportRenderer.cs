@@ -1,6 +1,7 @@
 using MBColumn.Application.Reports.Models;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -9,9 +10,28 @@ namespace MBColumn.Infrastructure.Reports.Pdf;
 
 public sealed class QuestPdfCalculationReportRenderer
 {
+    private const string ReportFont = "Inter";
+
     static QuestPdfCalculationReportRenderer()
     {
         QuestPDF.Settings.License = LicenseType.Community;
+        RegisterInterFont();
+    }
+
+    private static void RegisterInterFont()
+    {
+        try
+        {
+            string fontsDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Resources", "Fonts");
+            foreach (var file in new[] { "Inter-Regular.ttf", "Inter-Medium.ttf", "Inter-SemiBold.ttf", "Inter-Bold.ttf" })
+            {
+                string path = System.IO.Path.Combine(fontsDir, file);
+                if (!System.IO.File.Exists(path)) continue;
+                using var stream = System.IO.File.OpenRead(path);
+                FontManager.RegisterFont(stream);
+            }
+        }
+        catch { }
     }
 
     public void RenderToFile(ReportData data, string filePath)
@@ -22,7 +42,7 @@ public sealed class QuestPdfCalculationReportRenderer
             {
                 page.Size(PageSizes.A4);
                 page.Margin(15, Unit.Millimetre);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+                page.DefaultTextStyle(x => x.FontSize(12).FontFamily(ReportFont));
 
                 page.Header().Element(c => RenderHeader(c, data));
                 page.Content().Element(c => RenderContent(c, data));
@@ -97,7 +117,7 @@ public sealed class QuestPdfCalculationReportRenderer
                         .BorderBottom(1).BorderColor("#1A3A5C")
                         .PaddingBottom(2)
                         .Text($"{section.Number}  {section.Title}")
-                        .FontSize(12).Bold().FontColor("#1A3A5C");
+                        .FontSize(14).Bold().FontColor("#1A3A5C");
 
                     foreach (var block in section.Blocks)
                         RenderBlock(secCol, block);
@@ -112,17 +132,17 @@ public sealed class QuestPdfCalculationReportRenderer
         {
             case HeadingBlock h:
                 col.Item().PaddingTop(6)
-                    .Text(h.Text).FontSize(10 + (3 - h.Level)).Bold();
+                    .Text(h.Text).FontSize(System.Math.Max(12, 14 - h.Level)).Bold();
                 break;
 
             case ParagraphBlock p:
-                col.Item().PaddingTop(4).Text(p.Text).FontSize(10);
+                col.Item().PaddingTop(4).Text(p.Text).FontSize(12);
                 break;
 
             case NoteBlock n:
                 col.Item().PaddingTop(4)
                     .Background("#FFF8DC").Padding(4)
-                    .Text(n.Text).FontSize(9).Italic();
+                    .Text(n.Text).FontSize(12).Italic();
                 break;
 
             case TableBlock t:
@@ -135,14 +155,14 @@ public sealed class QuestPdfCalculationReportRenderer
 
             case ImageBlock img:
                 col.Item().PaddingTop(4).AlignCenter()
-                    .Text("[Section Geometry — see HTML export for SVG]").FontSize(9).Italic().FontColor("#888");
+                    .Text("[Section Geometry — see HTML export for SVG]").FontSize(12).Italic().FontColor("#888");
                 if (!string.IsNullOrEmpty(img.Caption))
-                    col.Item().AlignCenter().Text(img.Caption).FontSize(8).Italic().FontColor("#555");
+                    col.Item().AlignCenter().Text(img.Caption).FontSize(12).Italic().FontColor("#555");
                 break;
 
             case DiagramBlock diag:
                 col.Item().PaddingTop(4).AlignCenter()
-                    .Text($"[Diagram — {diag.Caption}]").FontSize(9).Italic().FontColor("#888");
+                    .Text($"[Diagram — {diag.Caption}]").FontSize(12).Italic().FontColor("#888");
                 break;
 
             case SummaryBoxBlock sum:
@@ -150,10 +170,10 @@ public sealed class QuestPdfCalculationReportRenderer
                     .Border(1).BorderColor(sum.IsPass ? "#27AE60" : "#E74C3C").Padding(8)
                     .Column(inner =>
                     {
-                        inner.Item().Text(sum.Label).Bold().FontSize(11)
+                        inner.Item().Text(sum.Label).Bold().FontSize(14)
                             .FontColor(sum.IsPass ? "#1E8449" : "#C0392B");
                         if (!string.IsNullOrWhiteSpace(sum.Value))
-                            inner.Item().Text(sum.Value).FontSize(10);
+                            inner.Item().Text(sum.Value).FontSize(12);
                     });
                 break;
 
@@ -173,13 +193,13 @@ public sealed class QuestPdfCalculationReportRenderer
         var rows = st.Rows.Select(r => new[] { r.Index.ToString(), r.XMm, r.YMm, r.DMm, r.EpsilonS, r.FsMpa, r.AsMm2, r.FsKn, r.FsYKnm, r.FsXKnm }).ToArray();
         RenderTable(col, null, headers, rows);
         if (!string.IsNullOrEmpty(st.SumFs))
-            col.Item().PaddingTop(2).Text($"ΣFs = {st.SumFs} kN   ΣFs·y = {st.SumFsY} kN·m   ΣFs·x = {st.SumFsX} kN·m").FontSize(9).Italic();
+            col.Item().PaddingTop(2).Text($"ΣFs = {st.SumFs} kN   ΣFs·y = {st.SumFsY} kN·m   ΣFs·x = {st.SumFsX} kN·m").FontSize(12).Italic();
     }
 
     private static void RenderTable(ColumnDescriptor col, string? caption, string[] headers, string[][] rows)
     {
         if (!string.IsNullOrEmpty(caption))
-            col.Item().PaddingTop(6).Text(caption).FontSize(9).Italic().FontColor("#555");
+            col.Item().PaddingTop(6).Text(caption).FontSize(12).Italic().FontColor("#555");
 
         col.Item().PaddingTop(2).Table(table =>
         {
@@ -192,7 +212,7 @@ public sealed class QuestPdfCalculationReportRenderer
             // Header row
             foreach (var h in headers)
                 table.Header(hdr => hdr.Cell().Background("#1A3A5C").Padding(3)
-                    .Text(h).FontColor(Colors.White).Bold().FontSize(9));
+                    .Text(h).FontColor(Colors.White).Bold().FontSize(10));
 
             // Data rows
             bool alt = false;
@@ -201,7 +221,7 @@ public sealed class QuestPdfCalculationReportRenderer
                 string bg = alt ? "#F5F7FA" : Colors.White;
                 foreach (var cell in row)
                     table.Cell().Background(bg).BorderBottom(1).BorderColor("#DDDDDD").Padding(3)
-                        .Text(cell).FontSize(9);
+                        .Text(cell).FontSize(10);
                 alt = !alt;
             }
         });

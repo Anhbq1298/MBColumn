@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded',function(){
         *{box-sizing:border-box;margin:0;padding:0;}
         body{
           font-family:'Inter','Segoe UI',Arial,sans-serif;
-          font-size:11pt;line-height:1.55;color:#1A1A2E;
+          font-size:12pt;line-height:1.55;color:#1A1A2E;
           background:#EAECF0;padding:20px 28px 40px;
         }
 
@@ -428,9 +428,9 @@ document.addEventListener('DOMContentLoaded',function(){
           border-radius:6px;padding:20px 24px 16px;margin-bottom:20px;
         }
         .cover-title{font-size:16pt;font-weight:700;margin-bottom:10px;}
-        .cover-meta{font-size:10pt;margin:3px 0;display:flex;gap:8px;}
+        .cover-meta{font-size:12pt;margin:3px 0;display:flex;gap:8px;}
         .cover-label{font-weight:600;opacity:.65;min-width:70px;}
-        .cover-generated{font-size:9pt;opacity:.55;margin-top:10px;}
+        .cover-generated{font-size:10pt;opacity:.55;margin-top:10px;}
 
         /* Sections */
         section{
@@ -439,56 +439,60 @@ document.addEventListener('DOMContentLoaded',function(){
         }
         .sec-header{
           background:var(--navy);color:#fff;padding:9px 16px;
-          font-size:12pt;font-weight:600;
+          font-size:14pt;font-weight:600;
         }
         .sec-num{opacity:.75;}
         .sec-body{padding:14px 16px 16px;}
 
         /* Typography */
-        h2.sub-heading{font-size:11.5pt;color:var(--navy);font-weight:600;
+        h2.sub-heading{font-size:13pt;color:var(--navy);font-weight:600;
           border-bottom:1px solid var(--border);padding-bottom:3px;margin:12px 0 6px;}
-        h3.sub-heading{font-size:10.5pt;color:var(--navy);font-weight:600;margin:10px 0 4px;}
-        h4.sub-heading,h5.sub-heading,h6.sub-heading{font-size:10pt;color:var(--navy-lt);font-weight:600;margin:8px 0 3px;}
-        .body-text{margin:4px 0;font-size:10.5pt;}
+        h3.sub-heading{font-size:12.5pt;color:var(--navy);font-weight:600;margin:10px 0 4px;}
+        h4.sub-heading,h5.sub-heading,h6.sub-heading{font-size:12pt;color:var(--navy-lt);font-weight:600;margin:8px 0 3px;}
+        .body-text{margin:4px 0;font-size:12pt;}
 
         /* Note */
         .note{
           background:var(--note-bg);border-left:3px solid var(--note-border);
-          padding:6px 10px;margin:8px 0;font-size:10pt;
+          padding:6px 10px;margin:8px 0;font-size:12pt;
           color:#1A5276;font-style:italic;border-radius:0 3px 3px 0;
         }
 
         /* Tables */
         .tbl-wrap{overflow-x:auto;margin:8px 0;}
-        table{border-collapse:collapse;width:100%;font-size:9.5pt;}
+        table{border-collapse:collapse;width:100%;font-size:10pt;}
         th{background:var(--navy);color:#fff;padding:5px 8px;text-align:left;font-weight:600;}
-        td{padding:4px 8px;border-bottom:1px solid var(--border);font-size:9.5pt;}
+        td{padding:4px 8px;border-bottom:1px solid var(--border);font-size:10pt;}
         tr.odd td{background:var(--alt);}
         tr.even td{background:#fff;}
-        .tbl-caption{font-size:9pt;color:var(--muted);margin:4px 0 2px;font-style:italic;}
+        .tbl-caption{font-size:12pt;color:var(--muted);margin:4px 0 2px;font-style:italic;}
 
-        /* Formula panel — matches FormulaPanelStyle in ShearDetailView.xaml */
+        /* Formula panel */
         .formula-panel{
           background:var(--formula-bg);border:1px solid var(--formula-border);
           border-radius:5px;padding:10px 14px;margin:8px 0;
         }
         .formula-title{
-          font-size:9.5pt;color:var(--muted);font-weight:600;
+          font-size:11pt;color:var(--muted);font-weight:600;
           margin-bottom:7px;
         }
-        .formula-main{margin:4px 0 4px 0;font-size:13pt;}
-        .formula-sub{margin:3px 0 3px 10px;font-size:11pt;color:#333;}
-        .formula-result{margin:3px 0 0 10px;font-size:11pt;font-weight:600;color:var(--navy-lt);}
+        .formula-main{margin:4px 0 4px 0;font-size:12pt;}
+        .formula-sub{margin:3px 0 3px 10px;font-size:12pt;color:#333;}
+        .formula-result{margin:3px 0 0 10px;font-size:12pt;font-weight:600;color:var(--navy-lt);}
+        /* KaTeX: scale to container (12pt) and use Inter for text-mode spans */
+        .katex{font-size:1em;}
+        .katex .mtext,.katex .text,.katex .mord.text{font-family:'Inter','Segoe UI',sans-serif!important;}
+        .katex-display{margin:0.4em 0;}
 
         /* Summary box */
         .summary-box{border:2px solid;border-radius:5px;padding:12px 16px;margin:10px 0;}
         .summary-box.pass{background:var(--pass-bg);border-color:var(--pass-border);}
         .summary-box.fail{background:var(--fail-bg);border-color:var(--fail-border);}
-        .summary-title{font-size:13pt;font-weight:700;margin-bottom:8px;}
+        .summary-title{font-size:14pt;font-weight:700;margin-bottom:8px;}
         .summary-box.pass .summary-title{color:var(--pass);}
         .summary-box.fail .summary-title{color:var(--fail);}
         .summary-entries{display:flex;flex-direction:column;gap:3px;}
-        .summary-row{display:flex;gap:10px;font-size:10pt;}
+        .summary-row{display:flex;gap:10px;font-size:12pt;}
         .s-lbl{color:var(--muted);min-width:160px;flex-shrink:0;}
         .s-val{font-weight:600;}
 
@@ -498,9 +502,9 @@ document.addEventListener('DOMContentLoaded',function(){
         .diagram-wrap{text-align:center;margin:10px 0;}
         .diagram-wrap svg{max-width:100%;height:auto;}
         .diagram-img{max-width:100%;height:auto;display:block;margin:0 auto;}
-        .fig-caption{font-size:9pt;color:var(--muted);font-style:italic;margin:4px 0 0;text-align:center;}
+        .fig-caption{font-size:12pt;color:var(--muted);font-style:italic;margin:4px 0 0;text-align:center;}
         .diagram-placeholder{border:1px dashed #AAA;padding:20px;text-align:center;
-          color:#888;margin:8px 0;font-size:9.5pt;font-style:italic;}
+          color:#888;margin:8px 0;font-size:12pt;font-style:italic;}
 
         hr.divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
         @media print{body{background:#fff;padding:0;}section{box-shadow:none;}}
