@@ -1,3 +1,4 @@
+using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Infrastructure.DesignCodes;
@@ -13,11 +14,17 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
 {
     private const double GammaC = 1.50;  // EC2 Table 2.1N
     private const double GammaS = 1.15;  // EC2 Table 2.1N
+    public EurocodeConcreteStrainProfile EurocodeConcreteStrainProfile { get; set; } = EurocodeConcreteStrainProfile.Ec2;
 
     // ── Concrete strain limits (EC2 Table 3.1, parabolic-rectangular model) ─────────
 
     /// <summary>εcu2: ultimate concrete strain at the extreme compression fibre.</summary>
     public double ConcreteUltimateStrain(double fckMpa)
+        => EurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3
+            ? ConcreteRectangularUltimateStrain(fckMpa)
+            : ConcreteParabolicUltimateStrain(fckMpa);
+
+    private static double ConcreteParabolicUltimateStrain(double fckMpa)
     {
         if (fckMpa <= 50.0) return 0.0035;
         if (fckMpa >= 90.0) return 0.0026;
@@ -27,6 +34,11 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
 
     /// <summary>εc2: concrete strain at onset of the parabolic plateau.</summary>
     public double ConcretePeakStrain(double fckMpa)
+        => EurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3
+            ? ConcreteRectangularPeakStrain(fckMpa)
+            : ConcreteParabolicPeakStrain(fckMpa);
+
+    private static double ConcreteParabolicPeakStrain(double fckMpa)
     {
         if (fckMpa <= 50.0) return 0.0020;
         if (fckMpa >= 90.0) return 0.0026;
@@ -49,10 +61,11 @@ public sealed class Ec2DesignCodeService : IDesignCodeService
     /// εcu3: ultimate strain for the simplified rectangular block model.
     /// Per Table 3.1, εcu3 == εcu2 at each fck breakpoint.
     /// </summary>
-    public double ConcreteRectangularUltimateStrain(double fckMpa) => ConcreteUltimateStrain(fckMpa);
+    public double ConcreteRectangularUltimateStrain(double fckMpa) => ConcreteParabolicUltimateStrain(fckMpa);
 
     /// <summary>EC2 follows the Fig 6.1 strain-domain pivot toward uniform εc3 near pure compression.</summary>
     public bool UseEc2CompressionDomain => true;
+    public bool UseBilinearConcreteStress => EurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3;
 
     /// <summary>εc3: strain at onset of the uniform plateau for the rectangular block.</summary>
     public double ConcreteRectangularPeakStrain(double fckMpa)

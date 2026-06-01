@@ -1,3 +1,4 @@
+using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 
 namespace MBColumn.Infrastructure.DesignCodes;
@@ -21,6 +22,8 @@ public sealed class Aci318DesignCodeService : IDesignCodeService
     public double ConcreteRectangularUltimateStrain(double fckMpa) => ConcreteUltimateStrain(fckMpa);
     public double ConcreteRectangularPeakStrain(double fckMpa) => ConcretePeakStrain(fckMpa);
     public bool UseEc2CompressionDomain => false;
+    public EurocodeConcreteStrainProfile EurocodeConcreteStrainProfile { get; set; } = EurocodeConcreteStrainProfile.Ec2;
+    public bool UseBilinearConcreteStress => false;
 
     // ACI rectangular block stress = 0.85 f'c; no high-strength η reduction.
     public double ConcreteEffectiveStrengthFactor(double fckMpa) => 1.0;

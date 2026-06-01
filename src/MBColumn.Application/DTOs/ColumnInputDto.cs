@@ -34,6 +34,7 @@ public sealed record ColumnInputDto(
     public IReadOnlyList<RebarCoordinateDto>? RebarCoordinates { get; init; }
     public DesignCodeType DesignCode { get; init; } = DesignCodeType.Aci318Style;
     public Ec2SolverType Ec2Solver { get; init; } = Ec2SolverType.Boundary;
+    public EurocodeConcreteStrainProfile EurocodeConcreteStrainProfile { get; init; } = EurocodeConcreteStrainProfile.Ec2;
     public SectionIntegrationMethod IntegrationMethod { get; init; } = SectionIntegrationMethod.Fiber;
     public double AlphaCc { get; init; } = 0.85;
     public double GammaC { get; init; } = 1.50;

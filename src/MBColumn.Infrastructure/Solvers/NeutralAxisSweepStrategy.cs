@@ -11,8 +11,7 @@ public sealed class NeutralAxisSweepStrategy : ISweepStrategy
         int depthCount = SMath.Max(2, input.Settings.NeutralAxisSamples);
         double cMax = 10.0 * SMath.Max(input.Section.WidthMm, input.Section.HeightMm);
         double ecu = input.DesignCode.ConcreteUltimateStrain(input.Concrete.FcMpa);
-        double epsCu3 = input.DesignCode.ConcreteRectangularUltimateStrain(input.Concrete.FcMpa);
-        double epsC3 = input.DesignCode.ConcreteRectangularPeakStrain(input.Concrete.FcMpa);
+        double peakCompressionStrain = input.DesignCode.ConcretePeakStrain(input.Concrete.FcMpa);
         bool useEc2 = input.DesignCode.UseEc2CompressionDomain;
         var states = new List<NeutralAxisState>(angleCount * depthCount);
 
@@ -36,16 +35,16 @@ public sealed class NeutralAxisSweepStrategy : ISweepStrategy
                     {
                         // Domains A/B — flexure. Reduces to the legacy εcu plane through the neutral axis.
                         // c < hθ → epsFar < 0 (tension); c = hθ → epsFar = 0 (far fibre at the neutral axis).
-                        epsExtreme = epsCu3;
-                        epsFar = epsCu3 * (1.0 - hTheta / c);
+                        epsExtreme = ecu;
+                        epsFar = ecu * (1.0 - hTheta / c);
                     }
                     else
                     {
                         // Domain C — high-compression transition. Pivot toward uniform εc3 (EC2 Fig 6.1).
                         // t = 0 at c = hθ (εcu3, 0); t = 1 at c = cMax (εc3, εc3 = pure compression).
                         double t = (c - hTheta) / (cMax - hTheta);
-                        epsExtreme = Lerp(epsCu3, epsC3, t);
-                        epsFar = Lerp(0.0, epsC3, t);
+                        epsExtreme = Lerp(ecu, peakCompressionStrain, t);
+                        epsFar = Lerp(0.0, peakCompressionStrain, t);
                     }
                 }
                 else

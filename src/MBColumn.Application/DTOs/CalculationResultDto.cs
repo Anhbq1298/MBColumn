@@ -32,6 +32,7 @@ public sealed record CalculationResultDto(
     public ControlPointTableDto? ControlPointTable { get; init; }
     public SectionShapeType SectionShape { get; init; } = SectionShapeType.Rectangular;
     public SectionIntegrationMethod IntegrationMethod { get; init; } = SectionIntegrationMethod.Fiber;
+    public EurocodeConcreteStrainProfile EurocodeConcreteStrainProfile { get; init; } = EurocodeConcreteStrainProfile.Ec2;
     public int ConcreteFiberCountX { get; init; } = 40;
     public int ConcreteFiberCountY { get; init; } = 40;
     public int CircularRadialFiberCount { get; init; } = 32;

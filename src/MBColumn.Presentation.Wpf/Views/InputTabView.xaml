@@ -452,12 +452,22 @@
                                          Grid.ColumnSpan="2"
                                          Style="{StaticResource ComputedTextBoxStyle}"
                                          Text="{Binding EcmDisplayText, Mode=OneWay}" />
-                                <CheckBox Grid.Row="17"
-                                          Grid.Column="0"
-                                          Grid.ColumnSpan="2"
-                                          IsEnabled="False"
-                                          Content="Override Ecm manually"
-                                          Margin="0,6,0,0" />
+                                <DockPanel Grid.Row="17"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Margin="0,6,0,0"
+                                           Visibility="{Binding ShowEurocodeConcreteStrainProfileOption, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Strain model"
+                                               Style="{StaticResource FieldLabelTextStyle}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0" />
+                                    <ComboBox ItemsSource="{Binding EurocodeConcreteStrainProfiles}"
+                                              DisplayMemberPath="DisplayName"
+                                              SelectedValuePath="Profile"
+                                              SelectedValue="{Binding SelectedEurocodeConcreteStrainProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              MinWidth="142"
+                                              HorizontalAlignment="Right" />
+                                </DockPanel>
                                  <TextBlock Grid.Row="18"
                                             Grid.Column="0">
                                      <TextBlock.Style>
@@ -528,7 +538,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="cu2" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="{Binding ConcreteUltimateStrainSubscript, Mode=OneWay}" FontSize="9" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="22"
                                             Grid.Column="0"
@@ -567,7 +577,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="c2" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="{Binding ConcretePeakStrainSubscript, Mode=OneWay}" FontSize="9" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="24"
                                             Grid.Column="0"

@@ -25,7 +25,7 @@ public static class SectionGeometryRenderer
     // ── Public API ────────────────────────────────────────────────────────────
 
     public static string RenderRectangularSection(double widthMm, double heightMm, double coverMm,
-        IReadOnlyList<RebarCoordinateDto> bars)
+        IReadOnlyList<RebarCoordinateDto> bars, double linkDiameterMm = 0.0, int totalLegsX = 2, int totalLegsY = 2)
     {
         int plotW = ViewW - PadL - PadR;
         int plotH = ViewH - PadT - PadB;
@@ -59,33 +59,7 @@ public static class SectionGeometryRenderer
         // ── Section fill & outline ─────────────────────────────────────────────
         sb.AppendLine($@"  <rect x=""{D(ox)}"" y=""{D(oy)}"" width=""{D(sw)}"" height=""{D(sh)}"" fill=""#EEF4FB"" stroke=""#1A3A5C"" stroke-width=""2""/>");
 
-        // ── Inner tie grid (red) derived from bar positions ────────────────────
-        if (bars.Count >= 4)
-        {
-            const double eps = 2.0; // mm grouping tolerance
-            var xGroups = bars.Select(b => b.X).Distinct(new ApproxEqualityComparer(eps)).OrderBy(x => x).ToList();
-            var yGroups = bars.Select(b => b.Y).Distinct(new ApproxEqualityComparer(eps)).OrderBy(y => y).ToList();
-
-            double xMin = xGroups.Min(), xMax = xGroups.Max();
-            double yMin = yGroups.Min(), yMax = yGroups.Max();
-
-            // Vertical tie lines at each unique X
-            foreach (double xMm in xGroups)
-            {
-                double px = cx + xMm * scale;
-                double py1 = cy - yMax * scale;
-                double py2 = cy - yMin * scale;
-                sb.AppendLine($@"  <line x1=""{D(px)}"" y1=""{D(py1)}"" x2=""{D(px)}"" y2=""{D(py2)}"" stroke=""#E74C3C"" stroke-width=""1"" opacity=""0.7""/>");
-            }
-            // Horizontal tie lines at each unique Y
-            foreach (double yMm in yGroups)
-            {
-                double py  = cy - yMm * scale;
-                double px1 = cx + xMin * scale;
-                double px2 = cx + xMax * scale;
-                sb.AppendLine($@"  <line x1=""{D(px1)}"" y1=""{D(py)}"" x2=""{D(px2)}"" y2=""{D(py)}"" stroke=""#E74C3C"" stroke-width=""1"" opacity=""0.7""/>");
-            }
-        }
+        DrawRectangularLinks(sb, bars, scale, cx, cy, ox, oy, sw, sh, coverMm, linkDiameterMm, totalLegsX, totalLegsY);
 
         // ── Cover outline (dashed) ─────────────────────────────────────────────
         sb.AppendLine($@"  <rect x=""{D(ox + covPx)}"" y=""{D(oy + covPx)}"" width=""{D(sw - 2 * covPx)}"" height=""{D(sh - 2 * covPx)}"" fill=""none"" stroke=""#5B8DB8"" stroke-width=""1"" stroke-dasharray=""5 3""/>");
@@ -121,7 +95,7 @@ public static class SectionGeometryRenderer
     }
 
     public static string RenderCircularSection(double diameterMm, double coverMm,
-        IReadOnlyList<RebarCoordinateDto> bars)
+        IReadOnlyList<RebarCoordinateDto> bars, double linkDiameterMm = 0.0)
     {
         int plotW = ViewW - PadL - PadR;
         int plotH = ViewH - PadT - PadB;
@@ -146,6 +120,10 @@ public static class SectionGeometryRenderer
             sb.AppendLine($@"  <text x=""{D(cx)}"" y=""27"" text-anchor=""middle"" font-size=""10"" fill=""#555"">{sub}</text>");
 
         sb.AppendLine($@"  <circle cx=""{D(cx)}"" cy=""{D(cy)}"" r=""{D(rPx)}"" fill=""#EEF4FB"" stroke=""#1A3A5C"" stroke-width=""2""/>");
+
+        double hoopR = (diameterMm / 2.0 - coverMm - SMath.Max(linkDiameterMm, 0.0) / 2.0) * scale;
+        if (hoopR > 0)
+            sb.AppendLine($@"  <circle cx=""{D(cx)}"" cy=""{D(cy)}"" r=""{D(hoopR)}"" fill=""none"" stroke=""#2E6F9E"" stroke-width=""1.4""/>");
 
         double covR = (diameterMm / 2.0 - coverMm) * scale;
         if (covR > 0)
@@ -176,10 +154,13 @@ public static class SectionGeometryRenderer
 
     public static string RenderSection(SectionShapeType shape,
         double widthMm, double heightMm, double diameterMm, double coverMm,
-        IReadOnlyList<RebarCoordinateDto> bars) => shape switch
+        IReadOnlyList<RebarCoordinateDto> bars,
+        double linkDiameterMm = 0.0,
+        int totalLegsX = 2,
+        int totalLegsY = 2) => shape switch
     {
-        SectionShapeType.Circular => RenderCircularSection(diameterMm, coverMm, bars),
-        _                        => RenderRectangularSection(widthMm, heightMm, coverMm, bars)
+        SectionShapeType.Circular => RenderCircularSection(diameterMm, coverMm, bars, linkDiameterMm),
+        _                        => RenderRectangularSection(widthMm, heightMm, coverMm, bars, linkDiameterMm, totalLegsX, totalLegsY)
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -188,6 +169,75 @@ public static class SectionGeometryRenderer
     {
         public bool Equals(double x, double y) => SMath.Abs(x - y) <= tolerance;
         public int GetHashCode(double obj) => SMath.Round(obj / tolerance).GetHashCode();
+    }
+
+    private static void DrawRectangularLinks(
+        StringBuilder sb,
+        IReadOnlyList<RebarCoordinateDto> bars,
+        double scale,
+        double cx,
+        double cy,
+        double ox,
+        double oy,
+        double sw,
+        double sh,
+        double coverMm,
+        double linkDiameterMm,
+        int totalLegsX,
+        int totalLegsY)
+    {
+        double tieInsetPx = (coverMm + SMath.Max(linkDiameterMm, 0.0) / 2.0) * scale;
+        double tieX = ox + tieInsetPx;
+        double tieY = oy + tieInsetPx;
+        double tieW = sw - 2.0 * tieInsetPx;
+        double tieH = sh - 2.0 * tieInsetPx;
+        if (tieW <= 0 || tieH <= 0)
+            return;
+
+        const string stroke = "#2E6F9E";
+        sb.AppendLine($@"  <rect x=""{D(tieX)}"" y=""{D(tieY)}"" width=""{D(tieW)}"" height=""{D(tieH)}"" rx=""3"" ry=""3"" fill=""none"" stroke=""{stroke}"" stroke-width=""1.4""/>");
+
+        if (bars.Count < 4)
+            return;
+
+        const double eps = 2.0;
+        var xGroups = bars.Select(b => b.X).Distinct(new ApproxEqualityComparer(eps)).OrderBy(x => x).ToList();
+        var yGroups = bars.Select(b => b.Y).Distinct(new ApproxEqualityComparer(eps)).OrderBy(y => y).ToList();
+
+        int innerVerticalLegs = SMath.Max(0, totalLegsX - 2);
+        foreach (double xMm in SelectInteriorGroups(xGroups, innerVerticalLegs))
+        {
+            double px = cx + xMm * scale;
+            sb.AppendLine($@"  <line x1=""{D(px)}"" y1=""{D(tieY)}"" x2=""{D(px)}"" y2=""{D(tieY + tieH)}"" stroke=""{stroke}"" stroke-width=""1.2"" opacity=""0.9""/>");
+        }
+
+        int innerHorizontalLegs = SMath.Max(0, totalLegsY - 2);
+        foreach (double yMm in SelectInteriorGroups(yGroups, innerHorizontalLegs))
+        {
+            double py = cy - yMm * scale;
+            sb.AppendLine($@"  <line x1=""{D(tieX)}"" y1=""{D(py)}"" x2=""{D(tieX + tieW)}"" y2=""{D(py)}"" stroke=""{stroke}"" stroke-width=""1.2"" opacity=""0.9""/>");
+        }
+    }
+
+    private static IEnumerable<double> SelectInteriorGroups(IReadOnlyList<double> groups, int count)
+    {
+        if (count <= 0 || groups.Count <= 2)
+            yield break;
+
+        var interior = groups.Skip(1).Take(groups.Count - 2).ToList();
+        if (count >= interior.Count)
+        {
+            foreach (double value in interior)
+                yield return value;
+            yield break;
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            int index = (int)SMath.Round((i + 1.0) * (interior.Count + 1.0) / (count + 1.0) - 1.0);
+            index = SMath.Clamp(index, 0, interior.Count - 1);
+            yield return interior[index];
+        }
     }
 
     private static void DrawAxes(StringBuilder sb, double cx, double cy, double len)

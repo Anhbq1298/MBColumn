@@ -46,7 +46,7 @@ internal sealed class Ec2ReportBuilder
         // ── Annexes ───────────────────────────────────────────────────────────
 
         sections.Add(AnnexA_Coordinates(r));
-        sections.Add(AnnexB_Theory());
+        sections.Add(AnnexB_Theory(r.IntegrationMethod));
 
         var handCalc = ReportHandCalcService.Build(
             r.SectionShape, r.SectionWidthMm, r.SectionHeightMm,
@@ -427,9 +427,62 @@ internal sealed class Ec2ReportBuilder
     // Annex B · MB Column PMM Sweeping Theory
     // ─────────────────────────────────────────────────────────────────────────
 
-    private static ReportSection AnnexB_Theory()
-        => new("Annex B", "MB Column PMM Sweeping Theory",
-        [
+    private static ReportSection AnnexB_Theory(SectionIntegrationMethod method = SectionIntegrationMethod.Fiber)
+    {
+        var integrationBlocks = method == SectionIntegrationMethod.Fiber
+            ? new ReportBlock[]
+            {
+                new HeadingBlock("Section Integration (Fibre Method)", 2),
+                new ParagraphBlock(
+                    "The concrete compression zone is discretized into a grid of fibres. Each fibre " +
+                    "contributes to the resultant forces through the EC2 parabolic-rectangular " +
+                    "stress-strain relationship."),
+                new ImageBlock(AnnexBIllustrations.FibreMethodSvg(),
+                    Caption: "Figure B.1 – Fibre discretization: section divided into a grid; each fibre is coloured by its compressive strain level"),
+                new FormulaBlock("Internal forces (discrete fibre sum)",
+                    @"N_{Rd} = \sum_{j \in C} \sigma_c(\varepsilon_j)\,A_j + \sum_i A_{si}\,\sigma_{si}",
+                    @"\sigma_c(\varepsilon_j) = f(\varepsilon_j)\ \text{per EC2 §3.1.7},\quad A_j = \text{fibre area}",
+                    @"\sigma_{si} = \operatorname{clamp}(E_s \varepsilon_{si},\,-f_{yd},\,f_{yd})"),
+                new FormulaBlock("Bending moments about section centroid",
+                    @"M_{Rd,x} = \sum_{j \in C} \sigma_c(\varepsilon_j)\,A_j\,y_j + \sum_i A_{si}\,\sigma_{si}\,y_i",
+                    @"M_{Rd,y} = \sum_{j \in C} \sigma_c(\varepsilon_j)\,A_j\,x_j + \sum_i A_{si}\,\sigma_{si}\,x_i",
+                    @"j \in C\ \text{: fibres inside the compression zone only}"),
+            }
+            : new ReportBlock[]
+            {
+                new HeadingBlock("Section Integration (Polygon Method)", 2),
+                new ParagraphBlock(
+                    "The compression zone boundary is obtained by exact geometric clipping of the " +
+                    "section polygon against the neutral axis plane (Sutherland-Hodgman algorithm). " +
+                    "The resulting compression polygon Pc is decomposed into horizontal strips; " +
+                    "each strip is integrated exactly — no fibre discretization error."),
+                new ImageBlock(AnnexBIllustrations.PolygonMethodSvg(),
+                    Caption: "Figure B.1 – Polygon clipping: the compression zone is the exact polygon Pc bounded by the section edges and the neutral axis"),
+
+                new FormulaBlock("Compression polygon (Sutherland-Hodgman clipping)",
+                    @"P_c = \text{section polygon} \cap \{\,(x,y) : \varepsilon(x,y) \geq 0\,\}",
+                    @"A_c = \tfrac{1}{2}\left|\sum_{k=1}^{n}(x_k\,y_{k+1} - x_{k+1}\,y_k)\right| \quad \text{(shoelace)}",
+                    @"(x_k,y_k) = \text{vertices of } P_c \text{ after clipping}"),
+
+                new FormulaBlock("Strip-wise force integration (exact)",
+                    @"N_c = \sum_{j}\, b_j(y_j)\cdot\sigma_c\!\left(\varepsilon(y_j)\right)\cdot\Delta y_j",
+                    @"b_j(y_j) = \text{exact chord width of } P_c \text{ at strip centroid } y_j",
+                    @"\sigma_c(\varepsilon_c) = f(\varepsilon_c)\ \text{per EC2 §3.1.7 parabolic-rectangular model}"),
+
+                new FormulaBlock("Strip-wise moment integration (exact)",
+                    @"M_{x} = \sum_{j}\, b_j\,y_j\,\sigma_c(\varepsilon_j)\,\Delta y_j + \sum_i A_{si}\sigma_{si}\,y_i",
+                    @"M_{y} = \sum_{j}\, \bar{x}_j\,b_j\,\sigma_c(\varepsilon_j)\,\Delta y_j + \sum_i A_{si}\sigma_{si}\,x_i",
+                    @"\bar{x}_j = \text{strip centroid }x\text{ derived from polygon geometry}"),
+
+                new NoteBlock(
+                    "Unlike the fibre method, the polygon method does not rasterize the section. " +
+                    "Accuracy depends only on the strip height Δy (≤ 0.5 mm), not on a fibre grid density. " +
+                    "Both methods converge to the same result; the polygon method eliminates rasterization error " +
+                    "and is preferred for irregular or circular sections."),
+            };
+
+        var blocks = new List<ReportBlock>
+        {
             new HeadingBlock("Overview", 2),
             new ParagraphBlock(
                 "MB Column determines the three-dimensional P-M-M interaction surface by sweeping " +
@@ -446,23 +499,12 @@ internal sealed class Ec2ReportBuilder
                 @"\varepsilon(d) = \varepsilon_{cu2} \cdot \frac{c - d}{c}",
                 @"\varepsilon_{cu2} = \text{EC2 Table 3.1, fck-dependent}",
                 @"d = \text{perpendicular distance from neutral axis, positive towards compression}"),
+        };
 
-            new HeadingBlock("Section Integration  (Fibre Method)", 2),
-            new ParagraphBlock(
-                "The concrete compression zone is discretized into a grid of fibres. Each fibre " +
-                "contributes to the resultant forces through the EC2 parabolic-rectangular " +
-                "stress-strain relationship."),
+        blocks.AddRange(integrationBlocks);
 
-            new FormulaBlock("Internal forces",
-                @"N_{Rd} = \int_{A_c} \sigma_c \, dA + \sum_i A_{si} \sigma_{si}",
-                @"\sigma_c = f(\varepsilon_c)\ \text{per EC2 §3.1.7 parabolic-rectangular model}",
-                @"\sigma_{si} = \operatorname{clamp}(E_s \varepsilon_{si},\,-f_{yd},\,f_{yd})"),
-
-            new FormulaBlock("Bending moments about section centroid",
-                @"M_{Rd,x} = \int_{A_c} \sigma_c \, y \, dA + \sum_i A_{si} \sigma_{si} \, y_i",
-                @"M_{Rd,y} = \int_{A_c} \sigma_c \, x \, dA + \sum_i A_{si} \sigma_{si} \, x_i",
-                ""),
-
+        blocks.AddRange(new ReportBlock[]
+        {
             new HeadingBlock("EC2 Material Partial Factors", 2),
             new ParagraphBlock(
                 "EC2 applies material partial factors to characteristic strengths rather than " +
@@ -493,7 +535,10 @@ internal sealed class Ec2ReportBuilder
                 "The governing angle θ_gov is the neutral axis orientation that maximises UR. " +
                 "The reported capacity (NRd, MRd,x, MRd,y) is the intersection of the " +
                 "proportional loading ray with the design interaction surface."),
-        ]);
+        });
+
+        return new("Annex B", "MB Column PMM Sweeping Theory", blocks);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Annex C · Hand-Calculation Verification  (rectangular sections, EC2)

@@ -129,7 +129,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **ColumnInputSnapshot** | Represents the ColumnInputSnapshot class. Key properties: UnitSystem, DesignCode, Ec2Solver, IntegrationMethod. | `ColumnInputSnapshot.cs` |
+| `class` | **ColumnInputSnapshot** | Represents the ColumnInputSnapshot class. Key properties: UnitSystem, DesignCode, Ec2Solver, EurocodeConcreteStrainProfile. | `ColumnInputSnapshot.cs` |
 | `class` | **SnapshotBoundaryPoint** | Represents the SnapshotBoundaryPoint class. Key properties: PtIndex, X, Y. | `ColumnInputSnapshot.cs` |
 | `class` | **SnapshotLoadCase** | Represents the SnapshotLoadCase class. Key properties: Id, Label, OriginalLoadCaseName, SourceObjectName. | `ColumnInputSnapshot.cs` |
 | `class` | **SnapshotRebar** | Represents the SnapshotRebar class. Key properties: RebarIndex, X, Y, BarSize. | `ColumnInputSnapshot.cs` |
@@ -159,6 +159,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **AnnexBIllustrations** | /// Generates SVG diagrams illustrating the Fibre and Polygon section integration methods. /// | `AnnexBIllustrations.cs` |
 | `class` | **CalculationReportBuilder** | /// Entry point for report generation. Routes to the appropriate code-specific /// builder based on DesignCode. ///. Key methods: Build. | `CalculationReportBuilder.cs` |
 | `class` | **CircularSevenPointBuilder** | /// Generates the 7-point independent verification for circular sections /// using the circular compression segment method. /// Correct centroid formula: ybar = (2/3)(R²-y_a²)^(3/2) / Aseg ///. Key methods: Build. | `CircularSevenPointBuilder.cs` |
 | `class` | **ConclusionSectionBuilder** | Represents the ConclusionSectionBuilder class. Key methods: Build. | `ConclusionSectionBuilder.cs` |
@@ -364,6 +365,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **DesignCodeType** | Enumeration defining states/types for DesignCodeType. | `DesignCodeType.cs` |
 | `enum` | **DiagramType** | Enumeration defining states/types for DiagramType. | `DiagramType.cs` |
 | `enum` | **Ec2SolverType** | Enumeration defining states/types for Ec2SolverType. | `Ec2SolverType.cs` |
+| `enum` | **EurocodeConcreteStrainProfile** | Enumeration defining states/types for EurocodeConcreteStrainProfile. | `EurocodeConcreteStrainProfile.cs` |
 | `enum` | **ForceUnit** | Enumeration defining states/types for ForceUnit. | `ForceUnit.cs` |
 | `enum` | **LengthUnit** | Enumeration defining states/types for LengthUnit. | `LengthUnit.cs` |
 | `enum` | **MomentUnit** | Enumeration defining states/types for MomentUnit. | `MomentUnit.cs` |
@@ -398,12 +400,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: UseEc2CompressionDomain, ConcreteStressBlockFactor, AlphaCc, UseLetterControlPoints. | `Aci318DesignCodeService.cs` |
+| `class` | **Aci318DesignCodeService** | Provides service logic and operations for Aci318DesignCode. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: UseEc2CompressionDomain, EurocodeConcreteStrainProfile, UseBilinearConcreteStress, ConcreteStressBlockFactor. | `Aci318DesignCodeService.cs` |
 | `class` | **Aci318ShearDesignService** | ACI 318-19 shear capacity check — PLACEHOLDER. Key methods: Check. | `Aci318ShearDesignService.cs` |
 | `record` | **CircularShearInput** | Represents the CircularShearInput record. | `EurocodeCircularColumnShearCalculator.cs` |
 | `record` | **CircularShearResult** | Encapsulates the result of CircularShear operations. | `EurocodeCircularColumnShearCalculator.cs` |
 | `class` | **DesignCodeServiceFactory** | Represents the DesignCodeServiceFactory class. Key methods: Get. | `DesignCodeServiceFactory.cs` |
-| `class` | **Ec2DesignCodeService** | /// Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. /// Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). /// Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). /// Concrete strain limits and parabolic parameters follow Table 3.1 with /// piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. ///. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: UseEc2CompressionDomain, ConcreteStressBlockFactor, EpsilonUd, AlphaCc. | `Ec2DesignCodeService.cs` |
+| `class` | **Ec2DesignCodeService** | /// Eurocode 2 (EN 1992-1-1:2004) implementation of IDesignCodeService. /// Material partial factors: γc = 1.5, γs = 1.15 (Table 2.1N). /// Strength coefficient: αcc = 0.85 (Singapore/UK National Annex, clause 3.1.6(1)P). /// Concrete strain limits and parabolic parameters follow Table 3.1 with /// piecewise-linear interpolation for 50 MPa &lt; fck ≤ 90 MPa. ///. Key methods: ConcreteUltimateStrain, ConcretePeakStrain, ConcreteParabolicExponent, ConcreteRectangularUltimateStrain. Key properties: EurocodeConcreteStrainProfile, UseEc2CompressionDomain, UseBilinearConcreteStress, ConcreteStressBlockFactor. | `Ec2DesignCodeService.cs` |
 | `class` | **Ec2ShearDesignService** | /// Effective depth (Fix 1 — from real geometry, not a fixed 60 mm): d_eff = section_dim − cover_nominal − link_dia − main_bar_dia / 2 /// Sign convention (b × h section): VEdX → bw = h, d = b − cover_eff, legs = TotalLegsX VEdY → bw = b, d = h − cover_eff, legs = TotalLegsY /// Circular: Caller passes bMm = 0.8 D for VRd,c/VRd,max and hMm = D. VRd,s uses the Orr-Bath circular hoop model: VRd,s = (π/2) · (Ah/s) · D' · fywd · cot θ. Internal diameter ties are ignored in VRd,s. Key methods: Check. | `Ec2ShearDesignService.cs` |
 | `class` | **EurocodeCircularColumnShearCalculator** | Represents the EurocodeCircularColumnShearCalculator class. Key methods: Calculate. | `EurocodeCircularColumnShearCalculator.cs` |
 | `class` | **ShearDesignServiceFactory** | Represents the ShearDesignServiceFactory class. Key methods: Get. | `ShearDesignServiceFactory.cs` |
@@ -725,6 +727,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsSectionMappingViewModel** | Represents the EtabsSectionMappingViewModel class. Key properties: SectionTypes, EtabsSectionName, UniqueSection, SectionType. | `EtabsSectionMappingViewModel.cs` |
 | `class` | **EtabsStoryOptionViewModel** | Represents the EtabsStoryOptionViewModel class. Key properties: StoryName, Elevation, SortIndex, DisplayName. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsUniqueSectionOptionViewModel** | Represents the EtabsUniqueSectionOptionViewModel class. Key properties: SectionName, SourceSectionName, ShapeType, ObjectCount. | `EtabsImportViewModel.cs` |
+| `record` | **EurocodeConcreteStrainProfileOption** | Represents the EurocodeConcreteStrainProfileOption record. | `InputViewModel.cs` |
+| `class` | **EurocodeConcreteStrainProfileValues** | Represents the EurocodeConcreteStrainProfileValues class. Key methods: Ec2Peak, Ec3Peak, Ec2Ultimate. | `InputViewModel.cs` |
 | `class` | **ExplorerNodeViewModel** | Represents the ExplorerNodeViewModel class. Key properties: Id, IsChecked, Name, IsSelected. | `ExplorerNodeViewModel.cs` |
 | `class` | **ExportControlPointsViewModel** | Represents the ExportControlPointsViewModel class. Key methods: RefreshPreview. Key properties: PreviewRows, RefreshPreviewCommand, ExportCsvCommand, CloseCommand. | `ExportControlPointsViewModel.cs` |
 | `class` | **GoverningChartPreviewViewModel** | Represents the GoverningChartPreviewViewModel class. Key properties: CriticalThetaDeg, UtilizationRatio, DemandP, DemandMx. | `A4ReportModels.cs` |
@@ -799,7 +803,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
-| `class` | **PmmInteractionWindow** | Represents the PmmInteractionWindow class. | `PmmInteractionWindow.xaml.cs` |
+| `class` | **PmmInteractionWindow** | Represents the PmmInteractionWindow class. Key methods: CapturePmChartDataUri, CaptureMmChartDataUri. | `PmmInteractionWindow.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
 | `class` | **RebarComplianceDetailView** | Represents the RebarComplianceDetailView class. | `RebarComplianceDetailView.xaml.cs` |
 | `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |

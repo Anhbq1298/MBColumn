@@ -33,6 +33,9 @@ public sealed class ReportTabViewModel : ViewModelBase
     private string _cachedProjectName = "";
     private string _cachedGroupName = "";
     private string _cachedDesignTierName = "";
+    private double _cachedLinkDiameterMm;
+    private int _cachedTotalLegsX = 2;
+    private int _cachedTotalLegsY = 2;
 
     private bool includeInputData = true;
     private bool includeBoundaryCoordinates = true;
@@ -80,6 +83,9 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     /// <summary>Set by the View so the ViewModel can scroll the WebView2 to an anchor.</summary>
     public Action<string>? WebViewScrollToAnchor { get; set; }
+
+    /// <summary>Set by the View to capture the actual PM/MM visualization controls for report figures.</summary>
+    public Func<string, DiagramBlock, string?>? ChartSnapshotProvider { get; set; }
 
     public ReportTabViewModel()
     {
@@ -321,6 +327,9 @@ public sealed class ReportTabViewModel : ViewModelBase
             UnitSystem = MaterialSummary = GeometrySummary = RebarSummary =
             ForceUnit = MomentUnit = "";
         _cachedProjectName = _cachedGroupName = _cachedDesignTierName = "";
+        _cachedLinkDiameterMm = 0;
+        _cachedTotalLegsX = 2;
+        _cachedTotalLegsY = 2;
         ResultStatusText = "No result";
         IsOutdated = false;
         _cachedResult = null;
@@ -372,6 +381,9 @@ public sealed class ReportTabViewModel : ViewModelBase
         _cachedProjectName  = projectName;
         _cachedGroupName    = groupName;
         _cachedDesignTierName = designTierName;
+        _cachedLinkDiameterMm = input.StirrupDiameterMm;
+        _cachedTotalLegsX = input.TotalLegsX;
+        _cachedTotalLegsY = input.TotalLegsY;
 
         ProjectName = projectName;
         GroupName = groupName;
@@ -509,7 +521,8 @@ public sealed class ReportTabViewModel : ViewModelBase
                     result.SectionShape,
                     result.SectionWidthMm, result.SectionHeightMm,
                     result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
-                    result.CoverMm, result.RebarCoordinates); }
+                    result.CoverMm, result.RebarCoordinates,
+                    _cachedLinkDiameterMm, _cachedTotalLegsX, _cachedTotalLegsY); }
                 catch { }
 
                 ct.ThrowIfCancellationRequested();
@@ -664,7 +677,8 @@ public sealed class ReportTabViewModel : ViewModelBase
             result.SectionShape,
             result.SectionWidthMm, result.SectionHeightMm,
             result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
-            result.CoverMm, result.RebarCoordinates); }
+            result.CoverMm, result.RebarCoordinates,
+            _cachedLinkDiameterMm, _cachedTotalLegsX, _cachedTotalLegsY); }
         catch { }
 
         var (pmDiagramBlock, mmDiagramBlock) = BuildReportDiagramBlocks(result, withPng: true);
@@ -680,7 +694,7 @@ public sealed class ReportTabViewModel : ViewModelBase
                              pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
     }
 
-    private static (DiagramBlock? Pm, DiagramBlock? Mm) BuildReportDiagramBlocks(CalculationResultDto result, bool withPng)
+    private (DiagramBlock? Pm, DiagramBlock? Mm) BuildReportDiagramBlocks(CalculationResultDto result, bool withPng)
     {
         try
         {
@@ -741,8 +755,10 @@ public sealed class ReportTabViewModel : ViewModelBase
                 return (pm, mm);
             }
 
-            pm = pm with { PngDataUri = ReportDiagramPngRenderer.RenderDataUri(pm) };
-            mm = mm with { PngDataUri = ReportDiagramPngRenderer.RenderDataUri(mm) };
+            var pmSnapshot = ChartSnapshotProvider?.Invoke("PM", pm);
+            var mmSnapshot = ChartSnapshotProvider?.Invoke("MM", mm);
+            pm = pm with { PngDataUri = string.IsNullOrWhiteSpace(pmSnapshot) ? ReportDiagramPngRenderer.RenderDataUri(pm) : pmSnapshot };
+            mm = mm with { PngDataUri = string.IsNullOrWhiteSpace(mmSnapshot) ? ReportDiagramPngRenderer.RenderDataUri(mm) : mmSnapshot };
             return (pm, mm);
         }
         catch

@@ -55,6 +55,7 @@ public sealed class ColumnCalculationService(
 
         var codeService = codeFactory.Get(input.DesignCode);
         codeService.AlphaCc = input.AlphaCc;
+        codeService.EurocodeConcreteStrainProfile = input.EurocodeConcreteStrainProfile;
 
         double coverMm = units.LengthToMm(input.Cover, input.LengthUnit);
         double fcMpa = units.StressToMpa(input.Fc, input.StressUnit);
@@ -326,6 +327,7 @@ public sealed class ColumnCalculationService(
             ControlPointTable = cpTable,
             SectionShape = section.Shape,
             IntegrationMethod = input.IntegrationMethod,
+            EurocodeConcreteStrainProfile = input.EurocodeConcreteStrainProfile,
             SectionWidthMm = sectionWidthMm,
             SectionHeightMm = sectionHeightMm,
             CoverMm = units.LengthToMm(input.Cover, input.LengthUnit),

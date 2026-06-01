@@ -1,3 +1,5 @@
+using MBColumn.Domain.Enums;
+
 namespace MBColumn.Domain.Interfaces;
 
 public interface IDesignCodeService
@@ -40,6 +42,10 @@ public interface IDesignCodeService
     /// and the concrete stress law is the bilinear (εc3, εcu3) idealisation. ACI: false.
     /// </summary>
     bool UseEc2CompressionDomain { get; }
+
+    EurocodeConcreteStrainProfile EurocodeConcreteStrainProfile { get; set; }
+
+    bool UseBilinearConcreteStress { get; }
 
     // --- Rectangular stress block ---
 

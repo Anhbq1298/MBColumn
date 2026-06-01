@@ -23,6 +23,7 @@ public sealed class InputViewModel : ViewModelBase
     private UnitSystem unitSystem = UnitSystem.Metric;
     private DesignCodeType selectedDesignCode = DesignCodeType.Ec2;
     private Ec2SolverType selectedEc2Solver = Ec2SolverType.Fiber;
+    private EurocodeConcreteStrainProfile selectedEurocodeConcreteStrainProfile = EurocodeConcreteStrainProfile.Ec2;
     private SectionIntegrationMethod selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
@@ -304,6 +305,7 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(FcLabel));
             Raise(nameof(FyLabel));
             Raise(nameof(ShowEc2SolverOption));
+            Raise(nameof(ShowEurocodeConcreteStrainProfileOption));
             Raise(nameof(ShowAlphaCcOption));
             RaiseMaterialDerivedProperties();
         }
@@ -316,6 +318,12 @@ public sealed class InputViewModel : ViewModelBase
         new(Ec2SolverType.Fiber, "Fiber")
     ];
 
+    public IReadOnlyList<EurocodeConcreteStrainProfileOption> EurocodeConcreteStrainProfiles { get; } =
+    [
+        new(EurocodeConcreteStrainProfile.Ec2, "EC2 (εc2 / εcu2)"),
+        new(EurocodeConcreteStrainProfile.Ec3, "EC3 (εc3 / εcu3)")
+    ];
+
     public Ec2SolverType SelectedEc2Solver
     {
         get => selectedEc2Solver;
@@ -323,6 +331,18 @@ public sealed class InputViewModel : ViewModelBase
     }
 
     public bool ShowEc2SolverOption => selectedDesignCode == DesignCodeType.Ec2;
+
+    public EurocodeConcreteStrainProfile SelectedEurocodeConcreteStrainProfile
+    {
+        get => selectedEurocodeConcreteStrainProfile;
+        set
+        {
+            if (!Set(ref selectedEurocodeConcreteStrainProfile, value)) return;
+            RaiseMaterialDerivedProperties();
+        }
+    }
+
+    public bool ShowEurocodeConcreteStrainProfileOption => selectedDesignCode == DesignCodeType.Ec2;
 
     public double AlphaCc
     {
@@ -953,8 +973,10 @@ public sealed class InputViewModel : ViewModelBase
     public string EcmDisplayText => Fc > 0 ? $"{22000.0 * Math.Pow((StressInputToMpa(Fc) + 8.0) / 10.0, 0.3):F0}" : "auto";
 
     public bool IsEc2 => SelectedDesignCode == DesignCodeType.Ec2;
-    public string ConcreteUltimateStrainLabel => IsEc2 ? "\u03b5cu2" : "\u03b5cu";
-    public string ConcretePeakStrainLabel => IsEc2 ? "\u03b5c2" : "\u03b5c0";
+    public string ConcreteUltimateStrainSubscript => IsEc2 && selectedEurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3 ? "cu3" : IsEc2 ? "cu2" : "cu";
+    public string ConcretePeakStrainSubscript => IsEc2 && selectedEurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3 ? "c3" : IsEc2 ? "c2" : "c0";
+    public string ConcreteUltimateStrainLabel => "\u03b5" + ConcreteUltimateStrainSubscript;
+    public string ConcretePeakStrainLabel => "\u03b5" + ConcretePeakStrainSubscript;
     
     public double EpsilonC2
     {
@@ -963,21 +985,9 @@ public sealed class InputViewModel : ViewModelBase
             if (IsEc2)
             {
                 double fck = StressInputToMpa(Fc);
-                if (fck <= 50.0) return 0.0020;
-                if (fck >= 90.0) return 0.0026;
-                
-                var table = new (double X, double Y)[] { (50, 0.0020), (55, 0.0022), (60, 0.0023), (70, 0.0024), (80, 0.0025), (90, 0.0026) };
-                for (int i = 0; i < table.Length - 1; i++)
-                {
-                    var (x0, y0) = table[i];
-                    var (x1, y1) = table[i + 1];
-                    if (fck >= x0 && fck <= x1)
-                    {
-                        double t = (fck - x0) / (x1 - x0);
-                        return y0 + t * (y1 - y0);
-                    }
-                }
-                return 0.0020;
+                return selectedEurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3
+                    ? EurocodeConcreteStrainProfileValues.Ec3Peak(fck)
+                    : EurocodeConcreteStrainProfileValues.Ec2Peak(fck);
             }
             return 0.0020;
         }
@@ -990,21 +1000,7 @@ public sealed class InputViewModel : ViewModelBase
             if (IsEc2)
             {
                 double fck = StressInputToMpa(Fc);
-                if (fck <= 50.0) return 0.0035;
-                if (fck >= 90.0) return 0.0026;
-                
-                var table = new (double X, double Y)[] { (50, 0.0035), (55, 0.0031), (60, 0.0029), (70, 0.0027), (80, 0.0026), (90, 0.0026) };
-                for (int i = 0; i < table.Length - 1; i++)
-                {
-                    var (x0, y0) = table[i];
-                    var (x1, y1) = table[i + 1];
-                    if (fck >= x0 && fck <= x1)
-                    {
-                        double t = (fck - x0) / (x1 - x0);
-                        return y0 + t * (y1 - y0);
-                    }
-                }
-                return 0.0035;
+                return EurocodeConcreteStrainProfileValues.Ec2Ultimate(fck);
             }
             return 0.003;
         }
@@ -1061,6 +1057,7 @@ public sealed class InputViewModel : ViewModelBase
                 SectionShape = SectionShapeType.Irregular,
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
+                EurocodeConcreteStrainProfile = SelectedEurocodeConcreteStrainProfile,
                 IntegrationMethod = SectionIntegrationMethod.Polygon,
                 AlphaCc = AlphaCc,
                 GammaC = GammaC,
@@ -1121,6 +1118,7 @@ public sealed class InputViewModel : ViewModelBase
                 RebarCoordinates = circularCoords,
                 DesignCode = SelectedDesignCode,
                 Ec2Solver = SelectedEc2Solver,
+                EurocodeConcreteStrainProfile = SelectedEurocodeConcreteStrainProfile,
                 IntegrationMethod = SelectedIntegrationMethod,
                 AlphaCc = AlphaCc,
                 GammaC = GammaC,
@@ -1166,6 +1164,7 @@ public sealed class InputViewModel : ViewModelBase
             RebarCoordinates = generatedCoordinates,
             DesignCode = SelectedDesignCode,
             Ec2Solver = SelectedEc2Solver,
+            EurocodeConcreteStrainProfile = SelectedEurocodeConcreteStrainProfile,
             IntegrationMethod = SelectedIntegrationMethod,
             AlphaCc = AlphaCc,
             GammaC = GammaC,
@@ -2224,7 +2223,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(RebarLayoutTypes)); Raise(nameof(SelectedRebarLayoutType));
         Raise(nameof(IsEqualSpacingLayout)); Raise(nameof(IsAllSidesEqualLayout)); Raise(nameof(IsSidesDifferentLayout)); Raise(nameof(IsRectangularEqualSpacingLayout));
         Raise(nameof(ShowTotalBarsInput)); Raise(nameof(IsCustomRebarCoordinates)); Raise(nameof(IsRebarCoordinatesEditable));
-        Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
+        Raise(nameof(SelectedDesignCode)); Raise(nameof(SelectedEurocodeConcreteStrainProfile)); Raise(nameof(SelectedIntegrationMethod)); Raise(nameof(FcLabel)); Raise(nameof(FyLabel));
         Raise(nameof(AlphaCc)); Raise(nameof(GammaC)); Raise(nameof(ShowAlphaCcOption));
         Raise(nameof(MemberLengthL)); Raise(nameof(IncludeEc2Slenderness)); Raise(nameof(Kx)); Raise(nameof(Ky)); Raise(nameof(PhiEff));
         Raise(nameof(UseDefaultAWhenPhiEffUnknown)); Raise(nameof(DemandInputModeText)); Raise(nameof(L0xText)); Raise(nameof(L0yText));
@@ -2975,6 +2974,9 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(IsEc2));
         Raise(nameof(ConcreteUltimateStrainLabel));
         Raise(nameof(ConcretePeakStrainLabel));
+        Raise(nameof(ConcreteUltimateStrainSubscript));
+        Raise(nameof(ConcretePeakStrainSubscript));
+        Raise(nameof(ShowEurocodeConcreteStrainProfileOption));
         Raise(nameof(EpsilonCu2));
         Raise(nameof(EpsilonC2));
         Raise(nameof(EpsilonYd));
@@ -3042,6 +3044,7 @@ public sealed class InputViewModel : ViewModelBase
         UnitSystem = unitSystem.ToString(),
         DesignCode = selectedDesignCode.ToString(),
         Ec2Solver = selectedEc2Solver.ToString(),
+        EurocodeConcreteStrainProfile = selectedEurocodeConcreteStrainProfile.ToString(),
         IntegrationMethod = selectedIntegrationMethod.ToString(),
         AlphaCc = alphaCc,
         GammaC = gammaC,
@@ -3121,6 +3124,9 @@ public sealed class InputViewModel : ViewModelBase
         unitSystem = Enum.TryParse<UnitSystem>(s.UnitSystem, out var us) ? us : UnitSystem.Metric;
         selectedDesignCode = Enum.TryParse<DesignCodeType>(s.DesignCode, out var dc) ? dc : DesignCodeType.Aci318Style;
         selectedEc2Solver = Enum.TryParse<Ec2SolverType>(s.Ec2Solver, out var ec2) ? ec2 : Ec2SolverType.Fiber;
+        selectedEurocodeConcreteStrainProfile = Enum.TryParse<EurocodeConcreteStrainProfile>(s.EurocodeConcreteStrainProfile, out var strainProfile)
+            ? strainProfile
+            : EurocodeConcreteStrainProfile.Ec2;
         selectedIntegrationMethod = Enum.TryParse<SectionIntegrationMethod>(s.IntegrationMethod, out var im) ? im : SectionIntegrationMethod.Fiber;
         alphaCc = s.AlphaCc;
         gammaC = s.GammaC > 0 ? s.GammaC : 1.50;
@@ -3563,8 +3569,52 @@ public sealed class InputViewModel : ViewModelBase
     }
 }
 
+internal static class EurocodeConcreteStrainProfileValues
+{
+    public static double Ec2Peak(double fckMpa)
+    {
+        if (fckMpa <= 50.0) return 0.0020;
+        if (fckMpa >= 90.0) return 0.0026;
+        return PiecewiseLinear(fckMpa,
+            (50, 0.0020), (55, 0.0022), (60, 0.0023), (70, 0.0024), (80, 0.0025), (90, 0.0026));
+    }
+
+    public static double Ec3Peak(double fckMpa)
+    {
+        if (fckMpa <= 50.0) return 0.00175;
+        if (fckMpa >= 90.0) return 0.0023;
+        return PiecewiseLinear(fckMpa,
+            (50, 0.00175), (55, 0.0018), (60, 0.0019), (70, 0.0020), (80, 0.0022), (90, 0.0023));
+    }
+
+    public static double Ec2Ultimate(double fckMpa)
+    {
+        if (fckMpa <= 50.0) return 0.0035;
+        if (fckMpa >= 90.0) return 0.0026;
+        return PiecewiseLinear(fckMpa,
+            (50, 0.0035), (55, 0.0031), (60, 0.0029), (70, 0.0027), (80, 0.0026), (90, 0.0026));
+    }
+
+    private static double PiecewiseLinear(double x, params (double X, double Y)[] table)
+    {
+        for (int i = 0; i < table.Length - 1; i++)
+        {
+            var (x0, y0) = table[i];
+            var (x1, y1) = table[i + 1];
+            if (x >= x0 && x <= x1)
+            {
+                double t = (x - x0) / (x1 - x0);
+                return y0 + t * (y1 - y0);
+            }
+        }
+
+        return table[^1].Y;
+    }
+}
+
 public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
 public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
+public sealed record EurocodeConcreteStrainProfileOption(EurocodeConcreteStrainProfile Profile, string DisplayName);
 public sealed record SectionIntegrationMethodOption(SectionIntegrationMethod Method, string DisplayName);
 public sealed record MaterialLibraryOption(MaterialLibraryType Library, string DisplayName);
 public sealed record RebarSetLibraryOption(RebarSetLibraryType Library, string DisplayName);

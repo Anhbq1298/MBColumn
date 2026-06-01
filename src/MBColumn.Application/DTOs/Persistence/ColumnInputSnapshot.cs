@@ -7,6 +7,7 @@ public sealed class ColumnInputSnapshot
     public string UnitSystem { get; set; } = "Metric";
     public string DesignCode { get; set; } = "Aci318Style";
     public string Ec2Solver { get; set; } = "Fiber";
+    public string EurocodeConcreteStrainProfile { get; set; } = "Ec2";
     public string IntegrationMethod { get; set; } = "Fiber";
     public double AlphaCc { get; set; } = 0.85;
     public double GammaC { get; set; } = 1.50;

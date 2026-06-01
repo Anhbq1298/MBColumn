@@ -19,10 +19,8 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
         var fibers = GetConcreteFibers(section, settings);
         double nx = neutralAxis.CompressionNormal.X;
         double ny = neutralAxis.CompressionNormal.Y;
-        bool useBilinear = designCode.UseEc2CompressionDomain;
-        double peakStrain = useBilinear
-            ? designCode.ConcreteRectangularPeakStrain(concrete.FcMpa)
-            : designCode.ConcretePeakStrain(concrete.FcMpa);
+        bool useBilinear = designCode.UseBilinearConcreteStress;
+        double peakStrain = designCode.ConcretePeakStrain(concrete.FcMpa);
         double exponent = designCode.ConcreteParabolicExponent(concrete.FcMpa);
         double concreteStressCap = designCode.ConcreteStressBlockFactor
             * designCode.ConcreteEffectiveStrengthFactor(concrete.FcMpa)
@@ -85,7 +83,7 @@ public sealed class FiberSectionIntegrator : ISectionIntegrator
     {
         double nx = neutralAxis.CompressionNormal.X;
         double ny = neutralAxis.CompressionNormal.Y;
-        bool useBilinear = designCode.UseEc2CompressionDomain;
+        bool useBilinear = designCode.UseBilinearConcreteStress;
         double fyd = designCode.SteelDesignStrength(steel.FyMpa);
         double epsUd = designCode.SteelMaxTensileStrain(steel.FyMpa, steel.EsMpa);
         double steelN = 0.0;
