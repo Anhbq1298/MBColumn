@@ -46,7 +46,7 @@ internal sealed class Ec2ReportBuilder
         // ── Annexes ───────────────────────────────────────────────────────────
 
         sections.Add(AnnexA_Coordinates(r));
-        sections.Add(AnnexB_Theory(r.IntegrationMethod));
+        sections.Add(AnnexB_Theory(r));
 
         var handCalc = ReportHandCalcService.Build(
             r.SectionShape, r.SectionWidthMm, r.SectionHeightMm,
@@ -427,26 +427,32 @@ internal sealed class Ec2ReportBuilder
     // Annex B · MB Column PMM Sweeping Theory
     // ─────────────────────────────────────────────────────────────────────────
 
-    private static ReportSection AnnexB_Theory(SectionIntegrationMethod method = SectionIntegrationMethod.Fiber)
+    private static ReportSection AnnexB_Theory(CalculationResultDto r)
     {
-        var integrationBlocks = method == SectionIntegrationMethod.Fiber
+        var integrationBlocks = r.IntegrationMethod == SectionIntegrationMethod.Fiber
             ? new ReportBlock[]
             {
                 new HeadingBlock("Section Integration (Fibre Method)", 2),
                 new ParagraphBlock(
-                    "The concrete compression zone is discretized into a grid of fibres. Each fibre " +
-                    "contributes to the resultant forces through the EC2 parabolic-rectangular " +
-                    "stress-strain relationship."),
-                new ImageBlock(AnnexBIllustrations.FibreMethodSvg(),
-                    Caption: "Figure B.1 – Fibre discretization: section divided into a grid; each fibre is coloured by its compressive strain level"),
+                    "The section is discretized into a grid of fibres. Each fibre strain is " +
+                    "determined from the assumed linear strain field using its signed perpendicular " +
+                    "distance to the neutral axis. Concrete fibres in compression contribute according " +
+                    "to the EC2 parabolic-rectangular stress-strain model, while tensile concrete is " +
+                    "neglected at ULS. Reinforcement fibres contribute in both tension and compression."),
+                new ImageBlock(AnnexBIllustrations.GoverningFibreMethodSvg(r), WidthPct: 82,
+                    Caption: "Figure B.1 – Governing fibre strain state using the input section geometry, reinforcement layout, governing θ, perpendicular compression depth c, and signed fibre distance di"),
+                new FormulaBlock("Concrete compression criterion",
+                    @"C = \{\,j : 0 \leq d_j \leq c\,\}",
+                    @"d_j = \text{signed perpendicular distance from the neutral axis toward compression}",
+                    @"\sigma_{c,j}=0\quad\text{for tensile concrete }(d_j < 0)"),
                 new FormulaBlock("Internal forces (discrete fibre sum)",
-                    @"N_{Rd} = \sum_{j \in C} \sigma_c(\varepsilon_j)\,A_j + \sum_i A_{si}\,\sigma_{si}",
+                    @"N_{Rd} = \sum_{j \in C} \sigma_{c,j}\,A_j + \sum_i \sigma_{s,i}\,A_{s,i}",
                     @"\sigma_c(\varepsilon_j) = f(\varepsilon_j)\ \text{per EC2 §3.1.7},\quad A_j = \text{fibre area}",
-                    @"\sigma_{si} = \operatorname{clamp}(E_s \varepsilon_{si},\,-f_{yd},\,f_{yd})"),
+                    @"F_{s,i}=A_{s,i}\sigma_{s,i},\quad \sigma_{s,i}=\operatorname{clamp}(E_s\varepsilon_{s,i},-f_{yd},f_{yd})"),
                 new FormulaBlock("Bending moments about section centroid",
-                    @"M_{Rd,x} = \sum_{j \in C} \sigma_c(\varepsilon_j)\,A_j\,y_j + \sum_i A_{si}\,\sigma_{si}\,y_i",
-                    @"M_{Rd,y} = \sum_{j \in C} \sigma_c(\varepsilon_j)\,A_j\,x_j + \sum_i A_{si}\,\sigma_{si}\,x_i",
-                    @"j \in C\ \text{: fibres inside the compression zone only}"),
+                    @"M_{Rd,x} = \sum F_k\,y_k",
+                    @"M_{Rd,y} = \sum F_k\,x_k",
+                    @"F_k = \text{concrete or reinforcement fibre force, signed by stress}"),
             }
             : new ReportBlock[]
             {
@@ -487,18 +493,22 @@ internal sealed class Ec2ReportBuilder
             new ParagraphBlock(
                 "MB Column determines the three-dimensional P-M-M interaction surface by sweeping " +
                 "the neutral axis orientation θ from 0° to 360° and, for each angle, iterating the " +
-                "neutral axis depth c to trace the full interaction curve."),
+                "neutral axis depth c to trace the full interaction curve. For biaxial bending, c is " +
+                "the perpendicular distance from the neutral axis to the extreme compression fibre, " +
+                "not a global vertical section depth."),
 
             new HeadingBlock("Strain Compatibility", 2),
             new ParagraphBlock(
                 "For a given neutral axis angle θ and depth c, the strain at any point (x, y) " +
                 "in the cross-section is determined by a planar strain distribution pinned to " +
-                "the ultimate concrete strain εcu2 at the extreme compression fibre."),
+                "the ultimate concrete strain εcu2 at the extreme compression fibre. Plane sections " +
+                "remain plane, tensile concrete is neglected at ULS, steel follows elastic-plastic " +
+                "behaviour, and the neutral axis may rotate to any orientation during the PMM sweep."),
 
             new FormulaBlock("Strain at distance d from the neutral axis",
-                @"\varepsilon(d) = \varepsilon_{cu2} \cdot \frac{c - d}{c}",
+                @"\varepsilon_i = \varepsilon_{cu2}\left(\frac{d_i}{c}\right)",
                 @"\varepsilon_{cu2} = \text{EC2 Table 3.1, fck-dependent}",
-                @"d = \text{perpendicular distance from neutral axis, positive towards compression}"),
+                @"d_i = 0\ \text{at NA},\quad d_i=c\ \text{at the extreme compression fibre},\quad d_i<0\ \text{on the tension side}"),
         };
 
         blocks.AddRange(integrationBlocks);

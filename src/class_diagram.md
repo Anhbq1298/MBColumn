@@ -155,6 +155,29 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `class` | **IrregularSectionMapper** | Maps data structures for IrregularSection. Key methods: ValidateAndMap. | `IrregularSectionMapper.cs` |
 
+### RebarSuggestion
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `record` | **CandidateEvaluationResult** | Encapsulates the result of CandidateEvaluation operations. | `CandidateEvaluationResult.cs` |
+| `class` | **CandidateValidationContext** | Represents the CandidateValidationContext class. Key methods: Fail, Warn. Key properties: Status, Warnings, FailureReason. | `CandidateValidationContext.cs` |
+| `class` | **DefaultRebarSuggestionScorer** | Represents the DefaultRebarSuggestionScorer class. Key methods: Score, GenerateReason. | `DefaultRebarSuggestionScorer.cs` |
+| `class` | **ExistingSolverRebarCandidateEvaluator** | Represents the ExistingSolverRebarCandidateEvaluator class. Key methods: Evaluate. | `ExistingSolverRebarCandidateEvaluator.cs` |
+| `interface` | **IRebarCandidateEvaluator** | Defines the contract for IRebarCandidateEvaluator. | `IRebarCandidateEvaluator.cs` |
+| `interface` | **IRebarCandidateGenerator** | Defines the contract for IRebarCandidateGenerator. | `IRebarCandidateGenerator.cs` |
+| `interface` | **IRebarCandidateValidator** | Validation logic for IRebarCandidate. | `IRebarCandidateValidator.cs` |
+| `interface` | **IRebarSuggestionScorer** | Defines the contract for IRebarSuggestionScorer. | `IRebarSuggestionScorer.cs` |
+| `class` | **RebarCodeValidator** | Validation logic for RebarCode. Key methods: Validate. | `RebarCodeValidator.cs` |
+| `class` | **RebarGeometryValidator** | Validation logic for RebarGeometry. Key methods: Validate. | `RebarGeometryValidator.cs` |
+| `class` | **RebarSuggestionCandidate** | Represents the RebarSuggestionCandidate class. Key properties: Bar, TotalBarCount, BarsOnTopBottomFace, BarsOnLeftRightFace. | `RebarSuggestionCandidate.cs` |
+| `class` | **RebarSuggestionConstraintSet** | Represents the RebarSuggestionConstraintSet class. Key properties: TargetPmmUtilization, MinimumAcceptablePmmUtilization, MaximumAcceptablePmmUtilization, TargetReinforcementRatio. | `RebarSuggestionConstraintSet.cs` |
+| `class` | **RebarSuggestionEngine** | Represents the RebarSuggestionEngine class. Key methods: Suggest. | `RebarSuggestionEngine.cs` |
+| `class` | **RebarSuggestionInput** | Represents the RebarSuggestionInput class. Key properties: BaseInput, Constraints, AllowedBars. | `RebarSuggestionInput.cs` |
+| `record` | **RebarSuggestionOption** | Represents the RebarSuggestionOption record. Key properties: Rank, ConfigurationName, Coordinates, TotalSteelAreaMm2. | `RebarSuggestionOption.cs` |
+| `class` | **RebarSuggestionResult** | Encapsulates the result of RebarSuggestion operations. Key properties: Options, RecommendedOption, TotalCandidateCount, PassedCandidateCount. | `RebarSuggestionResult.cs` |
+| `record` | **RebarSuggestionWarning** | Represents the RebarSuggestionWarning record. | `RebarSuggestionWarning.cs` |
+| `class` | **RectangularPerimeterCandidateGenerator** | Represents the RectangularPerimeterCandidateGenerator class. Key methods: Generate. | `RectangularPerimeterCandidateGenerator.cs` |
+
 ### Reports/Builders
 
 | Type | Name | Description | File |
@@ -169,9 +192,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PmmMethodologySectionBuilder** | Represents the PmmMethodologySectionBuilder class. Key methods: Build. | `PmmMethodologySectionBuilder.cs` |
 | `class` | **PmmSummarySectionBuilder** | Represents the PmmSummarySectionBuilder class. Key methods: Build. | `PmmSummarySectionBuilder.cs` |
 | `class` | **ProjectInfoSectionBuilder** | Represents the ProjectInfoSectionBuilder class. Key methods: Build. | `ProjectInfoSectionBuilder.cs` |
+| `class` | **RealSectionGeometry** | Represents the RealSectionGeometry class. | `AnnexBIllustrations.cs` |
 | `class` | **RebarComplianceSectionBuilder** | /// Builds Section 3 — "Reinforcement Code Compliance" — covering: /// EC2 EN 1992-1-1:2004 §9.5.1/9.5.2 — longitudinal reinforcement limits /// EC2 EN 1992-1-1:2004 §9.5.3 — transverse link detailing /// ACI 318-19 §10.6/§25.7.2 — stub (TODO) ///. Key methods: Build. | `RebarComplianceSectionBuilder.cs` |
 | `class` | **RectangularSevenPointBuilder** | Represents the RectangularSevenPointBuilder class. Key methods: BuildTheta0, BuildTheta90. | `RectangularSevenPointBuilder.cs` |
 | `class` | **ShearCheckSectionBuilder** | /// Builds Section 6 — "Shear Check (EC2 §6.2)" — following the two-step flow /// from the EC2 column design procedure (analogous to ACI §22.5 / §22.6). ///. Key methods: Build. | `ShearCheckSectionBuilder.cs` |
+| `record` | **struct** | Represents the struct record. | `AnnexBIllustrations.cs` |
+| `record` | **struct** | Represents the struct record. | `AnnexBIllustrations.cs` |
 
 ### Reports/Builders/Aci
 
@@ -370,6 +396,9 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **LengthUnit** | Enumeration defining states/types for LengthUnit. | `LengthUnit.cs` |
 | `enum` | **MomentUnit** | Enumeration defining states/types for MomentUnit. | `MomentUnit.cs` |
 | `enum` | **RebarSetLibraryType** | Enumeration defining states/types for RebarSetLibraryType. | `RebarSetLibraryType.cs` |
+| `enum` | **RebarSuggestionPreset** | Enumeration defining states/types for RebarSuggestionPreset. | `RebarSuggestionPreset.cs` |
+| `enum` | **RebarSuggestionStatus** | Enumeration defining states/types for RebarSuggestionStatus. | `RebarSuggestionStatus.cs` |
+| `enum` | **RebarSuggestionWarningType** | Enumeration defining states/types for RebarSuggestionWarningType. | `RebarSuggestionWarningType.cs` |
 | `enum` | **RebarUnitType** | Enumeration defining states/types for RebarUnitType. | `RebarUnitType.cs` |
 | `enum` | **SectionIntegrationMethod** | Enumeration defining states/types for SectionIntegrationMethod. | `SectionIntegrationMethod.cs` |
 | `enum` | **SectionShapeType** | Enumeration defining states/types for SectionShapeType. | `SectionShapeType.cs` |
@@ -673,12 +702,14 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **AutoDesignRebarDialogService** | Provides service logic and operations for AutoDesignRebarDialog. Key methods: ShowDialog. | `AutoDesignRebarDialogService.cs` |
 | `class` | **ControlPointExportDialogService** | Provides service logic and operations for ControlPointExportDialog. Key methods: ShowDialog. | `ControlPointExportDialogService.cs` |
 | `class` | **DxfImportDialogService** | Provides service logic and operations for DxfImportDialog. Key methods: ShowDialog. | `DxfImportDialogService.cs` |
 | `class` | **EtabsForceRefreshDialogService** | Provides service logic and operations for EtabsForceRefreshDialog. Key methods: ShowDialog. | `EtabsForceRefreshDialogService.cs` |
 | `record` | **EtabsImportDialogResult** | Encapsulates the result of EtabsImportDialog operations. | `EtabsImportDialogResult.cs` |
 | `class` | **EtabsImportDialogService** | Provides service logic and operations for EtabsImportDialog. Key methods: ShowDialog. | `EtabsImportDialogService.cs` |
 | `record` | **EtabsImportedSectionInput** | Represents the EtabsImportedSectionInput record. | `EtabsImportDialogResult.cs` |
+| `interface` | **IAutoDesignRebarDialogService** | Provides service logic and operations for IAutoDesignRebarDialog. | `IAutoDesignRebarDialogService.cs` |
 | `interface` | **IControlPointExportDialogService** | Provides service logic and operations for IControlPointExportDialog. | `IControlPointExportDialogService.cs` |
 | `interface` | **IDxfImportDialogService** | Provides service logic and operations for IDxfImportDialog. | `IDxfImportDialogService.cs` |
 | `interface` | **IEtabsForceRefreshDialogService** | Provides service logic and operations for IEtabsForceRefreshDialog. | `IEtabsForceRefreshDialogService.cs` |
@@ -786,11 +817,24 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **fields** | Represents the fields record. Key methods: GenerateSectionForceRows. | `EtabsImportViewModel.cs` |
 | `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions, GetSelectedColumnIds. | `ProjectExplorerViewModel.cs` |
 
+### ViewModels/AutomatedRebarDesign
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **AllowedBarToggleViewModel** | Represents the AllowedBarToggleViewModel class. Key properties: Bar, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
+| `class` | **AllowedCountToggleViewModel** | Represents the AllowedCountToggleViewModel class. Key properties: Count, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
+| `class` | **AutomatedRebarDesignViewModel** | Represents the AutomatedRebarDesignViewModel class. Key properties: AutoCommand, PreviewCommand, ApplyCommand, CancelCommand. | `AutomatedRebarDesignViewModel.cs` |
+| `class` | **BeforeAfterRowViewModel** | Represents the BeforeAfterRowViewModel class. Key properties: Parameter, Before, Unit, IsFrozen. | `BeforeAfterRowViewModel.cs` |
+| `class` | **CandidateSuggestionRowViewModel** | Represents the CandidateSuggestionRowViewModel class. Key properties: Rank, Config, TotalSteelAreaMm2, ReinforcementRatioPercent. | `CandidateSuggestionRowViewModel.cs` |
+| `class` | **CheckSummaryRowViewModel** | Represents the CheckSummaryRowViewModel class. Key properties: CheckName, Before, After, Condition. | `CheckSummaryRowViewModel.cs` |
+| `record` | **PresetOption** | Represents the PresetOption record. | `AutomatedRebarDesignViewModel.cs` |
+
 ### Views
 
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **AddSectionDialog** | Represents the AddSectionDialog class. Key properties: SectionName, SelectedGroupId. | `AddSectionDialog.xaml.cs` |
+| `class` | **AutomatedRebarDesignDialog** | Represents the AutomatedRebarDesignDialog class. | `AutomatedRebarDesignDialog.xaml.cs` |
 | `class` | **BatchPrintWindow** | Represents the BatchPrintWindow class. | `BatchPrintWindow.xaml.cs` |
 | `class` | **CalculationProgressWindow** | Represents the CalculationProgressWindow class. Key properties: StatusText, ProgressValue, ProgressMax. | `CalculationProgressWindow.xaml.cs` |
 | `class` | **DxfImportWindow** | Represents the DxfImportWindow class. | `DxfImportWindow.xaml.cs` |

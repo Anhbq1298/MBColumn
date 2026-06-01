@@ -10,6 +10,7 @@ using MBColumn.Infrastructure.Solvers;
 using MBColumn.Infrastructure.Solvers.StrainPoints;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.ViewModels;
+using MBColumn.Presentation.Wpf.ViewModels.AutomatedRebarDesign;
 
 namespace MBColumn.Presentation.Wpf.Composition;
 
@@ -27,6 +28,7 @@ public sealed class AppComposition : IDisposable
     private readonly IRebarDatabase metricBars;
     private readonly IRebarDatabase imperialBars;
     private readonly IRebarCoordinateBuilderService rebarCoordinates;
+    private readonly IAutoDesignRebarDialogService autoDesignRebarDialogService;
 
     private AppComposition()
     {
@@ -91,6 +93,9 @@ public sealed class AppComposition : IDisposable
             shearCheck,
             shearFactory,
             complianceCheck);
+
+        autoDesignRebarDialogService = new AutoDesignRebarDialogService(
+            calculationService, metricBars, imperialBars);
     }
 
     public static AppComposition Create()
@@ -98,12 +103,14 @@ public sealed class AppComposition : IDisposable
 
     public MainWindowViewModel CreateMainWindowViewModel()
     {
-        var input = new InputViewModel(metricBars, imperialBars, rebarCoordinates, new DxfImportDialogService());
+        var input = new InputViewModel(metricBars, imperialBars, rebarCoordinates,
+            new DxfImportDialogService(), autoDesignRebarDialogService);
         return new MainWindowViewModel(
             calculationService,
             ProjectService,
             input,
-            () => new InputViewModel(metricBars, imperialBars, rebarCoordinates, new DxfImportDialogService()),
+            () => new InputViewModel(metricBars, imperialBars, rebarCoordinates,
+                new DxfImportDialogService(), autoDesignRebarDialogService),
             MessageService,
             ProjectFileDialogService,
             ProjectNameDialogService,

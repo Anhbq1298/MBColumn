@@ -1449,6 +1449,16 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
+                            <!-- Auto Design Rebar button — rectangular section only -->
+                            <Button Content="Auto Design Rebar..."
+                                    Command="{Binding AutoDesignRebarCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    HorizontalAlignment="Left"
+                                    Padding="14,6"
+                                    Margin="0,8,0,4"
+                                    Visibility="{Binding IsRectangularSection, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    ToolTip="Open Automated Rebar Design dialog to generate and evaluate candidate rebar configurations." />
+
                             <!-- Section 2: Stirrups and Shear Links -->
                             <Separator Margin="0,12,0,10" />
                             <TextBlock Text="2 - Stirrups and Shear Links"

@@ -2,6 +2,7 @@ using MBColumn.Application.DTOs;
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.ImportExport;
 using MBColumn.Application.DTOs.Persistence;
+using MBColumn.Application.RebarSuggestion;
 using MBColumn.Application.Services;
 using MBColumn.Application.Services.ImportExport;
 using MBColumn.Domain.Enums;
@@ -29,6 +30,7 @@ public sealed class InputViewModel : ViewModelBase
     private readonly IRebarDatabase imperialBars;
     private readonly IRebarCoordinateBuilderService rebarCoordinateBuilder;
     private readonly IDxfImportDialogService? dxfImportDialogService;
+    private readonly IAutoDesignRebarDialogService? autoDesignRebarDialogService;
     private double width;
     private double height;
     private double diameter;
@@ -167,12 +169,14 @@ public sealed class InputViewModel : ViewModelBase
         IRebarDatabase metricBars,
         IRebarDatabase imperialBars,
         IRebarCoordinateBuilderService rebarCoordinateBuilder,
-        IDxfImportDialogService? dxfImportDialogService = null)
+        IDxfImportDialogService? dxfImportDialogService = null,
+        IAutoDesignRebarDialogService? autoDesignRebarDialogService = null)
     {
         this.metricBars = metricBars;
         this.imperialBars = imperialBars;
         this.rebarCoordinateBuilder = rebarCoordinateBuilder;
         this.dxfImportDialogService = dxfImportDialogService;
+        this.autoDesignRebarDialogService = autoDesignRebarDialogService;
         RebarLayout = new RebarLayoutViewModel(UpdateSectionPreview);
         IrregularInput = new IrregularSectionInputViewModel(new IrregularSectionCsvService());
         IrregularInput.BoundaryPoints.CollectionChanged += (_, _) => { if (!_isGeneratingRebars) UpdateSectionPreview(); };
@@ -211,6 +215,9 @@ public sealed class InputViewModel : ViewModelBase
             ShowSlendernessCalculationDetails,
             loadCase => IncludeEc2Slenderness && loadCase is LoadCaseViewModel);
         CloseSlendernessCalculationDetailsCommand = new RelayCommand(CloseSlendernessCalculationDetails);
+        AutoDesignRebarCommand = new RelayCommand(
+            OpenAutoDesignRebar,
+            () => autoDesignRebarDialogService is not null && IsRectangularSection);
     }
 
     public IReadOnlyList<UnitSystem> UnitSystems { get; } = [UnitSystem.Metric, UnitSystem.Imperial];
@@ -218,6 +225,7 @@ public sealed class InputViewModel : ViewModelBase
     public ICommand GenerateEqualSpacingRebarsCommand { get; }
     public ICommand ImportDxfCommand { get; }
     public ICommand ExportDxfCommand { get; }
+    public ICommand AutoDesignRebarCommand { get; }
     public IReadOnlyList<DesignCodeOption> DesignCodes { get; } =
     [
         new(DesignCodeType.Aci318Style, "ACI 318"),
@@ -3566,6 +3574,45 @@ public sealed class InputViewModel : ViewModelBase
         {
             _generatingRebarsDepth--;
         }
+    }
+
+    private void OpenAutoDesignRebar()
+    {
+        if (autoDesignRebarDialogService is null) return;
+        if (!IsRectangularSection) return;
+
+        var currentInput = ToDto();
+        var owner = System.Windows.Application.Current?.MainWindow;
+        var result = autoDesignRebarDialogService.ShowDialog(currentInput, owner);
+
+        if (result is not null)
+            ApplyAutoDesignOption(result);
+    }
+
+    private void ApplyAutoDesignOption(MBColumn.Application.RebarSuggestion.RebarSuggestionOption option)
+    {
+        BarSize = option.BarSizeName;
+
+        int nx    = option.BarsOnTopBottomFace;
+        int ny    = option.BarsOnLeftRightFace;
+        int total = option.TotalBarCount;
+
+        if (nx == ny && (total - 4) % 4 == 0)
+        {
+            BarCount = total;
+            SelectedRebarLayoutType = RebarLayoutType.AllSidesEqual;
+        }
+        else
+        {
+            SelectedRebarLayoutType = RebarLayoutType.SidesDifferent;
+            RebarLayout.Top.BarCount    = nx;
+            RebarLayout.Bottom.BarCount = nx;
+            RebarLayout.Left.BarCount   = Math.Max(0, ny - 2);
+            RebarLayout.Right.BarCount  = Math.Max(0, ny - 2);
+            BarCount = total;
+        }
+
+        UpdateSectionPreview();
     }
 }
 
