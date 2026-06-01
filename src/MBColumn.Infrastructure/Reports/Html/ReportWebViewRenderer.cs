@@ -1,6 +1,5 @@
 using MBColumn.Application.DTOs;
 using MBColumn.Application.Reports.Models;
-using MBColumn.Infrastructure.Reports.Graphics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -157,20 +156,18 @@ document.addEventListener('DOMContentLoaded',function(){
             case DiagramBlock diag:
                 try
                 {
-                    sb.Append("<div class='diagram-wrap'>");
                     if (!string.IsNullOrWhiteSpace(diag.PngDataUri))
                     {
+                        sb.Append("<div class='diagram-wrap'>");
                         sb.Append($"<img class='diagram-img' src='{XA(diag.PngDataUri)}' alt='{XA(diag.Caption)}' style='width:{diag.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'/>");
+                        if (!string.IsNullOrWhiteSpace(diag.Caption))
+                            sb.Append($"<p class='fig-caption'>{H(diag.Caption)}</p>");
+                        sb.Append("</div>");
                     }
                     else
                     {
-                        string svg = InteractionDiagramSvgRenderer.RenderDiagram(diag, 620, 430);
-                        sb.Append(svg);
+                        sb.Append($"<div class='diagram-placeholder'>{H(diag.Caption)}</div>");
                     }
-
-                    if (!string.IsNullOrWhiteSpace(diag.Caption))
-                        sb.Append($"<p class='fig-caption'>{H(diag.Caption)}</p>");
-                    sb.Append("</div>");
                 }
                 catch
                 {

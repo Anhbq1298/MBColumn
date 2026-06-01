@@ -687,19 +687,51 @@ public sealed class ReportTabViewModel : ViewModelBase
             var diag = new DiagramDataService();
             double theta = result.GoverningThetaDegrees;
             var pmData = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
+            var governing = result.LoadCaseResults
+                .Where(r => double.IsFinite(r.PmmRatio))
+                .OrderByDescending(r => r.PmmRatio)
+                .ThenByDescending(r => Math.Sqrt(r.MuxDisplay * r.MuxDisplay + r.MuyDisplay * r.MuyDisplay))
+                .FirstOrDefault();
             var pmAll = pmData.Points
                 .Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta))
                 .Concat(pmData.SpecialCapacityPoints)
                 .ToList();
+            var pmReferenceLines = pmData.ReferenceLines.ToList();
+            if (governing is not null)
+            {
+                double thetaRad = theta * Math.PI / 180.0;
+                double capacityMtheta = governing.CapacityMxDisplay * Math.Cos(thetaRad) + governing.CapacityMyDisplay * Math.Sin(thetaRad);
+                pmReferenceLines.Add(new ChartReferenceLineDto(
+                    0,
+                    0,
+                    capacityMtheta,
+                    governing.CapacityPDisplay,
+                    $"UR {governing.PmmRatio:F3}",
+                    "Proportional",
+                    IsDashed: true));
+            }
 
-            var pm = new DiagramBlock(pmAll, pmData.ReferenceLines,
+            var pm = new DiagramBlock(pmAll, pmReferenceLines,
                 $"M ({pmData.MUnit})", $"P ({pmData.PUnit})", result.Ratio,
                 UseEqualAspect: false, WidthPct: 90,
                 Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
 
             var mmData = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
             var mmAll = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
-            var mm = new DiagramBlock(mmAll, [],
+            var mmReferenceLines = new List<ChartReferenceLineDto>();
+            if (governing is not null)
+            {
+                mmReferenceLines.Add(new ChartReferenceLineDto(
+                    0,
+                    0,
+                    governing.CapacityMxDisplay,
+                    governing.CapacityMyDisplay,
+                    $"UR {governing.PmmRatio:F3}",
+                    "Proportional",
+                    IsDashed: true));
+            }
+
+            var mm = new DiagramBlock(mmAll, mmReferenceLines,
                 $"Mx ({mmData.MUnit})", $"My ({mmData.MUnit})", result.Ratio,
                 UseEqualAspect: true, WidthPct: 80,
                 Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");

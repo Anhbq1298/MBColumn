@@ -81,7 +81,7 @@ public sealed class InteractionViewport3D : FrameworkElement
     {
         base.OnRender(dc);
         dc.DrawRoundedRectangle(Brushes.White, new Pen(new SolidColorBrush(Color.FromRgb(214, 222, 230)), 1), new Rect(0, 0, ActualWidth, ActualHeight), 6, 6);
-        DrawText(dc, "Left drag rotate | Wheel zoom | Right/middle drag pan | Double-click reset", 9.0, new SolidColorBrush(Color.FromRgb(82, 97, 111)), new Point(12, 10));
+        DrawText(dc, "L drag rotate | Wheel zoom | R/M drag pan | Double-click reset", 8.0, new SolidColorBrush(Color.FromRgb(82, 97, 111)), new Point(12, 10));
 
         EnsureScene();
         if (cachedScene is null)

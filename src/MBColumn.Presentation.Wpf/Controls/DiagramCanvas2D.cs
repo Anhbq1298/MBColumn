@@ -119,7 +119,7 @@ public class DiagramCanvas2D : FrameworkElement
         DrawSelectedPoint(dc, transform);
         DrawHoverOverlay(dc, transform, plot);
         DrawInsetFigure(dc, plot);
-        if (ShowInteractionHint) DrawInteractionHint(dc);
+        DrawInteractionHint(dc);
         dc.Pop();
     }
 
@@ -1146,12 +1146,12 @@ public class DiagramCanvas2D : FrameworkElement
         if (ActualWidth < 420) return;
 
         string zoomText = viewZoom > 1.01 ? $"  {viewZoom * 100:0}%" : "";
-        string text = $"Wheel zoom  |  Drag pan  |  Double-click reset{zoomText}";
-        var ft = CreateText(text, 9.0, new SolidColorBrush(Color.FromRgb(82, 97, 111)), FontWeights.Normal);
-        var rect = new Rect(ActualWidth - ft.Width - 28, 12, ft.Width + 16, 22);
+        string text = $"Wheel zoom | Drag pan | Double-click reset{zoomText}";
+        var ft = CreateText(text, 8.0, new SolidColorBrush(Color.FromRgb(82, 97, 111)), FontWeights.Normal);
+        var rect = new Rect(ActualWidth - ft.Width - 24, 10, ft.Width + 14, 19);
         dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(232, 248, 251, 254)),
             new Pen(new SolidColorBrush(Color.FromRgb(226, 233, 240)), 0.8), rect, 11, 11);
-        dc.DrawText(ft, new Point(rect.Left + 8, rect.Top + 3.2));
+        dc.DrawText(ft, new Point(rect.Left + 7, rect.Top + 2.7));
     }
 
     private static void DrawText(DrawingContext dc, string text, double size, Brush brush, Point point, FontWeight weight)

@@ -80,8 +80,9 @@ public sealed class PmChartInsetBuilderService(CompressionZonePolygonBuilder com
         }
         else if (neutralAxisDepth is > 0 && IsFinite(neutralAxisDepth.Value))
         {
-            // The displayed theta follows the PM load angle (Mx/My). The neutral-axis angle
-            // may differ because the solver stores the section compression-normal direction.
+            // The inset uses the displayed PM slice angle as the visual convention. The
+            // neutral-axis normal is therefore perpendicular to that slice angle so the
+            // section sketch, theta arrow, and PM/MM chart labels stay in the same frame.
             // Do not infer concrete compression from the sign of P. Even for P < 0, bending can
             // leave part of the concrete section in compressive strain; the polygon below is
             // clipped only from the neutral-axis strain field.

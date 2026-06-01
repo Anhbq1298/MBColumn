@@ -36,7 +36,7 @@ public sealed class PmChartInsetStateResolverService
             loadCase.LoadCaseName,
             loadCase.LoadCaseId,
             loadAngle,
-            boundary?.ThetaDegrees ?? loadAngle,
+            NeutralAxisAngleFromSlice(loadAngle),
             boundary?.NeutralAxisDepth,
             loadCase.PuDisplay,
             loadCase.MuxDisplay,
@@ -51,15 +51,11 @@ public sealed class PmChartInsetStateResolverService
     {
         double theta = NormalizeAngle(thetaDegrees);
         var boundary = ResolveBoundaryState(result, axialDisplay, theta);
-        // In navigation mode the NA is shown perpendicular to the slice angle (theta + 90°)
-        // so the diagram is geometrically intuitive regardless of section asymmetry.
-        // Load-case and capacity-point modes continue to use the actual solver NA angle.
-        double naAngle = NormalizeAngle(theta + 90.0);
         return new PmChartInsetSelectedStateDto(
             "",
             "Navigation",
             theta,
-            naAngle,
+            NeutralAxisAngleFromSlice(theta),
             boundary?.NeutralAxisDepth,
             axialDisplay,
             boundary?.Mx,
@@ -70,11 +66,12 @@ public sealed class PmChartInsetStateResolverService
     public PmChartInsetSelectedStateDto FromCapacityPoint(ControlPointDto point)
     {
         bool isEntireConcreteTension = IsPureAxialTension(point.P, point.Mx, point.My);
+        double theta = DemandVectorAngle(point.Mx, point.My);
         return new PmChartInsetSelectedStateDto(
             point.Label,
             string.IsNullOrWhiteSpace(point.SliceKey) ? point.GroupKey : point.SliceKey,
-            DemandVectorAngle(point.Mx, point.My),
-            isEntireConcreteTension ? null : point.ThetaDegrees,
+            theta,
+            isEntireConcreteTension ? null : NeutralAxisAngleFromSlice(theta),
             !isEntireConcreteTension && point.NeutralAxisDepth > 0 ? point.NeutralAxisDepth : null,
             point.P,
             point.Mx,
@@ -82,6 +79,9 @@ public sealed class PmChartInsetStateResolverService
             point.DiagramType == DiagramType.PM ? point.X : Math.Sqrt(point.Mx * point.Mx + point.My * point.My),
             isEntireConcreteTension);
     }
+
+    private static double NeutralAxisAngleFromSlice(double thetaDegrees)
+        => NormalizeAngle(thetaDegrees + 90.0);
 
     private ControlPointDto? ResolveBoundaryState(CalculationResultDto result, double axialDisplay, double loadAngleDegrees)
     {
