@@ -137,7 +137,7 @@ public sealed class StrainControlledSevenPointStrategy
                     StrainState = new StrainStateResult
                     {
                         ExtremeCompressionStrain = nomResult.MaxConcreteStrain,
-                        ExtremeTensionSteelStrain = nomResult.MaxTensionSteelStrain,
+                        ExtremeTensionSteelStrain = es,
                         RegionClassification = reduction.Classification
                     },
                     RebarResults = ExtractRebarResults(section, state, ecu, c, na, steel)

@@ -23,13 +23,20 @@ public sealed record SevenPointValidationRowViewModel(
     double MNeg = 0.0,
     double MPos = 0.0)
 {
-    public string CDisplay => C > 10000 ? "∞" : $"{C:F1}";
-    public string Pn7Display => $"{Pn7 / 1000.0:F1}";
-    public string Mn7Display => $"{Mn7 / 1000000.0:F1}";
-    public string PnSolverDisplay => $"{PnSolver / 1000.0:F1}";
-    public string MnSolverDisplay => $"{MnSolver / 1000000.0:F1}";
-    public string MNegDisplay => $"{MNeg / 1000000.0:F1}";
-    public string MPosDisplay => $"{MPos / 1000000.0:F1}";
+    public string CDisplay => C > 10000 ? "∞" : (C > 0.0 && C < 0.95 ? $"{C:F1}" : $"{C:F0}");
+    public string Pn7Display => $"{Pn7 / 1000.0:F0}";
+    public string Mn7Display => $"{Mn7 / 1000000.0:F0}";
+    public string PnSolverDisplay => $"{Math.Round(PnSolver / 1000.0):F0}";
+    public string MnSolverDisplay => $"{Math.Round(MnSolver / 1000000.0):F0}";
+    public string MNegDisplay
+    {
+        get
+        {
+            double val = Math.Round(MNeg / 1000000.0);
+            return val > 0 ? $"-{val:F0}" : "0";
+        }
+    }
+    public string MPosDisplay => $"{Math.Round(MPos / 1000000.0):F0}";
     public string DevPDisplay => $"{DeviationP:F2}%";
     public string DevMDisplay => $"{DeviationM:F2}%";
 }
@@ -370,6 +377,7 @@ public sealed class ResultViewModel : ViewModelBase
     public string SelectedAxialLoadDisplay => $"{SelectedAxialLoad:F1} {ForceUnitLabel}";
     public string PmSliceLabel => $"PM at \u03b8 = {SelectedSliceAngleDegrees:F1}\u00b0";
     public string MxMySliceLabel => $"Mx-My at P = {SelectedAxialLoad:F1} {ForceUnitLabel}";
+    public string MmDiagramTitle => $"MM diagram at P = {SelectedAxialLoad:F0} {ForceUnitLabel}";
     public ICommand UpdateSliceAngleCommand { get; }
     public ICommand UpdateAxialLoadCommand { get; }
 
@@ -492,6 +500,7 @@ public sealed class ResultViewModel : ViewModelBase
         Raise(nameof(SelectedAxialLoadDisplay));
         Raise(nameof(PmSliceLabel));
         Raise(nameof(MxMySliceLabel));
+        Raise(nameof(MmDiagramTitle));
     }
 
     private static double NormalizeAngle(double angle)

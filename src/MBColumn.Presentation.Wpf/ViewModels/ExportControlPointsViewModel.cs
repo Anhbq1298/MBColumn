@@ -80,8 +80,40 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
     public bool HasEmptyState => !HasPreviewRows && !string.IsNullOrWhiteSpace(EmptyStateMessage);
 
     public bool IsEc2 => result.DesignCode == DesignCodeType.Ec2;
+    public string ActiveDesignCodeText => IsEc2 ? "EC2" : "ACI 318";
 
     public string ConcreteUltimateStrainLabel => IsEc2 ? "\u03b5cu2" : "\u03b5cu";
+    public string ConcretePeakStrainLabel => IsEc2 ? "\u03b5c2" : "\u03b5c0";
+
+    public double EpsilonC2
+    {
+        get
+        {
+            if (IsEc2)
+            {
+                double fck = result.FcMpa;
+                if (fck <= 50.0) return 0.0020;
+                if (fck >= 90.0) return 0.0026;
+                
+                var table = new (double X, double Y)[] { (50, 0.0020), (55, 0.0022), (60, 0.0023), (70, 0.0024), (80, 0.0025), (90, 0.0026) };
+                for (int i = 0; i < table.Length - 1; i++)
+                {
+                    var (x0, y0) = table[i];
+                    var (x1, y1) = table[i + 1];
+                    if (fck >= x0 && fck <= x1)
+                    {
+                        double t = (fck - x0) / (x1 - x0);
+                        return y0 + t * (y1 - y0);
+                    }
+                }
+                return 0.0020;
+            }
+            else
+            {
+                return 0.0020;
+            }
+        }
+    }
 
     public double EpsilonCu2
     {

@@ -300,6 +300,8 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="0"
@@ -343,23 +345,56 @@
                                           SelectedItem="{Binding SelectedSteelGrade}" />
                                 <TextBlock Grid.Row="6"
                                            Grid.Column="0"
-                                           Text="{Binding FcLabel}"
-                                           Style="{StaticResource FieldLabelTextStyle}"
-                                           Margin="0,8,0,0" />
-                                <TextBlock Grid.Row="6"
-                                           Grid.Column="1"
-                                           Text="{Binding StressLabel}"
-                                           Style="{StaticResource UnitTextStyle}"
-                                           Margin="0,8,0,0" />
+                                            
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f"/>
+                                     <Run Text="ck" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="6"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f'"/>
+                                     <Run Text="c" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="6"
+                                            Grid.Column="1"
+                                            Text="{Binding StressLabel}"
+                                            Style="{StaticResource UnitTextStyle}"
+                                            Margin="0,8,0,0" />
                                 <TextBox Grid.Row="7"
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
                                          IsEnabled="{Binding AreMaterialInputsEnabled}"
                                          Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Grid.Row="8"
-                                           Grid.Column="0"
-                                           Text="gamma c (&#x03B3;c)"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                 <TextBlock Grid.Row="8"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="gamma c (&#x03B3;"/>
+                                     <Run Text="c" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text=")"/>
+                                 </TextBlock>
                                 <TextBlock Grid.Row="8"
                                            Grid.Column="1"
                                            Text=""
@@ -368,18 +403,29 @@
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
                                          Text="{Binding GammaC, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Grid.Row="10"
-                                           Grid.Column="0"
-                                           Text="alpha cc (&#x03B1;cc)"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                 <TextBlock Grid.Row="10"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="alpha cc (&#x03B1;"/>
+                                     <Run Text="cc" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text=")"/>
+                                 </TextBlock>
                                 <TextBox Grid.Row="11"
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
                                          Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Grid.Row="12"
-                                           Grid.Column="0"
-                                           Text="fcd = &#x03B1;cc fck / &#x03B3;c"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                 <TextBlock Grid.Row="12"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="f"/>
+                                     <Run Text="cd" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text=" = &#x03B1;"/>
+                                     <Run Text="cc" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text=" f"/>
+                                     <Run Text="ck" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text=" / &#x03B3;"/>
+                                     <Run Text="c" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                 <TextBlock Grid.Row="12"
                                            Grid.Column="1"
                                            Text="MPa"
@@ -394,10 +440,12 @@
                                            Grid.ColumnSpan="2"
                                            Text="Ecm calculation: Auto from EC2"
                                            Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Grid.Row="15"
-                                           Grid.Column="0"
-                                           Text="Ecm"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                 <TextBlock Grid.Row="15"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="E"/>
+                                     <Run Text="cm" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                 <TextBlock Grid.Row="15"
                                            Grid.Column="1"
                                            Text="MPa"
@@ -413,10 +461,38 @@
                                           IsEnabled="False"
                                           Content="Override Ecm manually"
                                           Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="18"
-                                           Grid.Column="0"
-                                           Text="{Binding FyLabel}"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                 <TextBlock Grid.Row="18"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f"/>
+                                     <Run Text="yk" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="18"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f"/>
+                                     <Run Text="y" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                 <TextBlock Grid.Row="18"
                                            Grid.Column="1"
                                            Text="{Binding StressLabel}"
@@ -426,10 +502,12 @@
                                          Grid.ColumnSpan="2"
                                          IsEnabled="{Binding AreMaterialInputsEnabled}"
                                          Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBlock Grid.Row="20"
-                                           Grid.Column="0"
-                                           Text="Es"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                 <TextBlock Grid.Row="20"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="E"/>
+                                     <Run Text="s" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                 <TextBlock Grid.Row="20"
                                            Grid.Column="1"
                                            Text="{Binding StressLabel}"
@@ -440,32 +518,111 @@
                                          IsEnabled="{Binding AreMaterialInputsEnabled}"
                                          Text="{Binding Es, UpdateSourceTrigger=PropertyChanged}" />
                             
+                                 <!-- Concrete Ultimate Strain -->
                                  <TextBlock Grid.Row="22"
                                             Grid.Column="0"
-                                            Text="{Binding ConcreteUltimateStrainLabel}"
                                             Style="{StaticResource FieldLabelTextStyle}"
-                                            Margin="0,8,0,0" />
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="cu2" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="22"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="cu" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                  <TextBox Grid.Row="23"
                                           Grid.Column="0"
                                           Grid.ColumnSpan="2"
                                           Style="{StaticResource ComputedTextBoxStyle}"
                                           Text="{Binding EpsilonCu2, Mode=OneWay, StringFormat=F5}" />
+
+                                 <!-- Concrete Peak Strain -->
                                  <TextBlock Grid.Row="24"
                                             Grid.Column="0"
-                                            Text="&#x03B5;yd"
                                             Style="{StaticResource FieldLabelTextStyle}"
-                                            Margin="0,8,0,0" />
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="c2" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="24"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="c0" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                  <TextBox Grid.Row="25"
                                           Grid.Column="0"
                                           Grid.ColumnSpan="2"
                                           Style="{StaticResource ComputedTextBoxStyle}"
-                                          Text="{Binding EpsilonYd, Mode=OneWay, StringFormat=F5}" />
+                                          Text="{Binding EpsilonC2, Mode=OneWay, StringFormat=F5}" />
+
+                                 <!-- Steel Yield Strain -->
                                  <TextBlock Grid.Row="26"
                                             Grid.Column="0"
-                                            Text="&#x03B5;ud"
                                             Style="{StaticResource FieldLabelTextStyle}"
-                                            Margin="0,8,0,0" />
+                                            Margin="0,8,0,0">
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="yd" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
                                  <TextBox Grid.Row="27"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonYd, Mode=OneWay, StringFormat=F5}" />
+
+                                 <!-- Steel Ultimate Strain -->
+                                 <TextBlock Grid.Row="28"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="ud" FontSize="9" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBox Grid.Row="29"
                                           Grid.Column="0"
                                           Grid.ColumnSpan="2"
                                           Style="{StaticResource ComputedTextBoxStyle}"

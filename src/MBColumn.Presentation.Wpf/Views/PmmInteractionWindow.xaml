@@ -223,7 +223,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="2D MM Diagram"
+                <TextBlock Text="{Binding MmDiagramTitle}"
                            Style="{StaticResource SectionTitleTextStyle}"
                            Margin="0,0,0,4" />
                 <Grid Grid.Row="1" x:Name="MmChartArea">
@@ -249,10 +249,10 @@
                             Margin="6,6,0,0"
                             Style="{StaticResource ChartIconHintStyle}">
                         <StackPanel Orientation="Horizontal" Margin="2,0">
-                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Wheel zoom" IsHitTestVisible="False">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Scroll Mouse Wheel to Zoom" IsHitTestVisible="False">
                                 <TextBlock Text="🔍" />
                             </Button>
-                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Drag pan" IsHitTestVisible="False" Margin="4,0,0,0">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Left Click &amp; Drag to Pan" IsHitTestVisible="False" Margin="4,0,0,0">
                                 <TextBlock Text="✋" />
                             </Button>
                         </StackPanel>
@@ -279,7 +279,8 @@
                             </ToggleButton>
                             <Separator Margin="2,3" Background="#20000000" Height="1" />
                             <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Toggle control points"
-                                          IsChecked="{Binding ShowCpLabels}">
+                                          IsChecked="{Binding ShowCpLabels}"
+                                          Visibility="Collapsed">
                                 <TextBlock Text="🎯" FontSize="14" />
                             </ToggleButton>
                             <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Export PNG"
@@ -345,10 +346,10 @@
                             Margin="6,6,0,0"
                             Style="{StaticResource ChartIconHintStyle}">
                         <StackPanel Orientation="Horizontal" Margin="2,0">
-                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Wheel zoom" IsHitTestVisible="False">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Scroll Mouse Wheel to Zoom" IsHitTestVisible="False">
                                 <TextBlock Text="🔍" />
                             </Button>
-                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Drag pan" IsHitTestVisible="False" Margin="4,0,0,0">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Left Click &amp; Drag to Pan" IsHitTestVisible="False" Margin="4,0,0,0">
                                 <TextBlock Text="✋" />
                             </Button>
                         </StackPanel>
@@ -442,6 +443,22 @@
                                                    SpecialCapacityPoints="{Binding PM3D.SpecialCapacityPoints}"
                                                    ShowCpLabels="{Binding ShowCpLabels}"
                                                    ResetVersion="{Binding PM3D.ResetVersion}" />
+                    <!-- Zoom/Pan/Rotate Hint — top-left corner -->
+                    <Border VerticalAlignment="Top" HorizontalAlignment="Left"
+                            Margin="6,6,0,0"
+                            Style="{StaticResource ChartIconHintStyle}">
+                        <StackPanel Orientation="Horizontal" Margin="2,0">
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Left Click &amp; Drag to Rotate" IsHitTestVisible="False">
+                                <TextBlock Text="🔄" />
+                            </Button>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Scroll Mouse Wheel to Zoom" IsHitTestVisible="False" Margin="4,0,0,0">
+                                <TextBlock Text="🔍" />
+                            </Button>
+                            <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="Right Click &amp; Drag to Pan" IsHitTestVisible="False" Margin="4,0,0,0">
+                                <TextBlock Text="✋" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Grid>
         </Border>

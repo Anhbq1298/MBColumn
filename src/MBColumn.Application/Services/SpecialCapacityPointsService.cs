@@ -48,19 +48,35 @@ public static class SpecialCapacityPointsService
 
             var zeroTension = InterpolateAtDepth(pts, cZeroTension);
             if (zeroTension is not null)
+            {
+                double es = zeroTension.NeutralAxisDepthMm > 1e-6 ? ecu * (dtMm - zeroTension.NeutralAxisDepthMm) / zeroTension.NeutralAxisDepthMm : 0.0;
+                zeroTension = zeroTension with { MaxTensionSteelStrain = Math.Max(0.0, es), MinSteelStrain = -es };
                 result.Add(new SpecialCapacityEntry("Zero Tension", a, theta, zeroTension, CpNumber: 2));
+            }
 
             var halfYield = InterpolateAtDepth(pts, cHalfYield);
             if (halfYield is not null)
+            {
+                double es = halfYield.NeutralAxisDepthMm > 1e-6 ? ecu * (dtMm - halfYield.NeutralAxisDepthMm) / halfYield.NeutralAxisDepthMm : 0.0;
+                halfYield = halfYield with { MaxTensionSteelStrain = Math.Max(0.0, es), MinSteelStrain = -es };
                 result.Add(new SpecialCapacityEntry("50% Yield", a, theta, halfYield, CpNumber: 3));
+            }
 
             var balanced = InterpolateAtDepth(pts, cBalance);
             if (balanced is not null)
+            {
+                double es = balanced.NeutralAxisDepthMm > 1e-6 ? ecu * (dtMm - balanced.NeutralAxisDepthMm) / balanced.NeutralAxisDepthMm : 0.0;
+                balanced = balanced with { MaxTensionSteelStrain = Math.Max(0.0, es), MinSteelStrain = -es };
                 result.Add(new SpecialCapacityEntry("Balanced", a, theta, balanced, CpNumber: 4));
+            }
 
             var tensionCtrl = InterpolateAtDepth(pts, cTension);
             if (tensionCtrl is not null)
+            {
+                double es = tensionCtrl.NeutralAxisDepthMm > 1e-6 ? ecu * (dtMm - tensionCtrl.NeutralAxisDepthMm) / tensionCtrl.NeutralAxisDepthMm : 0.0;
+                tensionCtrl = tensionCtrl with { MaxTensionSteelStrain = Math.Max(0.0, es), MinSteelStrain = -es };
                 result.Add(new SpecialCapacityEntry("Tension Control", a, theta, tensionCtrl, CpNumber: 5));
+            }
 
             var pureBending = InterpolateAtPn(pts, 0.0);
             if (pureBending is not null)

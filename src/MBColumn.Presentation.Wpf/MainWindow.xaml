@@ -252,32 +252,135 @@
                             <Style TargetType="TreeViewItem">
                                 <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
                                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                                <Setter Property="Padding" Value="4,4" />
+                                <Setter Property="Padding" Value="6,4" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="VerticalContentAlignment" Value="Center" />
                                 <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
                                 <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TreeViewItem">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition/>
+                                                </Grid.RowDefinitions>
+                                                
+                                                <!-- Row container spanning full width -->
+                                                <Border x:Name="Bd"
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        Padding="{TemplateBinding Padding}"
+                                                        SnapsToDevicePixels="true">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="16" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        
+                                                        <!-- Chevron Expander -->
+                                                        <ToggleButton x:Name="Expander"
+                                                                      ClickMode="Press"
+                                                                      IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                                                      Foreground="{DynamicResource TextMutedBrush}"
+                                                                      Focusable="False">
+                                                            <ToggleButton.Template>
+                                                                <ControlTemplate TargetType="ToggleButton">
+                                                                    <Border Background="Transparent" Width="16" Height="16">
+                                                                        <Path x:Name="Arrow"
+                                                                              Data="M 4,4 L 8,8 L 4,12"
+                                                                              Stroke="{TemplateBinding Foreground}"
+                                                                              StrokeThickness="1.5"
+                                                                              StrokeStartLineCap="Round"
+                                                                              StrokeEndLineCap="Round"
+                                                                              StrokeLineJoin="Round"
+                                                                              HorizontalAlignment="Center"
+                                                                              VerticalAlignment="Center"
+                                                                              RenderTransformOrigin="0.5,0.5">
+                                                                            <Path.RenderTransform>
+                                                                                <RotateTransform Angle="0"/>
+                                                                            </Path.RenderTransform>
+                                                                        </Path>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsChecked" Value="True">
+                                                                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                                                                <Setter.Value>
+                                                                                    <RotateTransform Angle="90"/>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                        </Trigger>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource AccentBlueBrush}"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </ToggleButton.Template>
+                                                        </ToggleButton>
+                                                        
+                                                        <!-- ContentPresenter -->
+                                                        <ContentPresenter x:Name="PART_Header"
+                                                                          Grid.Column="1"
+                                                                          ContentSource="Header"
+                                                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                          Margin="6,0,0,0"/>
+                                                    </Grid>
+                                                </Border>
+                                                
+                                                <!-- ItemsPresenter for nested children -->
+                                                <ItemsPresenter x:Name="ItemsHost"
+                                                                Grid.Row="1"
+                                                                Margin="16,0,0,0"/>
+                                            </Grid>
+                                            
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="HasItems" Value="false">
+                                                    <Setter TargetName="Expander" Property="Visibility" Value="Hidden"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="true">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryNavyBrush}"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsMouseOver" Value="True"/>
+                                                        <Condition Property="IsSelected" Value="False"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBlueSoftBrush}"/>
+                                                </MultiTrigger>
+                                                <Trigger Property="IsEnabled" Value="false">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                             </Style>
                         </TreeView.ItemContainerStyle>
                             <TreeView.Resources>
                                 <!-- Group Template -->
                                 <HierarchicalDataTemplate DataType="{x:Type vm:GroupItemViewModel}" ItemsSource="{Binding Columns}">
-                                    <Grid>
+                                    <Grid Background="Transparent">
+                                        <Grid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
+                                                <MenuItem Header="Add New Section" Command="{Binding AddSectionCommand}" />
+                                                <MenuItem Header="Add Existing Sections..." Command="{Binding AddExistingSectionsCommand}" />
+                                                <Separator />
+                                                <MenuItem Header="Print Group Reports..." 
+                                                          Command="{Binding Path=PlacementTarget.DataContext.PrintGroupReportsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding}" />
+                                                <Separator />
+                                                <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                             <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="True" VerticalAlignment="Center" Margin="0,0,6,0" />
                                             <TextBlock Text="📁 " VerticalAlignment="Center" />
                                             <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center"/>
-                                            <StackPanel.ContextMenu>
-                                                <ContextMenu>
-                                                    <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
-                                                    <MenuItem Header="Add New Section" Command="{Binding AddSectionCommand}" />
-                                                    <MenuItem Header="Add Existing Sections..." Command="{Binding AddExistingSectionsCommand}" />
-                                                    <Separator />
-                                                    <MenuItem Header="Print Group Reports..." 
-                                                              Command="{Binding Path=PlacementTarget.DataContext.PrintGroupReportsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                              CommandParameter="{Binding}" />
-                                                    <Separator />
-                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
-                                                </ContextMenu>
-                                            </StackPanel.ContextMenu>
                                         </StackPanel>
                                         <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
                                                  Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -289,7 +392,28 @@
 
                                 <!-- Column Template -->
                                 <DataTemplate DataType="{x:Type vm:ColumnItemViewModel}">
-                                    <Grid>
+                                    <Grid Background="Transparent">
+                                        <Grid.ContextMenu>
+                                            <ContextMenu Opened="ColumnContextMenu_Opened">
+                                                <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
+                                                <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
+                                                <Separator />
+                                                <MenuItem Header="Print Report as PDF..."
+                                                          Command="{Binding Path=PlacementTarget.DataContext.PrintSingleReportCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding}" />
+                                                <Separator />
+                                                <MenuItem Header="Move to Group..." ItemsSource="{Binding MoveToGroupOptions}">
+                                                    <MenuItem.ItemContainerStyle>
+                                                        <Style TargetType="MenuItem">
+                                                            <Setter Property="Header" Value="{Binding Name}" />
+                                                            <Setter Property="Command" Value="{Binding Command}" />
+                                                        </Style>
+                                                    </MenuItem.ItemContainerStyle>
+                                                </MenuItem>
+                                                <Separator />
+                                                <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                             <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="False" VerticalAlignment="Top" Margin="0,3,6,0" />
                                             <StackPanel Orientation="Vertical">
@@ -308,27 +432,6 @@
                                                                Foreground="{DynamicResource TextDarkBrush}" />
                                                 </Border>
                                             </StackPanel>
-                                            <StackPanel.ContextMenu>
-                                                <ContextMenu Opened="ColumnContextMenu_Opened">
-                                                    <MenuItem Header="Rename" Command="{Binding BeginRenameCommand}" />
-                                                    <MenuItem Header="Duplicate" Command="{Binding DuplicateCommand}" />
-                                                    <Separator />
-                                                    <MenuItem Header="Print Report as PDF..."
-                                                              Command="{Binding Path=PlacementTarget.DataContext.PrintSingleReportCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                              CommandParameter="{Binding}" />
-                                                    <Separator />
-                                                    <MenuItem Header="Move to Group..." ItemsSource="{Binding MoveToGroupOptions}">
-                                                        <MenuItem.ItemContainerStyle>
-                                                            <Style TargetType="MenuItem">
-                                                                <Setter Property="Header" Value="{Binding Name}" />
-                                                                <Setter Property="Command" Value="{Binding Command}" />
-                                                            </Style>
-                                                        </MenuItem.ItemContainerStyle>
-                                                    </MenuItem>
-                                                    <Separator />
-                                                    <MenuItem Header="Delete" Command="{Binding DeleteCommand}" Foreground="{DynamicResource AccentRedBrush}" />
-                                                </ContextMenu>
-                                            </StackPanel.ContextMenu>
                                         </StackPanel>
                                         <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
                                                  Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"

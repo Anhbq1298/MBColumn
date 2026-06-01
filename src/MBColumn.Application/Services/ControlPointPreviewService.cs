@@ -127,11 +127,8 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
                 NeutralAxisDepth = matched is not null
                     ? DisplayLength(matched.NeutralAxisDepthMm, result.UnitSystem)
                     : DisplayLength(sp.NeutralAxisDepth, result.UnitSystem),
-                SteelStrainMax = matched is null ? 0.0 : DisplayStrain(SignedMaxAbs(
-                    matched.MaxSteelStrain, matched.MinSteelStrain, matched.MaxTensionSteelStrain,
-                    double.NaN, double.NaN, double.NaN)),
-                ConcreteStrainMax = matched is null ? 0.0 : DisplayStrain(SignedMaxAbs(
-                    matched.MaxConcreteStrain, matched.MinConcreteStrain, double.NaN)),
+                SteelStrainMax = matched is null ? 0.0 : DisplayStrain(matched.MinSteelStrain),
+                ConcreteStrainMax = matched is null ? 0.0 : DisplayStrain(matched.MaxConcreteStrain),
                 PhiFactor = matched?.Phi ?? sp.Phi,
                 IntegrationMethod = result.IntegrationMethod.ToString(),
                 ConcreteFiberCountX = result.ConcreteFiberCountX,
@@ -178,18 +175,12 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
             MyNegative = negative?.My ?? 0.0,
             MThetaNegative = negative is null ? 0.0 : Math.Min(0.0, negative.X),
             NeutralAxisDepth = displayLength,
-            SteelStrainMax = DisplayStrain(SignedMaxAbs(
-                positiveMatch?.MaxSteelStrain ?? double.NaN,
+            SteelStrainMax = DisplayStrain(MinOf(
                 positiveMatch?.MinSteelStrain ?? double.NaN,
-                positiveMatch?.MaxTensionSteelStrain ?? double.NaN,
-                negativeMatch?.MaxSteelStrain ?? double.NaN,
-                negativeMatch?.MinSteelStrain ?? double.NaN,
-                negativeMatch?.MaxTensionSteelStrain ?? double.NaN)),
-            ConcreteStrainMax = DisplayStrain(SignedMaxAbs(
+                negativeMatch?.MinSteelStrain ?? double.NaN)),
+            ConcreteStrainMax = DisplayStrain(MaxOf(
                 positiveMatch?.MaxConcreteStrain ?? double.NaN,
-                positiveMatch?.MinConcreteStrain ?? double.NaN,
-                negativeMatch?.MaxConcreteStrain ?? double.NaN,
-                negativeMatch?.MinConcreteStrain ?? double.NaN)),
+                negativeMatch?.MaxConcreteStrain ?? double.NaN)),
             PhiFactor = RepresentativePhi(positiveMatch, negativeMatch, positive, negative),
             IntegrationMethod = result.IntegrationMethod.ToString(),
             ConcreteFiberCountX = result.ConcreteFiberCountX,
@@ -368,6 +359,20 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         var valid = values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).ToList();
         if (valid.Count == 0) return 0.0;
         return valid.OrderByDescending(Math.Abs).First();
+    }
+
+    private static double MinOf(params double[] values)
+    {
+        var valid = values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).ToList();
+        if (valid.Count == 0) return 0.0;
+        return valid.Min();
+    }
+
+    private static double MaxOf(params double[] values)
+    {
+        var valid = values.Where(v => !double.IsNaN(v) && !double.IsInfinity(v)).ToList();
+        if (valid.Count == 0) return 0.0;
+        return valid.Max();
     }
 
     private static double DisplayStrain(double solverSignedStrain)

@@ -352,25 +352,97 @@
                             Background="#06000000" BorderBrush="{DynamicResource BorderSoftBrush}"
                             BorderThickness="1" CornerRadius="6">
                         <DockPanel>
-                            <TextBlock Text="Active Design Strain Limits:" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryNavyBrush}" />
+                            <TextBlock Text="{Binding ActiveDesignCodeText, StringFormat='Active Design Strain Limits ({0}):'}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryNavyBrush}" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Border Background="#103B82F6" CornerRadius="4" Padding="8,4" Margin="6,0,0,0">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Concrete Limit (" Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding ConcreteUltimateStrainLabel}" Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock  FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                            <Run Text="&#x03B5;" />
+                                            <Run Text="cu2" FontSize="9" BaselineAlignment="Subscript"/>
+                                        </TextBlock>
+                                        <TextBlock  FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                            <Run Text="&#x03B5;" />
+                                            <Run Text="cu" FontSize="9" BaselineAlignment="Subscript"/>
+                                        </TextBlock>
                                         <TextBlock Text="): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
                                         <TextBlock Text="{Binding EpsilonCu2, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF3B82F6" />
                                     </StackPanel>
                                 </Border>
+                                <Border Background="#108B5CF6" CornerRadius="4" Padding="8,4" Margin="12,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Concrete Peak (" Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock  FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                            <Run Text="&#x03B5;" />
+                                            <Run Text="c2" FontSize="9" BaselineAlignment="Subscript"/>
+                                        </TextBlock>
+                                        <TextBlock  FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HelperTextStyle}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                            <Run Text="&#x03B5;" />
+                                            <Run Text="c0" FontSize="9" BaselineAlignment="Subscript"/>
+                                        </TextBlock>
+                                        <TextBlock Text="): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding EpsilonC2, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF8B5CF6" />
+                                    </StackPanel>
+                                </Border>
                                 <Border Background="#1010B981" CornerRadius="4" Padding="8,4" Margin="12,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Steel Yield (&#x03B5;yd): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <Run Text="Steel Yield (" />
+                                            <Run Text="&#x03B5;" />
+                                            <Run Text="yd" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="): " />
+                                        </TextBlock>
                                         <TextBlock Text="{Binding EpsilonYd, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF10B981" />
                                     </StackPanel>
                                 </Border>
                                 <Border Background="#10F59E0B" CornerRadius="4" Padding="8,4" Margin="12,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Steel Max Tension (&#x03B5;ud): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
+                                        <TextBlock Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <Run Text="Steel Max Tension (" />
+                                            <Run Text="&#x03B5;" />
+                                            <Run Text="ud" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="): " />
+                                        </TextBlock>
                                         <TextBlock Text="{Binding EpsilonUd, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FFF59E0B" />
                                     </StackPanel>
                                 </Border>
