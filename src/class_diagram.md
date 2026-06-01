@@ -183,6 +183,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **AnnexBIllustrations** | /// Generates SVG diagrams illustrating the Fibre and Polygon section integration methods. /// | `AnnexBIllustrations.cs` |
+| `class` | **AnnexBTheorySectionBuilder** | Represents the AnnexBTheorySectionBuilder class. | `AnnexBTheorySectionBuilder.cs` |
 | `class` | **CalculationReportBuilder** | /// Entry point for report generation. Routes to the appropriate code-specific /// builder based on DesignCode. ///. Key methods: Build. | `CalculationReportBuilder.cs` |
 | `class` | **CircularSevenPointBuilder** | /// Generates the 7-point independent verification for circular sections /// using the circular compression segment method. /// Correct centroid formula: ybar = (2/3)(R²-y_a²)^(3/2) / Aseg ///. Key methods: Build. | `CircularSevenPointBuilder.cs` |
 | `class` | **ConclusionSectionBuilder** | Represents the ConclusionSectionBuilder class. Key methods: Build. | `ConclusionSectionBuilder.cs` |
@@ -517,7 +518,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ApproxEqualityComparer** | Represents the ApproxEqualityComparer class. Key methods: Equals, GetHashCode. | `SectionGeometryRenderer.cs` |
 | `class` | **InteractionDiagramSvgRenderer** | /// Renders section geometry and interaction diagrams as inline SVG strings. /// The nested SectionGeometryRenderer is importable via /// using static MBColumn.Infrastructure.Reports.Graphics.InteractionDiagramSvgRenderer; ///. Key methods: RenderDiagram. | `InteractionDiagramSvgRenderer.cs` |
 | `class` | **SectionGeometryRenderer** | Represents the SectionGeometryRenderer class. Key methods: RenderSection. | `InteractionDiagramSvgRenderer.cs` |
-| `class` | **SectionGeometryRenderer** | /// Generates SVG diagrams for section geometry and rebar layout. /// All coordinates in mm; SVG output is scaled to fit a fixed viewport. ///. Key methods: RenderRectangularSection, RenderCircularSection, RenderSection. | `SectionGeometryRenderer.cs` |
+| `class` | **SectionGeometryRenderer** | /// Generates SVG diagrams for section geometry and rebar layout. /// All coordinates in mm; SVG output is scaled to fit a fixed viewport. ///. Key methods: RenderRectangularSection, RenderCircularSection, RenderIrregularSection, RenderSection. | `SectionGeometryRenderer.cs` |
 
 ### Reports/Html
 

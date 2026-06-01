@@ -549,7 +549,8 @@ public sealed class MainWindowViewModel : ViewModelBase
                         res.SectionShape,
                         res.SectionWidthMm, res.SectionHeightMm,
                         res.DiameterMm > 0 ? res.DiameterMm : res.SectionWidthMm,
-                        res.CoverMm, res.RebarCoordinates);
+                        res.CoverMm, res.RebarCoordinates,
+                        irregularBoundaryPoints: res.IrregularSectionBoundaryPoints);
                 }
                 catch { }
 

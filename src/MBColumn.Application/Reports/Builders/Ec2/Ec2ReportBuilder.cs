@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Reports.Builders;
 using MBColumn.Application.Reports.Models;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
@@ -46,7 +47,7 @@ internal sealed class Ec2ReportBuilder
         // ── Annexes ───────────────────────────────────────────────────────────
 
         sections.Add(AnnexA_Coordinates(r));
-        sections.Add(AnnexB_Theory(r));
+        sections.Add(AnnexBTheorySectionBuilder.Build(r));
 
         var handCalc = ReportHandCalcService.Build(
             r.SectionShape, r.SectionWidthMm, r.SectionHeightMm,
@@ -151,7 +152,10 @@ internal sealed class Ec2ReportBuilder
         };
         double ag  = r.SectionShape == SectionShapeType.Circular
                      ? Math.PI / 4 * r.DiameterMm * r.DiameterMm
-                     : r.SectionWidthMm * r.SectionHeightMm;
+                     : r.SectionShape == SectionShapeType.Irregular
+                       && r.IrregularSectionBoundaryPoints.Count >= 3
+                         ? PolygonArea(r.IrregularSectionBoundaryPoints)
+                         : r.SectionWidthMm * r.SectionHeightMm;
         double ast = r.RebarCoordinates.Sum(b => b.Area);
 
         blocks.Add(new TableBlock(
@@ -424,133 +428,6 @@ internal sealed class Ec2ReportBuilder
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Annex B · MB Column PMM Sweeping Theory
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private static ReportSection AnnexB_Theory(CalculationResultDto r)
-    {
-        var integrationBlocks = r.IntegrationMethod == SectionIntegrationMethod.Fiber
-            ? new ReportBlock[]
-            {
-                new HeadingBlock("Section Integration (Fibre Method)", 2),
-                new ParagraphBlock(
-                    "The section is discretized into a grid of fibres. Each fibre strain is " +
-                    "determined from the assumed linear strain field using its signed perpendicular " +
-                    "distance to the neutral axis. Concrete fibres in compression contribute according " +
-                    "to the EC2 parabolic-rectangular stress-strain model, while tensile concrete is " +
-                    "neglected at ULS. Reinforcement fibres contribute in both tension and compression."),
-                new ImageBlock(AnnexBIllustrations.GoverningFibreMethodSvg(r), WidthPct: 82,
-                    Caption: "Figure B.1 – Governing fibre strain state using the input section geometry, reinforcement layout, governing θ, perpendicular compression depth c, and signed fibre distance di"),
-                new FormulaBlock("Concrete compression criterion",
-                    @"C = \{\,j : 0 \leq d_j \leq c\,\}",
-                    @"d_j = \text{signed perpendicular distance from the neutral axis toward compression}",
-                    @"\sigma_{c,j}=0\quad\text{for tensile concrete }(d_j < 0)"),
-                new FormulaBlock("Internal forces (discrete fibre sum)",
-                    @"N_{Rd} = \sum_{j \in C} \sigma_{c,j}\,A_j + \sum_i \sigma_{s,i}\,A_{s,i}",
-                    @"\sigma_c(\varepsilon_j) = f(\varepsilon_j)\ \text{per EC2 §3.1.7},\quad A_j = \text{fibre area}",
-                    @"F_{s,i}=A_{s,i}\sigma_{s,i},\quad \sigma_{s,i}=\operatorname{clamp}(E_s\varepsilon_{s,i},-f_{yd},f_{yd})"),
-                new FormulaBlock("Bending moments about section centroid",
-                    @"M_{Rd,x} = \sum F_k\,y_k",
-                    @"M_{Rd,y} = \sum F_k\,x_k",
-                    @"F_k = \text{concrete or reinforcement fibre force, signed by stress}"),
-            }
-            : new ReportBlock[]
-            {
-                new HeadingBlock("Section Integration (Polygon Method)", 2),
-                new ParagraphBlock(
-                    "The compression zone boundary is obtained by exact geometric clipping of the " +
-                    "section polygon against the neutral axis plane (Sutherland-Hodgman algorithm). " +
-                    "The resulting compression polygon Pc is decomposed into horizontal strips; " +
-                    "each strip is integrated exactly — no fibre discretization error."),
-                new ImageBlock(AnnexBIllustrations.PolygonMethodSvg(),
-                    Caption: "Figure B.1 – Polygon clipping: the compression zone is the exact polygon Pc bounded by the section edges and the neutral axis"),
-
-                new FormulaBlock("Compression polygon (Sutherland-Hodgman clipping)",
-                    @"P_c = \text{section polygon} \cap \{\,(x,y) : \varepsilon(x,y) \geq 0\,\}",
-                    @"A_c = \tfrac{1}{2}\left|\sum_{k=1}^{n}(x_k\,y_{k+1} - x_{k+1}\,y_k)\right| \quad \text{(shoelace)}",
-                    @"(x_k,y_k) = \text{vertices of } P_c \text{ after clipping}"),
-
-                new FormulaBlock("Strip-wise force integration (exact)",
-                    @"N_c = \sum_{j}\, b_j(y_j)\cdot\sigma_c\!\left(\varepsilon(y_j)\right)\cdot\Delta y_j",
-                    @"b_j(y_j) = \text{exact chord width of } P_c \text{ at strip centroid } y_j",
-                    @"\sigma_c(\varepsilon_c) = f(\varepsilon_c)\ \text{per EC2 §3.1.7 parabolic-rectangular model}"),
-
-                new FormulaBlock("Strip-wise moment integration (exact)",
-                    @"M_{x} = \sum_{j}\, b_j\,y_j\,\sigma_c(\varepsilon_j)\,\Delta y_j + \sum_i A_{si}\sigma_{si}\,y_i",
-                    @"M_{y} = \sum_{j}\, \bar{x}_j\,b_j\,\sigma_c(\varepsilon_j)\,\Delta y_j + \sum_i A_{si}\sigma_{si}\,x_i",
-                    @"\bar{x}_j = \text{strip centroid }x\text{ derived from polygon geometry}"),
-
-                new NoteBlock(
-                    "Unlike the fibre method, the polygon method does not rasterize the section. " +
-                    "Accuracy depends only on the strip height Δy (≤ 0.5 mm), not on a fibre grid density. " +
-                    "Both methods converge to the same result; the polygon method eliminates rasterization error " +
-                    "and is preferred for irregular or circular sections."),
-            };
-
-        var blocks = new List<ReportBlock>
-        {
-            new HeadingBlock("Overview", 2),
-            new ParagraphBlock(
-                "MB Column determines the three-dimensional P-M-M interaction surface by sweeping " +
-                "the neutral axis orientation θ from 0° to 360° and, for each angle, iterating the " +
-                "neutral axis depth c to trace the full interaction curve. For biaxial bending, c is " +
-                "the perpendicular distance from the neutral axis to the extreme compression fibre, " +
-                "not a global vertical section depth."),
-
-            new HeadingBlock("Strain Compatibility", 2),
-            new ParagraphBlock(
-                "For a given neutral axis angle θ and depth c, the strain at any point (x, y) " +
-                "in the cross-section is determined by a planar strain distribution pinned to " +
-                "the ultimate concrete strain εcu2 at the extreme compression fibre. Plane sections " +
-                "remain plane, tensile concrete is neglected at ULS, steel follows elastic-plastic " +
-                "behaviour, and the neutral axis may rotate to any orientation during the PMM sweep."),
-
-            new FormulaBlock("Strain at distance d from the neutral axis",
-                @"\varepsilon_i = \varepsilon_{cu2}\left(\frac{d_i}{c}\right)",
-                @"\varepsilon_{cu2} = \text{EC2 Table 3.1, fck-dependent}",
-                @"d_i = 0\ \text{at NA},\quad d_i=c\ \text{at the extreme compression fibre},\quad d_i<0\ \text{on the tension side}"),
-        };
-
-        blocks.AddRange(integrationBlocks);
-
-        blocks.AddRange(new ReportBlock[]
-        {
-            new HeadingBlock("EC2 Material Partial Factors", 2),
-            new ParagraphBlock(
-                "EC2 applies material partial factors to characteristic strengths rather than " +
-                "a member-level φ factor. The design strengths fcd = αcc·fck/γc and " +
-                "fyd = fyk/γs are used directly in the section analysis."),
-
-            new FormulaBlock("Design concrete strength",
-                @"f_{cd} = \frac{\alpha_{cc} \, f_{ck}}{\gamma_c}",
-                @"\alpha_{cc} = \text{National Annex value (default 0.85)},\quad \gamma_c = 1.50",
-                ""),
-
-            new FormulaBlock("Design steel strength",
-                @"f_{yd} = \frac{f_{yk}}{\gamma_s}",
-                @"\gamma_s = 1.15",
-                ""),
-
-            new HeadingBlock("PMM Utilization Ratio", 2),
-            new ParagraphBlock(
-                "For each load case demand (NEd, MEd,x, MEd,y), the governing utilization ratio " +
-                "is found by maximizing UR over all neutral axis orientations θ."),
-
-            new FormulaBlock("Utilization ratio",
-                @"\mathrm{UR} = \frac{\lVert (N_{Ed},\,M_{Ed,x},\,M_{Ed,y}) \rVert}{\lVert (N_{Rd},\,M_{Rd,x},\,M_{Rd,y}) \rVert}\Bigg|_{\theta = \theta_{gov}}",
-                @"\mathrm{UR} \leq 1.0 \implies \text{section adequate}",
-                ""),
-
-            new NoteBlock(
-                "The governing angle θ_gov is the neutral axis orientation that maximises UR. " +
-                "The reported capacity (NRd, MRd,x, MRd,y) is the intersection of the " +
-                "proportional loading ray with the design interaction surface."),
-        });
-
-        return new("Annex B", "MB Column PMM Sweeping Theory", blocks);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // Annex C · Hand-Calculation Verification  (rectangular sections, EC2)
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -599,4 +476,20 @@ internal sealed class Ec2ReportBuilder
     // ─────────────────────────────────────────────────────────────────────────
 
     private static string Dash(string? s) => string.IsNullOrWhiteSpace(s) ? "—" : s;
+
+    private static double PolygonArea(IReadOnlyList<InsetPointDto> points)
+    {
+        if (points.Count < 3)
+            return 0.0;
+
+        double sum = 0.0;
+        for (int i = 0; i < points.Count; i++)
+        {
+            var a = points[i];
+            var b = points[(i + 1) % points.Count];
+            sum += a.X * b.Y - b.X * a.Y;
+        }
+
+        return Math.Abs(sum) * 0.5;
+    }
 }

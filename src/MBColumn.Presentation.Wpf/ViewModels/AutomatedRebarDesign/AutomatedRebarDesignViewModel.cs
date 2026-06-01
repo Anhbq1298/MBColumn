@@ -22,6 +22,16 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     private CandidateSuggestionRowViewModel? _selectedCandidate;
     private RebarSuggestionOption? _selectedOption;
     private RebarSuggestionOption? _appliedOption;
+    private CancellationTokenSource? _cts;
+
+    // ── Preview canvas state ───────────────────────────────────────────────────
+    private IReadOnlyList<RebarCoordinateDto> _previewRebars = [];
+    private string _previewSectionLabel  = string.Empty;
+    private string _previewRebarLabel    = string.Empty;
+    private string _previewCoverLabel    = string.Empty;
+    private bool   _previewIsValid       = false;
+    private string _previewStatusText    = "Run Auto, then select a candidate to preview its layout.";
+    private int    _selectedTabIndex     = 1; // start on Target tab; switches to Preview (0) on selection
 
     // ── Right panel: Target tab ───────────────────────────────────────────────
     private double _targetPmm = 0.90;
@@ -88,6 +98,24 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     public RelayCommand ApplyCommand { get; }
     public ICommand CancelCommand { get; }
 
+    // ── Preview canvas (read-only section constants + per-selection state) ────
+    public double PreviewSectionWidthMm    => _baseInput.BaseInput.Width;
+    public double PreviewSectionHeightMm   => _baseInput.BaseInput.Height;
+    public double PreviewCoverMm           => _baseInput.BaseInput.Cover;
+    public double PreviewStirrupDiameterMm => _baseInput.BaseInput.LinkDiameterMm > 0 ? _baseInput.BaseInput.LinkDiameterMm : 10.0;
+
+    public IReadOnlyList<RebarCoordinateDto> PreviewRebars
+    {
+        get => _previewRebars;
+        private set => Set(ref _previewRebars, value);
+    }
+    public string PreviewSectionLabel { get => _previewSectionLabel; private set => Set(ref _previewSectionLabel, value); }
+    public string PreviewRebarLabel   { get => _previewRebarLabel;   private set => Set(ref _previewRebarLabel,   value); }
+    public string PreviewCoverLabel   { get => _previewCoverLabel;   private set => Set(ref _previewCoverLabel,   value); }
+    public bool   PreviewIsValid      { get => _previewIsValid;      private set => Set(ref _previewIsValid,      value); }
+    public string PreviewStatusText   { get => _previewStatusText;   private set => Set(ref _previewStatusText,   value); }
+    public int    SelectedTabIndex    { get => _selectedTabIndex;    set => Set(ref _selectedTabIndex, value); }
+
     // ── State ─────────────────────────────────────────────────────────────────
     public bool IsRunning
     {
@@ -142,7 +170,15 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             ApplyCommand.RaiseCanExecuteChanged();
             PreviewCommand.RaiseCanExecuteChanged();
             if (value?.Option is not null)
+            {
                 UpdateAfterColumns(value.Option);
+                UpdatePreviewCanvas(value.Option);
+                SelectedTabIndex = 0; // jump to Section Preview tab
+            }
+            else
+            {
+                ClearPreviewCanvas();
+            }
         }
     }
 
@@ -247,6 +283,11 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         IsRunning = true;
         StatusMessage = "Generating candidates…";
 
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
         try
         {
             var constraints = BuildConstraintSet();
@@ -268,9 +309,16 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
                 AllowedBars = allowedBars
             };
 
-            var result = await Task.Run(() => _engine.Suggest(input));
+            var progress = new Progress<(int done, int total)>(p =>
+                StatusMessage = $"Evaluating candidates… {p.done} / {p.total}");
+
+            var result = await Task.Run(() => _engine.Suggest(input, progress, token), token);
 
             PopulateResults(result);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Auto design cancelled.";
         }
         catch (Exception ex)
         {
@@ -285,7 +333,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     private void Preview()
     {
         if (SelectedOption is null) return;
-        StatusMessage = $"Previewing: {SelectedOption.ConfigurationName} — PMM = {SelectedOption.MaximumPmmUtilization:F2}";
+        SelectedTabIndex = 0; // bring Section Preview tab into view
     }
 
     private void Apply()
@@ -298,6 +346,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
 
     private void Cancel()
     {
+        _cts?.Cancel();
         DialogResult = false;
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -563,6 +612,27 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         }
     }
 
+    private void UpdatePreviewCanvas(RebarSuggestionOption opt)
+    {
+        var dto = _baseInput.BaseInput;
+        PreviewRebars       = opt.Coordinates;
+        PreviewSectionLabel = $"b = {dto.Width:F0} × h = {dto.Height:F0} mm";
+        PreviewRebarLabel   = $"{opt.TotalBarCount}{opt.BarSizeName}   As = {opt.TotalSteelAreaMm2:F0} mm²   ρ = {opt.ReinforcementRatio * 100:F2}%";
+        PreviewCoverLabel   = $"Cover = {dto.Cover:F0} mm";
+        PreviewIsValid      = opt.Status != Domain.Enums.RebarSuggestionStatus.Failed;
+        PreviewStatusText   = $"Rank #{opt.Rank} — {opt.Reason}";
+    }
+
+    private void ClearPreviewCanvas()
+    {
+        PreviewRebars       = [];
+        PreviewSectionLabel = string.Empty;
+        PreviewRebarLabel   = string.Empty;
+        PreviewCoverLabel   = string.Empty;
+        PreviewIsValid      = false;
+        PreviewStatusText   = "Run Auto, then select a candidate to preview its layout.";
+    }
+
     private RebarSuggestionConstraintSet BuildConstraintSet()
     {
         var allowedBarNames = _allowedBarToggles
@@ -610,7 +680,7 @@ public sealed class AllowedBarToggleViewModel(RebarDefinition bar, bool isEnable
 {
     private bool _isEnabled = isEnabled;
     public RebarDefinition Bar { get; } = bar;
-    public string Label => bar.DisplayLabel ?? bar.Name;
+    public string Label => Bar.DisplayLabel ?? Bar.Name;
     public bool IsEnabled { get => _isEnabled; set => Set(ref _isEnabled, value); }
 }
 
@@ -618,7 +688,7 @@ public sealed class AllowedCountToggleViewModel(int count, bool isEnabled) : Vie
 {
     private bool _isEnabled = isEnabled;
     public int  Count     { get; } = count;
-    public string Label   => count.ToString();
+    public string Label   => Count.ToString();
     public bool IsEnabled { get => _isEnabled; set => Set(ref _isEnabled, value); }
 }
 

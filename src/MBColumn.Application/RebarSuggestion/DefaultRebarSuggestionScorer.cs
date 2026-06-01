@@ -12,57 +12,32 @@ public sealed class DefaultRebarSuggestionScorer : IRebarSuggestionScorer
     {
         if (evaluation.EvaluationFailed) return 0;
 
-        var c = input.Constraints;
-        double pmm  = evaluation.MaxPmmUtilization;
-        double rho  = candidate.ReinforcementRatio;
-        double as_  = candidate.TotalSteelAreaMm2;
+        var    c   = input.Constraints;
+        double pmm = evaluation.MaxPmmUtilization;
+        double rho = candidate.ReinforcementRatio;
+
+        // Candidates outside the UR band are already Failed — score is irrelevant.
+        if (pmm < c.MinimumAcceptablePmmUtilization || pmm > c.MaximumAcceptablePmmUtilization)
+            return 0;
 
         return c.Preset switch
         {
-            RebarSuggestionPreset.MinimumSteel           => ScoreMinimumSteel(pmm, rho, as_, c),
-            RebarSuggestionPreset.ClosestToTargetReinforcementRatio => ScoreClosestRho(pmm, rho, c),
-            RebarSuggestionPreset.ClosestToTargetPmm     => ScoreClosestPmm(pmm, c),
-            RebarSuggestionPreset.Conservative           => ScoreConservative(pmm, rho, c),
-            _                                            => ScoreBalanced(pmm, rho, as_, c)
+            // Rank by closeness to a target utilization ratio.
+            RebarSuggestionPreset.ClosestToTargetPmm =>
+                Max(0, 100.0 - Abs(pmm - c.TargetPmmUtilization) * 200.0),
+
+            // Rank by closeness to a target reinforcement ratio.
+            RebarSuggestionPreset.ClosestToTargetReinforcementRatio =>
+                Max(0, 100.0 - Abs(rho - (c.TargetReinforcementRatio ?? 0.02)) * 2000.0),
+
+            // Rank by PMM margin below the maximum — most conservative first.
+            RebarSuggestionPreset.Conservative =>
+                (c.MaximumAcceptablePmmUtilization - pmm) * 100.0,
+
+            // Default / Balanced / MinimumSteel: minimize steel area.
+            // Score decreases linearly from 100 (ρ→0) to 0 (ρ=4 %, EC2 limit).
+            _ => 100.0 * (1.0 - rho / 0.04)
         };
-    }
-
-    private static double ScoreBalanced(double pmm, double rho, double as_, RebarSuggestionConstraintSet c)
-    {
-        double pmmScore  = 100.0 - Abs(pmm - c.TargetPmmUtilization) * 200.0;
-        double rhoScore  = c.TargetReinforcementRatio.HasValue
-            ? 20.0 - Abs(rho - c.TargetReinforcementRatio.Value) * 1000.0
-            : 10.0;
-        double economy   = 10.0 - as_ / 10000.0;  // favour lower As
-        return Max(0, pmmScore + rhoScore + economy);
-    }
-
-    private static double ScoreMinimumSteel(double pmm, double rho, double as_, RebarSuggestionConstraintSet c)
-    {
-        if (pmm > c.MaximumAcceptablePmmUtilization) return 0;
-        return 100.0 - as_ / 1000.0;
-    }
-
-    private static double ScoreClosestRho(double pmm, double rho, RebarSuggestionConstraintSet c)
-    {
-        if (pmm > c.MaximumAcceptablePmmUtilization) return 0;
-        double target = c.TargetReinforcementRatio ?? 0.02;
-        return 100.0 - Abs(rho - target) * 2000.0;
-    }
-
-    private static double ScoreClosestPmm(double pmm, RebarSuggestionConstraintSet c)
-    {
-        if (pmm > c.MaximumAcceptablePmmUtilization) return 0;
-        return 100.0 - Abs(pmm - c.TargetPmmUtilization) * 200.0;
-    }
-
-    private static double ScoreConservative(double pmm, double rho, RebarSuggestionConstraintSet c)
-    {
-        if (pmm > c.MaximumAcceptablePmmUtilization) return 0;
-        // Reward PMM well below the limit, but penalise excessive steel
-        double margin  = c.MaximumAcceptablePmmUtilization - pmm;
-        double economy = Max(0, 0.04 - rho) * 500.0;
-        return Max(0, margin * 100.0 + economy);
     }
 
     public string GenerateReason(
@@ -74,47 +49,47 @@ public sealed class DefaultRebarSuggestionScorer : IRebarSuggestionScorer
         bool isRecommended)
     {
         if (evaluation.EvaluationFailed)
-            return $"PMM solver failed: {evaluation.EvaluationError}";
+            return $"Failed — solver error: {evaluation.EvaluationError}";
 
         double pmm = evaluation.MaxPmmUtilization;
-        var c      = input.Constraints;
+        double rho = candidate.ReinforcementRatio;
+        var    c   = input.Constraints;
 
         if (status == RebarSuggestionStatus.Failed)
         {
-            if (pmm > c.MaximumAcceptablePmmUtilization)
-                return $"Failed — PMM utilization {pmm:F2} exceeds maximum {c.MaximumAcceptablePmmUtilization:F2}.";
-            if (warnings.Count > 0)
-                return $"Failed — {warnings[0].Message}";
-            return "Failed — does not meet all requirements.";
+            if (warnings.Count > 0) return $"Failed — {warnings[0].Message}";
+            return "Failed — does not meet requirements.";
         }
+
+        string shearNote = evaluation.MaxShearUtilization is { } sh && sh > 1.0
+            ? $"  ⚠ Shear = {sh:F2}"
+            : string.Empty;
 
         if (isRecommended)
-            return $"Recommended — PMM = {pmm:F2}, closest to target {c.TargetPmmUtilization:F2}.";
-
-        if (status == RebarSuggestionStatus.Warning)
         {
-            var w = warnings.FirstOrDefault();
-            return w is not null
-                ? $"Warning — {w.Message}"
-                : $"Passes PMM ({pmm:F2}) with warnings.";
+            return c.Preset switch
+            {
+                RebarSuggestionPreset.ClosestToTargetPmm =>
+                    $"Recommended — PMM = {pmm:F2} (target {c.TargetPmmUtilization:F2}), ρ = {rho * 100:F2}%.{shearNote}",
+                RebarSuggestionPreset.ClosestToTargetReinforcementRatio =>
+                    $"Recommended — ρ = {rho * 100:F2}% (target {(c.TargetReinforcementRatio ?? 0.02) * 100:F2}%), PMM = {pmm:F2}.{shearNote}",
+                RebarSuggestionPreset.Conservative =>
+                    $"Recommended — PMM = {pmm:F2}, margin = {c.MaximumAcceptablePmmUtilization - pmm:F2}.{shearNote}",
+                _ =>
+                    $"Recommended — minimum steel: ρ = {rho * 100:F2}%, PMM = {pmm:F2}.{shearNote}"
+            };
         }
-
-        // Valid
-        if (pmm < c.MinimumAcceptablePmmUtilization)
-            return $"Conservative — PMM = {pmm:F2}, well below limit.";
 
         return c.Preset switch
         {
-            RebarSuggestionPreset.MinimumSteel =>
-                $"Good economy — lowest steel area that passes PMM = {pmm:F2}.",
-            RebarSuggestionPreset.ClosestToTargetReinforcementRatio =>
-                $"ρ = {candidate.ReinforcementRatio * 100:F2}% close to target. PMM = {pmm:F2}.",
             RebarSuggestionPreset.ClosestToTargetPmm =>
-                $"PMM = {pmm:F2} is close to target {c.TargetPmmUtilization:F2}.",
+                $"PMM = {pmm:F2} (target {c.TargetPmmUtilization:F2}), ρ = {rho * 100:F2}%.{shearNote}",
+            RebarSuggestionPreset.ClosestToTargetReinforcementRatio =>
+                $"ρ = {rho * 100:F2}%, PMM = {pmm:F2}.{shearNote}",
             RebarSuggestionPreset.Conservative =>
-                $"Conservative — PMM = {pmm:F2} with comfortable margin.",
+                $"PMM = {pmm:F2}, margin = {c.MaximumAcceptablePmmUtilization - pmm:F2}.{shearNote}",
             _ =>
-                $"Good balance — PMM = {pmm:F2}, ρ = {candidate.ReinforcementRatio * 100:F2}%."
+                $"ρ = {rho * 100:F2}%, PMM = {pmm:F2}.{shearNote}"
         };
     }
 }

@@ -152,15 +152,96 @@ public static class SectionGeometryRenderer
         return sb.ToString();
     }
 
+    public static string RenderIrregularSection(
+        double coverMm,
+        IReadOnlyList<RebarCoordinateDto> bars,
+        IReadOnlyList<InsetPointDto> boundaryPoints)
+    {
+        if (boundaryPoints.Count < 3)
+            return RenderRectangularSection(1.0, 1.0, coverMm, bars);
+
+        double minX = boundaryPoints.Min(p => p.X);
+        double maxX = boundaryPoints.Max(p => p.X);
+        double minY = boundaryPoints.Min(p => p.Y);
+        double maxY = boundaryPoints.Max(p => p.Y);
+        double widthMm = SMath.Max(maxX - minX, 1.0);
+        double heightMm = SMath.Max(maxY - minY, 1.0);
+
+        int plotW = ViewW - PadL - PadR;
+        int plotH = ViewH - PadT - PadB;
+        double scale = SMath.Min(plotW / widthMm, plotH / heightMm);
+        double sw = widthMm * scale;
+        double sh = heightMm * scale;
+        double ox = PadL + (plotW - sw) / 2.0;
+        double oy = PadT + (plotH - sh) / 2.0;
+
+        double ToSvgX(double x) => ox + (x - minX) * scale;
+        double ToSvgY(double y) => oy + (maxY - y) * scale;
+
+        double axisX = ToSvgX(0.0);
+        double axisY = ToSvgY(0.0);
+        if (axisX < ox || axisX > ox + sw || axisY < oy || axisY > oy + sh)
+        {
+            axisX = ox + sw / 2.0;
+            axisY = oy + sh / 2.0;
+        }
+
+        double barR = bars.Count > 0 ? SMath.Max(bars[0].Diameter / 2.0 * scale * 0.9, 3.5) : 4.0;
+        double totalAs = bars.Sum(b => b.Area);
+        double ag = PolygonArea(boundaryPoints);
+        double rho = ag > 0 ? totalAs / ag * 100 : 0;
+        string barLabel = bars.Count > 0 ? bars[0].BarSizeLabel : "";
+        string title = $"{D(widthMm, 0)} x {D(heightMm, 0)} mm";
+        string sub = bars.Count > 0 ? $"{bars.Count}-{barLabel}  (rho = {D(rho, 2)}%)" : "";
+        string polygon = string.Join(" ", boundaryPoints.Select(p => $"{D(ToSvgX(p.X))},{D(ToSvgY(p.Y))}"));
+
+        var sb = new StringBuilder();
+        sb.AppendLine($@"<svg xmlns=""http://www.w3.org/2000/svg"" width=""{ViewW}"" height=""{ViewH}"" viewBox=""0 0 {ViewW} {ViewH}"" font-family=""Inter, Segoe UI, sans-serif"" font-size=""10"">");
+
+        sb.AppendLine($@"  <text x=""{D(ox + sw / 2.0)}"" y=""14"" text-anchor=""middle"" font-weight=""bold"" font-size=""12"" fill=""#1A3A5C"">{title}</text>");
+        if (!string.IsNullOrEmpty(sub))
+            sb.AppendLine($@"  <text x=""{D(ox + sw / 2.0)}"" y=""27"" text-anchor=""middle"" font-size=""10"" fill=""#555"">{sub}</text>");
+
+        sb.AppendLine($@"  <polygon points=""{polygon}"" fill=""#EEF4FB"" stroke=""#1A3A5C"" stroke-width=""2""/>");
+
+        double axLen = SMath.Min(sw, sh) * 0.22;
+        sb.AppendLine($@"  <line x1=""{D(axisX)}"" y1=""{D(axisY + axLen)}"" x2=""{D(axisX)}"" y2=""{D(axisY - axLen)}"" stroke=""#888"" stroke-width=""1""/>");
+        sb.AppendLine($@"  <line x1=""{D(axisX - axLen)}"" y1=""{D(axisY)}"" x2=""{D(axisX + axLen)}"" y2=""{D(axisY)}"" stroke=""#888"" stroke-width=""1""/>");
+        sb.AppendLine($@"  <text x=""{D(axisX + axLen + 3)}"" y=""{D(axisY + 4)}"" fill=""#666"" font-size=""9"">X</text>");
+        sb.AppendLine($@"  <text x=""{D(axisX - 4)}"" y=""{D(axisY - axLen - 3)}"" fill=""#666"" font-size=""9"">Y</text>");
+        sb.AppendLine($@"  <circle cx=""{D(axisX)}"" cy=""{D(axisY)}"" r=""2.5"" fill=""#C0392B""/>");
+
+        foreach (var bar in bars)
+        {
+            double bx = ToSvgX(bar.X);
+            double by = ToSvgY(bar.Y);
+            sb.AppendLine($@"  <circle cx=""{D(bx)}"" cy=""{D(by)}"" r=""{D(barR)}"" fill=""#1A3A5C"" stroke=""white"" stroke-width=""0.8""/>");
+        }
+
+        double dimY = oy + sh + 20;
+        sb.AppendLine($@"  <line x1=""{D(ox)}"" y1=""{D(dimY)}"" x2=""{D(ox + sw)}"" y2=""{D(dimY)}"" stroke=""#333"" stroke-width=""1""/>");
+        sb.AppendLine($@"  <text x=""{D(ox + sw / 2.0)}"" y=""{D(dimY + 11)}"" text-anchor=""middle"" fill=""#333"" font-size=""10"">b = {D(widthMm, 0)} mm</text>");
+
+        double dimX = ox - 20;
+        sb.AppendLine($@"  <line x1=""{D(dimX)}"" y1=""{D(oy)}"" x2=""{D(dimX)}"" y2=""{D(oy + sh)}"" stroke=""#333"" stroke-width=""1""/>");
+        sb.AppendLine($@"  <text x=""{D(dimX - 3)}"" y=""{D(oy + sh / 2.0 + 4)}"" text-anchor=""middle"" fill=""#333"" font-size=""10"" transform=""rotate(-90 {D(dimX - 3)} {D(oy + sh / 2.0)})"">h = {D(heightMm, 0)} mm</text>");
+
+        sb.AppendLine("</svg>");
+        return sb.ToString();
+    }
+
     public static string RenderSection(SectionShapeType shape,
         double widthMm, double heightMm, double diameterMm, double coverMm,
         IReadOnlyList<RebarCoordinateDto> bars,
         double linkDiameterMm = 0.0,
         int totalLegsX = 2,
-        int totalLegsY = 2) => shape switch
+        int totalLegsY = 2,
+        IReadOnlyList<InsetPointDto>? irregularBoundaryPoints = null) => shape switch
     {
         SectionShapeType.Circular => RenderCircularSection(diameterMm, coverMm, bars, linkDiameterMm),
-        _                        => RenderRectangularSection(widthMm, heightMm, coverMm, bars, linkDiameterMm, totalLegsX, totalLegsY)
+        SectionShapeType.Irregular when irregularBoundaryPoints is { Count: >= 3 }
+            => RenderIrregularSection(coverMm, bars, irregularBoundaryPoints),
+        _ => RenderRectangularSection(widthMm, heightMm, coverMm, bars, linkDiameterMm, totalLegsX, totalLegsY)
     };
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -257,5 +338,21 @@ public static class SectionGeometryRenderer
         double tx = horizontal ? mx : mx - 3;
         double ty = horizontal ? my - 3 : my + 4;
         sb.AppendLine($@"  <text x=""{D(tx)}"" y=""{D(ty)}"" text-anchor=""{anchor}"" fill=""#333"" font-size=""9"">{label}</text>");
+    }
+
+    private static double PolygonArea(IReadOnlyList<InsetPointDto> points)
+    {
+        if (points.Count < 3)
+            return 0.0;
+
+        double sum = 0.0;
+        for (int i = 0; i < points.Count; i++)
+        {
+            var a = points[i];
+            var b = points[(i + 1) % points.Count];
+            sum += a.X * b.Y - b.X * a.Y;
+        }
+
+        return SMath.Abs(sum) * 0.5;
     }
 }

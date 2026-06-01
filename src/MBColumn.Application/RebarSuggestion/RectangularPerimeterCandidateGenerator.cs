@@ -46,6 +46,16 @@ public sealed class RectangularPerimeterCandidateGenerator : IRebarCandidateGene
                     constraints.AllowAllSidesEqualLayout,
                     constraints.AllowSidesDifferentLayout))
                 {
+                    // Pre-filter: skip this distribution if minimum clear spacing is analytically impossible.
+                    // Avoids the full coordinate-generation overhead for infeasible layouts.
+                    if (constraints.CheckClearSpacing)
+                    {
+                        double minClear = Math.Max(db, Math.Max(20.0, 1.2 * constraints.AggregateSizeMm));
+                        double clearX   = nx > 1 ? (xRight - xLeft)   / (nx - 1) - db : double.PositiveInfinity;
+                        double clearY   = ny > 1 ? (yTop   - yBottom) / (ny - 1) - db : double.PositiveInfinity;
+                        if (Math.Min(clearX, clearY) < minClear - 1e-3) continue;
+                    }
+
                     var coords = GenerateCoordinates(nx, ny, xLeft, xRight, yBottom, yTop, db, area, bar.Name);
                     if (coords is null) continue;
 

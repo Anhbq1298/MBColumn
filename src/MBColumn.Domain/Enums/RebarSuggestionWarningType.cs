@@ -14,5 +14,6 @@ public enum RebarSuggestionWarningType
     MissingCornerBar,
     BarOutsideLinkBoundary,
     CoordinateGenerationFailed,
-    SolverError
+    SolverError,
+    ShearExceedsMaximum
 }

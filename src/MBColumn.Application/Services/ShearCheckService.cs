@@ -26,7 +26,7 @@ public sealed class ShearCheckService(IUnitConversionService units)
         {
             double d = units.LengthToMm(input.Diameter, input.LengthUnit);
             bMm = 0.8 * d;   // EC2 §6.2.2(5): effective width for circular
-            hMm = d;         // full diameter for d_eff = bMm − coverEff ≈ 0.8D − c
+            hMm = d;         // full diameter for d_eff and actual circular area
         }
         else
         {
@@ -46,18 +46,21 @@ public sealed class ShearCheckService(IUnitConversionService units)
             : 20.0; // conservative fallback
 
         ShearLinkReinforcement? links = null;
-        if (input.LinkDiameterMm > 0 && input.LinkSpacingMm > 0)
+        bool isCircularHoop = input.SectionShape == SectionShapeType.Circular;
+        bool hasLinkGeometry = input.LinkDiameterMm > 0 && input.LinkSpacingMm > 0;
+        if (hasLinkGeometry || isCircularHoop)
         {
-            bool isCircularHoop = input.SectionShape == SectionShapeType.Circular;
+            double linkDiameterMm = hasLinkGeometry ? input.LinkDiameterMm : 0.0;
+            double linkSpacingMm = hasLinkGeometry ? input.LinkSpacingMm : 0.0;
             double circularHoopCentrelineDiameterMm = input.CircularHoopCentrelineDiameterMm > 0
                 ? input.CircularHoopCentrelineDiameterMm
                 : isCircularHoop
-                    ? Math.Max(units.LengthToMm(input.Diameter, input.LengthUnit) - 2.0 * coverMm - input.LinkDiameterMm, 1.0)
+                    ? Math.Max(units.LengthToMm(input.Diameter, input.LengthUnit) - 2.0 * coverMm - linkDiameterMm, 1.0)
                     : 0.0;
 
             links = new ShearLinkReinforcement(
-                input.LinkDiameterMm,
-                input.LinkSpacingMm,
+                linkDiameterMm,
+                linkSpacingMm,
                 input.TotalLegsX,
                 input.TotalLegsY,
                 fywkMpa,

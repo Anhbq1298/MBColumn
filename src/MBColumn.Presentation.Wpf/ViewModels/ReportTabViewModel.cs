@@ -522,7 +522,8 @@ public sealed class ReportTabViewModel : ViewModelBase
                     result.SectionWidthMm, result.SectionHeightMm,
                     result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
                     result.CoverMm, result.RebarCoordinates,
-                    _cachedLinkDiameterMm, _cachedTotalLegsX, _cachedTotalLegsY); }
+                    _cachedLinkDiameterMm, _cachedTotalLegsX, _cachedTotalLegsY,
+                    result.IrregularSectionBoundaryPoints); }
                 catch { }
 
                 ct.ThrowIfCancellationRequested();
@@ -678,7 +679,8 @@ public sealed class ReportTabViewModel : ViewModelBase
             result.SectionWidthMm, result.SectionHeightMm,
             result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
             result.CoverMm, result.RebarCoordinates,
-            _cachedLinkDiameterMm, _cachedTotalLegsX, _cachedTotalLegsY); }
+            _cachedLinkDiameterMm, _cachedTotalLegsX, _cachedTotalLegsY,
+            result.IrregularSectionBoundaryPoints); }
         catch { }
 
         var (pmDiagramBlock, mmDiagramBlock) = BuildReportDiagramBlocks(result, withPng: true);

@@ -146,9 +146,18 @@ internal static class AnnexBIllustrations
         if (geometry.Boundary.Count < 3)
             return FibreMethodSvg();
 
+        const int canvasW = 1120;
+        const int canvasH = 760;
+        const double sectionLeft = 270;
+        const double sectionTop = 135;
+        const double sectionW = 410;
+        const double sectionH = 455;
+
         double theta = result.GoverningThetaDegrees * Math.PI / 180.0;
         double nx = Math.Cos(theta);
         double ny = Math.Sin(theta);
+        double tx = -ny;
+        double ty = nx;
         double c = result.GoverningNeutralAxisDepth;
         double maxProjection = geometry.Boundary.Max(p => Project(p, nx, ny));
         double minProjection = geometry.Boundary.Min(p => Project(p, nx, ny));
@@ -156,17 +165,36 @@ internal static class AnnexBIllustrations
         double neutralAxisOffset = maxProjection - c;
         var extreme = geometry.Boundary.MaxBy(p => Project(p, nx, ny));
         var naProjection = new Point2(extreme.X - c * nx, extreme.Y - c * ny);
+        string ultimateStrainLabel = UltimateStrainLabel(result);
+        var frame = BuildFrameForBox(
+            geometry,
+            sectionLeft,
+            sectionTop,
+            sectionW,
+            sectionH,
+            [
+                extreme,
+                naProjection,
+                new Point2(neutralAxisOffset * nx + tx * sectionDepth * 0.85, neutralAxisOffset * ny + ty * sectionDepth * 0.85),
+                new Point2(neutralAxisOffset * nx - tx * sectionDepth * 0.85, neutralAxisOffset * ny - ty * sectionDepth * 0.85)
+            ]);
 
-        var frame = BuildFrame(geometry, neutralAxisOffset, nx, ny, c);
-        var sb = StartSvg();
-        sb.Append($"<text x='28' y='24' font-size='12' fill='#111827' font-family='Segoe UI,sans-serif' font-weight='600'>Governing fibre strain state</text>");
-        Label(sb, $"theta = {result.GoverningThetaDegrees:0.#} deg, c = {result.GoverningNeutralAxisDepth:0.#} mm", 28, 39, "#6B7280", 8.5);
+        var sb = StartSvg(canvasW, canvasH);
+        sb.Append("<style>");
+        sb.Append(".t{font-family:Segoe UI,Arial,sans-serif;fill:#111827}.small{font-size:17px}.micro{font-size:14px}.bold{font-weight:700}.italic{font-style:italic}");
+        sb.Append("</style>");
 
-        // Concrete fibres from the real section, coloured by signed perpendicular distance to the governing NA.
-        int gridX = Math.Clamp(result.ConcreteFiberCountX > 0 ? result.ConcreteFiberCountX : 36, 18, 56);
-        int gridY = Math.Clamp(result.ConcreteFiberCountY > 0 ? result.ConcreteFiberCountY : 36, 18, 56);
+        sb.Append("<text x='80' y='64' class='t bold' font-size='24'>Governing fibre strain state</text>");
+        sb.Append($"<text x='80' y='94' class='t small'>θ = {result.GoverningThetaDegrees:0.#}°    c = {result.GoverningNeutralAxisDepth:0.#} mm    (d_i &gt; 0 toward compression)</text>");
+
+        // Layer 1: concrete fibre strain field from the real section boundary.
+        int gridX = FibreGridX(result);
+        int gridY = FibreGridY(result);
         double dx = (geometry.MaxX - geometry.MinX) / gridX;
         double dy = (geometry.MaxY - geometry.MinY) / gridY;
+        Point2? sampleFibre = null;
+        double sampleScore = double.PositiveInfinity;
+        double sampleTarget = Math.Min(c * 0.45, sectionDepth * 0.55);
         if (dx > 1e-9 && dy > 1e-9)
         {
             for (int ix = 0; ix < gridX; ix++)
@@ -184,12 +212,18 @@ internal static class AnnexBIllustrations
                     string stroke;
                     if (compression)
                     {
-                        fill = BlueGradient(strain);
-                        stroke = "#3B82F6";
+                        fill = GrayGradient(strain);
+                        stroke = "#9CA3AF";
+                        double score = Math.Abs(d - sampleTarget) + 0.10 * Math.Abs(Project(centre, -ny, nx));
+                        if (score < sampleScore)
+                        {
+                            sampleScore = score;
+                            sampleFibre = centre;
+                        }
                     }
                     else
                     {
-                        fill = "#E5E7EB";
+                        fill = "#FFFFFF";
                         stroke = "#D1D5DB";
                     }
 
@@ -204,6 +238,7 @@ internal static class AnnexBIllustrations
             }
         }
 
+        // Layer 2: section geometry and reinforcement.
         DrawRealSectionBoundary(sb, geometry, frame);
 
         foreach (var bar in result.RebarCoordinates)
@@ -211,34 +246,41 @@ internal static class AnnexBIllustrations
             var p = frame.ToScreen(new Point2(bar.X, bar.Y));
             double r = Math.Clamp(bar.Diameter * frame.Scale / 2.0, 3.5, 8.0);
             double d = bar.X * nx + bar.Y * ny - neutralAxisOffset;
-            string fill = d >= 0.0 ? "#4B5563" : "#7C2D12";
-            sb.Append($"<circle cx='{p.X:F1}' cy='{p.Y:F1}' r='{r:F1}' fill='{fill}' stroke='#111827' stroke-width='1.1'/>");
+            string stroke = d >= 0.0 ? "#111827" : "#4B5563";
+            sb.Append($"<circle cx='{p.X:F1}' cy='{p.Y:F1}' r='{r:F1}' fill='#4B5563' stroke='{stroke}' stroke-width='1.6'/>");
+            sb.Append($"<circle cx='{p.X - r * 0.28:F1}' cy='{p.Y - r * 0.30:F1}' r='{Math.Max(r * 0.18, 1.0):F1}' fill='#FFFFFF' fill-opacity='0.25'/>");
         }
 
-        DrawRealNeutralAxis(sb, frame, neutralAxisOffset, nx, ny, "#DC2626");
+        // Layer 3: annotations and governing strain geometry.
+        DrawNeutralAxisManual(sb, frame, neutralAxisOffset, nx, ny, sectionDepth);
         DrawRealAxes(sb, frame);
 
         var ex = frame.ToScreen(extreme);
         var na = frame.ToScreen(naProjection);
         if (IsDrawable(ex) && IsDrawable(na))
         {
-            sb.Append($"<line x1='{na.X:F1}' y1='{na.Y:F1}' x2='{ex.X:F1}' y2='{ex.Y:F1}' stroke='#1E40AF' stroke-width='1.8' marker-start='url(#arrowBlue)' marker-end='url(#arrowBlue)'/>");
-            Label(sb, "c", (na.X + ex.X) / 2 + 5, (na.Y + ex.Y) / 2, "#1E40AF", 11);
-            sb.Append($"<circle cx='{ex.X:F1}' cy='{ex.Y:F1}' r='4.5' fill='#1E40AF' stroke='white' stroke-width='1'/>");
+            DrawDimensionLine(sb, na, ex, "c", "#111827", 20);
+            sb.Append($"<circle cx='{ex.X:F1}' cy='{ex.Y:F1}' r='7.2' fill='#374151' stroke='#111827' stroke-width='1.4'/>");
+            sb.Append($"<line x1='{ex.X + 4:F1}' y1='{ex.Y - 4:F1}' x2='{ex.X + 34:F1}' y2='{ex.Y - 48:F1}' stroke='#111827' stroke-width='1.1'/>");
+            sb.Append($"<text x='{ex.X + 40:F1}' y='{ex.Y - 50:F1}' class='t micro'>Extreme compression fibre</text>");
+            sb.Append($"<text x='{ex.X + 40:F1}' y='{ex.Y - 33:F1}' class='t micro'>{ultimateStrainLabel}</text>");
         }
 
-        var naMid = frame.ToScreen(new Point2(neutralAxisOffset * nx, neutralAxisOffset * ny));
-        var normalEnd = frame.ToScreen(new Point2(neutralAxisOffset * nx + sectionDepth * 0.18 * nx, neutralAxisOffset * ny + sectionDepth * 0.18 * ny));
-        if (IsDrawable(naMid) && IsDrawable(normalEnd))
-            sb.Append($"<line x1='{naMid.X:F1}' y1='{naMid.Y:F1}' x2='{normalEnd.X:F1}' y2='{normalEnd.Y:F1}' stroke='#1E40AF' stroke-width='1.5' marker-end='url(#arrowBlue)'/>");
+        var naCentre = new Point2(neutralAxisOffset * nx, neutralAxisOffset * ny);
+        var normalStart = frame.ToScreen(new Point2(naCentre.X + tx * sectionDepth * 0.14, naCentre.Y + ty * sectionDepth * 0.14));
+        var normalEnd = frame.ToScreen(new Point2(naCentre.X + tx * sectionDepth * 0.14 + sectionDepth * 0.12 * nx, naCentre.Y + ty * sectionDepth * 0.14 + sectionDepth * 0.12 * ny));
+        sb.Append($"<line x1='{normalStart.X:F1}' y1='{normalStart.Y:F1}' x2='{normalEnd.X:F1}' y2='{normalEnd.Y:F1}' stroke='#111827' stroke-width='1.1' marker-end='url(#arrowGray)'/>");
+        sb.Append($"<text x='{normalEnd.X + 6:F1}' y='{normalEnd.Y + 4:F1}' class='t micro'>n̂</text>");
 
-        int lx = Sx, ly = H - 30;
-        sb.Append($"<rect x='{lx}' y='{ly}' width='13' height='13' fill='{BlueGradient(0.25)}' stroke='#3B82F6' stroke-width='0.8'/>");
-        Label(sb, "low compression", lx + 18, ly + 10, "#374151", 9);
-        sb.Append($"<rect x='{lx + 135}' y='{ly}' width='13' height='13' fill='{BlueGradient(1.0)}' stroke='#1D4ED8' stroke-width='0.8'/>");
-        Label(sb, "high compression", lx + 153, ly + 10, "#374151", 9);
-        sb.Append($"<rect x='{lx + 285}' y='{ly}' width='13' height='13' fill='#E5E7EB' stroke='#D1D5DB' stroke-width='0.8'/>");
-        Label(sb, "tensile concrete = 0", lx + 303, ly + 10, "#374151", 9);
+        if (sampleFibre is Point2 sample)
+        {
+            DrawSignedDistance(sb, frame, sample, neutralAxisOffset, nx, ny);
+        }
+
+        DrawGrayscaleLegend(sb, 70, 210, ultimateStrainLabel);
+        DrawStrainDistributionPanel(sb, 790, 120, ultimateStrainLabel);
+        DrawDefinitionsBox(sb, 775, 455, ultimateStrainLabel);
+        DrawFigureLegend(sb, 390, 620);
 
         EndSvg(sb);
         return sb.ToString();
@@ -331,10 +373,12 @@ internal static class AnnexBIllustrations
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static StringBuilder StartSvg()
+    private static StringBuilder StartSvg() => StartSvg(W, H);
+
+    private static StringBuilder StartSvg(int width, int height)
     {
         var sb = new StringBuilder();
-        sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{W}' height='{H}' viewBox='0 0 {W} {H}'>");
+        sb.Append($"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' viewBox='0 0 {width} {height}'>");
         sb.Append("<defs>");
         sb.Append("<marker id='arrowUp' markerWidth='6' markerHeight='6' refX='3' refY='6' orient='auto'>");
         sb.Append("<path d='M3,6 L0,0 L6,0 Z' fill='#1E40AF'/></marker>");
@@ -421,6 +465,27 @@ internal static class AnnexBIllustrations
         return new SvgFrame(scale, left + drawW / 2.0, top + drawH / 2.0, cx, cy);
     }
 
+    private static SvgFrame BuildFrameForBox(
+        RealSectionGeometry geometry,
+        double left,
+        double top,
+        double drawW,
+        double drawH,
+        IReadOnlyList<Point2> extraPoints)
+    {
+        var points = geometry.Boundary.Concat(extraPoints).ToArray();
+        double minX = points.Min(p => p.X);
+        double maxX = points.Max(p => p.X);
+        double minY = points.Min(p => p.Y);
+        double maxY = points.Max(p => p.Y);
+        double width = Math.Max(maxX - minX, 1.0);
+        double height = Math.Max(maxY - minY, 1.0);
+        double scale = Math.Min(drawW / width, drawH / height);
+        double cx = (minX + maxX) / 2.0;
+        double cy = (minY + maxY) / 2.0;
+        return new SvgFrame(scale, left + drawW / 2.0, top + drawH / 2.0, cx, cy);
+    }
+
     private static void DrawRealSectionBoundary(StringBuilder sb, RealSectionGeometry geometry, SvgFrame frame)
     {
         if (geometry.Boundary.Count == 0)
@@ -431,7 +496,7 @@ internal static class AnnexBIllustrations
             var s = frame.ToScreen(p);
             return $"{s.X:F1},{s.Y:F1}";
         }));
-        sb.Append($"<polygon points='{points}' fill='none' stroke='#111827' stroke-width='2.2'/>");
+        sb.Append($"<polygon points='{points}' fill='none' stroke='#111827' stroke-width='1.55'/>");
     }
 
     private static void DrawRealNeutralAxis(StringBuilder sb, SvgFrame frame, double offset, double nx, double ny, string color)
@@ -442,8 +507,26 @@ internal static class AnnexBIllustrations
         var centre = new Point2(offset * nx, offset * ny);
         var a = frame.ToScreen(new Point2(centre.X + tx * halfLine, centre.Y + ty * halfLine));
         var b = frame.ToScreen(new Point2(centre.X - tx * halfLine, centre.Y - ty * halfLine));
-        sb.Append($"<line x1='{a.X:F1}' y1='{a.Y:F1}' x2='{b.X:F1}' y2='{b.Y:F1}' stroke='{color}' stroke-width='2.2' stroke-dasharray='10,5'/>");
-        Label(sb, "NA", Math.Clamp(a.X, 24, W - 42), Math.Clamp(a.Y, 52, H - 50), color, 10);
+        sb.Append($"<line x1='{a.X:F1}' y1='{a.Y:F1}' x2='{b.X:F1}' y2='{b.Y:F1}' stroke='{color}' stroke-opacity='0.62' stroke-width='1.35' stroke-dasharray='8,5'/>");
+
+        var mid = frame.ToScreen(centre);
+        double labelX = Math.Clamp(mid.X + nx * 14.0, 32, W - 70);
+        double labelY = Math.Clamp(mid.Y - ny * 14.0, 50, H - 52);
+        double angle = Math.Atan2(b.Y - a.Y, b.X - a.X) * 180.0 / Math.PI;
+        RotText(sb, "NA", labelX, labelY, angle, color, 9.2);
+    }
+
+    private static void DrawNeutralAxisManual(StringBuilder sb, SvgFrame frame, double offset, double nx, double ny, double sectionDepth)
+    {
+        double tx = -ny;
+        double ty = nx;
+        var centre = new Point2(offset * nx, offset * ny);
+        double halfLine = sectionDepth * 0.95;
+        var a = frame.ToScreen(new Point2(centre.X - tx * halfLine, centre.Y - ty * halfLine));
+        var b = frame.ToScreen(new Point2(centre.X + tx * halfLine, centre.Y + ty * halfLine));
+        sb.Append($"<line x1='{a.X:F1}' y1='{a.Y:F1}' x2='{b.X:F1}' y2='{b.Y:F1}' stroke='#111827' stroke-width='1.35' stroke-dasharray='8,7'/>");
+        double angle = Math.Atan2(b.Y - a.Y, b.X - a.X) * 180.0 / Math.PI;
+        RotText(sb, "NA", b.X + 14, b.Y + 12, angle, "#111827", 16);
     }
 
     private static void DrawRealAxes(StringBuilder sb, SvgFrame frame)
@@ -453,10 +536,200 @@ internal static class AnnexBIllustrations
             return;
 
         sb.Append($"<circle cx='{origin.X:F1}' cy='{origin.Y:F1}' r='3.2' fill='#111827'/>");
-        sb.Append($"<line x1='{origin.X:F1}' y1='{origin.Y:F1}' x2='{origin.X + 34:F1}' y2='{origin.Y:F1}' stroke='#374151' stroke-width='1.1' marker-end='url(#arrowGray)'/>");
-        sb.Append($"<line x1='{origin.X:F1}' y1='{origin.Y:F1}' x2='{origin.X:F1}' y2='{origin.Y - 34:F1}' stroke='#374151' stroke-width='1.1' marker-end='url(#arrowGray)'/>");
-        Label(sb, "x", origin.X + 39, origin.Y + 4, "#374151", 8.5);
-        Label(sb, "y", origin.X - 3, origin.Y - 40, "#374151", 8.5);
+        sb.Append($"<line x1='{origin.X:F1}' y1='{origin.Y:F1}' x2='{origin.X + 42:F1}' y2='{origin.Y:F1}' stroke='#374151' stroke-width='1.25' marker-end='url(#arrowGray)'/>");
+        sb.Append($"<line x1='{origin.X:F1}' y1='{origin.Y:F1}' x2='{origin.X:F1}' y2='{origin.Y - 42:F1}' stroke='#374151' stroke-width='1.25' marker-end='url(#arrowGray)'/>");
+        Label(sb, "x", origin.X + 47, origin.Y + 4, "#374151", 8.5);
+        Label(sb, "y", origin.X - 3, origin.Y - 48, "#374151", 8.5);
+        Label(sb, "section axes", origin.X + 10, origin.Y - 9, "#6B7280", 7.8);
+    }
+
+    private static int FibreGridX(CalculationResultDto result)
+    {
+        if (result.SectionShape == SectionShapeType.Circular)
+        {
+            int n = (int)Math.Round(Math.Sqrt(Math.Max(1, result.CircularRadialFiberCount * result.CircularAngularFiberCount)));
+            return Math.Clamp(n, 24, 58);
+        }
+
+        return Math.Clamp(result.ConcreteFiberCountX > 0 ? result.ConcreteFiberCountX : 36, 18, 56);
+    }
+
+    private static int FibreGridY(CalculationResultDto result)
+    {
+        if (result.SectionShape == SectionShapeType.Circular)
+        {
+            int n = (int)Math.Round(Math.Sqrt(Math.Max(1, result.CircularRadialFiberCount * result.CircularAngularFiberCount)));
+            return Math.Clamp(n, 24, 58);
+        }
+
+        return Math.Clamp(result.ConcreteFiberCountY > 0 ? result.ConcreteFiberCountY : 36, 18, 56);
+    }
+
+    private static void DrawDimensionLine(StringBuilder sb, Point2 start, Point2 end, string label, string color, double size)
+    {
+        double dx = end.X - start.X;
+        double dy = end.Y - start.Y;
+        double length = Math.Sqrt(dx * dx + dy * dy);
+        double ux = length > 1e-6 ? dx / length : 1.0;
+        double uy = length > 1e-6 ? dy / length : 0.0;
+        double ox = -uy * 10.0;
+        double oy = ux * 10.0;
+        double tickX = -uy * 6.0;
+        double tickY = ux * 6.0;
+        double sx = start.X + ox;
+        double sy = start.Y + oy;
+        double ex = end.X + ox;
+        double ey = end.Y + oy;
+
+        sb.Append($"<line x1='{start.X:F1}' y1='{start.Y:F1}' x2='{sx:F1}' y2='{sy:F1}' stroke='{color}' stroke-width='0.9' stroke-opacity='0.65'/>");
+        sb.Append($"<line x1='{end.X:F1}' y1='{end.Y:F1}' x2='{ex:F1}' y2='{ey:F1}' stroke='{color}' stroke-width='0.9' stroke-opacity='0.65'/>");
+        sb.Append($"<line x1='{sx:F1}' y1='{sy:F1}' x2='{ex:F1}' y2='{ey:F1}' stroke='{color}' stroke-width='1.5' marker-start='url(#arrowGray)' marker-end='url(#arrowGray)'/>");
+        sb.Append($"<line x1='{sx - tickX:F1}' y1='{sy - tickY:F1}' x2='{sx + tickX:F1}' y2='{sy + tickY:F1}' stroke='{color}' stroke-width='1.1'/>");
+        sb.Append($"<line x1='{ex - tickX:F1}' y1='{ey - tickY:F1}' x2='{ex + tickX:F1}' y2='{ey + tickY:F1}' stroke='{color}' stroke-width='1.1'/>");
+        Label(sb, label, (sx + ex) / 2.0 + ox * 0.35, (sy + ey) / 2.0 + oy * 0.35, color, size);
+    }
+
+    private static void DrawSignedDistance(StringBuilder sb, SvgFrame frame, Point2 fibre, double neutralAxisOffset, double nx, double ny)
+    {
+        double d = Project(fibre, nx, ny) - neutralAxisOffset;
+        var projected = new Point2(fibre.X - d * nx, fibre.Y - d * ny);
+        var f = frame.ToScreen(fibre);
+        var p = frame.ToScreen(projected);
+        if (!IsDrawable(f) || !IsDrawable(p))
+            return;
+
+        sb.Append($"<circle cx='{f.X:F1}' cy='{f.Y:F1}' r='3.8' fill='#0F766E' stroke='white' stroke-width='1.1'/>");
+        sb.Append($"<line x1='{p.X:F1}' y1='{p.Y:F1}' x2='{f.X:F1}' y2='{f.Y:F1}' stroke='#0F766E' stroke-width='1.35' stroke-dasharray='4,3'/>");
+        DrawRightAngleMarker(sb, p, f, "#0F766E");
+        Label(sb, "d_i", (f.X + p.X) / 2.0 + 5, (f.Y + p.Y) / 2.0 + 4, "#0F766E", 9.5);
+    }
+
+    private static void DrawRightAngleMarker(StringBuilder sb, Point2 vertex, Point2 normalPoint, string color)
+    {
+        double dx = normalPoint.X - vertex.X;
+        double dy = normalPoint.Y - vertex.Y;
+        double len = Math.Sqrt(dx * dx + dy * dy);
+        if (len <= 1e-6)
+            return;
+
+        double ux = dx / len;
+        double uy = dy / len;
+        double tx = -uy;
+        double ty = ux;
+        const double size = 8.0;
+        var a = new Point2(vertex.X + tx * size, vertex.Y + ty * size);
+        var b = new Point2(a.X + ux * size, a.Y + uy * size);
+        var c = new Point2(vertex.X + ux * size, vertex.Y + uy * size);
+        sb.Append($"<polyline points='{a.X:F1},{a.Y:F1} {b.X:F1},{b.Y:F1} {c.X:F1},{c.Y:F1}' fill='none' stroke='{color}' stroke-width='1.15'/>");
+    }
+
+    private static void DrawGradientLegend(StringBuilder sb, double x, double y)
+    {
+        const int steps = 18;
+        const double w = 7.0;
+        for (int i = 0; i < steps; i++)
+        {
+            double t = i / (double)(steps - 1);
+            sb.Append($"<rect x='{x + i * w:F1}' y='{y:F1}' width='{w + 0.6:F1}' height='10' fill='{BlueGradient(t)}' stroke='none'/>");
+        }
+
+        sb.Append($"<rect x='{x:F1}' y='{y:F1}' width='{steps * w:F1}' height='10' fill='none' stroke='#CBD5E1' stroke-width='0.7'/>");
+        Label(sb, "neutral strain", x - 2, y + 23, "#374151", 8);
+        Label(sb, "high epsilon_c", x + steps * w - 42, y + 23, "#1E3A8A", 8);
+        sb.Append($"<rect x='{x + steps * w + 34:F1}' y='{y:F1}' width='12' height='10' fill='#F3F4F6' stroke='#DADDE2' stroke-width='0.7'/>");
+        Label(sb, "Concrete tension neglected (ULS)", x + steps * w + 52, y + 9, "#6B7280", 8);
+    }
+
+    private static void DrawGrayscaleLegend(StringBuilder sb, double x, double y, string ultimateStrainLabel)
+    {
+        sb.Append($"<rect x='{x - 38:F1}' y='{y - 64:F1}' width='170' height='292' rx='4' fill='white' stroke='#111827' stroke-width='0.9'/>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y - 38:F1}' text-anchor='middle' class='t small'>Concrete</text>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y - 18:F1}' text-anchor='middle' class='t small'>compression strain</text>");
+        sb.Append($"<line x1='{x + 46:F1}' y1='{y - 8:F1}' x2='{x + 46:F1}' y2='{y + 13:F1}' stroke='#111827' stroke-width='0.9'/>");
+
+        const int steps = 8;
+        const double h = 22.0;
+        for (int i = 0; i < steps; i++)
+        {
+            double t = 1.0 - i / (double)(steps - 1);
+            sb.Append($"<rect x='{x + 30:F1}' y='{y + i * h:F1}' width='32' height='{h:F1}' fill='{GrayGradient(t)}' stroke='#9CA3AF' stroke-width='0.55'/>");
+        }
+
+        sb.Append($"<text x='{x - 20:F1}' y='{y + 12:F1}' class='t micro'>{ultimateStrainLabel}</text>");
+        sb.Append($"<text x='{x - 20:F1}' y='{y + 30:F1}' class='t micro'>(max)</text>");
+        sb.Append($"<text x='{x + 8:F1}' y='{y + steps * h - 42:F1}' class='t micro'>0</text>");
+        sb.Append($"<text x='{x - 14:F1}' y='{y + steps * h - 22:F1}' class='t micro'>(at NA)</text>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y + steps * h + 34:F1}' text-anchor='middle' class='t micro'>Tension</text>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y + steps * h + 54:F1}' text-anchor='middle' class='t micro'>(neglected at ULS)</text>");
+    }
+
+    private static void DrawStrainDistributionPanel(StringBuilder sb, double x, double y, string ultimateStrainLabel)
+    {
+        sb.Append($"<rect x='{x - 28:F1}' y='{y - 34:F1}' width='260' height='285' rx='4' fill='white' stroke='#111827' stroke-width='0.9'/>");
+        sb.Append($"<text x='{x:F1}' y='{y:F1}' class='t bold small'>Linear strain distribution</text>");
+        double ox = x + 5;
+        double oy = y + 32;
+        double w = 126;
+        double h = 150;
+        sb.Append($"<line x1='{ox:F1}' y1='{oy:F1}' x2='{ox:F1}' y2='{oy + h:F1}' stroke='#111827' stroke-width='1.1'/>");
+        sb.Append($"<line x1='{ox:F1}' y1='{oy + h:F1}' x2='{ox + w:F1}' y2='{oy + h:F1}' stroke='#111827' stroke-width='1.1'/>");
+        sb.Append($"<line x1='{ox:F1}' y1='{oy:F1}' x2='{ox + w:F1}' y2='{oy + h:F1}' stroke='#111827' stroke-width='1.3'/>");
+        sb.Append($"<circle cx='{ox:F1}' cy='{oy:F1}' r='4.2' fill='#4B5563' stroke='#111827' stroke-width='1'/>");
+        sb.Append($"<circle cx='{ox + w:F1}' cy='{oy + h:F1}' r='4.2' fill='white' stroke='#111827' stroke-width='1'/>");
+        sb.Append($"<text x='{ox + 14:F1}' y='{oy + 4:F1}' class='t small'>{ultimateStrainLabel}</text>");
+        sb.Append($"<text x='{ox + 62:F1}' y='{oy + 26:F1}' class='t small'>0</text>");
+        sb.Append($"<text x='{ox + 62:F1}' y='{oy + 44:F1}' class='t micro'>(at extreme</text>");
+        sb.Append($"<text x='{ox + 62:F1}' y='{oy + 60:F1}' class='t micro'>compression fibre)</text>");
+        sb.Append($"<text x='{ox + w + 14:F1}' y='{oy + h - 18:F1}' class='t small'>0</text>");
+        sb.Append($"<text x='{ox + w + 14:F1}' y='{oy + h:F1}' class='t small'>(at NA)</text>");
+
+        double bx = x + 2;
+        double by = y + 204;
+        sb.Append($"<rect x='{bx:F1}' y='{by:F1}' width='150' height='62' fill='white' stroke='#111827' stroke-width='0.9'/>");
+        sb.Append($"<text x='{bx + 20:F1}' y='{by + 39:F1}' class='t small italic'>ε_i = {ultimateStrainLabel}</text>");
+        sb.Append($"<text x='{bx + 102:F1}' y='{by + 25:F1}' class='t micro'>d_i</text>");
+        sb.Append($"<line x1='{bx + 96:F1}' y1='{by + 31:F1}' x2='{bx + 132:F1}' y2='{by + 31:F1}' stroke='#111827' stroke-width='0.9'/>");
+        sb.Append($"<text x='{bx + 113:F1}' y='{by + 49:F1}' class='t micro'>c</text>");
+    }
+
+    private static void DrawDefinitionsBox(StringBuilder sb, double x, double y, string ultimateStrainLabel)
+    {
+        sb.Append($"<rect x='{x:F1}' y='{y:F1}' width='320' height='172' rx='4' fill='white' stroke='#111827' stroke-width='0.9'/>");
+        sb.Append($"<text x='{x + 14:F1}' y='{y + 22:F1}' class='t bold small'>Definitions</text>");
+        sb.Append($"<text x='{x + 14:F1}' y='{y + 48:F1}' class='t micro'>d_i</text>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y + 48:F1}' class='t micro'>= signed perpendicular distance</text>");
+        sb.Append($"<text x='{x + 60:F1}' y='{y + 64:F1}' class='t micro'>from NA (positive toward compression)</text>");
+        sb.Append($"<text x='{x + 14:F1}' y='{y + 84:F1}' class='t micro'>c</text>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y + 84:F1}' class='t micro'>= perpendicular distance from NA</text>");
+        sb.Append($"<text x='{x + 60:F1}' y='{y + 100:F1}' class='t micro'>to extreme compression fibre</text>");
+        sb.Append($"<text x='{x + 14:F1}' y='{y + 124:F1}' class='t micro'>{ultimateStrainLabel}</text>");
+        sb.Append($"<text x='{x + 46:F1}' y='{y + 124:F1}' class='t micro'>= ultimate concrete compressive strain</text>");
+    }
+
+    private static void DrawFigureLegend(StringBuilder sb, double x, double y)
+    {
+        sb.Append($"<rect x='{x - 18:F1}' y='{y - 20:F1}' width='390' height='112' rx='4' fill='white' stroke='#111827' stroke-width='0.9'/>");
+        sb.Append($"<rect x='{x:F1}' y='{y:F1}' width='20' height='20' fill='white' stroke='#9CA3AF' stroke-width='1'/>");
+        sb.Append($"<text x='{x + 34:F1}' y='{y + 16:F1}' class='t small'>Concrete tension neglected (ULS)</text>");
+        sb.Append($"<rect x='{x:F1}' y='{y + 34:F1}' width='20' height='20' fill='#BFC3C8' stroke='#9CA3AF' stroke-width='1'/>");
+        sb.Append($"<text x='{x + 34:F1}' y='{y + 50:F1}' class='t small'>Concrete in compression (strain &gt; 0)</text>");
+        sb.Append($"<circle cx='{x + 10:F1}' cy='{y + 76:F1}' r='8.5' fill='#4B5563' stroke='#111827' stroke-width='1.3'/>");
+        sb.Append($"<text x='{x + 34:F1}' y='{y + 82:F1}' class='t small'>Steel fibre (reinforcement bar)</text>");
+    }
+
+    private static void DrawStrainProfileMini(StringBuilder sb, double x, double y, string ultimateStrainLabel)
+    {
+        double h = 72;
+        double w = 58;
+        sb.Append($"<text x='{x:F1}' y='{y - 10:F1}' font-size='8.5' fill='#374151' font-family='Segoe UI,sans-serif' font-weight='600'>linear strain</text>");
+        sb.Append($"<line x1='{x:F1}' y1='{y:F1}' x2='{x:F1}' y2='{y + h:F1}' stroke='#64748B' stroke-width='1'/>");
+        sb.Append($"<line x1='{x:F1}' y1='{y + h:F1}' x2='{x + w:F1}' y2='{y + h:F1}' stroke='#64748B' stroke-width='1'/>");
+        sb.Append($"<polyline points='{x:F1},{y:F1} {x + w:F1},{y + h:F1}' fill='none' stroke='#1E40AF' stroke-width='1.8'/>");
+        sb.Append($"<circle cx='{x:F1}' cy='{y:F1}' r='2.6' fill='#1E3A8A'/>");
+        sb.Append($"<circle cx='{x + w:F1}' cy='{y + h:F1}' r='2.6' fill='#B91C1C'/>");
+        Label(sb, ultimateStrainLabel, x + 5, y + 4, "#1E3A8A", 7.8);
+        Label(sb, "0 at NA", x + w - 2, y + h - 5, "#B91C1C", 7.8);
+        Label(sb, $"ε_i = {ultimateStrainLabel} d_i / c", x - 15, y + h + 15, "#374151", 7.8);
     }
 
     private static bool PointInPolygon(Point2 point, IReadOnlyList<Point2> polygon)
@@ -480,12 +753,28 @@ internal static class AnnexBIllustrations
 
     private static double Project(Point2 point, double nx, double ny) => point.X * nx + point.Y * ny;
 
+    private static string UltimateStrainLabel(CalculationResultDto result)
+        => result.DesignCode == DesignCodeType.Ec2
+            ? result.EurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3
+                ? "εcu3"
+                : "εcu2"
+            : "εcu";
+
+    private static string GrayGradient(double strain)
+    {
+        strain = Math.Clamp(strain, 0.0, 1.0);
+        strain = Math.Pow(strain, 0.75);
+        int c = (int)(250 + strain * (72 - 250));
+        return $"rgb({c},{c},{c})";
+    }
+
     private static string BlueGradient(double strain)
     {
         strain = Math.Clamp(strain, 0.0, 1.0);
-        int r = (int)(219 + strain * (37 - 219));
-        int g = (int)(234 + strain * (99 - 234));
-        int b = (int)(254 + strain * (235 - 254));
+        strain = Math.Pow(strain, 0.72);
+        int r = (int)(250 + strain * (10 - 250));
+        int g = (int)(253 + strain * (49 - 253));
+        int b = (int)(255 + strain * (145 - 255));
         return $"rgb({r},{g},{b})";
     }
 

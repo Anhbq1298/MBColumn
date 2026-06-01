@@ -51,7 +51,10 @@ public sealed class Ec2ShearDesignService : IShearDesignService
         ShearLinkReinforcement? links,
         double coverMm, double mainBarDiaMm)
     {
-        double acMm2 = bMm * hMm;
+        bool isCircularHoop = links?.IsCircularHoop == true;
+        double acMm2 = isCircularHoop
+            ? PI * hMm * hMm / 4.0
+            : bMm * hMm;
         double fcd   = AlphaCc * fckMpa / GammaC;
         double sigCp = acMm2 > 0 ? Min(nedN / acMm2, 0.2 * fcd) : 0.0;
         double linkDia  = links?.LinkDiameterMm ?? 0.0;
@@ -59,19 +62,20 @@ public sealed class Ec2ShearDesignService : IShearDesignService
         double fywkMpa  = links?.FywkMpa ?? 0.0;
 
         // ── Circular hoop model (Orr-Bath / EC2 §6.2.3) ──────────────────────
-        if (links?.IsCircularHoop == true)
+        if (isCircularHoop)
         {
+            var hoopLinks = links!;
             double bw   = bMm;  // 0.8D, set by caller per EC2 §6.2.2(5)
             double dEff = Max(hMm - coverEff, 1.0); // d = D − cover_eff
-            double dPrim = links.HoopCentrelineDiameterMm > 0
-                ? links.HoopCentrelineDiameterMm
+            double dPrim = hoopLinks.HoopCentrelineDiameterMm > 0
+                ? hoopLinks.HoopCentrelineDiameterMm
                 : Max(hMm - 2.0 * coverMm - linkDia, 1.0); // auto D' = D − 2c − φh
 
             double rhoWMin = fywkMpa > 0 ? 0.08 * Sqrt(fckMpa) / fywkMpa : 0.0;
             var dx = CheckDirectionCircular(bw, dEff, dPrim, totalAslMm2, fckMpa, fcd,
-                sigCp, links.HoopAhMm2, links.SpacingMm, fywkMpa, rhoWMin, vEdXN);
+                sigCp, hoopLinks.HoopAhMm2, hoopLinks.SpacingMm, fywkMpa, rhoWMin, vEdXN);
             var dy = CheckDirectionCircular(bw, dEff, dPrim, totalAslMm2, fckMpa, fcd,
-                sigCp, links.HoopAhMm2, links.SpacingMm, fywkMpa, rhoWMin, vEdYN);
+                sigCp, hoopLinks.HoopAhMm2, hoopLinks.SpacingMm, fywkMpa, rhoWMin, vEdYN);
 
             double circularUtilX = dx.VRd > 0 ? Abs(vEdXN) / dx.VRd : (Abs(vEdXN) > 0 ? double.PositiveInfinity : 0.0);
             double circularUtilY = dy.VRd > 0 ? Abs(vEdYN) / dy.VRd : (Abs(vEdYN) > 0 ? double.PositiveInfinity : 0.0);
@@ -93,8 +97,8 @@ public sealed class Ec2ShearDesignService : IShearDesignService
                 FywdMpa: dx.Fywd > 0 ? dx.Fywd : dy.Fywd,
                 ZXMm: dx.Z,  ZYMm: dy.Z,  CotThetaX: dx.CotTheta,  CotThetaY: dy.CotTheta,
                 IsCircularHoop: true,
-                LinkAhMm2: links.HoopAhMm2,
-                LinkSpacingMm: links.SpacingMm,
+                LinkAhMm2: hoopLinks.HoopAhMm2,
+                LinkSpacingMm: hoopLinks.SpacingMm,
                 CircularHoopCentrelineDiameterMm: dPrim,
                 FckMpa: fckMpa,
                 FcdMpa: fcd,
@@ -210,7 +214,8 @@ public sealed class Ec2ShearDesignService : IShearDesignService
 
         double vRds   = aswS * z * fywd * cot;
         double vRdMax = AlphaCw * bwMm * z * nu1 * fcdMpa / (cot + 1.0 / cot);
-        double vRd    = Min(vRds, vRdMax);
+        double trussVRd = Min(vRds, vRdMax);
+        double vRd = linksRequired ? trussVRd : vRdc;
 
         // Fix 4 — strut crushing: VEd > VRdMax at all allowed angles (cot = 1 is most conservative)
         double vRdMaxAt45 = AlphaCw * bwMm * z * nu1 * fcdMpa / 2.0; // cot = tan = 1
@@ -272,7 +277,8 @@ public sealed class Ec2ShearDesignService : IShearDesignService
             .VRdsN;
 
         double vRdMax = AlphaCw * bwMm * z * nu1 * fcdMpa / (cot + 1.0 / cot);
-        double vRd = Min(vRds, vRdMax);
+        double trussVRd = Min(vRds, vRdMax);
+        double vRd = linksRequired ? trussVRd : vRdc;
         double vRdMaxAt45 = AlphaCw * bwMm * z * nu1 * fcdMpa / 2.0;
         bool isStruttingCritical = absVEd > vRdMaxAt45;
 

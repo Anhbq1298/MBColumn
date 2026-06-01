@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Reports.Builders;
 using MBColumn.Application.Reports.Models;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Interfaces;
@@ -45,7 +46,7 @@ internal sealed class AciReportBuilder
         // ── Annexes ───────────────────────────────────────────────────────────
 
         sections.Add(AnnexA_Coordinates(r));
-        sections.Add(AnnexB_TheoryPlaceholder());
+        sections.Add(AnnexBTheorySectionBuilder.Build(r));
 
         var handCalc = ReportHandCalcService.Build(
             r.SectionShape, r.SectionWidthMm, r.SectionHeightMm,
@@ -70,6 +71,22 @@ internal sealed class AciReportBuilder
         => new($"[PLACEHOLDER — ACI 318] {context}");
 
     private static string Dash(string? s) => string.IsNullOrWhiteSpace(s) ? "—" : s;
+
+    private static double PolygonArea(IReadOnlyList<InsetPointDto> points)
+    {
+        if (points.Count < 3)
+            return 0.0;
+
+        double sum = 0.0;
+        for (int i = 0; i < points.Count; i++)
+        {
+            var a = points[i];
+            var b = points[(i + 1) % points.Count];
+            sum += a.X * b.Y - b.X * a.Y;
+        }
+
+        return Math.Abs(sum) * 0.5;
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // 1 · Project Information
@@ -143,7 +160,10 @@ internal sealed class AciReportBuilder
         };
         double ag  = r.SectionShape == Domain.Enums.SectionShapeType.Circular
                      ? Math.PI / 4 * r.DiameterMm * r.DiameterMm
-                     : r.SectionWidthMm * r.SectionHeightMm;
+                     : r.SectionShape == Domain.Enums.SectionShapeType.Irregular
+                       && r.IrregularSectionBoundaryPoints.Count >= 3
+                         ? PolygonArea(r.IrregularSectionBoundaryPoints)
+                         : r.SectionWidthMm * r.SectionHeightMm;
         double ast = r.RebarCoordinates.Sum(b => b.Area);
 
         blocks.Add(new TableBlock(
@@ -379,42 +399,6 @@ internal sealed class AciReportBuilder
 
         return new("Annex A", "Rebar and Section Boundary Coordinates", blocks);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Annex B · PMM Sweeping Theory  [PLACEHOLDER]
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private static ReportSection AnnexB_TheoryPlaceholder()
-        => new("Annex B", "MB Column PMM Sweeping Theory",
-        [
-            Placeholder(
-                "Full ACI 318 theory annex — including Whitney rectangular stress block " +
-                "derivation, φ-factor transition diagram (ACI §21.2.2), and step-by-step " +
-                "PMM sweep algorithm with ACI-specific notation — will be added in a future release."),
-
-            new HeadingBlock("Overview", 2),
-            new ParagraphBlock(
-                "MB Column determines the three-dimensional P-M-M interaction surface by sweeping " +
-                "the neutral axis orientation θ from 0° to 360° and iterating the neutral axis " +
-                "depth c to trace the full interaction curve per ACI 318-19 §22.4."),
-
-            new HeadingBlock("Whitney Rectangular Stress Block  (ACI 318-19 §22.2.2)", 2),
-            new FormulaBlock("Equivalent rectangular stress block depth",
-                @"a = \beta_1 \, c",
-                @"\beta_1 = 0.85 - 0.05\,\frac{f'_c - 28}{7} \quad (0.65 \leq \beta_1 \leq 0.85)",
-                ""),
-
-            new FormulaBlock("Concrete compression resultant",
-                @"C_c = 0.85\,f'_c \cdot b \cdot a",
-                "", ""),
-
-            new HeadingBlock("Strength Reduction Factor φ  (ACI 318-19 §21.2.2)", 2),
-            new FormulaBlock("φ for combined axial and flexure (tied column)",
-                @"\phi = \begin{cases} 0.65 & \varepsilon_t \leq \varepsilon_y \\ " +
-                @"0.65 + 0.25\,\dfrac{\varepsilon_t - \varepsilon_y}{0.003} & \varepsilon_y < \varepsilon_t < \varepsilon_y + 0.003 \\ " +
-                @"0.90 & \varepsilon_t \geq \varepsilon_y + 0.003 \end{cases}",
-                "", ""),
-        ]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Annex C · Hand-Calculation Verification  (ACI 318)

@@ -429,7 +429,8 @@ public sealed class BatchPrintWindowViewModel : ViewModelBase
                 result.SectionShape,
                 result.SectionWidthMm, result.SectionHeightMm,
                 result.DiameterMm > 0 ? result.DiameterMm : result.SectionWidthMm,
-                result.CoverMm, result.RebarCoordinates);
+                result.CoverMm, result.RebarCoordinates,
+                irregularBoundaryPoints: result.IrregularSectionBoundaryPoints);
         }
         catch { }
 

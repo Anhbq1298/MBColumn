@@ -23,6 +23,24 @@ if (args.Contains("--run-internal-aci-ec-comparison"))
     return;
 }
 
+if (args.Contains("--run-ec2-shear-regressions"))
+{
+    TestEc2CircularHoopShearBenchmark();
+    TestEc2ShearKeepsConcreteCapacityWhenLinksNotRequired();
+    TestEc2CircularShearWithoutLinksUsesCircularGeometry();
+    Console.WriteLine("PASS EC2 shear regression checks");
+    return;
+}
+
+if (args.Contains("--run-rebar-compliance-regressions"))
+{
+    TestEc2ComplianceChecksLongitudinalBarDiameter();
+    TestEc2ComplianceIrregularUsesPolygonArea();
+    TestEc2ComplianceFailsMissingLinkSpacing();
+    Console.WriteLine("PASS EC2 rebar compliance regression checks");
+    return;
+}
+
 if (args.Contains("--generate-baselines"))
 {
     Console.WriteLine("Regenerating all solver baselines...");
@@ -86,6 +104,7 @@ var tests = new List<(string Name, Action Test)>
     ("PM max compression special point has zero moment", TestPmMaxCompressionSpecialPointHasZeroMoment),
     ("PM nominal apex has zero moment", TestPmNominalApexHasZeroMoment),
     ("Control point preview reports signed concrete strain", TestControlPointPreviewReportsSignedConcreteStrain),
+    ("Report Annex B is shape-aware for ACI and EC2", TestReportAnnexBShapeAware),
     ("Nominal uses Pn/Mn values", TestNominalUsesPnMn),
     ("Design uses PhiPn/PhiMn values", TestDesignUsesPhiPnPhiMn),
     ("Solver exposes nominal/reduced/strain-state split", TestInteractionPointSplitOutput),
@@ -150,6 +169,11 @@ var tests = new List<(string Name, Action Test)>
     ("Multi-load case fallback to single", TestMultiLoadCaseFallbackToSingle),
     ("Multi-load case governing id in result", TestMultiLoadCaseGoverningIdInResult),
     ("EC2 circular hoop shear benchmark", TestEc2CircularHoopShearBenchmark),
+    ("EC2 shear keeps VRd,c when links not required", TestEc2ShearKeepsConcreteCapacityWhenLinksNotRequired),
+    ("EC2 circular shear without links uses circular geometry", TestEc2CircularShearWithoutLinksUsesCircularGeometry),
+    ("EC2 compliance checks longitudinal bar diameter", TestEc2ComplianceChecksLongitudinalBarDiameter),
+    ("EC2 compliance irregular uses polygon area", TestEc2ComplianceIrregularUsesPolygonArea),
+    ("EC2 compliance fails missing link spacing", TestEc2ComplianceFailsMissingLinkSpacing),
     ("EC2 slenderness off preserves direct PMM moments", TestEc2SlendernessOffPreservesDirectMoments),
     ("EC2 slenderness on maps used PMM moments", TestEc2SlendernessOnMapsUsedMoments),
     ("Control points table has 32 rows", TestControlPointsTableRowCount),
@@ -329,6 +353,171 @@ static void TestEc2CircularHoopShearBenchmark()
 
     AreClose(serviceResult.VRdsXN, serviceResultWithTies.VRdsXN, 1e-9);
     AreClose(serviceResult.VRdsYN, serviceResultWithTies.VRdsYN, 1e-9);
+}
+
+static void TestEc2ShearKeepsConcreteCapacityWhenLinksNotRequired()
+{
+    var service = new Ec2ShearDesignService();
+    var weakLinks = new ShearLinkReinforcement(
+        LinkDiameterMm: 6.0,
+        SpacingMm: 1000.0,
+        TotalLegsX: 2,
+        TotalLegsY: 2,
+        FywkMpa: 500.0);
+
+    var result = service.Check(
+        bMm: 700.0,
+        hMm: 700.0,
+        totalAslMm2: 28.0 * 491.0,
+        fckMpa: 28.0,
+        nedN: 2_500_000.0,
+        vEdXN: 100_000.0,
+        vEdYN: 100_000.0,
+        links: weakLinks,
+        coverMm: 55.0,
+        mainBarDiaMm: 25.0);
+
+    IsFalse(result.LinksRequiredX);
+    IsFalse(result.LinksRequiredY);
+    IsTrue(result.VRdsXN < result.VRdcXN);
+    IsTrue(result.VRdsYN < result.VRdcYN);
+    AreClose(result.VRdcXN, result.VRdXN, 1e-6);
+    AreClose(result.VRdcYN, result.VRdYN, 1e-6);
+    IsTrue(result.StatusX == CapacityStatus.Pass);
+    IsTrue(result.StatusY == CapacityStatus.Pass);
+}
+
+static void TestEc2CircularShearWithoutLinksUsesCircularGeometry()
+{
+    var input = MetricInput(pu: 1000, mux: 0, muy: 0) with
+    {
+        DesignCode = DesignCodeType.Ec2,
+        SectionShape = SectionShapeType.Circular,
+        Diameter = 600.0,
+        LinkDiameterMm = 0.0,
+        LinkSpacingMm = 0.0,
+        LoadCases =
+        [
+            new LoadCaseDto("lc1", "LC1", 1000.0, 0.0, 0.0, true, ForceUnit.kN, MomentUnit.kNm)
+            {
+                Vux = 50.0,
+                Vuy = 50.0
+            }
+        ]
+    };
+    var bars = new[]
+    {
+        new RebarCoordinateDto("B1",  200.0,    0.0, 25.0, 491.0, "T25", "Circular"),
+        new RebarCoordinateDto("B2",    0.0,  200.0, 25.0, 491.0, "T25", "Circular"),
+        new RebarCoordinateDto("B3", -200.0,    0.0, 25.0, 491.0, "T25", "Circular"),
+        new RebarCoordinateDto("B4",    0.0, -200.0, 25.0, 491.0, "T25", "Circular")
+    };
+
+    var (perCase, governing) = new ShearCheckService(GetUnits())
+        .Check(input, input.LoadCases!, bars, new Ec2ShearDesignService());
+    var shear = perCase.Single()!;
+
+    IsTrue(governing is not null);
+    IsFalse(shear.HasLinks);
+    AreClose(480.0, shear.BwXMm, 1e-9);
+    AreClose(480.0, shear.BwYMm, 1e-9);
+    AreClose(shear.DEffXMm, shear.DEffYMm, 1e-9);
+    AreClose(shear.VRdcXDisplay, shear.VRdcYDisplay, 1e-9);
+}
+
+static void TestEc2ComplianceChecksLongitudinalBarDiameter()
+{
+    var input = MetricInput(pu: 0, mux: 0, muy: 0) with
+    {
+        DesignCode = DesignCodeType.Ec2,
+        Width = 400,
+        Height = 400,
+        LinkDiameterMm = 10.0,
+        LinkSpacingMm = 100.0,
+        TotalLegsX = 3,
+        TotalLegsY = 3
+    };
+    var bars = new List<RebarCoordinateDto>
+    {
+        new("B1", -150.0, -150.0, 6.0, Math.PI * 6.0 * 6.0 / 4.0, "T6", "Test"),
+        new("B2",  150.0, -150.0, 6.0, Math.PI * 6.0 * 6.0 / 4.0, "T6", "Test"),
+        new("B3",  150.0,  150.0, 6.0, Math.PI * 6.0 * 6.0 / 4.0, "T6", "Test"),
+        new("B4", -150.0,  150.0, 6.0, Math.PI * 6.0 * 6.0 / 4.0, "T6", "Test")
+    };
+
+    var result = new RebarComplianceCheckService(GetUnits()).Check(input, bars, maxCompNedN: 0.0);
+    var diameterCheck = result.Checks.Single(c => c.Description == "Min. longitudinal bar diameter");
+
+    IsFalse(diameterCheck.Pass);
+}
+
+static void TestEc2ComplianceIrregularUsesPolygonArea()
+{
+    var boundary = new List<IrregularBoundaryPointDto>
+    {
+        new(1, 0.0,   0.0),
+        new(2, 600.0, 0.0),
+        new(3, 600.0, 300.0),
+        new(4, 300.0, 300.0),
+        new(5, 300.0, 600.0),
+        new(6, 0.0,   600.0)
+    };
+    var input = MetricInput(pu: 0, mux: 0, muy: 0) with
+    {
+        DesignCode = DesignCodeType.Ec2,
+        SectionShape = SectionShapeType.Irregular,
+        Width = 600,
+        Height = 600,
+        Irregular = new IrregularSectionInputDto(
+            boundary,
+            Array.Empty<IrregularRebarInputDto>(),
+            55.0,
+            IrregularRebarModeType.CustomCoordinates),
+        LinkDiameterMm = 10.0,
+        LinkSpacingMm = 200.0
+    };
+    var bars = Enumerable.Range(0, 24)
+        .Select(i => new RebarCoordinateDto(
+            $"B{i + 1}",
+            40.0 + (i % 6) * 80.0,
+            40.0 + (i / 6) * 80.0,
+            25.0,
+            491.0,
+            "T25",
+            "Irregular"))
+        .ToList();
+
+    var result = new RebarComplianceCheckService(GetUnits()).Check(input, bars, maxCompNedN: 0.0);
+    var maxCheck = result.Checks.Single(c => c.Description == "Max. longitudinal reinforcement");
+
+    IsFalse(maxCheck.Pass);
+    IsTrue(maxCheck.Limit.Contains("10800", StringComparison.Ordinal));
+}
+
+static void TestEc2ComplianceFailsMissingLinkSpacing()
+{
+    var input = MetricInput(pu: 0, mux: 0, muy: 0) with
+    {
+        DesignCode = DesignCodeType.Ec2,
+        Width = 400,
+        Height = 400,
+        LinkDiameterMm = 10.0,
+        LinkSpacingMm = 0.0,
+        TotalLegsX = 3,
+        TotalLegsY = 3
+    };
+    var bars = new List<RebarCoordinateDto>
+    {
+        new("B1", -150.0, -150.0, 20.0, 314.0, "T20", "Test"),
+        new("B2",  150.0, -150.0, 20.0, 314.0, "T20", "Test"),
+        new("B3",  150.0,  150.0, 20.0, 314.0, "T20", "Test"),
+        new("B4", -150.0,  150.0, 20.0, 314.0, "T20", "Test")
+    };
+
+    var result = new RebarComplianceCheckService(GetUnits()).Check(input, bars, maxCompNedN: 0.0);
+    var spacingCheck = result.Checks.Single(c => c.Description == "Link spacing provided");
+
+    IsFalse(spacingCheck.Pass);
 }
 
 static void TestUsBars()
@@ -972,6 +1161,52 @@ static void TestControlPointPreviewReportsSignedConcreteStrain()
     IsTrue(preview.Rows.Count > 0);
     IsTrue(preview.Rows.Any(r => r.ConcreteStrainMax < 0.0));
 }
+
+static void TestReportAnnexBShapeAware()
+{
+    var units = GetUnits();
+    var aciResult = Service().Calculate(MetricInput() with
+    {
+        DesignCode = DesignCodeType.Aci318Style,
+        SectionShape = SectionShapeType.Circular,
+        Diameter = 700,
+        IntegrationMethod = SectionIntegrationMethod.Polygon
+    });
+    var aciReport = new MBColumn.Application.Reports.Builders.CalculationReportBuilder()
+        .Build("P", "G", "Circular", aciResult, new Aci318DesignCodeService(), units, null);
+    var aciAnnex = aciReport.Sections.Single(s => s.Number == "Annex B");
+    IsFalse(ReportSectionContains(aciAnnex, "PLACEHOLDER"));
+    IsTrue(ReportSectionContains(aciAnnex, "The circular section"));
+    IsTrue(ReportSectionContains(aciAnnex, "uses fibre integration only"));
+
+    var ec2Result = Service().Calculate(IrregularMetricInput() with
+    {
+        DesignCode = DesignCodeType.Ec2,
+        IntegrationMethod = SectionIntegrationMethod.Polygon
+    });
+    var ec2Report = new MBColumn.Application.Reports.Builders.CalculationReportBuilder()
+        .Build("P", "G", "Irregular", ec2Result, new Ec2DesignCodeService(), units, null);
+    var ec2Annex = ec2Report.Sections.Single(s => s.Number == "Annex B");
+    IsTrue(ReportSectionContains(ec2Annex, "The irregular section boundary"));
+    IsTrue(ReportSectionContains(ec2Annex, "EC2 Material Partial Factors"));
+    IsFalse(ReportSectionContains(ec2Annex, "preferred for irregular or circular"));
+}
+
+static bool ReportSectionContains(MBColumn.Application.Reports.Models.ReportSection section, string text)
+    => section.Blocks.Any(block => ReportBlockText(block).Contains(text, StringComparison.OrdinalIgnoreCase));
+
+static string ReportBlockText(MBColumn.Application.Reports.Models.ReportBlock block)
+    => block switch
+    {
+        MBColumn.Application.Reports.Models.HeadingBlock b => b.Text,
+        MBColumn.Application.Reports.Models.ParagraphBlock b => b.Text,
+        MBColumn.Application.Reports.Models.NoteBlock b => b.Text,
+        MBColumn.Application.Reports.Models.FormulaBlock b => $"{b.Title} {b.LatexFormula} {b.SubstitutionText} {b.ResultText}",
+        MBColumn.Application.Reports.Models.ImageBlock b => $"{b.Caption} {b.SvgContent}",
+        MBColumn.Application.Reports.Models.TableBlock b => string.Join(" ", b.Headers.Concat(b.Rows.SelectMany(r => r))),
+        MBColumn.Application.Reports.Models.SummaryBoxBlock b => $"{b.Label} {b.Value}",
+        _ => ""
+    };
 
 // ----- Nominal vs Design Curve Tests -----
 

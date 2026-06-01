@@ -1,4 +1,6 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.Services.Geometry;
+using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 using System.Globalization;
@@ -11,9 +13,11 @@ namespace MBColumn.Application.Services;
 ///
 /// EC2 EN 1992-1-1:2004 checks:
 ///   Longitudinal (§9.5.1 / §9.5.2):
-///     As ≥ max(0.002 Ag, 0.1 NEd/(0.87 fyk))   — §9.5.2(1) minimum
+///     ds ≥ 8 mm                                  — §9.5.2(1) minimum bar diameter
+///     As ≥ max(0.002 Ag, 0.1 NEd/(0.87 fyk))   — §9.5.2(2) minimum
 ///     As ≤ 0.04 Ag                               — §9.5.2(3) maximum (outside laps)
 ///     nBars ≥ 4 (rectangular) / ≥ 6 (circular)  — §9.5.1 implied, standard practice
+///     clear spacing ≥ max(ds, 20 mm)             — §8.2 aggregate term not modelled
 ///
 ///   Transverse links (§9.5.3):
 ///     dsw ≥ max(6, 0.25 dsmax)                  — §9.5.3(1) minimum link diameter
@@ -60,7 +64,9 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
                     : isIrregular ? units.LengthToMm(input.Height, input.LengthUnit)
                                   : units.LengthToMm(input.Height, input.LengthUnit);
 
-        double agMm2  = isCircular ? PI * bMm * bMm / 4.0 : bMm * hMm;
+        double agMm2  = isCircular ? PI * bMm * bMm / 4.0
+                       : isIrregular ? GrossAreaForIrregular(input, bMm * hMm)
+                                     : bMm * hMm;
         double fykMpa = units.StressToMpa(input.Fy, input.StressUnit);
         double coverMm = units.LengthToMm(input.Cover, input.LengthUnit);
 
@@ -71,7 +77,15 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
 
         var checks = new List<ComplianceCheck>();
 
-        // ── §9.5.2(1) — Minimum longitudinal reinforcement ───────────────────
+        checks.Add(new ComplianceCheck(
+            "EC2 §9.5.2(1)",
+            "Min. longitudinal bar diameter",
+            "ds ≥ 8 mm",
+            $"Ø{V(minBarDiaMm, 0)} mm",
+            "≥ Ø8 mm",
+            minBarDiaMm >= 8.0 - 0.01));
+
+        // ── §9.5.2(2) — Minimum longitudinal reinforcement ───────────────────
         double asMinNed  = Max(0.0, 0.1 * maxCompNedN / (0.87 * fykMpa));
         double asMinFrac = 0.002 * agMm2;
         double asMin     = Max(asMinNed, asMinFrac);
@@ -79,7 +93,7 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
             ? $" (NEd = {V(maxCompNedN / 1000.0)} kN → 0.1 NEd / 0.87 fyk = {V(asMinNed, 0)} mm²)"
             : " (NEd ≈ 0 — 0.002 Ag governs)";
         checks.Add(new ComplianceCheck(
-            "EC2 §9.5.2(1)",
+            "EC2 §9.5.2(2)",
             "Min. longitudinal reinforcement",
             "As ≥ max(0.002 Ag, 0.1 NEd / 0.87 fyk)",
             $"{V(totalAsMm2, 0)} mm²",
@@ -107,8 +121,30 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
             $"≥ {minBars}",
             nBars >= minBars));
 
+        if (nBars > 1)
+        {
+            var (clearSpacingMm, clearSpacingMinMm) = GoverningClearSpacing(rebarCoordinates);
+            checks.Add(new ComplianceCheck(
+                "EC2 §8.2",
+                "Minimum clear spacing between longitudinal bars",
+                "clear spacing ≥ max(ds, 20 mm)  (aggregate-size term not available)",
+                $"{V(clearSpacingMm, 1)} mm",
+                $"≥ {V(clearSpacingMinMm, 1)} mm",
+                clearSpacingMm >= clearSpacingMinMm - 0.5));
+        }
+
         // ── §9.5.3 link checks — only when link data is supplied ──────────────
-        if (input.LinkDiameterMm > 0 && !isIrregular)
+        if (isIrregular)
+        {
+            checks.Add(new ComplianceCheck(
+                "EC2 §9.5.3",
+                "Irregular transverse link detailing",
+                "links must restrain longitudinal bars and satisfy §9.5.3 spacing/detailing",
+                "Irregular section",
+                "Not checked automatically for irregular sections",
+                false));
+        }
+        else if (input.LinkDiameterMm > 0)
         {
             double dsw    = input.LinkDiameterMm;
             double s      = input.LinkSpacingMm;
@@ -118,6 +154,7 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
             int    totX   = input.TotalLegsX;
             int    totY   = input.TotalLegsY;
             double aSwMm2 = PI * dsw * dsw / 4.0;
+            bool   hasValidSpacing = s > 0.0;
 
             // §9.5.3(1): link diameter
             double dswMin = Max(6.0, 0.25 * dsMax);
@@ -130,6 +167,14 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
                 dsw >= dswMin - 0.01));
 
             // §9.5.3(3): link spacing
+            checks.Add(new ComplianceCheck(
+                "EC2 §9.5.3(3)",
+                "Link spacing provided",
+                "s > 0",
+                $"s = {V(s, 0)} mm",
+                "> 0 mm",
+                hasValidSpacing));
+
             double sMax = Min(Min(20.0 * dsMin, bMin), 400.0);
             checks.Add(new ComplianceCheck(
                 "EC2 §9.5.3(3)",
@@ -137,7 +182,7 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
                 "s ≤ min(20 ds_min, b_min, 400 mm)",
                 $"s = {V(s, 0)} mm",
                 $"≤ {V(sMax, 0)} mm  (min of 20×{V(dsMin, 0)} = {V(20 * dsMin, 0)}, {V(bMin, 0)}, 400)",
-                s <= sMax + 0.5));
+                hasValidSpacing && s <= sMax + 0.5));
 
             // §9.5.3(6): bar restraint gap
             if (!isCircular)
@@ -172,7 +217,7 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
                     true));
             }
         }
-        else if (input.LinkDiameterMm <= 0)
+        else
         {
             checks.Add(new ComplianceCheck(
                 "EC2 §9.5.3",
@@ -180,13 +225,56 @@ public sealed class RebarComplianceCheckService(IUnitConversionService units)
                 "Link data not provided",
                 "—",
                 "Specify link diameter and spacing to check §9.5.3(1), (3), (6)",
-                true)); // not a failure — just not checkable
+                false));
         }
 
         return new RebarComplianceResult(DesignCodeType.Ec2, input.SectionShape, checks);
     }
 
     // ── ACI 318-19 stub ───────────────────────────────────────────────────────
+
+    private static double GrossAreaForIrregular(ColumnInputDto input, double fallbackAreaMm2)
+    {
+        if (input.Irregular?.BoundaryPoints is not { Count: >= 3 } boundary)
+            return fallbackAreaMm2;
+
+        var polygon = boundary
+            .Select(p => new Point2D(p.X, p.Y))
+            .ToList();
+
+        double areaMm2 = PolygonGeometry.Area(polygon);
+        return double.IsFinite(areaMm2) && areaMm2 > 0.0 ? areaMm2 : fallbackAreaMm2;
+    }
+
+    private static (double ClearSpacingMm, double RequiredMm) GoverningClearSpacing(
+        IReadOnlyList<RebarCoordinateDto> bars)
+    {
+        double governingMargin = double.PositiveInfinity;
+        double governingClear = double.PositiveInfinity;
+        double governingRequired = 20.0;
+
+        for (int i = 0; i < bars.Count; i++)
+        {
+            for (int j = i + 1; j < bars.Count; j++)
+            {
+                double dx = bars[i].X - bars[j].X;
+                double dy = bars[i].Y - bars[j].Y;
+                double centreDistance = Sqrt(dx * dx + dy * dy);
+                double clear = centreDistance - 0.5 * (bars[i].Diameter + bars[j].Diameter);
+                double required = Max(Max(bars[i].Diameter, bars[j].Diameter), 20.0);
+                double margin = clear - required;
+
+                if (margin < governingMargin)
+                {
+                    governingMargin = margin;
+                    governingClear = clear;
+                    governingRequired = required;
+                }
+            }
+        }
+
+        return (governingClear, governingRequired);
+    }
 
     private static RebarComplianceResult BuildAciStub(
         ColumnInputDto input,
