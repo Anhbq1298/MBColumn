@@ -88,6 +88,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         OpenProjectCommand = new AsyncRelayCommand(OpenProjectAsync);
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync);
+        HelpCommand = new RelayCommand(ShowAbout);
 
         // ETABS commands — explicit source-differentiated versions plus legacy wrappers
         ImportSectionsFromEtabsCommand = new AsyncRelayCommand(ImportFromEtabsAsync);
@@ -147,6 +148,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand OpenProjectCommand { get; }
     public ICommand SaveProjectCommand { get; }
     public ICommand SaveProjectAsCommand { get; }
+    public ICommand HelpCommand { get; }
 
     // Explicit ETABS commands
     public ICommand ImportSectionsFromEtabsCommand { get; }
@@ -1430,4 +1432,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         return projectService.GetGroups().FirstOrDefault(group => group.Id == groupId)?.Name ?? "";
     }
+
+    private void ShowAbout()
+        => messageService.ShowInformation(
+            "MBColumn\nReinforced concrete column design\n\nUse File, Import, Export, and Help from the top toolbar.",
+            "About MBColumn");
 }

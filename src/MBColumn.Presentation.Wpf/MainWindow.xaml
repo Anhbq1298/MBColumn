@@ -53,6 +53,23 @@
                 </MultiDataTrigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="HeaderDropDownMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        </Style>
+        <Style x:Key="HeaderTopMenuItemStyle" TargetType="{x:Type MenuItem}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ItemContainerStyle" Value="{StaticResource HeaderDropDownMenuItemStyle}" />
+        </Style>
     </Window.Resources>
     <Grid Background="{DynamicResource LightBackgroundBrush}">
         <Grid.RowDefinitions>
@@ -64,12 +81,45 @@
 
         <!-- Header -->
         <Border Background="{DynamicResource PrimaryNavyBrush}" Padding="16,10">
-            <DockPanel>
-                <TextBlock Text="MBColumn" Style="{DynamicResource AppTitleTextStyle}" VerticalAlignment="Center" />
-                <TextBlock Text="Reinforced concrete column design"
-                           Style="{DynamicResource AppSubtitleTextStyle}"
-                           VerticalAlignment="Center"
-                           Margin="14,4,0,0" />
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <TextBlock Text="MBColumn" Style="{DynamicResource AppTitleTextStyle}" VerticalAlignment="Center" />
+                    <TextBlock Text="Reinforced concrete column design"
+                               Style="{DynamicResource AppSubtitleTextStyle}"
+                               VerticalAlignment="Center"
+                               Margin="14,4,0,0" />
+                </StackPanel>
+                <Menu DockPanel.Dock="Left"
+                      Margin="32,0,0,0"
+                      VerticalAlignment="Center"
+                      Background="Transparent"
+                      Foreground="White"
+                      ItemContainerStyle="{StaticResource HeaderTopMenuItemStyle}">
+                    <MenuItem Header="_File">
+                        <MenuItem Header="New Project" Command="{Binding NewProjectCommand}" InputGestureText="Ctrl+N" />
+                        <MenuItem Header="Open Project..." Command="{Binding OpenProjectCommand}" InputGestureText="Ctrl+O" />
+                        <Separator />
+                        <MenuItem Header="Save" Command="{Binding SaveProjectCommand}" InputGestureText="Ctrl+S" />
+                        <MenuItem Header="Save As..." Command="{Binding SaveProjectAsCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="_Import">
+                        <MenuItem Header="Sections from ETABS..." Command="{Binding ImportSectionsFromEtabsCommand}" />
+                        <Separator />
+                        <MenuItem Header="Element Forces from ETABS..." Command="{Binding ImportElementForcesCommand}" />
+                        <MenuItem Header="Design Forces from ETABS..." Command="{Binding ImportDesignForcesCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="_Export">
+                        <MenuItem Header="Current Report as PDF..." Command="{Binding Report.SaveAsPdfCommand}" />
+                        <MenuItem Header="Current Report as HTML..." Command="{Binding Report.SaveAsHtmlCommand}" />
+                        <Separator />
+                        <MenuItem Header="Current Section Report as PDF..." Command="{Binding PrintSingleReportCommand}" />
+                        <MenuItem Header="Batch Print PDF Reports..." Command="{Binding BatchPrintCommand}" />
+                        <MenuItem Header="Control Points CSV..." Command="{Binding Result.ExportAllPointsCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="_Help">
+                        <MenuItem Header="About MBColumn" Command="{Binding HelpCommand}" />
+                    </MenuItem>
+                </Menu>
             </DockPanel>
         </Border>
 
