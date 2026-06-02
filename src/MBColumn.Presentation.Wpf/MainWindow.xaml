@@ -71,6 +71,11 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="ItemContainerStyle" Value="{StaticResource HeaderDropDownMenuItemStyle}" />
         </Style>
+        <Style x:Key="BatchReportButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource WarningAmberBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource WarningAmberBrush}" />
+        </Style>
     </Window.Resources>
     <Grid Background="{DynamicResource LightBackgroundBrush}">
         <Grid.RowDefinitions>
@@ -496,25 +501,58 @@
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding Report.SaveAsHtmlCommand}"
-                                    Content="HTML"
                                     ToolTip="Save current report as HTML"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     MinHeight="30"
                                     Padding="12,5"
-                                    Margin="0,0,6,0" />
+                                    Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE943;"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="Current HTML"
+                                               Margin="7,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </StackPanel>
+                            </Button>
                             <Button Command="{Binding PrintSingleReportCommand}"
-                                    Content="Section PDF"
                                     ToolTip="Print current section report as PDF"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     MinHeight="30"
                                     Padding="12,5"
-                                    Margin="0,0,6,0" />
+                                    Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8A5;"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="Section PDF"
+                                               Margin="7,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </StackPanel>
+                            </Button>
                             <Button Command="{Binding BatchPrintCommand}"
-                                    Content="Batch PDF"
                                     ToolTip="Batch print PDF reports"
-                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Style="{StaticResource BatchReportButtonStyle}"
                                     MinHeight="30"
-                                    Padding="12,5" />
+                                    Padding="12,5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8FD;"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="Batch Print Report"
+                                               Margin="7,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </StackPanel>
+                            </Button>
                         </WrapPanel>
                     </DockPanel>
                 </Border>
