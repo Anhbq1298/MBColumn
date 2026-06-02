@@ -628,7 +628,7 @@ public sealed class InputViewModel : ViewModelBase
     }
 
     public IReadOnlyList<RebarLayoutTypeOption> RebarLayoutTypes =>
-        IsCircularSection
+        IsCircularSection || IsIrregularSection
             ? [
                 new(RebarLayoutType.EqualSpacing, "Equal Spacing"),
                 new(RebarLayoutType.CustomCoordinates, "Custom Coordinates")
@@ -792,8 +792,7 @@ public sealed class InputViewModel : ViewModelBase
                 ? RebarLayoutType.CustomCoordinates
                 : RebarLayoutType.EqualSpacing;
         }
-
-        if (shape == SectionShapeType.Irregular)
+        else if (shape == SectionShapeType.Irregular)
         {
             return layoutType == RebarLayoutType.CustomCoordinates
                 ? RebarLayoutType.CustomCoordinates
@@ -929,7 +928,7 @@ public sealed class InputViewModel : ViewModelBase
     public UnitSystem SelectedUnitSystem { get => UnitSystem; set => UnitSystem = value; }
     public double Spacing { get => spacing; set { Set(ref spacing, value); UpdateSectionPreview(); } }
     public bool ShowTotalBarsInput => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
-    public bool IsEqualSpacingLayout => (IsRectangularSection || IsCircularSection) && SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
+    public bool IsEqualSpacingLayout => SelectedRebarLayoutType == RebarLayoutType.EqualSpacing;
     public bool IsAllSidesEqualLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.AllSidesEqual;
     public bool IsSidesDifferentLayout => IsRectangularSection && SelectedRebarLayoutType == RebarLayoutType.SidesDifferent;
     public bool IsCircularEqualSpacingLayout => IsCircularSection;
@@ -1264,7 +1263,7 @@ public sealed class InputViewModel : ViewModelBase
             {
                 GenerateEqualSpacingRebarsInternal();
             }
-            else if (SelectedSectionShape == SectionShapeType.Irregular && IrregularInput.RebarMode == IrregularRebarModeType.EqualSpacing)
+            else if (SelectedSectionShape == SectionShapeType.Irregular)
             {
                 GenerateIrregularRebarsInternal();
             }
@@ -3081,16 +3080,38 @@ public sealed class InputViewModel : ViewModelBase
     {
         int n = pts.Count;
         if (n < 3) return (0, 0);
+
+        double area = 0;
+        double cx = 0, cy = 0;
         double ixx = 0, iyy = 0;
+
         for (int i = 0; i < n; i++)
         {
             var a = pts[i];
             var b = pts[(i + 1) % n];
             double cross = a.X * b.Y - b.X * a.Y;
+
+            area += cross;
+            cx += (a.X + b.X) * cross;
+            cy += (a.Y + b.Y) * cross;
+
             ixx += (a.Y * a.Y + a.Y * b.Y + b.Y * b.Y) * cross;
             iyy += (a.X * a.X + a.X * b.X + b.X * b.X) * cross;
         }
-        return (Math.Abs(ixx / 12.0), Math.Abs(iyy / 12.0));
+
+        area /= 2.0;
+        if (Math.Abs(area) < 1e-9) return (0, 0);
+
+        cx /= (6.0 * area);
+        cy /= (6.0 * area);
+
+        ixx /= 12.0;
+        iyy /= 12.0;
+
+        double ixxC = Math.Abs(ixx - area * cy * cy);
+        double iyyC = Math.Abs(iyy - area * cx * cx);
+
+        return (ixxC, iyyC);
     }
 
     private static string FormatInertia(double value)
@@ -3410,14 +3431,14 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         var available = AvailableBars;
-        var selectedBar = available.FirstOrDefault(b => string.Equals(b.Name, IrregularInput.BarSize, System.StringComparison.OrdinalIgnoreCase));
+        var selectedBar = available.FirstOrDefault(b => string.Equals(b.Name, BarSize, System.StringComparison.OrdinalIgnoreCase));
         if (selectedBar == null)
         {
             IrregularInput.RebarValidationMessage = "Invalid bar size selected.";
             return;
         }
 
-        double spacing = IrregularInput.Spacing;
+        double spacing = Spacing;
         if (spacing <= 0)
         {
             IrregularInput.RebarValidationMessage = "Spacing must be greater than zero.";
@@ -3687,7 +3708,13 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         UpdateSectionPreview();
+
+        // Signal that the auto-design was applied — subscribers (MainWindowViewModel)
+        // will trigger a recalculation automatically.
+        AutoDesignApplied?.Invoke(this, EventArgs.Empty);
     }
+
+    public event EventHandler? AutoDesignApplied;
 }
 
 internal static class EurocodeConcreteStrainProfileValues

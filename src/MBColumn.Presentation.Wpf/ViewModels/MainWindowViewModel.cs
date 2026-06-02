@@ -136,6 +136,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             UpdateWindowTitle();
             RaiseStatusProperties();
         };
+
+        _ = LoadColumnStatusesAsync();
     }
 
     public InputViewModel Input { get; }
@@ -803,22 +805,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             Report.Clear();
             Explorer.ClearSectionStatuses();
 
-            // Load statuses in background thread to keep UI perfectly smooth
-            var columns = projectService.GetColumns();
-            await Task.Run(() =>
-            {
-                foreach (var col in columns)
-                {
-                    var persisted = projectService.LoadColumnResult(col.Id);
-                    if (persisted is not null)
-                    {
-                        System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
-                        {
-                            Explorer.SetSectionStatus(col.Id, SectionStatus.Calculated);
-                        });
-                    }
-                }
-            });
+            await LoadColumnStatusesAsync();
 
             IsCalculationOutdated = false;
             SelectedMainTabIndex = InputTabIndex;
@@ -834,6 +821,26 @@ public sealed class MainWindowViewModel : ViewModelBase
             CalculationStatus = "";
             IsCalculating = false;
         }
+    }
+
+    private async Task LoadColumnStatusesAsync()
+    {
+        var columns = projectService.GetColumns();
+        if (columns.Count == 0) return;
+        await Task.Run(() =>
+        {
+            foreach (var col in columns)
+            {
+                var persisted = projectService.LoadColumnResult(col.Id);
+                if (persisted is not null)
+                {
+                    System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        Explorer.SetSectionStatus(col.Id, SectionStatus.Calculated);
+                    });
+                }
+            }
+        });
     }
 
     private async Task ImportFromEtabsAsync()
@@ -1219,6 +1226,13 @@ public sealed class MainWindowViewModel : ViewModelBase
         Input.RebarLayout.Bottom.PropertyChanged += OnInputChanged;
         Input.RebarLayout.Left.PropertyChanged += OnInputChanged;
         Input.RebarLayout.Right.PropertyChanged += OnInputChanged;
+
+        // Auto-recalculate immediately after applying the automated rebar design.
+        Input.AutoDesignApplied += async (_, _) =>
+        {
+            if (!IsCalculating && HasCurrentSection)
+                await CalculateCurrentColumnAsync();
+        };
     }
 
     private void OnLoadCasesChanged(object? sender, NotifyCollectionChangedEventArgs e)

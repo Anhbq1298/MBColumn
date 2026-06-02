@@ -1068,7 +1068,7 @@
                                 </StackPanel>
                             </Grid>
                             <!-- 1. Algorithmic / Shape-Specific Top Panel (Visible for Rectangular/Circular) -->
-                            <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            <StackPanel>
                                 <Grid Margin="0,0,0,10">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -1270,70 +1270,15 @@
                                     </Grid>
                                 </ScrollViewer>
                             </StackPanel>
-                            <!-- 2. Irregular Section-Specific Spacing/Generate Panel (Visible only for Irregular Section) -->
+                            <!-- 2. Irregular Section Validation Messages -->
                             <StackPanel Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Grid DataContext="{Binding IrregularInput}">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <!-- Row 0: Layout Type Selector for Irregular -->
-                                    <Grid Grid.Row="0"
-                                          Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0"
-                                                    Margin="0,0,8,0">
-                                            <TextBlock Text="Layout Type"
-                                                       Style="{StaticResource FieldLabelTextStyle}" />
-                                            <ComboBox ItemsSource="{Binding RebarModeOptions}"
-                                                      SelectedValue="{Binding RebarMode}"
-                                                      SelectedValuePath="Type"
-                                                      DisplayMemberPath="DisplayName" />
-                                        </StackPanel>
-                                    </Grid>
-                                    <!-- Row 1: Equal Spacing Inputs (Visible only when RebarMode is EqualSpacing) -->
-                                    <Grid Grid.Row="1"
-                                          Margin="0,0,0,12"
-                                          Visibility="{Binding IsEqualSpacing, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0"
-                                                    Margin="0,0,8,0">
-                                            <TextBlock Text="Bar size"
-                                                       Style="{StaticResource FieldLabelTextStyle}" />
-                                            <ComboBox ItemsSource="{Binding DataContext.AvailableBars, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      DisplayMemberPath="Name"
-                                                      SelectedValuePath="Name"
-                                                      SelectedValue="{Binding BarSize}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1"
-                                                    Margin="0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="Spacing ("
-                                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                                <TextBlock Text="{Binding DataContext.LengthLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                                <TextBlock Text=")"
-                                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                            </StackPanel>
-                                            <TextBox Text="{Binding Spacing}" />
-                                        </StackPanel>
-                                    </Grid>
-                                    <!-- Row 2: Validation Messages -->
-                                    <TextBlock Grid.Row="2"
-                                               Text="{Binding RebarValidationMessage}"
-                                               Visibility="{Binding HasRebarValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
-                                               Foreground="{DynamicResource AccentRedBrush}"
-                                               Style="{StaticResource HelperTextStyle}"
-                                               Margin="0,0,0,8"
-                                               TextWrapping="Wrap" />
-                                </Grid>
+                                <TextBlock DataContext="{Binding IrregularInput}"
+                                           Text="{Binding RebarValidationMessage}"
+                                           Visibility="{Binding HasRebarValidationMessage, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           Foreground="{DynamicResource AccentRedBrush}"
+                                           Style="{StaticResource HelperTextStyle}"
+                                           Margin="0,0,0,8"
+                                           TextWrapping="Wrap" />
                             </StackPanel>
 
                             <Separator Margin="0,12,0,10" />
