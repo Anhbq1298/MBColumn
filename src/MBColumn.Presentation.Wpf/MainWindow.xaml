@@ -10,6 +10,7 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
     <Window.Resources>
+        <SolidColorBrush x:Key="AppHeaderBannerBrush" Color="#1F5F9F" />
         <Style x:Key="EmptyStateCardStyle" TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
             <Setter Property="MaxWidth" Value="520" />
             <Setter Property="Padding" Value="28" />
@@ -74,13 +75,12 @@
     <Grid Background="{DynamicResource LightBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Background="{DynamicResource PrimaryNavyBrush}" Padding="16,10">
+        <Border Background="{StaticResource AppHeaderBannerBrush}" Padding="16,10">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                     <TextBlock Text="MBColumn" Style="{DynamicResource AppTitleTextStyle}" VerticalAlignment="Center" />
@@ -103,18 +103,17 @@
                         <MenuItem Header="Save As..." Command="{Binding SaveProjectAsCommand}" />
                     </MenuItem>
                     <MenuItem Header="_Import">
-                        <MenuItem Header="Sections from ETABS..." Command="{Binding ImportSectionsFromEtabsCommand}" />
-                        <Separator />
-                        <MenuItem Header="Element Forces from ETABS..." Command="{Binding ImportElementForcesCommand}" />
-                        <MenuItem Header="Design Forces from ETABS..." Command="{Binding ImportDesignForcesCommand}" />
+                        <MenuItem Header="Import from ETABS..." Command="{Binding ImportSectionsFromEtabsCommand}" />
+                        <MenuItem Header="New Section from DXF..." Command="{Binding Input.ImportDxfCommand}" />
                     </MenuItem>
                     <MenuItem Header="_Export">
-                        <MenuItem Header="Current Report as PDF..." Command="{Binding Report.SaveAsPdfCommand}" />
-                        <MenuItem Header="Current Report as HTML..." Command="{Binding Report.SaveAsHtmlCommand}" />
-                        <Separator />
-                        <MenuItem Header="Current Section Report as PDF..." Command="{Binding PrintSingleReportCommand}" />
-                        <MenuItem Header="Batch Print PDF Reports..." Command="{Binding BatchPrintCommand}" />
-                        <MenuItem Header="Control Points CSV..." Command="{Binding Result.ExportAllPointsCommand}" />
+                        <MenuItem Header="Section" ItemContainerStyle="{StaticResource HeaderDropDownMenuItemStyle}">
+                            <MenuItem Header="Current Section as DXF..." Command="{Binding Input.ExportDxfCommand}" />
+                        </MenuItem>
+                        <MenuItem Header="Forces" ItemContainerStyle="{StaticResource HeaderDropDownMenuItemStyle}">
+                            <MenuItem Header="Load Cases as CSV..." Command="{Binding Input.ExportLoadCasesCommand}" />
+                            <MenuItem Header="Control Points CSV..." Command="{Binding Result.ExportAllPointsCommand}" />
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="_Help">
                         <MenuItem Header="About MBColumn" Command="{Binding HelpCommand}" />
@@ -123,105 +122,8 @@
             </DockPanel>
         </Border>
 
-        <!-- Toolbar -->
-        <Border Grid.Row="1" Background="{DynamicResource PanelBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="0,0,0,1"
-                Padding="8,4">
-            <StackPanel Orientation="Horizontal">
-                <Button Command="{Binding NewProjectCommand}"
-                        ToolTip="New Project (Ctrl+N)"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        MinHeight="30" Padding="10,4"
-                        Margin="0,0,2,0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="New" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding OpenProjectCommand}"
-                        ToolTip="Open Project (Ctrl+O)"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        MinHeight="30" Padding="10,4"
-                        Margin="0,0,2,0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Open" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding SaveProjectCommand}"
-                        ToolTip="Save Project (Ctrl+S)"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        MinHeight="30" Padding="10,4"
-                        Margin="0,0,2,0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Save" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding SaveProjectAsCommand}"
-                        ToolTip="Save Project As…"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        MinHeight="30" Padding="10,4"
-                        Margin="0,0,12,0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE792;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Save As" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding BatchPrintCommand}"
-                        ToolTip="Batch print PDF reports for multiple sections"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        MinHeight="30" Padding="10,4"
-                        Margin="4,0,2,0">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" />
-                        <TextBlock Text="Batch Print" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" />
-                    </StackPanel>
-                </Button>
-                <Separator Margin="0,4,12,4" />
-                <Button Click="CalculateButton_Click"
-                        IsEnabled="{Binding HasSections}"
-                        ToolTip="Choose calculation scope"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        MinHeight="30" Padding="14,4">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                        <TextBlock Text="Calculate" Margin="5,0,0,0" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                        <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="10" Margin="8,1,0,0" VerticalAlignment="Center"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </StackPanel>
-                    <Button.ContextMenu>
-                        <ContextMenu>
-                             <MenuItem Header="Calculate This Section"
-                                       Command="{Binding Path=PlacementTarget.DataContext.CalculateCurrentColumnCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                             <MenuItem Header="Calculate Selected Sections"
-                                       Command="{Binding Path=PlacementTarget.DataContext.CalculateSelectedColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                             <MenuItem Header="Calculate All Sections"
-                                       Command="{Binding Path=PlacementTarget.DataContext.CalculateAllColumnsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                        </ContextMenu>
-                    </Button.ContextMenu>
-                </Button>
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="10,0,0,0"
-                            Visibility="{Binding IsCalculating, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <ProgressBar Width="130"
-                                 Height="12"
-                                 IsIndeterminate="True"
-                                 VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding CalculationStatus}"
-                               FontSize="{StaticResource FontSizeBody}"
-                               Foreground="{DynamicResource TextDarkBrush}"
-                               VerticalAlignment="Center"
-                               Margin="8,0,0,0" />
-                </StackPanel>
-            </StackPanel>
-        </Border>
-
         <!-- Main content: sidebar + tabs -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="4" />
@@ -498,11 +400,129 @@
             <!-- Divider (non-resizable) -->
             <Border Grid.Column="1" Background="{DynamicResource BorderGreyBrush}" />
 
-            <!-- Tabs -->
-            <TabControl Grid.Column="2" Margin="14,14,18,18"
-                        SelectedIndex="{Binding SelectedMainTabIndex, Mode=TwoWay}"
-                        Background="{DynamicResource LightBackgroundBrush}"
-                        Foreground="{DynamicResource TextDarkBrush}">
+            <!-- Analyze / Report bar + tabs -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Margin="14,14,18,0"
+                        Background="{DynamicResource PanelBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderGreyBrush}"
+                        BorderThickness="1"
+                        Padding="10,7">
+                    <DockPanel LastChildFill="True">
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding IsCalculating, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ProgressBar Width="120"
+                                         Height="12"
+                                         IsIndeterminate="True"
+                                         VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding CalculationStatus}"
+                                       FontSize="{StaticResource FontSizeBody}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0" />
+                        </StackPanel>
+
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="Analyze"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,14,0" />
+                            <Button Command="{Binding CalculateCurrentColumnCommand}"
+                                    ToolTip="Calculate this section"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5"
+                                    Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE768;"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="This Section"
+                                               Margin="7,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding CalculateSelectedColumnsCommand}"
+                                    Content="Selected"
+                                    ToolTip="Calculate selected sections"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5"
+                                    Margin="0,0,6,0" />
+                            <Button Command="{Binding CalculateAllColumnsCommand}"
+                                    Content="All"
+                                    ToolTip="Calculate all sections"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5"
+                                    Margin="0,0,14,0" />
+                            <Border Width="1"
+                                    Height="22"
+                                    Background="{DynamicResource BorderGreyBrush}"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,14,0" />
+                            <TextBlock Text="Report"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,14,0" />
+                            <Button Command="{Binding Report.SaveAsPdfCommand}"
+                                    ToolTip="Save current report as PDF"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5"
+                                    Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE749;"
+                                               FontFamily="Segoe MDL2 Assets"
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    <TextBlock Text="Current PDF"
+                                               Margin="7,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding Report.SaveAsHtmlCommand}"
+                                    Content="HTML"
+                                    ToolTip="Save current report as HTML"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5"
+                                    Margin="0,0,6,0" />
+                            <Button Command="{Binding PrintSingleReportCommand}"
+                                    Content="Section PDF"
+                                    ToolTip="Print current section report as PDF"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5"
+                                    Margin="0,0,6,0" />
+                            <Button Command="{Binding BatchPrintCommand}"
+                                    Content="Batch PDF"
+                                    ToolTip="Batch print PDF reports"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    MinHeight="30"
+                                    Padding="12,5" />
+                        </WrapPanel>
+                    </DockPanel>
+                </Border>
+
+                <TabControl Grid.Row="1" Margin="14,6,18,18"
+                            SelectedIndex="{Binding SelectedMainTabIndex, Mode=TwoWay}"
+                            Background="{DynamicResource LightBackgroundBrush}"
+                            Foreground="{DynamicResource TextDarkBrush}">
                 <TabItem Header="Input"
                          Background="{DynamicResource PanelBackgroundBrush}"
                          Foreground="{DynamicResource TextDarkBrush}">
@@ -611,9 +631,10 @@
                         </Border>
                     </Grid>
                 </TabItem>
-            </TabControl>
+                </TabControl>
+            </Grid>
         </Grid>
-        <StatusBar Grid.Row="3"
+        <StatusBar Grid.Row="2"
                    Background="{DynamicResource PanelBackgroundBrush}"
                    BorderBrush="{DynamicResource BorderGreyBrush}"
                    BorderThickness="0,1,0,0"
@@ -630,7 +651,7 @@
         </StatusBar>
 
         <!-- Save Notification Toast Overlay -->
-        <Border Grid.Row="0" Grid.RowSpan="4"
+        <Border Grid.Row="0" Grid.RowSpan="3"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
                 Margin="0,52,24,0"
@@ -690,7 +711,7 @@
         </Border>
 
         <!-- Saving Spinner Overlay (subtle top bar) -->
-        <Border Grid.Row="0" Grid.RowSpan="4"
+        <Border Grid.Row="0" Grid.RowSpan="3"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
                 Margin="0,52,24,0"
@@ -719,7 +740,7 @@
         </Border>
 
         <!-- Importing Spinner Overlay (subtle top bar) -->
-        <Border Grid.Row="0" Grid.RowSpan="4"
+        <Border Grid.Row="0" Grid.RowSpan="3"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
                 Margin="0,52,24,0"

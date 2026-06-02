@@ -167,16 +167,17 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `interface` | **IRebarCandidateGenerator** | Defines the contract for IRebarCandidateGenerator. | `IRebarCandidateGenerator.cs` |
 | `interface` | **IRebarCandidateValidator** | Validation logic for IRebarCandidate. | `IRebarCandidateValidator.cs` |
 | `interface` | **IRebarSuggestionScorer** | Defines the contract for IRebarSuggestionScorer. | `IRebarSuggestionScorer.cs` |
+| `enum` | **RebarCandidateLayoutType** | Enumeration defining states/types for RebarCandidateLayoutType. | `RebarCandidateLayoutType.cs` |
 | `class` | **RebarCodeValidator** | Validation logic for RebarCode. Key methods: Validate. | `RebarCodeValidator.cs` |
 | `class` | **RebarGeometryValidator** | Validation logic for RebarGeometry. Key methods: Validate. | `RebarGeometryValidator.cs` |
 | `class` | **RebarSuggestionCandidate** | Represents the RebarSuggestionCandidate class. Key properties: Bar, TotalBarCount, BarsOnTopBottomFace, BarsOnLeftRightFace. | `RebarSuggestionCandidate.cs` |
-| `class` | **RebarSuggestionConstraintSet** | Represents the RebarSuggestionConstraintSet class. Key properties: TargetPmmUtilization, MinimumAcceptablePmmUtilization, MaximumAcceptablePmmUtilization, TargetReinforcementRatio. | `RebarSuggestionConstraintSet.cs` |
-| `class` | **RebarSuggestionEngine** | Represents the RebarSuggestionEngine class. Key methods: Suggest. | `RebarSuggestionEngine.cs` |
+| `class` | **RebarSuggestionConstraintSet** | Represents the RebarSuggestionConstraintSet class. Key properties: MinimumBarDiameterMm, InitialTargetSpacingMm, SpacingReductionStepMm, MinimumSpacingSearchLimitMm. | `RebarSuggestionConstraintSet.cs` |
+| `class` | **RebarSuggestionEngine** | /// Automated Rebar Design engine. /// /// Filter pipeline (applied in order): /// 1. Spacing and geometry validation (via IRebarCandidateValidator) /// 2. Min / max steel ratio validation (via IRebarCandidateValidator) /// 3. PMM solver — only for candidates that passed steps 1-2 /// 4. PMM target filter — reject if PMM > UserTargetPmmRatio /// /// No scoring system. Passing candidates are sorted deterministically and /// tagged with "Best PMM Utilization" and "Lowest Rebar Ratio". ///. Key methods: Suggest. | `RebarSuggestionEngine.cs` |
 | `class` | **RebarSuggestionInput** | Represents the RebarSuggestionInput class. Key properties: BaseInput, Constraints, AllowedBars. | `RebarSuggestionInput.cs` |
 | `record` | **RebarSuggestionOption** | Represents the RebarSuggestionOption record. Key properties: Rank, ConfigurationName, Coordinates, TotalSteelAreaMm2. | `RebarSuggestionOption.cs` |
-| `class` | **RebarSuggestionResult** | Encapsulates the result of RebarSuggestion operations. Key properties: Options, RecommendedOption, TotalCandidateCount, PassedCandidateCount. | `RebarSuggestionResult.cs` |
+| `class` | **RebarSuggestionResult** | Encapsulates the result of RebarSuggestion operations. Key properties: Options, BestPmmUtilizationOption, LowestRebarRatioOption, RecommendedOption. | `RebarSuggestionResult.cs` |
 | `record` | **RebarSuggestionWarning** | Represents the RebarSuggestionWarning record. | `RebarSuggestionWarning.cs` |
-| `class` | **RectangularPerimeterCandidateGenerator** | Represents the RectangularPerimeterCandidateGenerator class. Key methods: Generate. | `RectangularPerimeterCandidateGenerator.cs` |
+| `class` | **RectangularPerimeterCandidateGenerator** | /// Generates rebar layout candidates for rectangular / square sections using a /// spacing-first approach: starts from InitialTargetSpacingMm (default 150 mm) /// and reduces by SpacingReductionStepMm until MinimumSpacingSearchLimitMm. /// The four corner bars are always present (nTop >= 2, nLeft >= 2). /// Rebar count is derived from spacing — never iterated directly. ///. Key methods: Generate. | `RectangularPerimeterCandidateGenerator.cs` |
 
 ### Reports/Builders
 

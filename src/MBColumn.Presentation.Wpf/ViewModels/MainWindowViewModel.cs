@@ -20,6 +20,9 @@ namespace MBColumn.Presentation.Wpf.ViewModels;
 
 public sealed class MainWindowViewModel : ViewModelBase
 {
+    private const int InputTabIndex = 0;
+    private const int ResultsTabIndex = 1;
+
     private readonly ColumnCalculationService calculationService;
     private readonly IProjectService projectService;
     private readonly IMessageService messageService;
@@ -289,7 +292,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 IsCalculationOutdated = false;
                 if (Explorer is not null && currentColumn is not null)
                     Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Calculated);
-                SelectedMainTabIndex = 1;
+                SelectedMainTabIndex = ResultsTabIndex;
                 RaiseResultStateProperties();
 
                 // Auto-save column input and result after successful calculation
@@ -455,7 +458,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         ValidationMessage = "";
         ApplyCurrentColumnResult();
         RefreshReportFromCurrentWorkspace();
-        SelectedMainTabIndex = 1;
+        SelectedMainTabIndex = ResultsTabIndex;
         RaiseResultStateProperties();
     }
 
@@ -751,7 +754,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         ValidationMessage = "";
         ApplyCurrentColumnResult();
         RefreshReportFromCurrentWorkspace();
-        SelectedMainTabIndex = 1;
+        SelectedMainTabIndex = ResultsTabIndex;
         RaiseResultStateProperties();
     }
 
@@ -772,7 +775,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         Report.Clear();
         Explorer.ClearSectionStatuses();
         IsCalculationOutdated = false;
-        SelectedMainTabIndex = 0;
+        SelectedMainTabIndex = InputTabIndex;
         RaiseResultStateProperties();
         RaiseStatusProperties();
     }
@@ -818,7 +821,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             });
 
             IsCalculationOutdated = false;
-            SelectedMainTabIndex = 0;
+            SelectedMainTabIndex = InputTabIndex;
             RaiseResultStateProperties();
             RaiseStatusProperties();
         }
@@ -919,7 +922,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 Explorer.SelectColumnById(lastImportedId.Value);
             }
 
-            SelectedMainTabIndex = 0;
+            SelectedMainTabIndex = InputTabIndex;
             ValidationMessage = "";
             RaiseStatusProperties();
             var importedTier = result.Sections.Count == 1 ? result.Sections[0] : null;
@@ -1240,14 +1243,18 @@ public sealed class MainWindowViewModel : ViewModelBase
         "PreviewEcmText", "PreviewDxText", "PreviewDyText", "PreviewOmegaText",
         "PreviewNRatioText", "PreviewRebarPercentageText",
         "PreviewShapeSummaryText", "PreviewRebarLayoutText",
+        "PreviewConcreteQuantityText", "PreviewSteelQuantityText",
+        "SectionPreviewErrorMessage", "RebarLayoutWarning", "HasRebarLayoutWarning",
         "FcdDisplayText", "FcmDisplayText", "EcmDisplayText",
         "SlendernessWarningText", "HasSlendernessWarnings",
+        "Ec2Check1Text", "Ec2Check1Pass", "Ec2Check2Text", "Ec2Check2Pass", "Ec2Check3Text", "Ec2Check3Pass",
+        "Ec2AswsXText", "Ec2AswsYText", "Ec2AswsXLatex", "Ec2AswsYLatex",
         "L0xText", "L0yText", "L0xLatex", "L0yLatex", "MemberLengthLInM", "AFactorDisplayText",
         "ImperfectionCalculationText", "MinimumEccentricityCalculationText",
         "ImperfectionXCalculationLatex", "ImperfectionYCalculationLatex",
         "MinimumEccentricityXCalculationLatex", "MinimumEccentricityYCalculationLatex",
         "DemandInputModeText", "SlendernessSettingsVisibility",
-        "IsSlendernessCalculationDetailsOpen", "SlendernessCalculationLoadCase",
+        "SelectedLoadCase", "IsSlendernessCalculationDetailsOpen", "SlendernessCalculationLoadCase",
         "SectionPreviewLabel", "RebarPreviewLabel", "CoverPreviewLabel", "IsSectionPreviewValid",
         // Section geometry alias/derived properties — underlying properties (Width, Height, etc.) still trigger correctly
         "SectionWidth", "SectionHeight", "NumberOfBars", "SelectedRebarSize", "SelectedRebarLayout",
@@ -1270,6 +1277,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         "NominalCurvatureX1rLatex", "NominalCurvatureY1rLatex",
         "NominalCurvatureXE2Latex", "NominalCurvatureYE2Latex",
         "FactorNLatex", "FactorALatex", "FactorBLatex", "FactorCxLatex", "FactorCyLatex",
+        "Ec2BranchXLatex", "Ec2BranchYLatex",
         "MxUsedResultLatex", "MyUsedResultLatex",
         "IsAnyAxisSlender", "IsNeitherAxisSlender",
         "LambdaXDisplay", "LambdaLimitXDisplay", "LambdaYDisplay", "LambdaLimitYDisplay",
@@ -1385,16 +1393,16 @@ public sealed class MainWindowViewModel : ViewModelBase
                 IsCalculationOutdated = false;
                 if (Explorer is not null)
                     Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.NotCalculated);
-                if (SelectedMainTabIndex == 1)
-                    SelectedMainTabIndex = 0;
+                if (SelectedMainTabIndex == ResultsTabIndex)
+                    SelectedMainTabIndex = InputTabIndex;
             }
         }
         else
         {
             Result.Result = null;
             IsCalculationOutdated = false;
-            if (SelectedMainTabIndex == 1)
-                SelectedMainTabIndex = 0;
+            if (SelectedMainTabIndex == ResultsTabIndex)
+                SelectedMainTabIndex = InputTabIndex;
         }
 
         RaiseResultStateProperties();

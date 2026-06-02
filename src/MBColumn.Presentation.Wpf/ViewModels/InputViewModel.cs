@@ -101,6 +101,8 @@ public sealed class InputViewModel : ViewModelBase
     private string previewRebarPercentageText = "—";
     private string previewShapeSummaryText = "";
     private string previewRebarLayoutText = "";
+    private string previewConcreteQuantityText = "—";
+    private string previewSteelQuantityText = "—";
     private int _generatingRebarsDepth = 0;
     private bool _isGeneratingRebars => _generatingRebarsDepth > 0;
     private bool isDxfImportedSection = false;
@@ -977,6 +979,8 @@ public sealed class InputViewModel : ViewModelBase
     public string PreviewRebarPercentageText { get => previewRebarPercentageText; private set => Set(ref previewRebarPercentageText, value); }
     public string PreviewShapeSummaryText { get => previewShapeSummaryText; private set => Set(ref previewShapeSummaryText, value); }
     public string PreviewRebarLayoutText { get => previewRebarLayoutText; private set => Set(ref previewRebarLayoutText, value); }
+    public string PreviewConcreteQuantityText { get => previewConcreteQuantityText; private set => Set(ref previewConcreteQuantityText, value); }
+    public string PreviewSteelQuantityText { get => previewSteelQuantityText; private set => Set(ref previewSteelQuantityText, value); }
     public LoadCaseViewModel? SelectedLoadCase
     {
         get => selectedLoadCase;
@@ -2741,6 +2745,23 @@ public sealed class InputViewModel : ViewModelBase
             PreviewRebarPercentageText = $"{totalAsMm2 / agMm2 * 100.0:F2} %";
         else
             PreviewRebarPercentageText = "—";
+
+        // Quantity estimation per unit length (kg/m)
+        // density_concrete = 2400 kg/m³ = 2.4e-6 kg/mm³; × 1000 mm/m → factor = 2.4e-3
+        // density_steel    = 7850 kg/m³ = 7.85e-6 kg/mm³; × 1000 mm/m → factor = 7.85e-3
+        if (agMm2 > 0)
+        {
+            double netConcreteArea = Math.Max(agMm2 - totalAsMm2, 0.0);
+            double concreteKgPerM = netConcreteArea * 2.4e-3;
+            double steelKgPerM = totalAsMm2 * 7.85e-3;
+            PreviewConcreteQuantityText = $"{concreteKgPerM:F2} kg/m";
+            PreviewSteelQuantityText = totalAsMm2 > 0 ? $"{steelKgPerM:F2} kg/m" : "—";
+        }
+        else
+        {
+            PreviewConcreteQuantityText = "—";
+            PreviewSteelQuantityText = "—";
+        }
 
         RefreshSlendernessUiState();
     }
