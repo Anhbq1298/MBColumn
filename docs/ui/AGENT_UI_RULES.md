@@ -33,6 +33,14 @@ Use this guide before changing WPF views in `src/MBColumn.Presentation.Wpf`.
 - Header title/subtitle must use `DialogHeaderTitleTextStyle` and `DialogHeaderSubtitleTextStyle`.
 - Footer buttons should use `DialogActionButtonStyle` for secondary actions and `PrimaryButtonStyle` for the primary action.
 
+## Notifications
+
+- Do not use `System.Windows.MessageBox` for normal app notifications such as export complete, import/export errors, warnings, confirmations, or status messages.
+- Use `IMessageService` when a ViewModel already receives a message service. Otherwise use `AppNotificationDialog.Show(...)` from `MBColumn.Presentation.Wpf.Views`.
+- Notification titles should be short and action-oriented, for example `Export Complete`, `Export Error`, `Import Error`, or `Warning`.
+- Notification body text should follow the MBColumn pattern: one concise sentence, then a newline before file paths or detailed error messages.
+- Keep notification buttons consistent with the app template: `OK` for informational/error messages, `Yes`/`No` for confirmations.
+
 ## Theme Collection Folder
 
 - Primitive tokens stay in `Themes/Theme.Colors.xaml` and `Themes/Theme.Typography.xaml`.

@@ -11,6 +11,7 @@ namespace MBColumn.Infrastructure.Reports.Pdf;
 public sealed class QuestPdfCalculationReportRenderer
 {
     private const string ReportFont = "Inter";
+    private const float PdfContentWidthPt = 180f / 25.4f * 72f;
 
     static QuestPdfCalculationReportRenderer()
     {
@@ -154,15 +155,16 @@ public sealed class QuestPdfCalculationReportRenderer
                 break;
 
             case ImageBlock img:
-                col.Item().PaddingTop(4).AlignCenter()
-                    .Text("[Section Geometry — see HTML export for SVG]").FontSize(12).Italic().FontColor("#888");
-                if (!string.IsNullOrEmpty(img.Caption))
-                    col.Item().AlignCenter().Text(img.Caption).FontSize(12).Italic().FontColor("#555");
+                RenderSvgFigure(col, img.SvgContent, img.WidthPct, img.Caption);
                 break;
 
             case DiagramBlock diag:
-                col.Item().PaddingTop(4).AlignCenter()
-                    .Text($"[Diagram — {diag.Caption}]").FontSize(12).Italic().FontColor("#888");
+                RenderDiagramFigure(col, diag);
+                break;
+
+            case SectionPreviewBlock sp:
+                if (!string.IsNullOrWhiteSpace(sp.SvgFallback))
+                    RenderSvgFigure(col, sp.SvgFallback, sp.WidthPct, sp.Caption);
                 break;
 
             case SummaryBoxBlock sum:
@@ -184,6 +186,76 @@ public sealed class QuestPdfCalculationReportRenderer
             case PageBreakBlock:
                 col.Item().PageBreak();
                 break;
+        }
+    }
+
+    private static void RenderSvgFigure(ColumnDescriptor col, string? svgContent, double widthPct, string caption)
+    {
+        if (string.IsNullOrWhiteSpace(svgContent))
+            return;
+
+        try
+        {
+            col.Item().PaddingTop(4).AlignCenter().Width(FigureWidth(widthPct))
+                .Svg(SvgImage.FromText(svgContent));
+        }
+        catch
+        {
+            col.Item().PaddingTop(4).AlignCenter()
+                .Text($"[Figure could not be rendered — {caption}]")
+                .FontSize(12).Italic().FontColor("#888");
+        }
+
+        RenderCaption(col, caption);
+    }
+
+    private static void RenderDiagramFigure(ColumnDescriptor col, DiagramBlock diagram)
+    {
+        if (TryDecodeDataUri(diagram.PngDataUri, out var imageBytes))
+        {
+            col.Item().PaddingTop(4).AlignCenter().Width(FigureWidth(diagram.WidthPct))
+                .Image(imageBytes)
+                .FitWidth();
+            RenderCaption(col, diagram.Caption);
+            return;
+        }
+
+        col.Item().PaddingTop(4).AlignCenter()
+            .Text($"[Diagram image unavailable — {diagram.Caption}]")
+            .FontSize(12).Italic().FontColor("#888");
+        RenderCaption(col, diagram.Caption);
+    }
+
+    private static void RenderCaption(ColumnDescriptor col, string caption)
+    {
+        if (!string.IsNullOrWhiteSpace(caption))
+            col.Item().AlignCenter().Text(caption).FontSize(12).Italic().FontColor("#555");
+    }
+
+    private static float FigureWidth(double widthPct)
+    {
+        var pct = (float)System.Math.Clamp(widthPct, 10, 100) / 100f;
+        return PdfContentWidthPt * pct;
+    }
+
+    private static bool TryDecodeDataUri(string dataUri, out byte[] imageBytes)
+    {
+        imageBytes = [];
+        if (string.IsNullOrWhiteSpace(dataUri))
+            return false;
+
+        const string marker = "base64,";
+        int index = dataUri.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        string payload = index >= 0 ? dataUri[(index + marker.Length)..] : dataUri;
+
+        try
+        {
+            imageBytes = Convert.FromBase64String(payload);
+            return imageBytes.Length > 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 

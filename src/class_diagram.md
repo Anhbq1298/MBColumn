@@ -179,7 +179,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **RebarSuggestionWarning** | Represents the RebarSuggestionWarning record. | `RebarSuggestionWarning.cs` |
 | `class` | **RectangularPerimeterCandidateGenerator** | /// Generates rebar layout candidates for rectangular / square sections using a /// spacing-first approach: starts from InitialTargetSpacingMm (default 150 mm) /// and reduces by SpacingReductionStepMm until MinimumSpacingSearchLimitMm. /// The four corner bars are always present (nTop >= 2, nLeft >= 2). /// Rebar count is derived from spacing — never iterated directly. ///. Key methods: Generate. | `RectangularPerimeterCandidateGenerator.cs` |
 | `record` | **ShearLinkDesignResult** | Encapsulates the result of ShearLinkDesign operations. Key properties: LinkBarName, LinkBarLabel, LinkDiameterMm, LinkSpacingMm. | `ShearLinkDesignResult.cs` |
-| `class` | **ShearLinkDesigner** | yClear = height - 2*(cover + linkDiameter) gX = xClear / (InnerLegsX + 1) must be ≤ threshold (default 150 mm) gY = yClear / (InnerLegsY + 1) /// → InnerLegsX_min = max(0, ceil(xClear / threshold) - 1) → InnerLegsY_min = max(0, ceil(yClear / threshold) - 1) /// Feasibility: the required number of inner legs must not exceed the number of intermediate longitudinal bars on each face (nTop-2 and nLeft-2 respectively). If infeasible the candidate should be rejected by the engine. Key methods: Design, RequiredInnerLegs. | `ShearLinkDesigner.cs` |
+| `class` | **ShearLinkDesigner** | Required Asw/s = VxUtilization × (Asw/s)_existing At the detailing spacing cap, extra legs needed: TotX_required = ceil(reqX × svMaxDetail / barArea) InnerLegsX = max(InnerLegsX_gap, TotX_required − 2) /// STEP 4 — Spacing from shear demand sv = min(svMaxDetail, TotX × barArea / reqX, TotY × barArea / reqY) rounded down to nearest 5 mm, ≥ 50 mm /// The algorithm iterates from the smallest qualifying link bar upward until the design satisfies both detailing and shear demand, or exhausts options. Key methods: Design, RequiredInnerLegs. | `ShearLinkDesigner.cs` |
 
 ### Reports/Builders
 
@@ -837,6 +837,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **AddSectionDialog** | Represents the AddSectionDialog class. Key properties: SectionName, SelectedGroupId. | `AddSectionDialog.xaml.cs` |
+| `class` | **AppNotificationDialog** | Represents the AppNotificationDialog class. Key methods: Show. | `AppNotificationDialog.xaml.cs` |
 | `class` | **AutomatedRebarDesignDialog** | Represents the AutomatedRebarDesignDialog class. | `AutomatedRebarDesignDialog.xaml.cs` |
 | `class` | **BatchPrintWindow** | Represents the BatchPrintWindow class. | `BatchPrintWindow.xaml.cs` |
 | `class` | **CalculationProgressWindow** | Represents the CalculationProgressWindow class. Key properties: StatusText, ProgressValue, ProgressMax. | `CalculationProgressWindow.xaml.cs` |

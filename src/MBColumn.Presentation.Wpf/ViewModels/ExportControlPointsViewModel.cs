@@ -2,6 +2,7 @@ using MBColumn.Application.DTOs;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
+using MBColumn.Presentation.Wpf.Views;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -284,12 +285,11 @@ public sealed class ExportControlPointsViewModel : ViewModelBase
         }
 
         csvExportService.Export(dialog.FileName, PreviewRows);
-        MessageBox.Show(
-            System.Windows.Application.Current.MainWindow,
+        AppNotificationDialog.Show(
             $"Exported {PreviewRows.Count} preview rows to:\n{dialog.FileName}",
             "Export Complete",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+            MessageBoxImage.Information,
+            owner: System.Windows.Application.Current.MainWindow);
     }
 
     private string BuildSuggestedFileName()

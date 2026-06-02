@@ -16,6 +16,7 @@ using System.Linq;
 using MBColumn.Application.Services.Geometry;
 using MBColumn.Domain.Entities;
 using MBColumn.Presentation.Wpf.Services;
+using MBColumn.Presentation.Wpf.Views;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
@@ -1889,7 +1890,10 @@ public sealed class InputViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Failed to export: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                AppNotificationDialog.Show(
+                    $"Failed to export:\n{ex.Message}",
+                    "Export Error",
+                    System.Windows.MessageBoxImage.Error);
             }
         }
     }
@@ -1937,7 +1941,10 @@ public sealed class InputViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Failed to import: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                AppNotificationDialog.Show(
+                    $"Failed to import:\n{ex.Message}",
+                    "Import Error",
+                    System.Windows.MessageBoxImage.Error);
             }
         }
     }
@@ -2391,18 +2398,16 @@ public sealed class InputViewModel : ViewModelBase
 
             new DxfExportService().Export(dialog.FileName, boundary, rebars);
 
-            System.Windows.MessageBox.Show(
+            AppNotificationDialog.Show(
                 $"DXF exported to:\n{dialog.FileName}",
                 "Export Complete",
-                System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(
+            AppNotificationDialog.Show(
                 $"DXF export failed:\n{ex.Message}",
                 "Export Error",
-                System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
         }
     }

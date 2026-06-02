@@ -62,9 +62,10 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     private bool   _warnInternalLinks   = true;
 
     // ── Shear link design inputs ──────────────────────────────────────────────
-    private double _minLinkDiameterMm    = 0;      // 0 = EC2 auto
+    private double _minLinkDiameterMm    = 10.0;   // practical minimum (T10)
     private double _maxLinkSpacingMm     = 0;      // 0 = EC2 auto
     private double _crossTieThresholdMm  = 150.0;
+    private double _targetShearUtil      = 1.00;
 
     // Toggles
     private readonly ObservableCollection<AllowedBarToggleViewModel>  _allowedBarToggles  = new();
@@ -208,6 +209,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     public double MinLinkDiameterMm   { get => _minLinkDiameterMm;   set => Set(ref _minLinkDiameterMm, value); }
     public double MaxLinkSpacingMm    { get => _maxLinkSpacingMm;    set => Set(ref _maxLinkSpacingMm, value); }
     public double CrossTieThresholdMm { get => _crossTieThresholdMm; set => Set(ref _crossTieThresholdMm, value); }
+    public double TargetShearUtil     { get => _targetShearUtil;     set => Set(ref _targetShearUtil, value); }
 
     // ── Design Summary ────────────────────────────────────────────────────────
     private string _candidateCountsText = "—";
@@ -416,6 +418,8 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         Add("Link bar (auto)",           "—",                               true);
         Add("Link spacing (auto)",       "—",                               true);
         Add("Cross-ties",                "—",                               true);
+        Add("Asw/s (X) demand",          "—",                               true);
+        Add("Asw/s (Y) demand",          "—",                               true);
         Add("Overall", r is null ? "—" : (pmmPass && vxPass && vyPass ? "OK" : "Failed"),
             r is null || (pmmPass && vxPass && vyPass));
     }
@@ -579,10 +583,20 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             UpdateCheckRow("Link bar (auto)",    ld.LinkBarLabel,                 !noBar);
             UpdateCheckRow("Link spacing (auto)", $"{ld.LinkSpacingMm:F0} mm",    true);
             UpdateCheckRow("Cross-ties",
-                $"ΔX={ld.ActualGapX:F0}  ΔY={ld.ActualGapY:F0} mm" +
+                $"ΔX={ld.ActualGapX:F0} ΔY={ld.ActualGapY:F0} mm" +
                 (ld.GapCheckPass ? " ✓" : " ✗") +
                 $"  (X:{ld.InternalLinksX} Y:{ld.InternalLinksY})",
                 ld.GapCheckPass);
+
+            if (ld.HasShearDemand)
+            {
+                UpdateCheckRow("Asw/s (X) demand",
+                    $"req {ld.RequiredAswsX:F3}  prov {ld.ProvidedAswsX:F3} mm²/mm",
+                    ld.ProvidedAswsX >= ld.RequiredAswsX - 1e-9);
+                UpdateCheckRow("Asw/s (Y) demand",
+                    $"req {ld.RequiredAswsY:F3}  prov {ld.ProvidedAswsY:F3} mm²/mm",
+                    ld.ProvidedAswsY >= ld.RequiredAswsY - 1e-9);
+            }
         }
 
         bool overall = opt.Status != RebarSuggestionStatus.Failed;
@@ -662,6 +676,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             MinLinkDiameterMm            = _minLinkDiameterMm,
             MaxLinkSpacingMm             = _maxLinkSpacingMm,
             CrossTieThresholdMm          = _crossTieThresholdMm,
+            TargetShearUtilization       = _targetShearUtil,
             AllowAllSidesEqualLayout     = _allowAllSidesEqual,
             AllowSidesDifferentLayout    = _allowSidesDifferent,
             RequireSymmetricLayout       = true,

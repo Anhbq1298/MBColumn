@@ -10,6 +10,7 @@ using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Infrastructure.Reports.Html;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
+using MBColumn.Presentation.Wpf.Views;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -600,8 +601,8 @@ public sealed class ReportTabViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"PDF preview failed:\n{ex.Message}", "Export Error",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            AppNotificationDialog.Show($"PDF preview failed:\n{ex.Message}", "Export Error",
+                System.Windows.MessageBoxImage.Error);
         }
         finally { IsExportBusy = false; }
     }
@@ -619,25 +620,54 @@ public sealed class ReportTabViewModel : ViewModelBase
         try
         {
             IsExportBusy = true;
-            if (WebViewPrintToPdfAsync is not null && !string.IsNullOrEmpty(ReportHtmlContent))
+            await Task.Yield();
+            var data = BuildReportData();
+            var visibleNumbers = SectionToggles
+                .Where(t => t.IsVisible)
+                .Select(t => t.Section.Number)
+                .ToHashSet();
+            if (visibleNumbers.Count > 0 && visibleNumbers.Count < data.Sections.Count)
+                data = data with { Sections = data.Sections.Where(s => visibleNumbers.Contains(s.Number)).ToArray() };
+
+            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
+            renderer.RenderToFile(data, dialog.FileName);
+            if (TryOpenFileWithDefaultApp(dialog.FileName, out var openError))
             {
-                await WebViewPrintToPdfAsync(dialog.FileName);
+                AppNotificationDialog.Show($"PDF saved and opened:\n{dialog.FileName}", "Export Complete",
+                    System.Windows.MessageBoxImage.Information);
             }
             else
             {
-                var data = BuildReportData();
-                var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
-                renderer.RenderToFile(data, dialog.FileName);
+                AppNotificationDialog.Show(
+                    $"PDF saved to:\n{dialog.FileName}\n\nCould not open automatically:\n{openError}",
+                    "Open PDF Error",
+                    System.Windows.MessageBoxImage.Warning);
             }
-            System.Windows.MessageBox.Show($"PDF saved to:\n{dialog.FileName}", "Export Complete",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"PDF export failed:\n{ex.Message}", "Export Error",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            AppNotificationDialog.Show($"PDF export failed:\n{ex.Message}", "Export Error",
+                System.Windows.MessageBoxImage.Error);
         }
         finally { IsExportBusy = false; }
+    }
+
+    private static bool TryOpenFileWithDefaultApp(string fileName, out string errorMessage)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fileName)
+            {
+                UseShellExecute = true
+            });
+            errorMessage = string.Empty;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            return false;
+        }
     }
 
     private void SaveAsHtml()
@@ -656,13 +686,13 @@ public sealed class ReportTabViewModel : ViewModelBase
             var data = BuildReportData();
             var renderer = new MBColumn.Infrastructure.Reports.Html.HtmlCalculationReportRenderer();
             renderer.RenderToFile(data, dialog.FileName);
-            System.Windows.MessageBox.Show($"HTML saved to:\n{dialog.FileName}", "Export Complete",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            AppNotificationDialog.Show($"HTML saved to:\n{dialog.FileName}", "Export Complete",
+                System.Windows.MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"HTML export failed:\n{ex.Message}", "Export Error",
-                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            AppNotificationDialog.Show($"HTML export failed:\n{ex.Message}", "Export Error",
+                System.Windows.MessageBoxImage.Error);
         }
         finally { IsExportBusy = false; }
     }

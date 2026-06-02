@@ -92,33 +92,95 @@ public sealed class RebarSuggestionEngine(
             // ── Candidate passes all checks ──────────────────────────────────
             passedCount++;
             var finalStatus = candidate.Status; // Valid or Warning (from validator)
-
-            // Shear warning (informational — does not fail the candidate)
-            var warnings = new List<RebarSuggestionWarning>(candidate.Warnings);
-            if (eval.MaxShearUtilization is { } shear && shear > 1.0)
-            {
-                finalStatus = RebarSuggestionStatus.Warning;
-                warnings.Add(new RebarSuggestionWarning(
-                    RebarSuggestionWarningType.ShearExceedsMaximum,
-                    $"Shear utilization {shear:F2} exceeds 1.0."));
-            }
+            var warnings    = new List<RebarSuggestionWarning>(candidate.Warnings);
 
             double minClearSpacing = ComputeMinClearSpacing(candidate, input);
 
-            // ── Shear link auto-design ───────────────────────────────────────
+            // ── Shear link auto-design (iterative convergence) ──────────────
+            // The first PMM eval used old stirrups, so VRd,c may differ from what
+            // the new longitudinal bars provide.  We iterate: design links →
+            // re-evaluate → if shear still exceeds target, feed the new eval back
+            // into the designer so it scales from the now-correct Asw/s baseline.
             ShearLinkDesignResult? linkDesign = null;
+            double shearTarget = input.Constraints.TargetShearUtilization > 0
+                ? input.Constraints.TargetShearUtilization : 1.00;
+
             if (input.AllowedLinkBars.Count > 0)
             {
-                linkDesign = ShearLinkDesigner.Design(candidate, input);
+                const int MaxShearIter = 3;
+                var iterInput = input;     // evolves each iteration with new stirrups
+                var iterEval  = eval;      // evolves each iteration with new utilizations
 
-                // Reject candidate if the required inner legs exceed the
-                // intermediate bar count — the ΔX/ΔY check cannot pass.
-                if (!linkDesign.IsLinkCheckFeasible)
+                for (int iter = 0; iter < MaxShearIter; iter++)
+                {
+                    var ld = ShearLinkDesigner.Design(candidate, iterInput, iterEval);
+
+                    // Reject candidate if the geometric ΔX/ΔY check cannot pass
+                    if (!ld.IsLinkCheckFeasible)
+                    {
+                        linkDesign = ld;
+                        break;
+                    }
+
+                    linkDesign = ld;
+
+                    // Patch DTO with the newly designed stirrups and re-evaluate
+                    var newDto = iterInput.BaseInput with
+                    {
+                        LinkDiameterMm = ld.LinkDiameterMm,
+                        LinkSpacingMm  = ld.LinkSpacingMm,
+                        TotalLegsX     = 2 + ld.InternalLinksX,
+                        TotalLegsY     = 2 + ld.InternalLinksY
+                    };
+                    var newInput = new RebarSuggestionInput
+                    {
+                        BaseInput       = newDto,
+                        Constraints     = input.Constraints,
+                        AllowedBars     = input.AllowedBars,
+                        AllowedLinkBars = input.AllowedLinkBars
+                    };
+                    var newEval = evaluator.Evaluate(candidate, newInput);
+
+                    // Update for next iteration
+                    iterInput = newInput;
+                    iterEval  = newEval;
+                    eval      = newEval;   // final option uses converged eval
+
+                    // Converged?
+                    if (newEval.MaxShearUtilization is null ||
+                        newEval.MaxShearUtilization <= shearTarget + 1e-6)
+                        break;
+                }
+
+                if (linkDesign is null || !linkDesign.IsLinkCheckFeasible)
                 {
                     failedCount++;
                     done++;
                     progress?.Report((done, total));
                     continue;
+                }
+
+                // After convergence, warn only if truly unresolvable
+                double finalShear = eval.MaxShearUtilization ?? 0;
+                if (finalShear > shearTarget + 1e-6)
+                {
+                    finalStatus = RebarSuggestionStatus.Warning;
+                    warnings.Add(new RebarSuggestionWarning(
+                        RebarSuggestionWarningType.ShearExceedsMaximum,
+                        $"Shear utilization {finalShear:F2} > target {shearTarget:F2} — " +
+                        $"no available link configuration can satisfy the demand. " +
+                        $"Try larger link bars or a different longitudinal layout."));
+                }
+            }
+            else
+            {
+                // No link bars: fall back to evaluator's raw shear check
+                if (eval.MaxShearUtilization is { } shear && shear > shearTarget + 1e-6)
+                {
+                    finalStatus = RebarSuggestionStatus.Warning;
+                    warnings.Add(new RebarSuggestionWarning(
+                        RebarSuggestionWarningType.ShearExceedsMaximum,
+                        $"Shear utilization {shear:F2} exceeds target {shearTarget:F2}."));
                 }
             }
 

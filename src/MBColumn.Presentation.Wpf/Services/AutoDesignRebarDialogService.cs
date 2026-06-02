@@ -27,9 +27,9 @@ public sealed class AutoDesignRebarDialogService(
             .Where(b => b.DiameterMm >= 16.0)
             .ToList();
 
-        // Shear link bars: 6–16 mm diameter range
+        // Shear link bars: T10–T16 (practical minimum 10 mm for Singapore set)
         var shearLinkBars = allBars
-            .Where(b => b.DiameterMm is >= 6.0 and <= 16.0)
+            .Where(b => b.DiameterMm is >= 10.0 and <= 16.0)
             .OrderBy(b => b.DiameterMm)
             .ToList();
 
@@ -96,7 +96,7 @@ public sealed class AutoDesignRebarDialogService(
             MinimumSpacingSearchLimitMm  = 50.0,
             MaximumBarSpacingMm          = 300.0,
             UserTargetPmmRatio           = 1.00,
-            MinLinkDiameterMm            = 0,       // EC2 auto
+            MinLinkDiameterMm            = 10.0,    // practical minimum for Singapore (T10)
             MaxLinkSpacingMm             = 0,       // EC2 auto
             CrossTieThresholdMm          = 150.0,
             AllowAllSidesEqualLayout     = true,

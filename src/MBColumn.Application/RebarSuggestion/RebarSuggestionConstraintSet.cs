@@ -55,6 +55,11 @@ public sealed class RebarSuggestionConstraintSet
     public double AggregateSizeMm { get; init; } = 20.0;
     public RebarSuggestionPreset Preset { get; init; } = RebarSuggestionPreset.Balanced;
 
+    // ── PMM target ────────────────────────────────────────────────────────────
+    // Shear utilization ceiling: design loop iterates until Vu ≤ this value.
+    // 0 = use 1.00 (full utilization).
+    public double TargetShearUtilization { get; init; } = 1.00;
+
     // ── Shear link auto-design ────────────────────────────────────────────────
     // 0 = use EC2 formula automatically; positive value = user override (must still
     // satisfy EC2 minimum / maximum).

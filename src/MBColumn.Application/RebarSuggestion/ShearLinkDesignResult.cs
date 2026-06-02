@@ -16,16 +16,22 @@ public sealed record ShearLinkDesignResult
     public bool InternalLinksRequired { get; init; }
     public int InternalLinkCount => InternalLinksX + InternalLinksY;
 
-    // Actual gap between restrained positions (same quantities checked by UpdateEc2LinkChecks)
+    // Gap check (EC2 §9.5.3(6) geometric condition)
     public double ActualGapX { get; init; }
     public double ActualGapY { get; init; }
     public double ThresholdMm { get; init; }
     public bool GapCheckPass { get; init; }
-
-    // True if the required inner legs can be physically placed at intermediate bar positions
     public bool IsLinkCheckFeasible { get; init; }
 
-    // EC2 computed limits (informational)
+    // Shear demand (Asw/s in mm²/mm for each principal direction)
+    public double RequiredAswsX { get; init; }
+    public double RequiredAswsY { get; init; }
+    public double ProvidedAswsX { get; init; }
+    public double ProvidedAswsY { get; init; }
+    public bool ShearDemandSatisfied { get; init; }
+    public bool HasShearDemand { get; init; }
+
+    // EC2 detailing limits (informational)
     public double MinRequiredDiameterMm { get; init; }
     public double MaxAllowedSpacingMm { get; init; }
 

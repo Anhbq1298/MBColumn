@@ -1,4 +1,5 @@
 using System.Windows;
+using MBColumn.Presentation.Wpf.Views;
 
 namespace MBColumn.Presentation.Wpf.Services;
 
@@ -13,14 +14,14 @@ public interface IMessageService
 public sealed class MessageBoxService : IMessageService
 {
     public void ShowError(string message, string title = "Error")
-        => MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+        => AppNotificationDialog.Show(message, title, MessageBoxImage.Error);
 
     public void ShowInformation(string message, string title = "Information")
-        => MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+        => AppNotificationDialog.Show(message, title, MessageBoxImage.Information);
 
     public void ShowWarning(string message, string title = "Warning")
-        => MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        => AppNotificationDialog.Show(message, title, MessageBoxImage.Warning);
 
     public bool ConfirmWarning(string message, string title)
-        => MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
+        => AppNotificationDialog.Show(message, title, MessageBoxImage.Warning, MessageBoxButton.YesNo) == MessageBoxResult.Yes;
 }

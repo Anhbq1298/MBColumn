@@ -315,13 +315,20 @@
                                     <TextBox Text="{Binding MaxLinkSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <TextBlock Text="Cross-tie threshold (mm)"
-                                           Style="{StaticResource FieldLabelTextStyle}"
-                                           VerticalAlignment="Center" Width="165" />
-                                <TextBox Text="{Binding CrossTieThresholdMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}"
-                                         Width="80" />
-                            </StackPanel>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <TextBlock Text="Cross-tie threshold (mm)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding CrossTieThresholdMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Target shear utilization" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding TargetShearUtil, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
 
                             <!-- Layout type -->
                             <TextBlock Text="Layout type" Style="{StaticResource SectionLabelStyle}" />
