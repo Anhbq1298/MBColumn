@@ -23,6 +23,7 @@ public sealed record RebarSuggestionOption
     public string GoverningLoadCaseName { get; init; } = string.Empty;
     public double Score { get; init; }
     public double MinimumClearSpacingMm { get; init; }
+    public ShearLinkDesignResult? ShearLinkDesign { get; init; }
     public RebarSuggestionStatus Status { get; init; }
     public required string Reason { get; init; }
     public string RecommendationTag { get; init; } = string.Empty;

@@ -5,8 +5,8 @@
         xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
         xmlns:enums="clr-namespace:MBColumn.Domain.Enums;assembly=MBColumn.Domain"
         Title="Automated Rebar Design"
-        Width="1100" Height="720"
-        MinWidth="900" MinHeight="600"
+        Width="1200" Height="760"
+        MinWidth="950" MinHeight="620"
         WindowStartupLocation="CenterOwner"
         Style="{DynamicResource DialogWindowStyle}">
 
@@ -29,6 +29,16 @@
                 <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:RebarSuggestionStatus.Valid}">
                     <Setter Property="Background" Value="#E8F5E9" />
                     <Setter Property="Foreground" Value="#2E7D32" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="TagCellStyle" TargetType="DataGridCell">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBlueBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RecommendationTag}" Value="">
+                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                    <Setter Property="FontWeight" Value="Normal" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -68,17 +78,17 @@
             <StackPanel>
                 <TextBlock Text="Automated Rebar Design"
                            Style="{DynamicResource DialogHeaderTitleTextStyle}" />
-                <TextBlock Text="Generate, evaluate, and apply optimised rebar layouts for the current section."
+                <TextBlock Text="Spacing-first longitudinal layout + EC2 shear link auto-design. Corner bars fixed; count derived from spacing."
                            Style="{DynamicResource DialogHeaderSubtitleTextStyle}" />
             </StackPanel>
         </Border>
 
-        <!-- Main body: left results + right constraints -->
-        <Grid Grid.Row="1" Margin="0">
+        <!-- Main body -->
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="4*" MinWidth="300" MaxWidth="420" />
+                <ColumnDefinition Width="4*" MinWidth="320" MaxWidth="460" />
             </Grid.ColumnDefinitions>
 
             <!-- ════════════════ LEFT PANEL ════════════════ -->
@@ -91,21 +101,15 @@
                     <RowDefinition Height="2*" />
                 </Grid.RowDefinitions>
 
-                <!-- Before / After Table -->
+                <!-- Before / After -->
                 <TextBlock Grid.Row="0" Text="Before / After"
-                           Style="{StaticResource SectionLabelStyle}"
-                           Margin="12,10,0,4" />
-
+                           Style="{StaticResource SectionLabelStyle}" Margin="12,10,0,4" />
                 <DataGrid Grid.Row="1"
                           ItemsSource="{Binding ParameterRows}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
-                          CanUserSortColumns="False"
-                          CanUserResizeRows="False"
-                          BorderThickness="0,1,0,0"
-                          Margin="8,0,4,0">
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                          CanUserSortColumns="False" CanUserResizeRows="False"
+                          BorderThickness="0,1,0,0" Margin="8,0,4,0">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Parameter" Binding="{Binding Parameter}" Width="160" />
                         <DataGridTextColumn Header="Before"    Binding="{Binding Before}"    Width="80" />
@@ -116,28 +120,21 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <!-- Check Summary -->
+                <!-- Design Check Summary -->
                 <TextBlock Grid.Row="2" Text="Design Check Summary"
-                           Style="{StaticResource SectionLabelStyle}"
-                           Margin="12,4,0,4" />
-
+                           Style="{StaticResource SectionLabelStyle}" Margin="12,4,0,4" />
                 <DataGrid Grid.Row="3"
                           ItemsSource="{Binding CheckRows}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
-                          CanUserSortColumns="False"
-                          CanUserResizeRows="False"
-                          MaxHeight="200"
-                          BorderThickness="0,1,0,0"
-                          Margin="8,0,4,0">
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                          CanUserSortColumns="False" CanUserResizeRows="False"
+                          MaxHeight="220" BorderThickness="0,1,0,0" Margin="8,0,4,0">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Check"     Binding="{Binding CheckName}" Width="190" />
                         <DataGridTextColumn Header="Before"    Binding="{Binding Before}"    Width="65" />
                         <DataGridTextColumn Header="Condition" Binding="{Binding Condition}" Width="80"
                                             CellStyle="{StaticResource ConditionCellStyle}" />
-                        <DataGridTextColumn Header="After"     Binding="{Binding After}"     Width="65"
+                        <DataGridTextColumn Header="After"     Binding="{Binding After}"     Width="80"
                                             CellStyle="{StaticResource CheckPassCellStyle}" />
                         <DataGridTextColumn Header="Status"    Binding="{Binding Status}"    Width="60"
                                             CellStyle="{StaticResource CheckPassCellStyle}" />
@@ -151,59 +148,54 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="Candidate Suggestions"
-                               Style="{StaticResource SectionLabelStyle}"
-                               Margin="12,4,0,4" />
+                               Style="{StaticResource SectionLabelStyle}" Margin="12,4,0,4" />
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding CandidateRows}"
                               SelectedItem="{Binding SelectedCandidate}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal"
-                              SelectionMode="Single"
-                              CanUserSortColumns="True"
-                              CanUserResizeRows="False"
-                              BorderThickness="0,1,0,0"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                              SelectionMode="Single" CanUserSortColumns="True"
+                              CanUserResizeRows="False" BorderThickness="0,1,0,0"
                               Margin="8,0,4,4">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="#"       Binding="{Binding Rank}"       Width="30" />
-                            <DataGridTextColumn Header="Config"  Binding="{Binding Config}"     Width="70" />
-                            <DataGridTextColumn Header="As mm²"  Binding="{Binding AsMm2Display}" Width="65" />
-                            <DataGridTextColumn Header="ρ %"     Binding="{Binding RhoDisplay}"  Width="55" />
-                            <DataGridTextColumn Header="PMM"     Binding="{Binding PmmDisplay}"  Width="50" />
-                            <DataGridTextColumn Header="V max"   Binding="{Binding MaxShearDisplay}" Width="55" />
-                            <DataGridTextColumn Header="Spacing" Binding="{Binding SpacingStatus}" Width="60" />
-                            <DataGridTextColumn Header="Score"   Binding="{Binding ScoreDisplay}" Width="50" />
-                            <DataGridTextColumn Header="Status"  Binding="{Binding StatusLabel}"  Width="65"
+                            <DataGridTextColumn Header="#"       Binding="{Binding Rank}"                Width="28" />
+                            <DataGridTextColumn Header="Config"  Binding="{Binding Config}"              Width="65" />
+                            <DataGridTextColumn Header="Layout"  Binding="{Binding LayoutTypeLabel}"     Width="45" />
+                            <DataGridTextColumn Header="As mm²"  Binding="{Binding AsMm2Display}"        Width="60" />
+                            <DataGridTextColumn Header="ρ %"     Binding="{Binding RhoDisplay}"          Width="50" />
+                            <DataGridTextColumn Header="PMM"     Binding="{Binding PmmDisplay}"          Width="46" />
+                            <DataGridTextColumn Header="Clr mm"  Binding="{Binding MinClearSpacingDisplay}" Width="50" />
+                            <DataGridTextColumn Header="Link"    Binding="{Binding LinkLabel}"           Width="46" />
+                            <DataGridTextColumn Header="Sv mm"   Binding="{Binding LinkSpacingDisplay}"  Width="46" />
+                            <DataGridTextColumn Header="X-ties"  Binding="{Binding InternalLinksDisplay}" Width="46" />
+                            <DataGridTextColumn Header="Status"  Binding="{Binding StatusLabel}"         Width="46"
                                                 CellStyle="{StaticResource StatusCellStyle}" />
-                            <DataGridTextColumn Header="Reason"  Binding="{Binding Reason}"     Width="*" MinWidth="120" />
+                            <DataGridTextColumn Header="Tag"     Binding="{Binding RecommendationTag}"   Width="150"
+                                                CellStyle="{StaticResource TagCellStyle}" />
+                            <DataGridTextColumn Header="Reason"  Binding="{Binding Reason}"              Width="*" MinWidth="80" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </Grid>
 
             <!-- Splitter -->
-            <GridSplitter Grid.Column="1"
-                          Width="4"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Stretch"
+            <GridSplitter Grid.Column="1" Width="4"
+                          HorizontalAlignment="Center" VerticalAlignment="Stretch"
                           Background="{DynamicResource BorderGreyBrush}"
                           ResizeBehavior="PreviousAndNext" />
 
-            <!-- ════════════════ RIGHT PANEL ════════════════ -->
+            <!-- ════════════════ RIGHT PANEL — 4 tabs ════════════════ -->
             <TabControl Grid.Column="2" Margin="4,8,8,4"
                         SelectedIndex="{Binding SelectedTabIndex}">
 
-                <!-- Tab 0: Section Preview -->
+                <!-- ── Tab 0: Section Preview ── -->
                 <TabItem Header="Section Preview">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-
-                        <controls:SectionPreviewCanvas
-                            Grid.Row="0"
+                        <controls:SectionPreviewCanvas Grid.Row="0"
                             SectionWidth="{Binding PreviewSectionWidthMm}"
                             SectionHeight="{Binding PreviewSectionHeightMm}"
                             Cover="{Binding PreviewCoverMm}"
@@ -215,165 +207,142 @@
                             IsValid="{Binding PreviewIsValid}"
                             StirrupDiameterMm="{Binding PreviewStirrupDiameterMm}"
                             Margin="8,8,8,4" />
-
                         <TextBlock Grid.Row="1"
                                    Text="{Binding PreviewStatusText}"
-                                   Margin="10,0,10,10"
-                                   FontSize="11"
+                                   Margin="10,0,10,10" FontSize="11"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextMutedBrush}" />
                     </Grid>
                 </TabItem>
 
-                <!-- Tab 1: Target -->
-                <TabItem Header="Target">
+                <!-- ── Tab 1: Parameters (merged Target + Search Space) ── -->
+                <TabItem Header="Parameters">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="12,8">
-                            <TextBlock Text="PMM Utilization Target"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Target" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding TargetPmm, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="0,0,6,0">
-                                    <TextBlock Text="Min acceptable" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MinPmm, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Max acceptable" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MaxPmm, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
 
-                            <TextBlock Text="Steel Ratio ρ Target"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Target %" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding TargetRho, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="0,0,6,0">
-                                    <TextBlock Text="Min preferred %" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MinPreferredRho, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Max preferred %" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MaxPreferredRho, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
-
-                            <TextBlock Text="Suggestion Intent"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <ComboBox ItemsSource="{Binding PresetOptions}"
-                                      DisplayMemberPath="DisplayName"
-                                      SelectedValuePath="Preset"
-                                      SelectedValue="{Binding SelectedPreset}"
-                                      Margin="0,0,0,8" />
-
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Max suggestions" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MaxSuggestions, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                            </Grid>
-
-                            <CheckBox Content="Show failed candidates"
-                                      IsChecked="{Binding ShowFailed}"
-                                      Margin="0,0,0,4" />
-                        </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
-
-                <!-- Tab 2: Search Space -->
-                <TabItem Header="Search Space">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="12,8">
-                            <TextBlock Text="Allowed longitudinal bar sizes"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <TextBlock Text="Shear link / stirrup bars (T6, T8, T10) are set separately in the Stirrups section."
+                            <!-- PMM Target -->
+                            <TextBlock Text="PMM Target" Style="{StaticResource SectionLabelStyle}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="Target PMM Ratio (0–1)"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           VerticalAlignment="Center" Width="165" />
+                                <TextBox Text="{Binding TargetPmmRatio, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="80" />
+                            </StackPanel>
+                            <TextBlock Text="Candidates with PMM &gt; target are rejected. Default: 1.00."
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,6" />
+                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                            <!-- Longitudinal bar spacing -->
+                            <TextBlock Text="Longitudinal bar spacing" Style="{StaticResource SectionLabelStyle}" />
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <TextBlock Text="Initial spacing (mm)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding InitialSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Reduction step (mm)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding SpacingStepMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <TextBlock Text="Min spacing limit (mm)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MinSpacingLimitMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Max bar spacing (mm)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MaxBarSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Longitudinal bar sizes -->
+                            <TextBlock Text="Allowed longitudinal bar sizes" Style="{StaticResource SectionLabelStyle}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="Min diameter (mm)"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           VerticalAlignment="Center" Width="120" />
+                                <TextBox Text="{Binding MinBarDiameterMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="70" />
+                            </StackPanel>
                             <ItemsControl ItemsSource="{Binding AllowedBarToggles}" Margin="0,0,0,8">
                                 <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
+                                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:AllowedBarToggleViewModel}">
-                                        <CheckBox Content="{Binding Label}"
-                                                  IsChecked="{Binding IsEnabled}"
-                                                  Margin="0,0,12,4" />
+                                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsEnabled}" Margin="0,0,12,4" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <!-- Shear link info (informational — not changed by auto-design) -->
-                            <TextBlock Text="Shear link / stirrup bars"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <TextBlock Text="{Binding ShearLinkRangeText}"
+                            <!-- Shear link auto-design -->
+                            <TextBlock Text="Shear link auto-design" Style="{StaticResource SectionLabelStyle}" />
+                            <TextBlock Text="EC2 §9.5.3 — link diameter and spacing calculated automatically. Set 0 to use EC2 limits."
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,10" />
-
-                            <TextBlock Text="Allowed bar counts" Style="{StaticResource SectionLabelStyle}" />
-                            <ItemsControl ItemsSource="{Binding AllowedCountToggles}" Margin="0,0,0,6">
+                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6" />
+                            <ItemsControl ItemsSource="{Binding AllowedLinkToggles}" Margin="0,0,0,6">
                                 <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
+                                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:AllowedCountToggleViewModel}">
-                                        <CheckBox Content="{Binding Label}"
-                                                  IsChecked="{Binding IsEnabled}"
-                                                  Margin="0,0,12,4" />
+                                    <DataTemplate DataType="{x:Type vm:AllowedLinkBarToggleViewModel}">
+                                        <CheckBox Content="{Binding Label}" IsChecked="{Binding IsEnabled}" Margin="0,0,12,4" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <TextBlock Text="Min link dia. (mm, 0=auto)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MinLinkDiameterMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Max link spacing (mm, 0=auto)" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MaxLinkSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="Cross-tie threshold (mm)"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           VerticalAlignment="Center" Width="165" />
+                                <TextBox Text="{Binding CrossTieThresholdMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="80" />
+                            </StackPanel>
 
+                            <!-- Layout type -->
                             <TextBlock Text="Layout type" Style="{StaticResource SectionLabelStyle}" />
-                            <CheckBox Content="All Sides Equal  (nx = ny)"
-                                      IsChecked="{Binding AllowAllSidesEqual}"
-                                      Margin="0,0,0,4" />
-                            <CheckBox Content="Sides Different  (nx ≠ ny)"
-                                      IsChecked="{Binding AllowSidesDifferent}"
-                                      Margin="0,0,0,10" />
+                            <CheckBox Content="All Sides Equal  (nTop = nLeft)"
+                                      IsChecked="{Binding AllowAllSidesEqual}" Margin="0,0,0,4" />
+                            <CheckBox Content="Sides Different Symmetric  (nTop ≠ nLeft)"
+                                      IsChecked="{Binding AllowSidesDifferent}" Margin="0,0,0,8" />
 
-                            <TextBlock Text="Auto-change permission" Style="{StaticResource SectionLabelStyle}" />
-                            <CheckBox Content="Change bar diameter"       IsChecked="{Binding AllowChangeDiameter}" Margin="0,0,0,4" />
-                            <CheckBox Content="Change number of bars"     IsChecked="{Binding AllowChangeCount}"    Margin="0,0,0,4" />
-                            <CheckBox Content="Change side distribution"  IsChecked="{Binding AllowChangeSide}"     Margin="0,0,0,4" />
-                            <CheckBox Content="Change tie spacing"        IsChecked="{Binding AllowChangeTie}"      Margin="0,0,0,4" />
-                            <CheckBox Content="Change section size"       IsEnabled="False" Margin="0,0,0,4"
-                                      ToolTip="Not available in current version" />
-                            <CheckBox Content="Change material grade"     IsEnabled="False" Margin="0,0,0,4"
-                                      ToolTip="Not available in current version" />
-                            <CheckBox Content="Change cover"              IsEnabled="False" Margin="0,0,0,4"
-                                      ToolTip="Not available in current version" />
+                            <!-- Display -->
+                            <TextBlock Text="Display" Style="{StaticResource SectionLabelStyle}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Max suggestions to show"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           VerticalAlignment="Center" Width="165" />
+                                <TextBox Text="{Binding MaxSuggestions, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="80" />
+                            </StackPanel>
+
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
 
-                <!-- Tab 3: Code / Detailing -->
+                <!-- ── Tab 2: Code / Detailing ── -->
                 <TabItem Header="Code / Detailing">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="12,8">
@@ -381,44 +350,47 @@
                             <TextBox Text="EC2 (EN 1992-1-1)" IsReadOnly="True" Margin="0,0,0,8" />
 
                             <TextBlock Text="Reinforcement ratio" Style="{StaticResource SectionLabelStyle}" />
-                            <CheckBox Content="Check minimum ρ"   IsChecked="{Binding CheckMinRho}"   Margin="0,0,0,4" />
-                            <CheckBox Content="Check maximum ρ"   IsChecked="{Binding CheckMaxRho}"   Margin="0,0,0,8" />
+                            <CheckBox Content="Check minimum ρ (EC2 §9.5.2)" IsChecked="{Binding CheckMinRho}"  Margin="0,0,0,4" />
+                            <CheckBox Content="Check maximum ρ (EC2 §9.5.2)" IsChecked="{Binding CheckMaxRho}"  Margin="0,0,0,8" />
 
                             <TextBlock Text="Clear spacing" Style="{StaticResource SectionLabelStyle}" />
                             <CheckBox Content="Check clear spacing" IsChecked="{Binding CheckClearSpacing}" Margin="0,0,0,4" />
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock Text="Aggregate size (mm)" Style="{StaticResource FieldLabelTextStyle}"
+                                <TextBlock Text="Aggregate size (mm)"
+                                           Style="{StaticResource FieldLabelTextStyle}"
                                            VerticalAlignment="Center" Width="130" />
-                                <TextBox Text="{Binding AggregateSize, UpdateSourceTrigger=PropertyChanged}"
-                                         Width="70" />
+                                <TextBox Text="{Binding AggregateSize, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                             </StackPanel>
 
                             <TextBlock Text="Cover and link checks" Style="{StaticResource SectionLabelStyle}" />
                             <CheckBox Content="Check bars inside link boundary" IsChecked="{Binding CheckBarInsideLink}" Margin="0,0,0,4" />
-                            <CheckBox Content="Corner bars required"            IsChecked="{Binding RequireCornerBars}"   Margin="0,0,0,8" />
+                            <CheckBox Content="Corner bars — always required (immutable)"
+                                      IsChecked="{Binding RequireCornerBars}" IsEnabled="False"
+                                      ToolTip="Corner bars are always present in the spacing-first algorithm."
+                                      Margin="0,0,0,8" />
 
-                            <TextBlock Text="Tie compatibility" Style="{StaticResource SectionLabelStyle}" />
-                            <CheckBox Content="Check tie diameter"                      IsChecked="{Binding CheckTieDiameter}"    Margin="0,0,0,4" />
-                            <CheckBox Content="Check tie spacing"                       IsChecked="{Binding CheckTieSpacing}"     Margin="0,0,0,4" />
-                            <CheckBox Content="Check unsupported bar distance"          IsChecked="{Binding CheckUnsupportedBar}" Margin="0,0,0,4" />
-                            <CheckBox Content="Warn if internal links are required"     IsChecked="{Binding WarnInternalLinks}"   Margin="0,0,0,4" />
+                            <TextBlock Text="Tie compatibility (EC2 §9.5.3)" Style="{StaticResource SectionLabelStyle}" />
+                            <CheckBox Content="Check tie diameter ≥ EC2 minimum"       IsChecked="{Binding CheckTieDiameter}"    Margin="0,0,0,4" />
+                            <CheckBox Content="Check tie spacing ≤ EC2 maximum"         IsChecked="{Binding CheckTieSpacing}"     Margin="0,0,0,4" />
+                            <CheckBox Content="Check unsupported bar distance"           IsChecked="{Binding CheckUnsupportedBar}" Margin="0,0,0,4" />
+                            <CheckBox Content="Warn if internal links required"          IsChecked="{Binding WarnInternalLinks}"   Margin="0,0,0,4" />
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
 
-                <!-- Tab 4: Design Summary -->
+                <!-- ── Tab 3: Design Summary ── -->
                 <TabItem Header="Design Summary">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="12,8">
-                            <TextBlock Text="Run Results"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <TextBlock Text="{Binding CandidateCountsText}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,10" />
 
-                            <TextBlock Text="Recommended Option"
-                                       Style="{StaticResource SectionLabelStyle}" />
+                            <TextBlock Text="Run Results" Style="{StaticResource SectionLabelStyle}" />
+                            <TextBlock Text="{Binding CandidateCountsText}" TextWrapping="Wrap" Margin="0,0,0,10" />
 
+                            <!-- Best PMM Utilization -->
+                            <TextBlock Text="Best PMM Utilization" Style="{StaticResource SectionLabelStyle}" />
+                            <TextBlock Text="Highest PMM ratio while still ≤ target — most efficient use of section capacity."
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4" />
                             <Grid Margin="0,4,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -427,44 +399,54 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="130" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Configuration"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Grid.Row="0" Grid.Column="1"
-                                           Text="{Binding RecommendedConfig}"
-                                           FontWeight="SemiBold" Margin="0,0,0,4" />
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Max PMM"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding RecommendedPmm}"
-                                           Margin="0,0,0,4" />
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Steel ratio ρ"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Grid.Row="2" Grid.Column="1"
-                                           Text="{Binding RecommendedRho}"
-                                           Margin="0,0,0,4" />
-
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Total As"
-                                           Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Grid.Row="3" Grid.Column="1"
-                                           Text="{Binding RecommendedAs}"
-                                           Margin="0,0,0,4" />
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Configuration"      Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding BestPmmConfig}" FontWeight="SemiBold" Margin="0,0,0,3" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Max PMM"             Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BestPmmValue}" Margin="0,0,0,3" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Steel ratio ρ"       Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BestPmmRho}"  Margin="0,0,0,3" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Shear link"           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding BestPmmLink}" Margin="0,0,0,3" />
                             </Grid>
 
                             <Separator Margin="0,10,0,8" />
-                            <TextBlock Text="Reason / Notes"
-                                       Style="{StaticResource SectionLabelStyle}" />
-                            <TextBlock Text="{Binding SummaryText}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,4,0,0" />
+
+                            <!-- Lowest Rebar Ratio -->
+                            <TextBlock Text="Lowest Rebar Ratio" Style="{StaticResource SectionLabelStyle}" />
+                            <TextBlock Text="Least reinforcement while passing all constraints."
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4" />
+                            <Grid Margin="0,4,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Configuration"        Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LowestRhoConfig}" FontWeight="SemiBold" Margin="0,0,0,3" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Steel ratio ρ"         Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LowestRhoValue}" Margin="0,0,0,3" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="PMM"                   Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LowestRhoPmm}"  Margin="0,0,0,3" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Shear link"             Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LowestRhoLink}" Margin="0,0,0,3" />
+                            </Grid>
+
+                            <Separator Margin="0,10,0,8" />
+                            <TextBlock Text="Summary" Style="{StaticResource SectionLabelStyle}" />
+                            <TextBlock Text="{Binding SummaryText}" TextWrapping="Wrap" Margin="0,4,0,0" />
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
+
             </TabControl>
         </Grid>
 
@@ -475,36 +457,19 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
-                <!-- Status message (left) -->
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
-                           VerticalAlignment="Center"
-                           Margin="12,0"
+                           VerticalAlignment="Center" Margin="12,0"
                            Foreground="{DynamicResource TextMutedBrush}"
                            TextTrimming="CharacterEllipsis" />
-
-                <!-- Buttons (right) -->
-                <StackPanel Grid.Column="1"
-                            Style="{DynamicResource DialogActionPanelStyle}">
-                    <Button Content="Auto"
-                            Command="{Binding AutoCommand}"
-                            Width="80"
-                            Style="{DynamicResource PrimaryButtonStyle}"
-                            Margin="0,0,6,0" />
-                    <Button Content="Preview"
-                            Command="{Binding PreviewCommand}"
-                            Width="80"
-                            Style="{DynamicResource SecondaryButtonStyle}"
-                            Margin="0,0,6,0" />
-                    <Button Content="Apply"
-                            Command="{Binding ApplyCommand}"
-                            Width="80"
-                            Style="{DynamicResource PrimaryButtonStyle}"
-                            Margin="0,0,6,0" />
-                    <Button Content="Cancel"
-                            Command="{Binding CancelCommand}"
-                            Width="80"
+                <StackPanel Grid.Column="1" Style="{DynamicResource DialogActionPanelStyle}">
+                    <Button Content="Auto"    Command="{Binding AutoCommand}"    Width="80"
+                            Style="{DynamicResource PrimaryButtonStyle}"    Margin="0,0,6,0" />
+                    <Button Content="Preview" Command="{Binding PreviewCommand}" Width="80"
+                            Style="{DynamicResource SecondaryButtonStyle}"  Margin="0,0,6,0" />
+                    <Button Content="Apply"   Command="{Binding ApplyCommand}"   Width="80"
+                            Style="{DynamicResource PrimaryButtonStyle}"    Margin="0,0,6,0" />
+                    <Button Content="Cancel"  Command="{Binding CancelCommand}"  Width="80"
                             IsCancel="True"
                             Style="{DynamicResource DialogActionButtonStyle}" />
                 </StackPanel>

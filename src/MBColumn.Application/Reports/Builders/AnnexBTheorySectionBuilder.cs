@@ -100,17 +100,23 @@ internal static class AnnexBTheorySectionBuilder
         [
             new HeadingBlock("Section Integration (Polygon Method)", 2),
             new ParagraphBlock(
-                "For rectangular sections, the compression zone boundary may be obtained by geometric " +
-                "clipping of the section polygon against the neutral axis. The compression polygon Pc " +
-                "is then integrated as a geometric area plus discrete reinforcement forces."),
+                "For rectangular or general polygonal sections, the compression zone boundary is obtained " +
+                "by clipping the section polygon against the neutral axis. The resulting compression polygon " +
+                "Pc is then integrated as a concrete compression area, while reinforcement forces are " +
+                "evaluated discretely at each bar location. Concrete in tension is neglected."),
 
             new ImageBlock(AnnexBIllustrations.PolygonMethodSvg(),
-                Caption: "Figure B.1 - Polygon clipping for a rectangular section: the compression zone is the polygon Pc bounded by the section edges and the neutral axis"),
+                Caption: "Figure B.1 — Polygon clipping for a rectangular section. The compression zone is the polygon Pc obtained by clipping the section polygon with the compression half-plane defined by the neutral axis."),
 
-            new FormulaBlock("Compression polygon",
-                @"P_c = \text{section polygon} \cap \{\,(x,y) : \varepsilon(x,y) \geq 0\,\}",
+            new FormulaBlock("Compression polygon definition",
+                @"P_c = P_s \cap H_c",
+                @"H_c = \{\,(x,y) : \varphi(x,y) \geq 0\,\}",
+                @"P_s = \text{section polygon},\quad H_c = \text{compression half-plane},\quad \varphi = \text{signed compression function}"),
+
+            new FormulaBlock("Area and centroid of Pc",
                 @"A_c = \tfrac{1}{2}\left|\sum_{k=1}^{n}(x_k\,y_{k+1} - x_{k+1}\,y_k)\right|",
-                @"(x_k,y_k) = \text{vertices of } P_c \text{ after clipping}"),
+                @"\bar{x}_c = \tfrac{1}{6A_c}\sum_{k}(x_k+x_{k+1})(x_k y_{k+1}-x_{k+1} y_k)",
+                @"\bar{y}_c = \tfrac{1}{6A_c}\sum_{k}(y_k+y_{k+1})(x_k y_{k+1}-x_{k+1} y_k)"),
 
             new FormulaBlock("Concrete resultant",
                 @"N_c = \int_{P_c}\sigma_c(\varepsilon)\,dA",

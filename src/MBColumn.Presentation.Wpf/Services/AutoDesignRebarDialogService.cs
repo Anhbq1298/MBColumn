@@ -20,29 +20,32 @@ public sealed class AutoDesignRebarDialogService(
             ? imperialBars
             : metricBars;
 
-        // Longitudinal bars: diameter >= 16 mm (T6–T13 reserved for shear links/stirrups)
-        var longitudinalBars = barDb.GetBars()
+        var allBars = barDb.GetBars().ToList();
+
+        // Longitudinal bars: diameter >= 16 mm
+        var longitudinalBars = allBars
             .Where(b => b.DiameterMm >= 16.0)
             .ToList();
 
-        // Shear link bars: diameter 10–16 mm (informational — not changed by auto-design)
-        var shearLinkBars = barDb.GetBars()
-            .Where(b => b.DiameterMm is >= 10.0 and <= 16.0)
+        // Shear link bars: 6–16 mm diameter range
+        var shearLinkBars = allBars
+            .Where(b => b.DiameterMm is >= 6.0 and <= 16.0)
+            .OrderBy(b => b.DiameterMm)
             .ToList();
 
-        // Compute "before" state so the dialog can show existing check results
         CalculationResultDto? beforeResult = null;
         try { beforeResult = calculationService.Calculate(currentInput); }
-        catch { /* before result unavailable — dialog shows "—" */ }
+        catch { /* before result unavailable */ }
 
-        var engine = BuildEngine(calculationService);
+        var engine   = BuildEngine(calculationService);
         var snapshot = NormaliseToMm(currentInput);
 
         var baseInput = new RebarSuggestionInput
         {
-            BaseInput   = snapshot,
-            Constraints = BuildDefaultConstraints(longitudinalBars),
-            AllowedBars = longitudinalBars
+            BaseInput    = snapshot,
+            Constraints  = BuildDefaultConstraints(longitudinalBars, shearLinkBars),
+            AllowedBars  = longitudinalBars,
+            AllowedLinkBars = shearLinkBars
         };
 
         var vm = new AutomatedRebarDesignViewModel(
@@ -64,30 +67,40 @@ public sealed class AutoDesignRebarDialogService(
             new RebarCodeValidator()
         ];
         return new RebarSuggestionEngine(generator, validators,
-            new ExistingSolverRebarCandidateEvaluator(calc),
-            new DefaultRebarSuggestionScorer());
+            new ExistingSolverRebarCandidateEvaluator(calc));
     }
 
     private static ColumnInputDto NormaliseToMm(ColumnInputDto input)
-    {
-        if (input.LengthUnit == LengthUnit.Millimeter)
-            return input;
-        return input;
-    }
+        => input.LengthUnit == LengthUnit.Millimeter ? input : input;
 
-    private static RebarSuggestionConstraintSet BuildDefaultConstraints(IReadOnlyList<RebarDefinition> bars)
+    private static RebarSuggestionConstraintSet BuildDefaultConstraints(
+        IReadOnlyList<RebarDefinition> longitudinalBars,
+        IReadOnlyList<RebarDefinition> shearLinkBars)
     {
-        var barNames = bars
-            .Where(b => b.DiameterMm is >= 16 and <= 40)
+        var longNames = longitudinalBars
+            .Where(b => b.DiameterMm >= 20.0)
+            .Select(b => b.Name)
+            .ToList();
+
+        var linkNames = shearLinkBars
             .Select(b => b.Name)
             .ToList();
 
         return new RebarSuggestionConstraintSet
         {
-            AllowedBarSizeNames      = barNames,
-            AllowedBarCounts         = [8, 12, 16, 20, 24, 28, 32],
-            AllowAllSidesEqualLayout  = true,
-            AllowSidesDifferentLayout = true
+            AllowedBarSizeNames          = longNames,
+            AllowedLinkBarSizeNames      = linkNames,
+            MinimumBarDiameterMm         = 20.0,
+            InitialTargetSpacingMm       = 150.0,
+            SpacingReductionStepMm       = 10.0,
+            MinimumSpacingSearchLimitMm  = 50.0,
+            MaximumBarSpacingMm          = 300.0,
+            UserTargetPmmRatio           = 1.00,
+            MinLinkDiameterMm            = 0,       // EC2 auto
+            MaxLinkSpacingMm             = 0,       // EC2 auto
+            CrossTieThresholdMm          = 150.0,
+            AllowAllSidesEqualLayout     = true,
+            AllowSidesDifferentLayout    = true
         };
     }
 }

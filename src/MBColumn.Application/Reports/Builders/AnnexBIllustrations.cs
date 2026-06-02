@@ -289,42 +289,30 @@ internal static class AnnexBIllustrations
     internal static string PolygonMethodSvg()
     {
         var sb = StartSvg();
-        var (ex, ey, _) = ExtremeCompressionPoint();
-        var (px, py) = ProjectToNA(ex, ey);
 
-        // Compute compression polygon vertices (section clipped above NA)
-        // Section corners: TL(Sx,Sy) TR(Sx+Sw,Sy) BR(Sx+Sw,Sy+Sh) BL(Sx,Sy+Sh)
-        // NA enters left edge at (Sx, YatNA(Sx)) and exits right edge at (Sx+Sw, YatNA(Sx+Sw))
+        // Compression polygon: section polygon clipped by compression half-plane Hc
         double naLeft  = YatNA(Sx);
         double naRight = YatNA(Sx + Sw);
+        string compPoly = $"{Sx},{Sy} {Sx + Sw},{Sy} {Sx + Sw},{naRight:F1} {Sx},{naLeft:F1}";
 
-        string compPoly  = $"{Sx},{Sy} {Sx + Sw},{Sy} {Sx + Sw},{naRight} {Sx},{naLeft}";
-        string tensPoly  = $"{Sx},{naLeft} {Sx + Sw},{naRight} {Sx + Sw},{Sy + Sh} {Sx},{Sy + Sh}";
+        // Layer 1 – compression polygon fill (light grey, low opacity)
+        sb.Append($"<polygon points='{compPoly}' fill='#505050' fill-opacity='0.14' stroke='none'/>");
 
-        // Tension background
-        sb.Append($"<polygon points='{tensPoly}' fill='#F9FAFB'/>");
+        // Layer 2 – compression polygon stroke
+        sb.Append($"<polygon points='{compPoly}' fill='none' stroke='#505050' stroke-width='1.3'/>");
 
-        // Compression polygon — filled
-        sb.Append($"<polygon points='{compPoly}' fill='#BFDBFE' stroke='none'/>");
+        // Layer 3 – section outline
+        sb.Append($"<rect x='{Sx}' y='{Sy}' width='{Sw}' height='{Sh}' fill='none' stroke='#111827' stroke-width='2.2'/>");
 
-        // Hatch lines inside compression polygon to show it's exact
-        for (int hy = (int)Sy + 14; hy < (int)Math.Min(naLeft, naRight); hy += 18)
-            sb.Append($"<line x1='{Sx}' y1='{hy}' x2='{Sx + Sw}' y2='{hy}' stroke='#93C5FD' stroke-width='0.8'/>");
+        // Layer 4 – neutral axis (black dashed)
+        sb.Append($"<line x1='{NaX1}' y1='{NaY1}' x2='{NaX2}' y2='{NaY2}' stroke='#111827' stroke-width='1.4' stroke-dasharray='8,5'/>");
+        Label(sb, "Neutral axis", NaX2 + 4, NaY2 + 9, "#111827", 9.5);
 
-        // Polygon boundary highlight
-        sb.Append($"<polygon points='{compPoly}' fill='none' stroke='#1D4ED8' stroke-width='2'/>");
-
-        // Rebar circles
+        // Layer 5 – rebar circles
         foreach (var (rx, ry) in Rebars)
-            sb.Append($"<circle cx='{rx}' cy='{ry}' r='6' fill='#6B7280' stroke='#374151' stroke-width='1.2'/>");
+            sb.Append($"<circle cx='{rx}' cy='{ry}' r='6' fill='#5F5F5F' stroke='#111827' stroke-width='1.0'/>");
 
-        // Section outline
-        sb.Append($"<rect x='{Sx}' y='{Sy}' width='{Sw}' height='{Sh}' fill='none' stroke='#111827' stroke-width='2.5'/>");
-
-        // Neutral axis
-        DrawNA(sb);
-
-        // Polygon vertices markers
+        // Layer 6 – Pc vertices and NA-intersection markers
         double[][] verts =
         [
             [(double)Sx,        (double)Sy],
@@ -337,35 +325,22 @@ internal static class AnnexBIllustrations
         double[] vOffY   = [-6, -6, 8, 8];
         for (int i = 0; i < verts.Length; i++)
         {
-            sb.Append($"<circle cx='{verts[i][0]}' cy='{verts[i][1]}' r='4.5' fill='#1D4ED8' stroke='white' stroke-width='1'/>");
-            sb.Append($"<text x='{verts[i][0] + vOffX[i]}' y='{verts[i][1] + vOffY[i]}' font-size='9.5' fill='#1E40AF' font-family='Segoe UI,sans-serif' font-weight='600'>{vLabels[i]}</text>");
+            sb.Append($"<circle cx='{verts[i][0]:F1}' cy='{verts[i][1]:F1}' r='4.0' fill='#374151' stroke='white' stroke-width='1.0'/>");
+            sb.Append($"<text x='{verts[i][0] + vOffX[i]:F0}' y='{verts[i][1] + vOffY[i]:F0}' font-size='9.5' fill='#374151' font-family='Segoe UI,sans-serif' font-weight='600'>{vLabels[i]}</text>");
         }
 
-        // Strip annotation (one horizontal strip in the middle of compression zone)
-        double stripY = Sy + (naLeft - Sy) * 0.55;
-        double stripLeft  = Sx;
-        double stripRight = Sx + Sw;
-        sb.Append($"<rect x='{stripLeft}' y='{stripY - 6}' width='{stripRight - stripLeft}' height='12' fill='#3B82F6' fill-opacity='0.25' stroke='#3B82F6' stroke-width='1.2' stroke-dasharray='4,2'/>");
-        Label(sb, "horizontal strip  b(y)·Δy", (stripLeft + stripRight) / 2 - 50, stripY + 3, "#1D4ED8", 8.5);
-
-        // c is measured perpendicular to the neutral axis.
-        sb.Append($"<line x1='{px:F1}' y1='{py:F1}' x2='{ex:F1}' y2='{ey:F1}' stroke='#1E40AF' stroke-width='1.8' marker-start='url(#arrowBlue)' marker-end='url(#arrowBlue)'/>");
-        RotText(sb, "c", (px + ex) / 2 - 8, (py + ey) / 2 + 4, -66, "#1E40AF", 11);
-        sb.Append($"<circle cx='{ex:F1}' cy='{ey:F1}' r='4.5' fill='#1E40AF' stroke='white' stroke-width='1'/>");
-
-        // Labels
-        Label(sb, "Exact compression polygon  Pc", 175, 80, "#1D4ED8");
-        Label(sb, "(Sutherland-Hodgman clipping)", 175, 93, "#6B7280", 8);
+        // Layer 7 – labels
+        Label(sb, "Compression polygon  Pc", 175, 80, "#374151", 9.5);
         Label(sb, "Concrete tension neglected", 190, 218, "#9CA3AF");
 
-        // Legend row
-        int lx = Sx, ly = H - 30;
-        sb.Append($"<rect x='{lx}' y='{ly}' width='13' height='13' fill='#BFDBFE' stroke='#1D4ED8' stroke-width='1'/>");
+        // Layer 8 – legend
+        int lx = Sx, ly = H - 28;
+        sb.Append($"<rect x='{lx}' y='{ly}' width='13' height='13' fill='#505050' fill-opacity='0.14' stroke='#505050' stroke-width='0.9'/>");
         Label(sb, "Compression polygon Pc", lx + 18, ly + 10, "#374151", 9);
-        sb.Append($"<circle cx='{lx + 185}' cy='{ly + 6}' r='4.5' fill='#1D4ED8' stroke='white' stroke-width='1'/>");
-        Label(sb, "Polygon vertex", lx + 195, ly + 10, "#374151", 9);
-        sb.Append($"<line x1='{lx + 310}' y1='{ly + 6}' x2='{lx + 330}' y2='{ly + 6}' stroke='#DC2626' stroke-width='2' stroke-dasharray='6,3'/>");
-        Label(sb, "Neutral axis", lx + 335, ly + 10, "#DC2626", 9);
+        sb.Append($"<circle cx='{lx + 193}' cy='{ly + 6}' r='4.0' fill='#374151' stroke='white' stroke-width='0.9'/>");
+        Label(sb, "Polygon vertex / NA intersection", lx + 202, ly + 10, "#374151", 9);
+        sb.Append($"<line x1='{lx + 393}' y1='{ly + 6}' x2='{lx + 413}' y2='{ly + 6}' stroke='#111827' stroke-width='1.3' stroke-dasharray='6,3'/>");
+        Label(sb, "Neutral axis", lx + 418, ly + 10, "#374151", 9);
 
         EndSvg(sb);
         return sb.ToString();

@@ -173,11 +173,13 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **RebarSuggestionCandidate** | Represents the RebarSuggestionCandidate class. Key properties: Bar, TotalBarCount, BarsOnTopBottomFace, BarsOnLeftRightFace. | `RebarSuggestionCandidate.cs` |
 | `class` | **RebarSuggestionConstraintSet** | Represents the RebarSuggestionConstraintSet class. Key properties: MinimumBarDiameterMm, InitialTargetSpacingMm, SpacingReductionStepMm, MinimumSpacingSearchLimitMm. | `RebarSuggestionConstraintSet.cs` |
 | `class` | **RebarSuggestionEngine** | /// Automated Rebar Design engine. /// /// Filter pipeline (applied in order): /// 1. Spacing and geometry validation (via IRebarCandidateValidator) /// 2. Min / max steel ratio validation (via IRebarCandidateValidator) /// 3. PMM solver — only for candidates that passed steps 1-2 /// 4. PMM target filter — reject if PMM > UserTargetPmmRatio /// /// No scoring system. Passing candidates are sorted deterministically and /// tagged with "Best PMM Utilization" and "Lowest Rebar Ratio". ///. Key methods: Suggest. | `RebarSuggestionEngine.cs` |
-| `class` | **RebarSuggestionInput** | Represents the RebarSuggestionInput class. Key properties: BaseInput, Constraints, AllowedBars. | `RebarSuggestionInput.cs` |
+| `class` | **RebarSuggestionInput** | Represents the RebarSuggestionInput class. Key properties: BaseInput, Constraints, AllowedBars, AllowedLinkBars. | `RebarSuggestionInput.cs` |
 | `record` | **RebarSuggestionOption** | Represents the RebarSuggestionOption record. Key properties: Rank, ConfigurationName, Coordinates, TotalSteelAreaMm2. | `RebarSuggestionOption.cs` |
 | `class` | **RebarSuggestionResult** | Encapsulates the result of RebarSuggestion operations. Key properties: Options, BestPmmUtilizationOption, LowestRebarRatioOption, RecommendedOption. | `RebarSuggestionResult.cs` |
 | `record` | **RebarSuggestionWarning** | Represents the RebarSuggestionWarning record. | `RebarSuggestionWarning.cs` |
 | `class` | **RectangularPerimeterCandidateGenerator** | /// Generates rebar layout candidates for rectangular / square sections using a /// spacing-first approach: starts from InitialTargetSpacingMm (default 150 mm) /// and reduces by SpacingReductionStepMm until MinimumSpacingSearchLimitMm. /// The four corner bars are always present (nTop >= 2, nLeft >= 2). /// Rebar count is derived from spacing — never iterated directly. ///. Key methods: Generate. | `RectangularPerimeterCandidateGenerator.cs` |
+| `record` | **ShearLinkDesignResult** | Encapsulates the result of ShearLinkDesign operations. Key properties: LinkBarName, LinkBarLabel, LinkDiameterMm, LinkSpacingMm. | `ShearLinkDesignResult.cs` |
+| `class` | **ShearLinkDesigner** | /// Designs the shear link set for a given longitudinal rebar candidate. /// /// EC2 §9.5.3 rules applied: /// Link diameter: dsw ≥ max(6 mm, 0.25 × max longitudinal diameter) /// Link spacing: sv ≤ min(20 × min longitudinal diameter, b_min, 400 mm) /// Cross-ties: every bar > crossTieThreshold mm from a restrained bar /// needs an internal cross-tie (EC2 §9.5.3(6)) ///. Key methods: Design. | `ShearLinkDesigner.cs` |
 
 ### Reports/Builders
 
@@ -824,12 +826,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **AllowedBarToggleViewModel** | Represents the AllowedBarToggleViewModel class. Key properties: Bar, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
-| `class` | **AllowedCountToggleViewModel** | Represents the AllowedCountToggleViewModel class. Key properties: Count, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
+| `class` | **AllowedLinkBarToggleViewModel** | Represents the AllowedLinkBarToggleViewModel class. Key properties: Bar, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
 | `class` | **AutomatedRebarDesignViewModel** | Represents the AutomatedRebarDesignViewModel class. Key properties: AutoCommand, PreviewCommand, ApplyCommand, CancelCommand. | `AutomatedRebarDesignViewModel.cs` |
 | `class` | **BeforeAfterRowViewModel** | Represents the BeforeAfterRowViewModel class. Key properties: Parameter, Before, Unit, IsFrozen. | `BeforeAfterRowViewModel.cs` |
-| `class` | **CandidateSuggestionRowViewModel** | Represents the CandidateSuggestionRowViewModel class. Key properties: Rank, Config, TotalSteelAreaMm2, ReinforcementRatioPercent. | `CandidateSuggestionRowViewModel.cs` |
+| `class` | **CandidateSuggestionRowViewModel** | Represents the CandidateSuggestionRowViewModel class. Key properties: Rank, Config, LayoutTypeLabel, TotalSteelAreaMm2. | `CandidateSuggestionRowViewModel.cs` |
 | `class` | **CheckSummaryRowViewModel** | Represents the CheckSummaryRowViewModel class. Key properties: CheckName, Before, After, Condition. | `CheckSummaryRowViewModel.cs` |
-| `record` | **PresetOption** | Represents the PresetOption record. | `AutomatedRebarDesignViewModel.cs` |
 
 ### Views
 

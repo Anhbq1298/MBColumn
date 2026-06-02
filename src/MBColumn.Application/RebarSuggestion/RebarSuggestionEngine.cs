@@ -19,6 +19,15 @@ public sealed class RebarSuggestionEngine(
     IReadOnlyList<IRebarCandidateValidator> validators,
     IRebarCandidateEvaluator evaluator)
 {
+    public RebarSuggestionEngine(
+        IRebarCandidateGenerator generator,
+        IReadOnlyList<IRebarCandidateValidator> validators,
+        IRebarCandidateEvaluator evaluator,
+        IRebarSuggestionScorer _)
+        : this(generator, validators, evaluator)
+    {
+    }
+
     public RebarSuggestionResult Suggest(
         RebarSuggestionInput input,
         IProgress<(int done, int total)>? progress = null,
@@ -96,6 +105,11 @@ public sealed class RebarSuggestionEngine(
 
             double minClearSpacing = ComputeMinClearSpacing(candidate, input);
 
+            // ── Shear link auto-design ───────────────────────────────────────
+            ShearLinkDesignResult? linkDesign = null;
+            if (input.AllowedLinkBars.Count > 0)
+                linkDesign = ShearLinkDesigner.Design(candidate, input);
+
             passingOptions.Add(new RebarSuggestionOption
             {
                 Rank                    = 0,
@@ -115,6 +129,7 @@ public sealed class RebarSuggestionEngine(
                 VyUtilization           = eval.VyUtilization,
                 GoverningLoadCaseName   = eval.GoverningLoadCaseName,
                 MinimumClearSpacingMm   = minClearSpacing,
+                ShearLinkDesign         = linkDesign,
                 Status                  = finalStatus,
                 Reason                  = BuildReason(candidate, eval, candidate.Warnings),
                 Warnings                = warnings

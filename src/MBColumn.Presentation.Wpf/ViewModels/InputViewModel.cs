@@ -3642,6 +3642,7 @@ public sealed class InputViewModel : ViewModelBase
 
     private void ApplyAutoDesignOption(MBColumn.Application.RebarSuggestion.RebarSuggestionOption option)
     {
+        // ── Longitudinal rebar ────────────────────────────────────────────────
         BarSize = option.BarSizeName;
 
         int nx    = option.BarsOnTopBottomFace;
@@ -3661,6 +3662,23 @@ public sealed class InputViewModel : ViewModelBase
             RebarLayout.Left.BarCount   = Math.Max(0, ny - 2);
             RebarLayout.Right.BarCount  = Math.Max(0, ny - 2);
             BarCount = total;
+        }
+
+        // ── Shear link auto-design result ─────────────────────────────────────
+        if (option.ShearLinkDesign is { } lnk)
+        {
+            // Stirrup bar: find by name in available bars
+            var linkBar = AvailableStirrupBars
+                .FirstOrDefault(b => b.Name == lnk.LinkBarName);
+            if (linkBar is not null)
+                SelectedStirrupBar = linkBar;
+
+            // Link spacing (property setters handle unit conversion)
+            LinkSpacingMm = lnk.LinkSpacingMm;
+
+            // Inner legs: property setters clamp to MaxInnerLegsX/Y automatically
+            InnerLegsX = lnk.InternalLinksX;
+            InnerLegsY = lnk.InternalLinksY;
         }
 
         UpdateSectionPreview();
