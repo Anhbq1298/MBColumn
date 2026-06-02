@@ -32,6 +32,9 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     private bool   _previewIsValid       = false;
     private string _previewStatusText    = "Run Auto, then select a candidate to preview its layout.";
     private int    _selectedTabIndex     = 1;
+    private double _previewLinkDiameterMm = 10.0;
+    private int    _previewInnerLegsX    = 0;
+    private int    _previewInnerLegsY    = 0;
 
     // ── Parameters tab ────────────────────────────────────────────────────────
     private double _targetPmmRatio   = 1.00;
@@ -109,12 +112,15 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         get => _previewRebars;
         private set => Set(ref _previewRebars, value);
     }
-    public string PreviewSectionLabel { get => _previewSectionLabel; private set => Set(ref _previewSectionLabel, value); }
-    public string PreviewRebarLabel   { get => _previewRebarLabel;   private set => Set(ref _previewRebarLabel,   value); }
-    public string PreviewCoverLabel   { get => _previewCoverLabel;   private set => Set(ref _previewCoverLabel,   value); }
-    public bool   PreviewIsValid      { get => _previewIsValid;      private set => Set(ref _previewIsValid,      value); }
-    public string PreviewStatusText   { get => _previewStatusText;   private set => Set(ref _previewStatusText,   value); }
-    public int    SelectedTabIndex    { get => _selectedTabIndex;    set => Set(ref _selectedTabIndex, value); }
+    public string PreviewSectionLabel  { get => _previewSectionLabel;  private set => Set(ref _previewSectionLabel,  value); }
+    public string PreviewRebarLabel    { get => _previewRebarLabel;    private set => Set(ref _previewRebarLabel,    value); }
+    public string PreviewCoverLabel    { get => _previewCoverLabel;    private set => Set(ref _previewCoverLabel,    value); }
+    public bool   PreviewIsValid       { get => _previewIsValid;       private set => Set(ref _previewIsValid,       value); }
+    public string PreviewStatusText    { get => _previewStatusText;    private set => Set(ref _previewStatusText,    value); }
+    public int    SelectedTabIndex     { get => _selectedTabIndex;     set => Set(ref _selectedTabIndex, value); }
+    public double PreviewLinkDiameterMm { get => _previewLinkDiameterMm; private set => Set(ref _previewLinkDiameterMm, value); }
+    public int    PreviewInnerLegsX    { get => _previewInnerLegsX;   private set => Set(ref _previewInnerLegsX,   value); }
+    public int    PreviewInnerLegsY    { get => _previewInnerLegsY;   private set => Set(ref _previewInnerLegsY,   value); }
 
     // ── State ─────────────────────────────────────────────────────────────────
     public bool IsRunning
@@ -441,9 +447,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             string linkLabel    = lnk is not null ? lnk.LinkBarLabel : "—";
             string linkSpacing  = lnk is not null ? $"{lnk.LinkSpacingMm:F0}" : "—";
             string intLinks = lnk is not null
-                ? (lnk.InternalLinkCount > 0
-                    ? $"X:{lnk.InternalLinksX} Y:{lnk.InternalLinksY}"
-                    : "0")
+                ? $"X:{lnk.InternalLinksX} Y:{lnk.InternalLinksY}"
                 : "—";
 
             CandidateRows.Add(new CandidateSuggestionRowViewModel
@@ -575,10 +579,10 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             UpdateCheckRow("Link bar (auto)",    ld.LinkBarLabel,                 !noBar);
             UpdateCheckRow("Link spacing (auto)", $"{ld.LinkSpacingMm:F0} mm",    true);
             UpdateCheckRow("Cross-ties",
-                ld.InternalLinkCount > 0
-                    ? $"X:{ld.InternalLinksX}  Y:{ld.InternalLinksY}"
-                    : "0 (peripheral only)",
-                true);
+                $"ΔX={ld.ActualGapX:F0}  ΔY={ld.ActualGapY:F0} mm" +
+                (ld.GapCheckPass ? " ✓" : " ✗") +
+                $"  (X:{ld.InternalLinksX} Y:{ld.InternalLinksY})",
+                ld.GapCheckPass);
         }
 
         bool overall = opt.Status != RebarSuggestionStatus.Failed;
@@ -600,28 +604,44 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         var dto = _baseInput.BaseInput;
         PreviewRebars       = opt.Coordinates;
         PreviewSectionLabel = $"b = {dto.Width:F0} × h = {dto.Height:F0} mm";
-        PreviewRebarLabel   = $"{opt.TotalBarCount}{opt.BarSizeName}   As = {opt.TotalSteelAreaMm2:F0} mm²   ρ = {opt.ReinforcementRatio * 100:F2}%";
         PreviewCoverLabel   = $"Cover = {dto.Cover:F0} mm";
         PreviewIsValid      = opt.Status != Domain.Enums.RebarSuggestionStatus.Failed;
 
-        string linkNote = opt.ShearLinkDesign is { } lnk
-            ? $"  Link: {lnk.LinkBarLabel} @ {lnk.LinkSpacingMm:F0} mm" +
-              (lnk.InternalLinkCount > 0
-                  ? $", X:{lnk.InternalLinksX} Y:{lnk.InternalLinksY} cross-ties"
-                  : string.Empty)
-            : string.Empty;
-        string tagNote  = string.IsNullOrEmpty(opt.RecommendationTag) ? string.Empty : $"  [{opt.RecommendationTag}]";
-        PreviewStatusText = $"Rank #{opt.Rank} — {opt.Reason}{linkNote}{tagNote}";
+        if (opt.ShearLinkDesign is { } lnk)
+        {
+            PreviewLinkDiameterMm = lnk.LinkDiameterMm > 0 ? lnk.LinkDiameterMm : PreviewStirrupDiameterMm;
+            PreviewInnerLegsX     = lnk.InternalLinksX;
+            PreviewInnerLegsY     = lnk.InternalLinksY;
+
+            string crossTieNote = lnk.InternalLinkCount > 0
+                ? $"  X-ties: X{lnk.InternalLinksX}/Y{lnk.InternalLinksY}  ΔX={lnk.ActualGapX:F0} ΔY={lnk.ActualGapY:F0} mm"
+                : string.Empty;
+            PreviewRebarLabel = $"{opt.TotalBarCount}{opt.BarSizeName}  ρ={opt.ReinforcementRatio * 100:F2}%  |  " +
+                                $"{lnk.LinkBarLabel}@{lnk.LinkSpacingMm:F0}mm{crossTieNote}";
+        }
+        else
+        {
+            PreviewLinkDiameterMm = PreviewStirrupDiameterMm;
+            PreviewInnerLegsX     = 0;
+            PreviewInnerLegsY     = 0;
+            PreviewRebarLabel = $"{opt.TotalBarCount}{opt.BarSizeName}   As = {opt.TotalSteelAreaMm2:F0} mm²   ρ = {opt.ReinforcementRatio * 100:F2}%";
+        }
+
+        string tagNote = string.IsNullOrEmpty(opt.RecommendationTag) ? string.Empty : $"  [{opt.RecommendationTag}]";
+        PreviewStatusText = $"Rank #{opt.Rank} — {opt.Reason}{tagNote}";
     }
 
     private void ClearPreviewCanvas()
     {
-        PreviewRebars       = [];
-        PreviewSectionLabel = string.Empty;
-        PreviewRebarLabel   = string.Empty;
-        PreviewCoverLabel   = string.Empty;
-        PreviewIsValid      = false;
-        PreviewStatusText   = "Run Auto, then select a candidate to preview its layout.";
+        PreviewRebars         = [];
+        PreviewSectionLabel   = string.Empty;
+        PreviewRebarLabel     = string.Empty;
+        PreviewCoverLabel     = string.Empty;
+        PreviewIsValid        = false;
+        PreviewStatusText     = "Run Auto, then select a candidate to preview its layout.";
+        PreviewLinkDiameterMm = PreviewStirrupDiameterMm;
+        PreviewInnerLegsX     = 0;
+        PreviewInnerLegsY     = 0;
     }
 
     private RebarSuggestionConstraintSet BuildConstraintSet()

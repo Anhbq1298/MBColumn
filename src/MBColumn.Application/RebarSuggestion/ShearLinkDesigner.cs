@@ -1,15 +1,22 @@
-using MBColumn.Domain.Interfaces;
-
 namespace MBColumn.Application.RebarSuggestion;
 
 /// <summary>
-/// Designs the shear link set for a given longitudinal rebar candidate.
+/// Designs the shear link set for a given longitudinal rebar candidate per EC2 §9.5.3.
 ///
-/// EC2 §9.5.3 rules applied:
-///   Link diameter:  dsw ≥ max(6 mm, 0.25 × max longitudinal diameter)
-///   Link spacing:   sv  ≤ min(20 × min longitudinal diameter, b_min, 400 mm)
-///   Cross-ties:     every bar > crossTieThreshold mm from a restrained bar
-///                   needs an internal cross-tie (EC2 §9.5.3(6))
+/// InternalLinksX / InternalLinksY are computed from the same geometric formula used
+/// by InputViewModel.UpdateEc2LinkChecks so that Apply will produce a passing check:
+///
+///   xClear = width  - 2*(cover + linkDiameter)
+///   yClear = height - 2*(cover + linkDiameter)
+///   gX     = xClear / (InnerLegsX + 1)   must be ≤ threshold (default 150 mm)
+///   gY     = yClear / (InnerLegsY + 1)
+///
+///   → InnerLegsX_min = max(0, ceil(xClear / threshold) - 1)
+///   → InnerLegsY_min = max(0, ceil(yClear / threshold) - 1)
+///
+/// Feasibility: the required number of inner legs must not exceed the number of
+/// intermediate longitudinal bars on each face (nTop-2 and nLeft-2 respectively).
+/// If infeasible the candidate should be rejected by the engine.
 /// </summary>
 public static class ShearLinkDesigner
 {
@@ -23,22 +30,20 @@ public static class ShearLinkDesigner
         double db   = candidate.Bar.DiameterMm;
         double bMin = Math.Min(dto.Width, dto.Height);
 
-        // ── EC2 link diameter limit ────────────────────────────────────────────
+        // ── EC2 §9.5.3(1): link diameter ─────────────────────────────────────
         double dswMinEc2 = Math.Max(6.0, 0.25 * db);
         double dswMin    = c.MinLinkDiameterMm > 0
             ? Math.Max(dswMinEc2, c.MinLinkDiameterMm)
             : dswMinEc2;
 
-        // ── EC2 link spacing limit ─────────────────────────────────────────────
+        // ── EC2 §9.5.3(3): link spacing ──────────────────────────────────────
         double svMaxEc2 = Math.Min(20.0 * db, Math.Min(bMin, 400.0));
         double svMax    = c.MaxLinkSpacingMm > 0
             ? Math.Min(svMaxEc2, c.MaxLinkSpacingMm)
             : svMaxEc2;
+        double svDesign = Math.Floor(svMax / 5.0) * 5.0; // round down to nearest 5 mm
 
-        // Round down to nearest 5 mm (practical detailing)
-        double svDesign = Math.Floor(svMax / 5.0) * 5.0;
-
-        // ── Select smallest available link bar that meets diameter requirement ──
+        // ── Select smallest available link bar meeting diameter requirement ───
         var linkBars     = input.AllowedLinkBars;
         var selectedLink = linkBars
             .Where(b => b.DiameterMm >= dswMin - 1e-6)
@@ -46,114 +51,63 @@ public static class ShearLinkDesigner
             .FirstOrDefault();
 
         bool noBarFound = selectedLink is null;
+        selectedLink ??= linkBars.OrderByDescending(b => b.DiameterMm).FirstOrDefault();
 
-        // Fallback to largest available if nothing meets the minimum
-        selectedLink ??= linkBars
-            .OrderByDescending(b => b.DiameterMm)
-            .FirstOrDefault();
+        double dsw = selectedLink?.DiameterMm ?? (dto.LinkDiameterMm > 0 ? dto.LinkDiameterMm : 10.0);
 
-        // ── Internal cross-tie count (EC2 §9.5.3(6)) ──────────────────────────
+        // ── EC2 §9.5.3(6): internal cross-tie gap check ───────────────────────
         double threshold = c.CrossTieThresholdMm > 0 ? c.CrossTieThresholdMm : 150.0;
-        (int linksX, int linksY) = ComputeInternalLinkCounts(candidate, input, threshold);
+        double cover     = dto.Cover;
+
+        // xClear / yClear: distance between INNER faces of the perimeter link legs
+        // (matches the formula in InputViewModel.UpdateEc2LinkChecks exactly)
+        double xClear = dto.Width  - 2.0 * (cover + dsw);
+        double yClear = dto.Height - 2.0 * (cover + dsw);
+
+        // Minimum inner legs so that gX = xClear/(InnerLegsX+1) ≤ threshold
+        int linksX = RequiredInnerLegs(xClear, threshold);
+        int linksY = RequiredInnerLegs(yClear, threshold);
+
+        // Feasibility: inner legs must be placeable at intermediate bar positions
+        int maxLinksX = Math.Max(0, candidate.BarsOnTopBottomFace - 2);
+        int maxLinksY = Math.Max(0, candidate.BarsOnLeftRightFace - 2);
+        bool feasible = linksX <= maxLinksX && linksY <= maxLinksY;
+
+        // Actual gaps after clamping (for reporting; engine rejects if infeasible)
+        double gX = xClear > 0 ? xClear / (linksX + 1) : 0;
+        double gY = yClear > 0 ? yClear / (linksY + 1) : 0;
+        bool gapPass = gX <= threshold + 1e-6 && gY <= threshold + 1e-6;
 
         return new ShearLinkDesignResult
         {
             LinkBarName            = selectedLink?.Name         ?? "—",
             LinkBarLabel           = selectedLink?.DisplayLabel ?? selectedLink?.Name ?? "—",
-            LinkDiameterMm         = selectedLink?.DiameterMm   ?? 0,
+            LinkDiameterMm         = dsw,
             LinkSpacingMm          = svDesign,
             InternalLinksRequired  = linksX + linksY > 0,
             InternalLinksX         = linksX,
             InternalLinksY         = linksY,
+            ActualGapX             = gX,
+            ActualGapY             = gY,
+            ThresholdMm            = threshold,
+            GapCheckPass           = gapPass,
+            IsLinkCheckFeasible    = feasible,
             MinRequiredDiameterMm  = dswMinEc2,
             MaxAllowedSpacingMm    = svMaxEc2,
             NoSuitableLinkBarFound = noBarFound
         };
     }
 
-    // ── Internal cross-tie geometry ───────────────────────────────────────────
+    // ── Formula ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Returns (linksX, linksY):
-    ///   linksX = cross-ties for top/bottom face → InnerLegsX in InputViewModel
-    ///   linksY = cross-ties for left/right face → InnerLegsY in InputViewModel
+    /// Minimum inner legs count so that clear_span / (n + 1) ≤ threshold.
+    /// Mirrors the EC2 Check 3 formula in InputViewModel.UpdateEc2LinkChecks.
     /// </summary>
-    private static (int linksX, int linksY) ComputeInternalLinkCounts(
-        RebarSuggestionCandidate candidate,
-        RebarSuggestionInput input,
-        double threshold)
+    public static int RequiredInnerLegs(double clearSpanMm, double thresholdMm)
     {
-        var    dto   = input.BaseInput;
-        double db    = candidate.Bar.DiameterMm;
-        double link  = dto.LinkDiameterMm > 0 ? dto.LinkDiameterMm : 10.0;
-        double cover = dto.Cover;
-
-        double availW = dto.Width  - 2.0 * (cover + link + db / 2.0);
-        double availH = dto.Height - 2.0 * (cover + link + db / 2.0);
-
-        int nTop  = candidate.BarsOnTopBottomFace;
-        int nLeft = candidate.BarsOnLeftRightFace;
-
-        // linksX: cross-ties spanning the depth (connect top↔bottom intermediate bar pairs)
-        // linksY: cross-ties spanning the width  (connect left↔right intermediate bar pairs)
-        int linksX = CrossTiesForFace(nTop,  availW, threshold);
-        int linksY = CrossTiesForFace(nLeft, availH, threshold);
-
-        return (linksX, linksY);
-    }
-
-    /// <summary>
-    /// Minimum cross-ties needed so that every intermediate bar on a face
-    /// is within <paramref name="threshold"/> of a directly restrained bar
-    /// (corner or previously cross-tied bar). Uses a greedy left-to-right scan.
-    /// </summary>
-    private static int CrossTiesForFace(int nBars, double availableLength, double threshold)
-    {
-        if (nBars <= 2 || availableLength <= 0) return 0;
-
-        double spacing = availableLength / (nBars - 1);
-
-        // Directly restrained bars: initially just the two corner bars
-        var restrained = new HashSet<int> { 0, nBars - 1 };
-        int crossTies  = 0;
-
-        // Iteratively find the leftmost unrestrained bar and place a cross-tie
-        // at the rightmost bar within threshold of that bar's position.
-        while (true)
-        {
-            int leftmostUnrestrained = -1;
-            for (int i = 1; i < nBars - 1; i++)
-            {
-                if (!IsRestrained(i, spacing, restrained, threshold))
-                {
-                    leftmostUnrestrained = i;
-                    break;
-                }
-            }
-
-            if (leftmostUnrestrained < 0) break; // all bars covered
-
-            double unPos    = leftmostUnrestrained * spacing;
-            // Place cross-tie at the furthest intermediate bar within threshold of unPos
-            int rightmost   = Math.Min(nBars - 2, (int)Math.Floor((unPos + threshold) / spacing));
-            restrained.Add(rightmost);
-            crossTies++;
-        }
-
-        return crossTies;
-    }
-
-    private static bool IsRestrained(
-        int barIndex, double spacing,
-        HashSet<int> directlyRestrained,
-        double threshold)
-    {
-        double pos = barIndex * spacing;
-        foreach (int r in directlyRestrained)
-        {
-            if (Math.Abs(r * spacing - pos) <= threshold + 1e-6)
-                return true;
-        }
-        return false;
+        if (clearSpanMm <= thresholdMm + 1e-6) return 0;
+        // Need (n+1) ≥ clearSpan/threshold  →  n ≥ ceil(clearSpan/threshold) - 1
+        return Math.Max(0, (int)Math.Ceiling(clearSpanMm / thresholdMm - 1e-9) - 1);
     }
 }

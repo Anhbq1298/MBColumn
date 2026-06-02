@@ -108,7 +108,19 @@ public sealed class RebarSuggestionEngine(
             // ── Shear link auto-design ───────────────────────────────────────
             ShearLinkDesignResult? linkDesign = null;
             if (input.AllowedLinkBars.Count > 0)
+            {
                 linkDesign = ShearLinkDesigner.Design(candidate, input);
+
+                // Reject candidate if the required inner legs exceed the
+                // intermediate bar count — the ΔX/ΔY check cannot pass.
+                if (!linkDesign.IsLinkCheckFeasible)
+                {
+                    failedCount++;
+                    done++;
+                    progress?.Report((done, total));
+                    continue;
+                }
+            }
 
             passingOptions.Add(new RebarSuggestionOption
             {

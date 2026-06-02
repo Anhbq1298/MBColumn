@@ -205,7 +205,9 @@
                             RebarLabel="{Binding PreviewRebarLabel}"
                             CoverLabel="{Binding PreviewCoverLabel}"
                             IsValid="{Binding PreviewIsValid}"
-                            StirrupDiameterMm="{Binding PreviewStirrupDiameterMm}"
+                            StirrupDiameterMm="{Binding PreviewLinkDiameterMm}"
+                            InnerLegsX="{Binding PreviewInnerLegsX}"
+                            InnerLegsY="{Binding PreviewInnerLegsY}"
                             Margin="8,8,8,4" />
                         <TextBlock Grid.Row="1"
                                    Text="{Binding PreviewStatusText}"
