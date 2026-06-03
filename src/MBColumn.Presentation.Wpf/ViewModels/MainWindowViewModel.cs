@@ -13,6 +13,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows.Input;
 
@@ -47,8 +49,16 @@ public sealed class MainWindowViewModel : ViewModelBase
     private bool isSaveNotificationVisible;
     private string saveNotificationText = "";
     private CancellationTokenSource? saveNotificationCts;
+    private string? currentInputSnapshotHash;
 
     private readonly Func<InputViewModel> inputFactory;
+
+    private static readonly JsonSerializerOptions SnapshotHashJsonOptions = new()
+    {
+        IncludeFields = false,
+        WriteIndented = false,
+        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+    };
 
     public MainWindowViewModel(
         ColumnCalculationService calculationService,
@@ -439,8 +449,12 @@ public sealed class MainWindowViewModel : ViewModelBase
             if (selectedId is not null)
             {
                 var selectedSnapshot = projectService.LoadColumnInput(selectedId.Value);
+                currentInputSnapshotHash = null;
                 if (selectedSnapshot is not null)
+                {
                     Input.LoadFromSnapshot(selectedSnapshot);
+                    CaptureCurrentInputSnapshotBaseline();
+                }
             }
         }
         finally
@@ -735,8 +749,12 @@ public sealed class MainWindowViewModel : ViewModelBase
             if (selectedId is not null)
             {
                 var selectedSnapshot = projectService.LoadColumnInput(selectedId.Value);
+                currentInputSnapshotHash = null;
                 if (selectedSnapshot is not null)
+                {
                     Input.LoadFromSnapshot(selectedSnapshot);
+                    CaptureCurrentInputSnapshotBaseline();
+                }
             }
         }
         finally
@@ -770,6 +788,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         // Save + detach before firing any project events
         SaveCurrentColumnInput();
         currentColumn = null;
+        currentInputSnapshotHash = null;
         projectSession.SelectColumn(null);
 
         projectService.NewProject(name);
@@ -794,6 +813,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             // Save + detach before firing any project events
             SaveCurrentColumnInput();
             currentColumn = null;
+            currentInputSnapshotHash = null;
             projectSession.SelectColumn(null);
 
             CalculationStatus = "Opening project...";
@@ -1157,6 +1177,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                     Input.ResetToDefaults();
                 }
 
+                CaptureCurrentInputSnapshotBaseline();
                 ApplyCurrentColumnResult();
             }
             finally
@@ -1166,6 +1187,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
         else
         {
+            currentInputSnapshotHash = null;
             ApplyCurrentColumnResult();
         }
 
@@ -1176,7 +1198,28 @@ public sealed class MainWindowViewModel : ViewModelBase
     private void SaveCurrentColumnInput()
     {
         if (currentColumn is null) return;
-        projectService.SaveColumnInput(currentColumn.Id, Input.ToSnapshot());
+        var snapshot = Input.ToSnapshot();
+        projectService.SaveColumnInput(currentColumn.Id, snapshot);
+        currentInputSnapshotHash = ComputeInputSnapshotHash(snapshot);
+    }
+
+    private void CaptureCurrentInputSnapshotBaseline()
+        => currentInputSnapshotHash = ComputeInputSnapshotHash(Input.ToSnapshot());
+
+    private bool CurrentInputMatchesSnapshotBaseline()
+    {
+        if (currentInputSnapshotHash is null) return false;
+
+        var currentHash = ComputeInputSnapshotHash(Input.ToSnapshot());
+        return string.Equals(currentInputSnapshotHash, currentHash, StringComparison.Ordinal);
+    }
+
+    private static string ComputeInputSnapshotHash(ColumnInputSnapshot snapshot)
+    {
+        var json = JsonSerializer.Serialize(snapshot, SnapshotHashJsonOptions);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        return Convert.ToBase64String(sha256.ComputeHash(bytes));
     }
 
     private void UpdateWindowTitle()
@@ -1333,6 +1376,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
 
         if (!projectSession.CurrentColumnHasResult()) return;
+        if (CurrentInputMatchesSnapshotBaseline()) return;
+
         projectSession.MarkCurrentColumnOutdated();
         Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Outdated);
         IsCalculationOutdated = true;
@@ -1341,8 +1386,10 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private void MarkProjectModified()
     {
-        if (!suppressModified && currentColumn is not null)
-            projectService.MarkModified();
+        if (suppressModified || currentColumn is null) return;
+        if (CurrentInputMatchesSnapshotBaseline()) return;
+
+        projectService.MarkModified();
     }
 
     private void RaiseCommandStates()

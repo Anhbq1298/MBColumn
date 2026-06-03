@@ -258,6 +258,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **ColumnCalculationService** | Provides service logic and operations for ColumnCalculation. Key methods: Calculate. | `ColumnCalculationService.cs` |
+| `record` | **ColumnInputChangedEventArgs** | Represents the ColumnInputChangedEventArgs record. | `IProjectService.cs` |
 | `record` | **ColumnRecord** | Represents the ColumnRecord record. | `IProjectService.cs` |
 | `class` | **CompressionZonePolygonBuilder** | Represents the CompressionZonePolygonBuilder class. Key methods: ClipByNeutralAxis, ClipTensionSideByNeutralAxis. | `CompressionZonePolygonBuilder.cs` |
 | `class` | **ControlPointBuilderService** | Provides service logic and operations for ControlPointBuilder. Key methods: Build. | `ControlPointBuilderService.cs` |
@@ -426,6 +427,13 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `interface` | **IShearDesignServiceFactory** | /// Returns the code-specific IShearDesignService for a given design code. /// Returns null when the code's shear check is not yet implemented. /// | `IShearDesignServiceFactory.cs` |
 | `interface` | **IUnitConversionService** | Provides service logic and operations for IUnitConversion. | `IUnitConversionService.cs` |
 | `record` | **RebarDefinition** | Represents the RebarDefinition record. | `IRebarDatabase.cs` |
+
+### Units
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `enum` | **EngineeringUnitCategory** | Enumeration defining states/types for EngineeringUnitCategory. | `EngineeringUnitCategory.cs` |
+| `record` | **UnitProfile** | Represents the UnitProfile record. Key methods: For, Label, LatexLabel. Key properties: Metric, Imperial, SectionSizeLabel, MemberLengthLabel. | `UnitProfile.cs` |
 
 ## MBColumn.Infrastructure
 
@@ -813,7 +821,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **SectionStatus** | Enumeration defining states/types for SectionStatus. | `SectionStatus.cs` |
 | `record` | **SevenPointValidationRowViewModel** | Represents the SevenPointValidationRowViewModel record. Key properties: CDisplay, Pn7Display, Mn7Display, PnSolverDisplay. | `ResultViewModel.cs` |
 | `record` | **ShearEnvelopeSummaryRowViewModel** | Represents the ShearEnvelopeSummaryRowViewModel record. Key properties: DemandText, CapacityText, RatioText, StatusText. | `ShearResultViewModel.cs` |
-| `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// All force values in the user's display unit; lengths/stresses in mm / MPa. ///. Key methods: Load. Key properties: HasResult, EnvelopeSummaryRows, HasEnvelopeSummary, HasDemand. | `ShearResultViewModel.cs` |
+| `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// Force values arrive in display units; length/stress intermediates arrive in base units and are formatted through UnitProfile. ///. Key methods: Load. Key properties: HasResult, EnvelopeSummaryRows, HasEnvelopeSummary, HasDemand. | `ShearResultViewModel.cs` |
 | `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. | `SnapResult.cs` |
 | `class` | **SnapResult** | Encapsulates the result of Snap operations. Key properties: X, Y, Kind, HasSnap. | `SnapResult.cs` |
 | `class` | **ViewModelBase** | Represents the ViewModelBase class. Key methods: Dispose. | `ViewModelBase.cs` |
