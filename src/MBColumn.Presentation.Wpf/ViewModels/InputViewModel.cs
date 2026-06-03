@@ -118,6 +118,13 @@ public sealed class InputViewModel : ViewModelBase
     private bool isSlendernessCalculationDetailsOpen;
     private bool isRefreshingSlendernessState;
 
+    // Debounce timer for section preview — fires 150 ms after the last input change
+    private readonly System.Windows.Threading.DispatcherTimer _previewDebounceTimer;
+    // Stored handlers needed for clean unsubscription in Dispose
+    private readonly System.Collections.Specialized.NotifyCollectionChangedEventHandler _onBoundaryPointsChanged;
+    private readonly System.ComponentModel.PropertyChangedEventHandler _onIrregularInputPropertyChanged;
+    private readonly System.Collections.Specialized.NotifyCollectionChangedEventHandler _onIrregularRebarsChanged;
+
     private static readonly IReadOnlyList<MaterialGradeOption> AmericanConcreteGrades =
     [
         new("3 ksi / 21 MPa", 21.0, 3.0),
@@ -180,23 +187,43 @@ public sealed class InputViewModel : ViewModelBase
         this.rebarCoordinateBuilder = rebarCoordinateBuilder;
         this.dxfImportDialogService = dxfImportDialogService;
         this.autoDesignRebarDialogService = autoDesignRebarDialogService;
-        RebarLayout = new RebarLayoutViewModel(UpdateSectionPreview);
-        IrregularInput = new IrregularSectionInputViewModel(new IrregularSectionCsvService());
-        IrregularInput.BoundaryPoints.CollectionChanged += (_, _) => { if (!_isGeneratingRebars) UpdateSectionPreview(); };
-        IrregularInput.PropertyChanged += (sender, args) =>
+
+        _previewDebounceTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(150)
+        };
+        _previewDebounceTimer.Tick += (_, _) =>
+        {
+            _previewDebounceTimer.Stop();
+            RunPreviewImmediate();
+        };
+
+        _onBoundaryPointsChanged = (_, _) => { if (!_isGeneratingRebars) UpdateSectionPreview(); };
+        _onIrregularInputPropertyChanged = (_, args) =>
         {
             if (args.PropertyName == nameof(IrregularSectionInputViewModel.RebarMode))
-            {
                 SyncRebarLayoutTypeFromIrregularMode();
-            }
 
             if (args.PropertyName == nameof(IrregularSectionInputViewModel.Spacing) ||
                 args.PropertyName == nameof(IrregularSectionInputViewModel.BarSize) ||
                 args.PropertyName == nameof(IrregularSectionInputViewModel.RebarMode))
-            {
                 UpdateSectionPreview();
-            }
         };
+        _onIrregularRebarsChanged = (s, e) =>
+        {
+            if (e.NewItems is not null)
+                foreach (IrregularRebarRowViewModel item in e.NewItems)
+                    item.PropertyChanged += RebarRow_PropertyChanged;
+            if (e.OldItems is not null)
+                foreach (IrregularRebarRowViewModel item in e.OldItems)
+                    item.PropertyChanged -= RebarRow_PropertyChanged;
+            if (!_isGeneratingRebars) UpdateSectionPreview();
+        };
+
+        RebarLayout = new RebarLayoutViewModel(UpdateSectionPreview);
+        IrregularInput = new IrregularSectionInputViewModel(new IrregularSectionCsvService());
+        IrregularInput.BoundaryPoints.CollectionChanged += _onBoundaryPointsChanged;
+        IrregularInput.PropertyChanged += _onIrregularInputPropertyChanged;
         WireRebarsCollectionChanged();
         LoadCases.CollectionChanged += LoadCases_CollectionChanged;
         ApplyMetricDefaults();
@@ -1227,6 +1254,22 @@ public sealed class InputViewModel : ViewModelBase
     public void UpdateSectionPreview()
     {
         ReClampInnerLegs();
+        _previewDebounceTimer.Stop();
+        _previewDebounceTimer.Start();
+    }
+
+    // Cancels the debounce timer and runs the preview synchronously right now.
+    // Use this after bulk-load operations (LoadFromSnapshot, ResetToDefaults) so
+    // the preview fires while the caller's suppressModified guard is still active.
+    public void FlushPreviewNow()
+    {
+        _previewDebounceTimer.Stop();
+        ReClampInnerLegs();
+        RunPreviewImmediate();
+    }
+
+    private void RunPreviewImmediate()
+    {
         if (_isUpdatingPreview) return;
         _isUpdatingPreview = true;
         try
@@ -2292,8 +2335,8 @@ public sealed class InputViewModel : ViewModelBase
         SelectedMaterialLibrary = unitSystem == UnitSystem.Metric ? MaterialLibraryType.Europe : MaterialLibraryType.America;
 
         if (unitSystem == UnitSystem.Metric) ApplyMetricDefaults(); else ApplyImperialDefaults();
-        
-        UpdateSectionPreview();
+
+        FlushPreviewNow();
     }
 
     private IReadOnlyList<RebarCoordinateDto> BuildCustomRebarCoordinates()
@@ -2534,25 +2577,7 @@ public sealed class InputViewModel : ViewModelBase
 
     private void WireRebarsCollectionChanged()
     {
-        IrregularInput.Rebars.CollectionChanged += (s, e) =>
-        {
-            if (e.NewItems is not null)
-            {
-                foreach (IrregularRebarRowViewModel item in e.NewItems)
-                {
-                    item.PropertyChanged += RebarRow_PropertyChanged;
-                }
-            }
-            if (e.OldItems is not null)
-            {
-                foreach (IrregularRebarRowViewModel item in e.OldItems)
-                {
-                    item.PropertyChanged -= RebarRow_PropertyChanged;
-                }
-            }
-            if (!_isGeneratingRebars)
-                UpdateSectionPreview();
-        };
+        IrregularInput.Rebars.CollectionChanged += _onIrregularRebarsChanged;
 
         foreach (var item in IrregularInput.Rebars)
         {
@@ -3319,7 +3344,7 @@ public sealed class InputViewModel : ViewModelBase
         }
 
         RaiseDefaults();
-        UpdateSectionPreview();
+        FlushPreviewNow();
         RefreshSlendernessUiState();
     }
 
@@ -3715,6 +3740,18 @@ public sealed class InputViewModel : ViewModelBase
     }
 
     public event EventHandler? AutoDesignApplied;
+
+    public override void Dispose()
+    {
+        _previewDebounceTimer.Stop();
+        _previewDebounceTimer.IsEnabled = false;
+        IrregularInput.BoundaryPoints.CollectionChanged -= _onBoundaryPointsChanged;
+        IrregularInput.PropertyChanged -= _onIrregularInputPropertyChanged;
+        IrregularInput.Rebars.CollectionChanged -= _onIrregularRebarsChanged;
+        foreach (var item in IrregularInput.Rebars)
+            item.PropertyChanged -= RebarRow_PropertyChanged;
+        LoadCases.CollectionChanged -= LoadCases_CollectionChanged;
+    }
 }
 
 internal static class EurocodeConcreteStrainProfileValues

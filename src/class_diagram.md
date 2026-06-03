@@ -769,7 +769,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **GoverningChartPreviewViewModel** | Represents the GoverningChartPreviewViewModel class. Key properties: CriticalThetaDeg, UtilizationRatio, DemandP, DemandMx. | `A4ReportModels.cs` |
 | `class` | **GroupActionViewModel** | Represents the GroupActionViewModel class. Key properties: Name, Command. | `GroupActionViewModel.cs` |
 | `class` | **GroupItemViewModel** | Represents the GroupItemViewModel class. Key methods: UpdateCheckStateFromChildren. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand. | `GroupItemViewModel.cs` |
-| `class` | **InputViewModel** | Represents the InputViewModel class. Key methods: ToDto, UpdateSectionPreview, ResetToDefaults, ApplyDxfImportResult. Key properties: UnitSystems, GenerateIrregularRebarsCommand, GenerateEqualSpacingRebarsCommand, ImportDxfCommand. | `InputViewModel.cs` |
+| `class` | **InputViewModel** | Represents the InputViewModel class. Key methods: ToDto, UpdateSectionPreview, FlushPreviewNow, ResetToDefaults. Key properties: UnitSystems, GenerateIrregularRebarsCommand, GenerateEqualSpacingRebarsCommand, ImportDxfCommand. | `InputViewModel.cs` |
 | `class` | **IrregularBoundaryPointViewModel** | Represents the IrregularBoundaryPointViewModel class. Key properties: PtIndex, X, Y. | `IrregularBoundaryPointViewModel.cs` |
 | `record` | **IrregularRebarModeOption** | Represents the IrregularRebarModeOption record. | `IrregularSectionInputViewModel.cs` |
 | `class` | **IrregularRebarRowViewModel** | Represents the IrregularRebarRowViewModel class. Key properties: RebarIndex, X, Y, BarSize. | `IrregularRebarRowViewModel.cs` |
@@ -778,7 +778,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **LoadCaseViewModel** | Represents the LoadCaseViewModel class. Key methods: ToDto, ClearEc2SlendernessResults. Key properties: Id, Name, Pu, Mux. | `LoadCaseViewModel.cs` |
 | `class` | **MM3DViewModel** | Represents the MM3DViewModel class. Key methods: Load. Key properties: MmSliceContours, SurfaceMesh, DemandPoint, GoverningPoint. | `MM3DViewModel.cs` |
 | `class` | **MMDiagramViewModel** | Represents the MMDiagramViewModel class. Key methods: Load. Key properties: DiagramTitle, XAxisLabel, YAxisLabel, BoundaryPoints. | `MMDiagramViewModel.cs` |
-| `class` | **MainWindowViewModel** | Represents the MainWindowViewModel class. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
+| `class` | **MainWindowViewModel** | Represents the MainWindowViewModel class. Key methods: Dispose. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
 | `record` | **MaterialGradeOption** | Represents the MaterialGradeOption record. Key methods: StressValue, ModulusValue. | `InputViewModel.cs` |
 | `record` | **MaterialLibraryOption** | Represents the MaterialLibraryOption record. | `InputViewModel.cs` |
 | `enum` | **MaterialLibraryType** | Enumeration defining states/types for MaterialLibraryType. | `InputViewModel.cs` |
@@ -804,7 +804,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ReportPaginatorService** | Provides service logic and operations for ReportPaginator. Key methods: Paginate. | `A4ReportModels.cs` |
 | `class` | **ReportPm7RowViewModel** | Represents the ReportPm7RowViewModel class. Key properties: Index, PointCode, PointName, StrainDescription. | `A4ReportModels.cs` |
 | `class` | **ReportSectionToggleViewModel** | Represents the ReportSectionToggleViewModel class. Key properties: Title, SectionNumber, IsVisible. | `ReportTabViewModel.cs` |
-| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace. Key properties: WebViewScrollToAnchor, GeneratePreviewCommand, RevealReportPreviewCommand, HideReportPreviewCommand. | `ReportTabViewModel.cs` |
+| `class` | **ReportTabViewModel** | Represents the ReportTabViewModel class. Key methods: Clear, MarkOutdated, LoadFromCurrentWorkspace, Dispose. Key properties: WebViewScrollToAnchor, GeneratePreviewCommand, RevealReportPreviewCommand, HideReportPreviewCommand. | `ReportTabViewModel.cs` |
 | `class` | **ReportTreeItemViewModel** | Represents the ReportTreeItemViewModel class. Key methods: InitializeFromToggle, VerifyCheckedState. Key properties: Title, SectionNumber, IsChecked, Parent. | `ReportTabViewModel.cs` |
 | `class` | **ReportUnitConverter** | Represents the ReportUnitConverter class. Key methods: MmToDip, InchToDip. | `A4ReportModels.cs` |
 | `class` | **ResultViewModel** | Represents the ResultViewModel class. Key methods: ToggleViewport, CloseViewport. Key properties: PM, MM, PM3D, MM3D. | `ResultViewModel.cs` |
@@ -816,7 +816,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// All force values in the user's display unit; lengths/stresses in mm / MPa. ///. Key methods: Load. Key properties: HasResult, EnvelopeSummaryRows, HasEnvelopeSummary, HasDemand. | `ShearResultViewModel.cs` |
 | `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. | `SnapResult.cs` |
 | `class` | **SnapResult** | Encapsulates the result of Snap operations. Key properties: X, Y, Kind, HasSnap. | `SnapResult.cs` |
-| `class` | **ViewModelBase** | Represents the ViewModelBase class. | `ViewModelBase.cs` |
+| `class` | **ViewModelBase** | Represents the ViewModelBase class. Key methods: Dispose. | `ViewModelBase.cs` |
 | `class` | **ViewportOptionViewModel** | Represents the ViewportOptionViewModel class. Key properties: Type, DisplayName, IsSelected. | `ViewportOptionViewModel.cs` |
 | `record` | **fields** | Represents the fields record. Key methods: GenerateSectionForceRows. | `EtabsImportViewModel.cs` |
 | `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions, GetSelectedColumnIds. | `ProjectExplorerViewModel.cs` |
@@ -827,7 +827,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `class` | **AllowedBarToggleViewModel** | Represents the AllowedBarToggleViewModel class. Key properties: Bar, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
 | `class` | **AllowedLinkBarToggleViewModel** | Represents the AllowedLinkBarToggleViewModel class. Key properties: Bar, Label, IsEnabled. | `AutomatedRebarDesignViewModel.cs` |
-| `class` | **AutomatedRebarDesignViewModel** | Represents the AutomatedRebarDesignViewModel class. Key properties: AutoCommand, PreviewCommand, ApplyCommand, CancelCommand. | `AutomatedRebarDesignViewModel.cs` |
+| `class` | **AutomatedRebarDesignViewModel** | Represents the AutomatedRebarDesignViewModel class. Key methods: Dispose. Key properties: AutoCommand, PreviewCommand, ApplyCommand, CancelCommand. | `AutomatedRebarDesignViewModel.cs` |
 | `class` | **BeforeAfterRowViewModel** | Represents the BeforeAfterRowViewModel class. Key properties: Parameter, Before, Unit, IsFrozen. | `BeforeAfterRowViewModel.cs` |
 | `class` | **CandidateSuggestionRowViewModel** | Represents the CandidateSuggestionRowViewModel class. Key properties: Rank, Config, LayoutTypeLabel, TotalSteelAreaMm2. | `CandidateSuggestionRowViewModel.cs` |
 | `class` | **CheckSummaryRowViewModel** | Represents the CheckSummaryRowViewModel class. Key properties: CheckName, Before, After, Condition. | `CheckSummaryRowViewModel.cs` |

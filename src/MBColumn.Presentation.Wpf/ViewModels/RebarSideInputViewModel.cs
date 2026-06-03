@@ -55,8 +55,11 @@ public sealed class RebarSideInputViewModel : ViewModelBase
 
     public void SetWarning(string message)
     {
-        BarCountWarning = message;
-        Raise(nameof(HasBarCountWarning));
+        var hadWarning = HasBarCountWarning;
+        if (!Set(ref barCountWarning, message, nameof(BarCountWarning)))
+            return;
+
+        if (hadWarning != HasBarCountWarning)
+            Raise(nameof(HasBarCountWarning));
     }
 }
-

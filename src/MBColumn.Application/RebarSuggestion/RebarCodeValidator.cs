@@ -98,7 +98,11 @@ public sealed class RebarCodeValidator : IRebarCandidateValidator
         }
 
         // ── Tie compatibility (basic checks) ──────────────────────────────────
-        if (constraints.CheckTieCompatibility && dto.LinkDiameterMm > 0)
+        // Auto link design validates the final link size, spacing, and cross-ties.
+        // Do not downgrade a candidate for details that the auto-design step resolves.
+        if (constraints.CheckTieCompatibility &&
+            dto.LinkDiameterMm > 0 &&
+            input.AllowedLinkBars.Count == 0)
         {
             double dsw   = dto.LinkDiameterMm;
             double dsMax = candidate.Bar.DiameterMm;

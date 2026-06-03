@@ -228,8 +228,10 @@
                                 <TextBlock Text="Target PMM Ratio (0–1)"
                                            Style="{StaticResource FieldLabelTextStyle}"
                                            VerticalAlignment="Center" Width="165" />
-                                <TextBox Text="{Binding TargetPmmRatio, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}"
-                                         Width="80" />
+                                <TextBox Text="{Binding TargetPmmRatio, StringFormat=F2, UpdateSourceTrigger=LostFocus}"
+                                         Width="80"
+                                         InputScope="Number"
+                                         InputMethod.IsInputMethodEnabled="False" />
                             </StackPanel>
                             <TextBlock Text="Candidates with PMM &gt; target are rejected. Default: 1.00."
                                        Foreground="{DynamicResource TextMutedBrush}"
@@ -326,7 +328,9 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="Target shear utilization" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding TargetShearUtil, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBox Text="{Binding TargetShearUtil, StringFormat=F2, UpdateSourceTrigger=LostFocus}"
+                                             InputScope="Number"
+                                             InputMethod.IsInputMethodEnabled="False" />
                                 </StackPanel>
                             </Grid>
 

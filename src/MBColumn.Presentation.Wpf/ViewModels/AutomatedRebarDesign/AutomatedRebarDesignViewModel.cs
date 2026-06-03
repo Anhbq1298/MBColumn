@@ -297,15 +297,25 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         if (SelectedOption is null) return;
         AppliedOption = SelectedOption;
         DialogResult  = true;
+        DisposeCts();
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void Cancel()
     {
         _cts?.Cancel();
+        DisposeCts();
         DialogResult = false;
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
+
+    private void DisposeCts()
+    {
+        _cts?.Dispose();
+        _cts = null;
+    }
+
+    public override void Dispose() => DisposeCts();
 
     public event EventHandler? CloseRequested;
 
@@ -573,9 +583,14 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         bool tieIssue = opt.Warnings.Any(w => w.Type == RebarSuggestionWarningType.TieCompatibilityIssue);
         UpdateCheckRow("Tie compatibility", tieIssue ? "Warn" : "OK", true);
 
+        bool internalLinksProvided = opt.ShearLinkDesign?.InternalLinksRequired == true;
         bool unsupported = opt.Warnings.Any(w => w.Type == RebarSuggestionWarningType.InternalLinksRequired);
-        UpdateCheckRow("Unsupported bar distance", unsupported ? "Warn" : "OK", true);
-        UpdateCheckRow("Internal link warning", unsupported ? "Yes" : "No", true);
+        UpdateCheckRow("Unsupported bar distance",
+            internalLinksProvided ? "Resolved by cross-ties" : unsupported ? "Warn" : "OK",
+            true);
+        UpdateCheckRow("Internal link warning",
+            internalLinksProvided ? "Cross-ties provided" : unsupported ? "Yes" : "No",
+            true);
 
         if (opt.ShearLinkDesign is { } ld)
         {

@@ -278,7 +278,6 @@ internal static class AnnexBIllustrations
         }
 
         DrawGrayscaleLegend(sb, 70, 210, ultimateStrainLabel);
-        DrawStrainDistributionPanel(sb, 790, 120, ultimateStrainLabel);
         DrawDefinitionsBox(sb, 775, 455, ultimateStrainLabel);
         DrawFigureLegend(sb, 390, 620);
 

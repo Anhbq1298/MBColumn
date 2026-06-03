@@ -19,6 +19,7 @@ public sealed class RebarSuggestionEngine(
     IReadOnlyList<IRebarCandidateValidator> validators,
     IRebarCandidateEvaluator evaluator)
 {
+    private const double ShearConvergenceTolerance = 1e-6;
     public RebarSuggestionEngine(
         IRebarCandidateGenerator generator,
         IReadOnlyList<IRebarCandidateValidator> validators,
@@ -148,7 +149,7 @@ public sealed class RebarSuggestionEngine(
 
                     // Converged?
                     if (newEval.MaxShearUtilization is null ||
-                        newEval.MaxShearUtilization <= shearTarget + 1e-6)
+                        newEval.MaxShearUtilization <= shearTarget + ShearConvergenceTolerance)
                         break;
                 }
 
@@ -162,7 +163,7 @@ public sealed class RebarSuggestionEngine(
 
                 // After convergence, warn only if truly unresolvable
                 double finalShear = eval.MaxShearUtilization ?? 0;
-                if (finalShear > shearTarget + 1e-6)
+                if (finalShear > shearTarget + ShearConvergenceTolerance)
                 {
                     finalStatus = RebarSuggestionStatus.Warning;
                     warnings.Add(new RebarSuggestionWarning(
@@ -175,7 +176,7 @@ public sealed class RebarSuggestionEngine(
             else
             {
                 // No link bars: fall back to evaluator's raw shear check
-                if (eval.MaxShearUtilization is { } shear && shear > shearTarget + 1e-6)
+                if (eval.MaxShearUtilization is { } shear && shear > shearTarget + ShearConvergenceTolerance)
                 {
                     finalStatus = RebarSuggestionStatus.Warning;
                     warnings.Add(new RebarSuggestionWarning(

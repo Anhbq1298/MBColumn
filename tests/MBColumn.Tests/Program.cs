@@ -239,6 +239,7 @@ var tests = new List<(string Name, Action Test)>
     ("DXF import applies irregular custom coordinates",              TestDxfImportAppliesIrregularCustomCoordinates),
     ("DXF import does not block on cover",                           TestDxfImportDoesNotBlockOnCover),
     ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
+    ("ETABS import preserves software force demands",                TestEtabsImportPreservesSoftwareForceDemands),
     ("ETABS pier geometry snap-tolerance fix",                      TestIrregularPierGeometrySnapTolerance),
     ("ETABS pier geometry forward-cap fix",                         TestIrregularPierGeometryForwardCap),
     ("ETABS pier geometry applies clockwise axis angle",             TestIrregularPierGeometryAppliesClockwiseAxisAngle),
@@ -3444,6 +3445,51 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     IsTrue(snapshot.Rebars.All(r => string.Equals(r.BarSize, "T25", StringComparison.OrdinalIgnoreCase)));
 }
 
+static void TestEtabsImportPreservesSoftwareForceDemands()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel(
+        [],
+        [],
+        null,
+        new StubEtabsConnectionService(),
+        new StubEtabsColumnImportService(),
+        new StubEtabsForceImportService(),
+        null,
+        new StubPierShellImportService(),
+        new Stub32PointGeometryBuilder());
+
+    vm.ConnectCommand.Execute(null);
+    var column = vm.Columns.First(c => c.EtabsSectionName == "CIRC800");
+    column.IsSelected = true;
+
+    vm.CreateMbColumnSectionCommand.Execute(null);
+    vm.AssignToSectionCommand.Execute(vm.MbColumnSections[0]);
+    vm.GoToFlow2Command.Execute(null);
+    vm.LoadCombinations[0].IsSelected = true;
+    vm.GoToFlow3Command.Execute(null);
+
+    IsTrue(vm.ForceRows.Count == 2);
+
+    vm.ApplyImportCommand.Execute(null);
+    var snapshot = vm.ImportResult!.Sections.Single().Snapshot;
+    var top = snapshot.LoadCases.Single(lc => lc.Station == "Top");
+    var bottom = snapshot.LoadCases.Single(lc => lc.Station == "Bottom");
+
+    IsFalse(snapshot.IncludeEc2Slenderness);
+    AreClose(250.0, top.Mux, 1e-9);
+    AreClose(180.0, top.Muy, 1e-9);
+    AreClose(70.0, top.Vux, 1e-9);
+    AreClose(80.0, top.Vuy, 1e-9);
+    AreClose(-210.0, bottom.Mux, 1e-9);
+    AreClose(160.0, bottom.Muy, 1e-9);
+    AreClose(75.0, bottom.Vux, 1e-9);
+    AreClose(85.0, bottom.Vuy, 1e-9);
+    AreClose(250.0, top.MxTop!.Value, 1e-9);
+    AreClose(-210.0, top.MxBottom!.Value, 1e-9);
+    AreClose(180.0, bottom.MyTop!.Value, 1e-9);
+    AreClose(160.0, bottom.MyBottom!.Value, 1e-9);
+}
+
 static void TestIrregularEqualSpacingGeneratedRebarsSatisfyCover()
 {
     var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
@@ -3924,7 +3970,10 @@ sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.I
         IReadOnlyList<(string PierLabel, string StoryName)> _,
         IReadOnlyList<string> _2,
         MBColumn.Domain.Enums.UnitSystem _3)
-        => [new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 0, 0, "Top", "OK")];
+        => [
+            new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 70, 80, "Top", "OK"),
+            new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2600, -210, 160, 75, 85, "Bottom", "OK")
+        ];
     public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetElementForces(
         IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> _,
         IReadOnlyList<string> _2,

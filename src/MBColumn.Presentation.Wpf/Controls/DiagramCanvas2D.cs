@@ -34,7 +34,11 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty ShowDemandLabelProperty = DependencyProperty.Register(nameof(ShowDemandLabel), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowCpLabelsProperty = DependencyProperty.Register(nameof(ShowCpLabels), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    private const double HitTolerance = 10.0;
+    private const double HitToleranceDip = 10.0;
+    private double ScaledHitTolerance =>
+        HitToleranceDip / (PresentationSource.FromVisual(this) is { } src
+            ? src.CompositionTarget.TransformFromDevice.M11
+            : 1.0);
     private const double MinZoom = 0.35;
     private const double MaxZoom = 18.0;
     private double viewZoom = 1.0;
@@ -48,14 +52,38 @@ public class DiagramCanvas2D : FrameworkElement
     public DiagramCanvas2D()
     {
         Focusable = true;
-        MouseMove += OnMouseMove;
-        MouseLeave += (_, _) => { hoverPoint = null; hoverPosition = null; InvalidateVisual(); };
-        MouseLeftButtonDown += OnMouseLeftButtonDown;
-        MouseRightButtonDown += OnPanMouseDown;
-        MouseDown += OnAnyMouseDown;
-        MouseUp += OnAnyMouseUp;
-        MouseWheel += OnMouseWheel;
+        Loaded   += (_, _) => AttachMouseHandlers();
+        Unloaded += (_, _) => DetachMouseHandlers();
         SizeChanged += (_, _) => InvalidateVisual();
+    }
+
+    private void AttachMouseHandlers()
+    {
+        MouseMove            += OnMouseMove;
+        MouseLeave           += OnMouseLeave;
+        MouseLeftButtonDown  += OnMouseLeftButtonDown;
+        MouseRightButtonDown += OnPanMouseDown;
+        MouseDown            += OnAnyMouseDown;
+        MouseUp              += OnAnyMouseUp;
+        MouseWheel           += OnMouseWheel;
+    }
+
+    private void DetachMouseHandlers()
+    {
+        MouseMove            -= OnMouseMove;
+        MouseLeave           -= OnMouseLeave;
+        MouseLeftButtonDown  -= OnMouseLeftButtonDown;
+        MouseRightButtonDown -= OnPanMouseDown;
+        MouseDown            -= OnAnyMouseDown;
+        MouseUp              -= OnAnyMouseUp;
+        MouseWheel           -= OnMouseWheel;
+    }
+
+    private void OnMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        hoverPoint = null;
+        hoverPosition = null;
+        InvalidateVisual();
     }
 
     public IEnumerable<ControlPointDto>? Points { get => (IEnumerable<ControlPointDto>?)GetValue(PointsProperty); set => SetValue(PointsProperty, value); }
@@ -1075,7 +1103,7 @@ public class DiagramCanvas2D : FrameworkElement
         var nearest = points
             .Select(p => new { Point = p, Screen = transform.ToScreen(p.X, p.Y) })
             .Select(x => new { x.Point, Distance = (x.Screen - position).Length })
-            .Where(x => x.Distance < HitTolerance)
+            .Where(x => x.Distance < ScaledHitTolerance)
             .OrderBy(x => x.Distance)
             .FirstOrDefault();
 
@@ -1123,7 +1151,7 @@ public class DiagramCanvas2D : FrameworkElement
         var nearest = points
             .Select(p => new { Point = p, Screen = transform.ToScreen(p.X, p.Y) })
             .Select(x => new { x.Point, Distance = (x.Screen - position).Length })
-            .Where(x => x.Distance < HitTolerance)
+            .Where(x => x.Distance < ScaledHitTolerance)
             .OrderBy(x => x.Distance)
             .FirstOrDefault();
 

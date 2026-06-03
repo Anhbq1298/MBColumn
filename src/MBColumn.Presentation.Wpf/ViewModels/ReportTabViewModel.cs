@@ -484,6 +484,7 @@ public sealed class ReportTabViewModel : ViewModelBase
     private async Task RefreshReportSectionsAsync()
     {
         _reportCts?.Cancel();
+        _reportCts?.Dispose();
         _reportCts = new CancellationTokenSource();
         var ct = _reportCts.Token;
 
@@ -573,6 +574,13 @@ public sealed class ReportTabViewModel : ViewModelBase
             if (!ct.IsCancellationRequested)
                 IsGeneratingReport = false;
         }
+    }
+
+    public override void Dispose()
+    {
+        _reportCts?.Cancel();
+        _reportCts?.Dispose();
+        _reportCts = null;
     }
 
     // ── Export commands ───────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -46,6 +47,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly IEtabsForceCacheResolver? forceCacheResolver;
     private readonly IEtabsSectionForceFilterService? sectionForceFilter;
     private readonly UnitSystem targetUnitSystem;
+    private const int PierBoundaryCacheLimit = 500;
     private readonly Dictionary<string, (IReadOnlyList<Point2D> Outer, IReadOnlyList<IReadOnlyList<Point2D>> Openings)>
         pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
     private bool pierGroupsLoaded;
@@ -894,6 +896,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         var boundary = storyBoundaries[firstStory];
                         if (boundary.Outer.Count >= 3)
                         {
+                            if (pierBoundaryCache.Count >= PierBoundaryCacheLimit)
+                                pierBoundaryCache.Clear();
                             pierBoundaryCache[uniqueSectionName] = (boundary.Outer, boundary.Openings);
                         }
 
@@ -1121,6 +1125,13 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private void ApplyImport()
     {
+        if (ForceRows.Count == 0
+            && MbColumnSections.Any(g => g.Items.Count > 0)
+            && LoadCombinations.Any(c => c.IsSelected))
+        {
+            GenerateForceRows();
+        }
+
         var sections = new List<EtabsImportedSectionInput>();
         var reservedNames = existingSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -1168,33 +1179,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         if (mapping is null) return null;
 
-        var objectNames = group.Items.Select(i => i.ObjectName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var selectedForces = ForceRows
-            .Where(f => f.IsSelected && objectNames.Contains(f.ObjectName))
-            .ToList();
-
-        var loadCases = selectedForces
-            .Select((force, index) =>
-            {
-                var station = NormalizeDemandStation(force.Station, force.Status);
-                var sourceLabel = string.IsNullOrWhiteSpace(force.Label) ? force.Pier : force.Label;
-                return new SnapshotLoadCase
-                {
-                    Id = $"etabs_{index + 1}",
-                    OriginalLoadCaseName = force.LoadCombination,
-                    SourceObjectName = force.ObjectName,
-                    SourceObjectLabel = sourceLabel,
-                    Story = force.Story,
-                    Station = station,
-                    Source = "ETABS",
-                    Label = BuildDemandCaseLabel(force.LoadCombination, sourceLabel, force.Story, station),
-                    Pu = force.P,
-                    Mux = force.M2,
-                    Muy = force.M3,
-                    IsActive = true
-                };
-            })
-            .ToList();
+        var selectedForces = GetSelectedForcesForItems(group.Items);
+        var loadCases = BuildSnapshotLoadCases(selectedForces);
 
         IReadOnlyList<Point2D> boundary;
         IReadOnlyList<IReadOnlyList<Point2D>> openings = [];
@@ -2125,21 +2111,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private ColumnInputSnapshot CreateSnapshot(EtabsImportSummaryRowViewModel row)
     {
         var mapping = row.Mapping;
-        var selectedForces = ForceRows
-            .Where(force => force.IsSelected && force.ObjectName == row.SourceColumn.ObjectName)
-            .ToList();
-        var primaryForce = selectedForces.FirstOrDefault();
-        var loadCases = selectedForces
-            .Select((force, index) => new SnapshotLoadCase
-            {
-                Id = $"etabs_{index + 1}",
-                Label = force.LoadCombination,
-                Pu = force.P,
-                Mux = force.M2,
-                Muy = force.M3,
-                IsActive = true
-            })
-            .ToList();
+        var selectedForces = GetSelectedForcesForItems(new[] { row.SourceColumn });
+        var loadCases = BuildSnapshotLoadCases(selectedForces);
+        var primaryForce = loadCases.FirstOrDefault();
 
         IReadOnlyList<Point2D> boundary;
         IReadOnlyList<IReadOnlyList<Point2D>> openings = [];
@@ -2218,9 +2192,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     }).ToList()).ToList()
                 : [],
             Rebars = mapping.IsIrregular ? rebars : [],
-            Pu = primaryForce?.P ?? 0,
-            Mux = primaryForce?.M2 ?? 0,
-            Muy = primaryForce?.M3 ?? 0,
+            Pu = primaryForce?.Pu ?? 0,
+            Mux = primaryForce?.Mux ?? 0,
+            Muy = primaryForce?.Muy ?? 0,
             PmAngleDegrees = 0,
             AxialLoad = 0,
             LoadCases = loadCases,
@@ -2252,36 +2226,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private ColumnInputSnapshot CreateTierSnapshot(EtabsImportSummaryRowViewModel row)
     {
         var snapshot = CreateSnapshot(row);
-        var selectedObjectNames = Columns
-            .Where(c => c.IsSelected)
-            .Select(c => c.ObjectName)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var selectedForces = ForceRows
-            .Where(force => force.IsSelected && selectedObjectNames.Contains(force.ObjectName))
-            .ToList();
-
-        var loadCases = selectedForces
-            .Select((force, index) =>
-            {
-                var station = NormalizeDemandStation(force.Station, force.Status);
-                var sourceLabel = string.IsNullOrWhiteSpace(force.Label) ? force.Pier : force.Label;
-                return new SnapshotLoadCase
-                {
-                    Id = $"etabs_{index + 1}",
-                    OriginalLoadCaseName = force.LoadCombination,
-                    SourceObjectName = force.ObjectName,
-                    SourceObjectLabel = sourceLabel,
-                    Story = force.Story,
-                    Station = station,
-                    Source = "ETABS",
-                    Label = BuildDemandCaseLabel(force.LoadCombination, sourceLabel, force.Story, station),
-                    Pu = force.P,
-                    Mux = force.M2,
-                    Muy = force.M3,
-                    IsActive = true
-                };
-            })
-            .ToList();
+        var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
+        var selectedForces = GetSelectedForcesForItems(selectedColumns);
+        var loadCases = BuildSnapshotLoadCases(selectedForces);
 
         var primaryForce = loadCases.FirstOrDefault();
         snapshot.Pu = primaryForce?.Pu ?? 0;
@@ -2291,7 +2238,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
         snapshot.DesignTierName = row.NewSectionName;
         snapshot.DesignTierSource = "ETABS";
 
-        var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
         snapshot.EtabsTierMetadata = new EtabsTierImportMetadataDto
         {
             SourceModelPath = ModelPath,
@@ -2530,6 +2476,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
             var centered = result.ClockwisePolylines[0];
 
+            if (pierBoundaryCache.Count >= PierBoundaryCacheLimit)
+                pierBoundaryCache.Clear();
             pierBoundaryCache[key] = (centered, result.OpeningPolylines);
             return centered;
         }
@@ -2966,6 +2914,135 @@ public sealed class EtabsImportViewModel : ViewModelBase
             .Select(SanitizeName);
         return string.Join("-", parts);
     }
+
+    private List<EtabsForceImportRowViewModel> GetSelectedForcesForItems(IEnumerable<EtabsColumnImportRowViewModel> items)
+    {
+        var itemList = items.ToList();
+        if (itemList.Count == 0)
+            return [];
+
+        var objectNames = itemList
+            .Select(item => item.ObjectName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var storyLabelKeys = itemList
+            .Select(BuildStoryLabelKey)
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return ForceRows
+            .Where(force => force.IsSelected
+                && (objectNames.Contains(force.ObjectName)
+                    || storyLabelKeys.Contains(BuildStoryLabelKey(force))))
+            .ToList();
+    }
+
+    private static List<SnapshotLoadCase> BuildSnapshotLoadCases(IReadOnlyList<EtabsForceImportRowViewModel> forces)
+    {
+        var endMoments = BuildEndMomentLookup(forces);
+
+        return forces
+            .Select((force, index) =>
+            {
+                var station = NormalizeDemandStation(force.Station, force.Status);
+                var sourceLabel = ForceSourceLabel(force);
+                var hasEndMoments = endMoments.TryGetValue(BuildEndMomentKey(force), out var ends);
+
+                return new SnapshotLoadCase
+                {
+                    Id = $"etabs_{index + 1}",
+                    OriginalLoadCaseName = force.LoadCombination,
+                    SourceObjectName = force.ObjectName,
+                    SourceObjectLabel = sourceLabel,
+                    Story = force.Story,
+                    Station = station,
+                    Source = "ETABS",
+                    Label = BuildDemandCaseLabel(force.LoadCombination, sourceLabel, force.Story, station),
+                    Pu = force.P,
+                    Mux = force.M2,
+                    Muy = force.M3,
+                    Vux = force.V2,
+                    Vuy = force.V3,
+                    MxTop = hasEndMoments ? ends.MxTop : force.M2,
+                    MxBottom = hasEndMoments ? ends.MxBottom : force.M2,
+                    MyTop = hasEndMoments ? ends.MyTop : force.M3,
+                    MyBottom = hasEndMoments ? ends.MyBottom : force.M3,
+                    IsActive = true
+                };
+            })
+            .ToList();
+    }
+
+    private static Dictionary<string, (double MxTop, double MxBottom, double MyTop, double MyBottom)>
+        BuildEndMomentLookup(IReadOnlyList<EtabsForceImportRowViewModel> forces)
+    {
+        var lookup = new Dictionary<string, (double, double, double, double)>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in forces.GroupBy(BuildEndMomentKey, StringComparer.OrdinalIgnoreCase))
+        {
+            var rows = group.ToList();
+            if (rows.Count == 0)
+                continue;
+
+            var top = FindEndMomentRow(rows, top: true) ?? rows[0];
+            var bottom = FindEndMomentRow(rows, top: false) ?? top;
+            lookup[group.Key] = (top.M2, bottom.M2, top.M3, bottom.M3);
+        }
+
+        return lookup;
+    }
+
+    private static EtabsForceImportRowViewModel? FindEndMomentRow(
+        IReadOnlyList<EtabsForceImportRowViewModel> rows,
+        bool top)
+    {
+        var named = rows.FirstOrDefault(row =>
+        {
+            var station = NormalizeDemandStation(row.Station, row.Status);
+            return top
+                ? station.Equals("Top", StringComparison.OrdinalIgnoreCase)
+                : station.Equals("Bottom", StringComparison.OrdinalIgnoreCase)
+                  || station.Equals("Bot", StringComparison.OrdinalIgnoreCase);
+        });
+
+        if (named is not null)
+            return named;
+
+        var numericRows = rows
+            .Select(row => (Row: row, Station: TryParseStation(NormalizeDemandStation(row.Station, row.Status))))
+            .Where(pair => pair.Station.HasValue)
+            .ToList();
+
+        if (numericRows.Count == 0)
+            return null;
+
+        return top
+            ? numericRows.OrderByDescending(pair => pair.Station!.Value).First().Row
+            : numericRows.OrderBy(pair => pair.Station!.Value).First().Row;
+    }
+
+    private static double? TryParseStation(string station)
+        => double.TryParse(station, NumberStyles.Any, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : null;
+
+    private static string BuildEndMomentKey(EtabsForceImportRowViewModel force)
+        => $"{force.ObjectName.Trim()}|{force.Story.Trim()}|{ForceSourceLabel(force)}|{force.LoadCombination.Trim()}";
+
+    private static string BuildStoryLabelKey(EtabsColumnImportRowViewModel item)
+        => BuildStoryLabelKey(item.Story, string.IsNullOrWhiteSpace(item.Label) ? item.Pier : item.Label);
+
+    private static string BuildStoryLabelKey(EtabsForceImportRowViewModel force)
+        => BuildStoryLabelKey(force.Story, ForceSourceLabel(force));
+
+    private static string BuildStoryLabelKey(string story, string label)
+        => string.IsNullOrWhiteSpace(story) || string.IsNullOrWhiteSpace(label)
+            ? ""
+            : $"{story.Trim()}|{label.Trim()}";
+
+    private static string ForceSourceLabel(EtabsForceImportRowViewModel force)
+        => string.IsNullOrWhiteSpace(force.Label) ? force.Pier : force.Label;
 
     private void RaiseCounts()
     {

@@ -518,24 +518,6 @@
                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                                 </StackPanel>
                             </Button>
-                            <Button Command="{Binding PrintSingleReportCommand}"
-                                    ToolTip="Print current section report as PDF"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    MinHeight="30"
-                                    Padding="12,5"
-                                    Margin="0,0,6,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE8A5;"
-                                               FontFamily="Segoe MDL2 Assets"
-                                               FontSize="12"
-                                               VerticalAlignment="Center"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                                    <TextBlock Text="Section PDF"
-                                               Margin="7,0,0,0"
-                                               VerticalAlignment="Center"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                                </StackPanel>
-                            </Button>
                             <Button Command="{Binding BatchPrintCommand}"
                                     ToolTip="Batch print PDF reports"
                                     Style="{StaticResource BatchReportButtonStyle}"

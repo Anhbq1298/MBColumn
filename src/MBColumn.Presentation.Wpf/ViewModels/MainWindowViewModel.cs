@@ -1112,8 +1112,8 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private async Task ShowSaveNotificationAsync(string message)
     {
-        // Cancel any previous notification timer
         saveNotificationCts?.Cancel();
+        saveNotificationCts?.Dispose();
         var cts = new CancellationTokenSource();
         saveNotificationCts = cts;
 
@@ -1298,11 +1298,26 @@ public sealed class MainWindowViewModel : ViewModelBase
         "AngleDisplay", "UtilizationDisplay", "StatusDisplay", "IsCritical", "IsFailing",
     };
 
+    private static readonly HashSet<string> s_rebarSideDisplayOnlyProperties = new(StringComparer.Ordinal)
+    {
+        nameof(RebarSideInputViewModel.BarSize),
+        nameof(RebarSideInputViewModel.Cover),
+        nameof(RebarSideInputViewModel.BarCountWarning),
+        nameof(RebarSideInputViewModel.HasBarCountWarning)
+    };
+
     private void OnInputChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not null && s_displayOnlyProperties.Contains(e.PropertyName)) return;
+        if (IsDisplayOnlyChange(sender, e.PropertyName)) return;
         MarkCalculationOutdated();
         MarkProjectModified();
+    }
+
+    private static bool IsDisplayOnlyChange(object? sender, string? propertyName)
+    {
+        if (propertyName is null) return false;
+        if (s_displayOnlyProperties.Contains(propertyName)) return true;
+        return sender is RebarSideInputViewModel && s_rebarSideDisplayOnlyProperties.Contains(propertyName);
     }
 
     private void MarkCalculationOutdated()
@@ -1459,4 +1474,13 @@ public sealed class MainWindowViewModel : ViewModelBase
         => messageService.ShowInformation(
             "MBColumn\nReinforced concrete column design\n\nUse File, Import, Export, and Help from the top toolbar.",
             "About MBColumn");
+
+    public override void Dispose()
+    {
+        saveNotificationCts?.Cancel();
+        saveNotificationCts?.Dispose();
+        saveNotificationCts = null;
+        Input.Dispose();
+        Report.Dispose();
+    }
 }
