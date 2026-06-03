@@ -3,6 +3,8 @@
 public enum LengthUnit
 {
     Millimeter,
-    Inch
+    Meter,
+    Inch,
+    Foot
 }
 

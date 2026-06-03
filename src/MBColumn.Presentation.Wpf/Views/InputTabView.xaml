@@ -252,12 +252,12 @@
                                            Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
-                                           Text="m"
+                                           Text="{Binding MemberLengthLabel}"
                                            Style="{StaticResource UnitTextStyle}" />
                                 <TextBox Grid.Row="1"
                                          Grid.Column="0"
                                          Grid.ColumnSpan="2"
-                                         Text="{Binding MemberLengthLInM, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" />
+                                         Text="{Binding MemberLengthDisplay, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" />
                             </Grid>
                         </GroupBox>
                         <GroupBox Header="Material"
@@ -425,7 +425,7 @@
                                  </TextBlock>
                                 <TextBlock Grid.Row="12"
                                            Grid.Column="1"
-                                           Text="MPa"
+                                           Text="{Binding StressLabel}"
                                            Style="{StaticResource UnitTextStyle}" />
                                 <TextBox Grid.Row="13"
                                          Grid.Column="0"
@@ -441,7 +441,7 @@
                                  </TextBlock>
                                 <TextBlock Grid.Row="15"
                                            Grid.Column="1"
-                                           Text="MPa"
+                                           Text="{Binding StressLabel}"
                                            Style="{StaticResource UnitTextStyle}" />
                                 <TextBox Grid.Row="16"
                                          Grid.Column="0"
@@ -1940,10 +1940,10 @@
                                     <StackPanel Width="120" Margin="0,0,10,6">
                                         <DockPanel>
                                             <TextBlock Text="L" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="m" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                            <TextBlock Text="{Binding MemberLengthLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
                                         </DockPanel>
                                         <TextBox Style="{StaticResource ComputedTextBoxStyle}"
-                                                 Text="{Binding MemberLengthLInM, Mode=OneWay, TargetNullValue=''}" />
+                                                 Text="{Binding MemberLengthDisplay, Mode=OneWay, TargetNullValue=''}" />
                                     </StackPanel>
 
                                     <StackPanel Width="95" Margin="0,0,10,6">
@@ -1959,7 +1959,7 @@
                                     <StackPanel Width="110" Margin="0,0,10,6">
                                         <DockPanel>
                                             <TextBlock Text="l&#x2080;x" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="m" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                            <TextBlock Text="{Binding MemberLengthLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
                                         </DockPanel>
                                         <TextBox Style="{StaticResource ComputedTextBoxStyle}"
                                                  Text="{Binding L0xText, Mode=OneWay}" />
@@ -1968,7 +1968,7 @@
                                     <StackPanel Width="110" Margin="0,0,10,6">
                                         <DockPanel>
                                             <TextBlock Text="l&#x2080;y" Style="{StaticResource FieldLabelTextStyle}" />
-                                            <TextBlock Text="m" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                            <TextBlock Text="{Binding MemberLengthLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
                                         </DockPanel>
                                         <TextBox Style="{StaticResource ComputedTextBoxStyle}"
                                                  Text="{Binding L0yText, Mode=OneWay}" />
@@ -1999,6 +1999,9 @@
                                           SelectionUnit="CellOrRowHeader"
                                           ClipboardCopyMode="IncludeHeader"
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling"
+                                          EnableRowVirtualization="True"
                                           Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                                           PreviewKeyDown="DataGrid_PreviewKeyDown">
                                     <DataGrid.Resources>
@@ -2107,6 +2110,9 @@
                                           SelectionUnit="CellOrRowHeader"
                                           ClipboardCopyMode="IncludeHeader"
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          VirtualizingPanel.IsVirtualizing="True"
+                                          VirtualizingPanel.VirtualizationMode="Recycling"
+                                          EnableRowVirtualization="True"
                                           Visibility="{Binding IncludeEc2Slenderness, Converter={StaticResource BoolToVisibilityConverter}}"
                                           PreviewKeyDown="DataGrid_PreviewKeyDown">
                                     <DataGrid.Resources>
@@ -2563,11 +2569,11 @@
                                                    Text="Member length L"
                                                    Style="{StaticResource FieldLabelTextStyle}" />
                                         <TextBlock Grid.Row="0" Grid.Column="1"
-                                                   Text="m"
+                                                   Text="{Binding MemberLengthLabel}"
                                                    Style="{StaticResource UnitTextStyle}" />
                                         <TextBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
                                                  Style="{StaticResource ComputedTextBoxStyle}"
-                                                 Text="{Binding MemberLengthLInM, Mode=OneWay, TargetNullValue=''}" />
+                                                 Text="{Binding MemberLengthDisplay, Mode=OneWay, TargetNullValue=''}" />
                                     </Grid>
 
                                     <!-- Effective Length Mode & Coefficients -->
@@ -3434,7 +3440,7 @@
                                             <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                             <Run Text="e" />
                                             <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
-                                            <Run Text=" = max(section dimension / 30, 20 mm). The final M" />
+                                            <Run Text="{Binding MinimumEccentricityRuleText}" />
                                             <Run Text="used" BaselineAlignment="Subscript" FontSize="9" />
                                             <Run Text=" is never less than N" />
                                             <Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" />
@@ -3492,7 +3498,7 @@
                                 <TextBlock Text="Axis" FontWeight="SemiBold" TextAlignment="Center" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
-                                <TextBlock Text="{Binding LengthLabel, StringFormat='l0 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                                <TextBlock Text="{Binding MemberLengthLabel, StringFormat='l0 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
                             </Border>
                             <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
                                 <controls:SafeFormulaControl Formula="\lambda" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />

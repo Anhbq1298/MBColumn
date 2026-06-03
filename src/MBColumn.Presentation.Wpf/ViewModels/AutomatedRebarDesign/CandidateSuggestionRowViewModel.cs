@@ -14,6 +14,7 @@ public sealed class CandidateSuggestionRowViewModel : ViewModelBase
     public string MaxShearDisplay { get; init; } = "—";
     public string SpacingStatus { get; init; } = "OK";
     public string MinClearSpacingDisplay { get; init; } = "—";
+    public string SteelAreaDisplay { get; init; } = "—";
 
     // Shear link auto-design
     public string LinkLabel { get; init; } = "—";
@@ -32,7 +33,7 @@ public sealed class CandidateSuggestionRowViewModel : ViewModelBase
 
     public string Reason { get; init; } = string.Empty;
 
-    public string AsMm2Display  => $"{TotalSteelAreaMm2:F0}";
+    public string AsMm2Display  => SteelAreaDisplay;
     public string RhoDisplay     => $"{ReinforcementRatioPercent:F2}%";
     public string PmmDisplay     => $"{MaxPmmUtilization:F2}";
 

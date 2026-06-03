@@ -5,6 +5,7 @@ using MBColumn.Application.Services.Etabs;
 using MBColumn.Application.Services.Geometry;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
+using MBColumn.Domain.Units;
 using MBColumn.Presentation.Wpf.Collections;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
@@ -323,11 +324,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
         => SelectedColumn is null ? 0 : SelectedColumn.IsCircular ? SelectedColumn.Diameter : SelectedColumn.Height;
     public double BoundaryPreviewCover
         => SectionMappings.FirstOrDefault(m =>
-            string.Equals(m.UniqueSection, SelectedColumn?.UniqueSection, StringComparison.OrdinalIgnoreCase))?.Cover ?? 50.0;
+            string.Equals(m.UniqueSection, SelectedColumn?.UniqueSection, StringComparison.OrdinalIgnoreCase))?.Cover
+           ?? (targetUnitSystem == UnitSystem.Metric ? 50.0 : 2.0);
     public string BoundaryPreviewSectionLabel
         => SelectedColumn is null ? "" : $"{SelectedColumn.EtabsSectionName}  ·  {SelectedColumn.SectionTypeDisplay}";
 
     public UnitSystem TargetUnitSystem => targetUnitSystem;
+    private UnitProfile TargetUnitProfile => UnitProfile.For(targetUnitSystem);
+    private string TargetGeometryUnitSummary => $"{TargetUnitProfile.ForceLabel}, {TargetUnitProfile.SectionSizeLabel}";
+    private string TargetForceMomentUnitSummary => $"{TargetUnitProfile.ForceLabel}, {TargetUnitProfile.MomentLabel}";
     public bool IsBoundaryPreviewValid
         => SelectedColumn is not null
            && (SelectedColumn.IsIrregular
@@ -679,10 +684,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public string ColumnPreviewDimensions => SelectedColumn is null
         ? "-"
         : SelectedColumn.IsCircular
-            ? $"D = {SelectedColumn.Diameter:0.#} mm"
+            ? $"D = {SelectedColumn.Diameter:0.#} {TargetUnitProfile.SectionSizeLabel}"
             : SelectedColumn.IsIrregular
                 ? "Pier shell (boundary computed from ETABS area objects)"
-                : $"b = {SelectedColumn.Width:0.#} mm, h = {SelectedColumn.Height:0.#} mm";
+                : $"b = {SelectedColumn.Width:0.#} {TargetUnitProfile.SectionSizeLabel}, h = {SelectedColumn.Height:0.#} {TargetUnitProfile.SectionSizeLabel}";
     public string ColumnPreviewRebar => SelectedColumn is null
         ? "-"
         : SelectedColumn.IsCircular ? "Mock preview: equal angular bars" : "Mock preview: perimeter bars";
@@ -707,7 +712,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         StoryCount = info.StoryCount;
         PierCount = info.PierCount;
         FrameObjectCount = info.FrameObjectCount;
-        UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to {(targetUnitSystem == UnitSystem.Metric ? "kN, mm" : "kip, in")}.";
+        UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to {TargetGeometryUnitSummary}.";
 
         Columns.Clear();
         pierBoundaryCache.Clear();
@@ -734,7 +739,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         dto.Diameter,
                         dto.LengthMm,
                         dto.LinkedSection,
-                        dto.Status)));
+                        dto.Status,
+                        targetUnitSystem)));
             }
         }
         catch (Exception ex)
@@ -917,7 +923,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                                 SectionShapeType.Irregular,
                                 0, 0, 0, 0,
                                 "",
-                                "Ready"));
+                                "Ready",
+                                targetUnitSystem));
                         }
                     }
                 }
@@ -966,8 +973,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         StoryCount       = data.StoryCount;
         PierCount        = data.PierCount;
         FrameObjectCount = data.FrameObjectCount;
-        UnitConversionMessage = $"ETABS data will be converted from {data.PresentUnits} to " +
-            $"{(targetUnitSystem == UnitSystem.Metric ? "kN, mm" : "kip, in")}.";
+        UnitConversionMessage = $"ETABS data will be converted from {data.PresentUnits} to {TargetGeometryUnitSummary}.";
 
         using (FilteredColumns.DeferRefresh())
         using (TierObjectCandidatesView.DeferRefresh())
@@ -987,7 +993,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 dto.Diameter,
                 dto.LengthMm,
                 dto.LinkedSection,
-                dto.Status)));
+                dto.Status,
+                targetUnitSystem)));
         }
 
         var combosToShow = data.SelectedLoadCombinations.Count > 0
@@ -1271,7 +1278,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 UniqueSectionDisplayName = sourceColumn.UniqueSection,
                 ImportedAt = DateTime.UtcNow,
                 ImportedUnits = PresentUnits,
-                MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+                MBColumnUnitsAtImport = TargetForceMomentUnitSummary,
                 SelectedLoadCombinations = loadCases.Select(lc => lc.OriginalLoadCaseName).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
                 ImportMode = importMode,
                 SourceShellNames = sourceShells,
@@ -1284,7 +1291,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 SourceModelPath = ModelPath,
                 SourceModelName = ModelName,
                 ImportedUnits = PresentUnits,
-                MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+                MBColumnUnitsAtImport = TargetForceMomentUnitSummary,
                 ShapeType = mapping.IsRectangular ? "Rectangular" : mapping.IsCircular ? "Circular" : "Irregular",
                 SourceSectionName = sourceColumn.EtabsSectionName,
                 UniqueSectionDisplayName = sourceColumn.UniqueSection,
@@ -2210,7 +2217,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
                 ImportedAt = DateTime.UtcNow,
                 ImportedUnits = PresentUnits,
-                MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+                MBColumnUnitsAtImport = TargetForceMomentUnitSummary,
                 SelectedLoadCombinations = loadCases.Select(lc => lc.Label).ToList(),
                 ImportMode = importMode,
                 SourceShellNames = sourceShells,
@@ -2243,7 +2250,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             SourceModelPath = ModelPath,
             SourceModelName = ModelName,
             ImportedUnits = PresentUnits,
-            MBColumnUnitsAtImport = targetUnitSystem == UnitSystem.Metric ? "kN, kNm" : "kip, kip-ft",
+            MBColumnUnitsAtImport = TargetForceMomentUnitSummary,
             ShapeType = row.SectionType.ToString(),
             SourceSectionName = row.SourceColumn.EtabsSectionName,
             UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
@@ -2452,7 +2459,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         BoundaryPreviewPointCollection = pc;
         var openingSuffix = openingCount > 0 ? $"  ·  {openingCount} opening(s)" : "";
-        PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} × {maxY - minY:0.#} mm{openingSuffix}";
+        PreviewStatusText = $"{typeLabel}  ·  {points.Count} pts  ·  {maxX - minX:0.#} x {maxY - minY:0.#} {TargetUnitProfile.SectionSizeLabel}{openingSuffix}";
         RaiseCanvasProperties();
     }
 
@@ -2949,6 +2956,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 var sourceLabel = ForceSourceLabel(force);
                 var hasEndMoments = endMoments.TryGetValue(BuildEndMomentKey(force), out var ends);
 
+                double? mxTop    = hasEndMoments ? ends.MxTop    : force.M2;
+                double? mxBottom = hasEndMoments ? ends.MxBottom : force.M2;
+                double? myTop    = hasEndMoments ? ends.MyTop    : force.M3;
+                double? myBottom = hasEndMoments ? ends.MyBottom : force.M3;
                 return new SnapshotLoadCase
                 {
                     Id = $"etabs_{index + 1}",
@@ -2964,10 +2975,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
                     Muy = force.M3,
                     Vux = force.V2,
                     Vuy = force.V3,
-                    MxTop = hasEndMoments ? ends.MxTop : force.M2,
-                    MxBottom = hasEndMoments ? ends.MxBottom : force.M2,
-                    MyTop = hasEndMoments ? ends.MyTop : force.M3,
-                    MyBottom = hasEndMoments ? ends.MyBottom : force.M3,
+                    MxTop    = mxTop,
+                    MxBottom = mxBottom,
+                    MyTop    = myTop,
+                    MyBottom = myBottom,
+                    MxUsed = mxTop.HasValue && mxBottom.HasValue
+                        ? Math.Max(Math.Abs(mxTop.Value), Math.Abs(mxBottom.Value))
+                        : null,
+                    MyUsed = myTop.HasValue && myBottom.HasValue
+                        ? Math.Max(Math.Abs(myTop.Value), Math.Abs(myBottom.Value))
+                        : null,
                     IsActive = true
                 };
             })

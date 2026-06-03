@@ -41,14 +41,26 @@ public sealed class ProjectSession
     public bool CurrentColumnHasResult()
         => CurrentColumnId is not null && columnResults.ContainsKey(CurrentColumnId.Value);
 
+    public bool ColumnHasResult(int columnId)
+        => columnResults.ContainsKey(columnId);
+
     public void MarkCurrentColumnOutdated()
     {
-        if (CurrentColumnId is not null && columnResults.ContainsKey(CurrentColumnId.Value))
-            outdatedColumnIds.Add(CurrentColumnId.Value);
+        if (CurrentColumnId is not null)
+            MarkColumnOutdated(CurrentColumnId.Value);
+    }
+
+    public void MarkColumnOutdated(int columnId)
+    {
+        if (columnResults.ContainsKey(columnId))
+            outdatedColumnIds.Add(columnId);
     }
 
     public bool IsCurrentColumnOutdated()
         => CurrentColumnId is not null && outdatedColumnIds.Contains(CurrentColumnId.Value);
+
+    public bool IsColumnOutdated(int columnId)
+        => outdatedColumnIds.Contains(columnId);
 
     public void ClearColumnResult(int columnId)
     {

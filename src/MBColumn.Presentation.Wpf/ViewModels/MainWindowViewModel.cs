@@ -1,7 +1,9 @@
+using MBColumn.Application.DTOs;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Reports.Builders;
 using MBColumn.Application.Reports.Models;
 using MBColumn.Application.Services;
+using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
@@ -13,8 +15,6 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows.Input;
 
@@ -41,6 +41,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     private string calculationStatus = "";
     private int selectedMainTabIndex;
     private bool suppressModified;
+    private bool suppressColumnInputChangedHandling;
     private bool isSaving;
     private bool isImporting;
     private int importProgressValue;
@@ -50,15 +51,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     private string saveNotificationText = "";
     private CancellationTokenSource? saveNotificationCts;
     private string? currentInputSnapshotHash;
+    private bool currentInputSnapshotIsPersisted;
 
     private readonly Func<InputViewModel> inputFactory;
-
-    private static readonly JsonSerializerOptions SnapshotHashJsonOptions = new()
-    {
-        IncludeFields = false,
-        WriteIndented = false,
-        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
-    };
 
     public MainWindowViewModel(
         ColumnCalculationService calculationService,
@@ -146,6 +141,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             UpdateWindowTitle();
             RaiseStatusProperties();
         };
+        projectService.ColumnInputChanged += OnColumnInputChanged;
 
         _ = LoadColumnStatusesAsync();
     }
@@ -202,8 +198,8 @@ public sealed class MainWindowViewModel : ViewModelBase
     public bool ShowInputEmptyState => !HasCurrentSection;
     public bool ShowResultContent => HasCurrentSection && HasCurrentResult && !IsCalculationOutdated;
     public bool ShowNoSectionResultEmptyState => !HasCurrentSection;
-    public bool ShowNoResultEmptyState => HasCurrentSection && !HasCurrentResult;
-    public bool ShowOutdatedResultEmptyState => HasCurrentSection && HasCurrentResult && IsCalculationOutdated;
+    public bool ShowNoResultEmptyState => HasCurrentSection && !HasCurrentResult && !IsCalculationOutdated;
+    public bool ShowOutdatedResultEmptyState => HasCurrentSection && IsCalculationOutdated;
     public bool IsProjectModified => projectService.IsModified;
     public bool IsCurrentResultOutdated => IsCalculationOutdated;
     public string AppStatusText => IsCalculating
@@ -310,7 +306,16 @@ public sealed class MainWindowViewModel : ViewModelBase
                 // Auto-save column input and result after successful calculation
                 if (currentColumn is not null)
                 {
-                    SaveCurrentColumnInput();
+                    suppressColumnInputChangedHandling = true;
+                    try
+                    {
+                        SaveCurrentColumnInput();
+                    }
+                    finally
+                    {
+                        suppressColumnInputChangedHandling = false;
+                    }
+
                     projectService.SaveColumnResult(currentColumn.Id, result);
                 }
 
@@ -453,7 +458,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 if (selectedSnapshot is not null)
                 {
                     Input.LoadFromSnapshot(selectedSnapshot);
-                    CaptureCurrentInputSnapshotBaseline();
+                    CaptureCurrentInputSnapshotBaseline(isPersisted: true);
                 }
             }
         }
@@ -753,7 +758,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 if (selectedSnapshot is not null)
                 {
                     Input.LoadFromSnapshot(selectedSnapshot);
-                    CaptureCurrentInputSnapshotBaseline();
+                    CaptureCurrentInputSnapshotBaseline(isPersisted: true);
                 }
             }
         }
@@ -789,6 +794,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         SaveCurrentColumnInput();
         currentColumn = null;
         currentInputSnapshotHash = null;
+        currentInputSnapshotIsPersisted = false;
         projectSession.SelectColumn(null);
 
         projectService.NewProject(name);
@@ -814,6 +820,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             SaveCurrentColumnInput();
             currentColumn = null;
             currentInputSnapshotHash = null;
+            currentInputSnapshotIsPersisted = false;
             projectSession.SelectColumn(null);
 
             CalculationStatus = "Opening project...";
@@ -852,11 +859,14 @@ public sealed class MainWindowViewModel : ViewModelBase
             foreach (var col in columns)
             {
                 var persisted = projectService.LoadColumnResult(col.Id);
-                if (persisted is not null)
+                var status = persisted is not null
+                    ? SectionStatus.Calculated
+                    : projectService.HasColumnResult(col.Id) ? SectionStatus.Outdated : (SectionStatus?)null;
+                if (status is not null)
                 {
                     System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
-                        Explorer.SetSectionStatus(col.Id, SectionStatus.Calculated);
+                        Explorer.SetSectionStatus(col.Id, status.Value);
                     });
                 }
             }
@@ -1168,6 +1178,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             try
             {
                 var snapshot = projectService.LoadColumnInput(column.Id);
+                var isPersistedSnapshot = snapshot is not null;
                 if (snapshot != null)
                 {
                     Input.LoadFromSnapshot(snapshot);
@@ -1177,7 +1188,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                     Input.ResetToDefaults();
                 }
 
-                CaptureCurrentInputSnapshotBaseline();
+                CaptureCurrentInputSnapshotBaseline(isPersistedSnapshot);
                 ApplyCurrentColumnResult();
             }
             finally
@@ -1188,6 +1199,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         else
         {
             currentInputSnapshotHash = null;
+            currentInputSnapshotIsPersisted = false;
             ApplyCurrentColumnResult();
         }
 
@@ -1199,27 +1211,84 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         if (currentColumn is null) return;
         var snapshot = Input.ToSnapshot();
+        var snapshotHash = projectService.ComputeColumnInputHash(snapshot);
+        if (currentInputSnapshotIsPersisted &&
+            string.Equals(currentInputSnapshotHash, snapshotHash, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         projectService.SaveColumnInput(currentColumn.Id, snapshot);
-        currentInputSnapshotHash = ComputeInputSnapshotHash(snapshot);
+        currentInputSnapshotHash = snapshotHash;
+        currentInputSnapshotIsPersisted = true;
     }
 
-    private void CaptureCurrentInputSnapshotBaseline()
-        => currentInputSnapshotHash = ComputeInputSnapshotHash(Input.ToSnapshot());
+    private void CaptureCurrentInputSnapshotBaseline(bool isPersisted)
+    {
+        currentInputSnapshotHash = projectService.ComputeColumnInputHash(Input.ToSnapshot());
+        currentInputSnapshotIsPersisted = isPersisted;
+    }
 
     private bool CurrentInputMatchesSnapshotBaseline()
     {
         if (currentInputSnapshotHash is null) return false;
 
-        var currentHash = ComputeInputSnapshotHash(Input.ToSnapshot());
+        var currentHash = projectService.ComputeColumnInputHash(Input.ToSnapshot());
         return string.Equals(currentInputSnapshotHash, currentHash, StringComparison.Ordinal);
     }
 
-    private static string ComputeInputSnapshotHash(ColumnInputSnapshot snapshot)
+    private bool CurrentInputMatchesHash(string hash)
     {
-        var json = JsonSerializer.Serialize(snapshot, SnapshotHashJsonOptions);
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-        return Convert.ToBase64String(sha256.ComputeHash(bytes));
+        var currentHash = projectService.ComputeColumnInputHash(Input.ToSnapshot());
+        return string.Equals(currentHash, hash, StringComparison.Ordinal);
+    }
+
+    private void OnColumnInputChanged(object? sender, ColumnInputChangedEventArgs e)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            _ = dispatcher.InvokeAsync(() => HandleColumnInputChanged(e));
+            return;
+        }
+
+        HandleColumnInputChanged(e);
+    }
+
+    private void HandleColumnInputChanged(ColumnInputChangedEventArgs e)
+    {
+        var isCurrentColumn = currentColumn?.Id == e.ColumnId;
+        if (isCurrentColumn && CurrentInputMatchesHash(e.CurrentInputHash))
+        {
+            currentInputSnapshotHash = e.CurrentInputHash;
+            currentInputSnapshotIsPersisted = true;
+        }
+
+        if (suppressColumnInputChangedHandling)
+        {
+            RaiseStatusProperties();
+            return;
+        }
+
+        var hasResult = projectSession.ColumnHasResult(e.ColumnId) || projectService.HasColumnResult(e.ColumnId);
+        if (!hasResult)
+        {
+            RaiseStatusProperties();
+            return;
+        }
+
+        projectSession.MarkColumnOutdated(e.ColumnId);
+        Explorer.SetSectionStatus(e.ColumnId, SectionStatus.Outdated);
+
+        if (isCurrentColumn)
+        {
+            IsCalculationOutdated = true;
+            Report.MarkOutdated();
+            RefreshReportFromCurrentWorkspace();
+        }
+
+        RaiseStatusProperties();
+        RaiseCommandStates();
     }
 
     private void UpdateWindowTitle()
@@ -1288,8 +1357,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             foreach (LoadCaseViewModel lc in e.NewItems)
                 lc.PropertyChanged += OnInputChanged;
 
-        MarkCalculationOutdated();
-        MarkProjectModified();
+        PersistCurrentInputChange();
     }
 
     private static readonly HashSet<string> s_displayOnlyProperties = new(StringComparer.Ordinal)
@@ -1306,7 +1374,13 @@ public sealed class MainWindowViewModel : ViewModelBase
         "SlendernessWarningText", "HasSlendernessWarnings",
         "Ec2Check1Text", "Ec2Check1Pass", "Ec2Check2Text", "Ec2Check2Pass", "Ec2Check3Text", "Ec2Check3Pass",
         "Ec2AswsXText", "Ec2AswsYText", "Ec2AswsXLatex", "Ec2AswsYLatex",
-        "L0xText", "L0yText", "L0xLatex", "L0yLatex", "MemberLengthLInM", "AFactorDisplayText",
+        "LengthLabel", "MemberLengthLabel", "AreaLabel", "ForceLabel", "MomentLabel", "StressLabel",
+        "CurrentSectionSizeUnit", "CurrentMemberLengthUnit", "CurrentForceUnit", "CurrentMomentUnit", "CurrentStressUnit",
+        "DemandForceHeader", "DemandMomentXHeader", "DemandMomentYHeader", "ShearVuxHeader", "ShearVuyHeader",
+        "MxTopHeader", "MxBottomHeader", "MyTopHeader", "MyBottomHeader", "MxUsedHeader", "MyUsedHeader",
+        "RebarDiameterUnitLabel", "LinkSpacingUnitLabel",
+        "L0xText", "L0yText", "L0xLatex", "L0yLatex", "MemberLengthDisplay", "MemberLengthLInM", "AFactorDisplayText",
+        "ImperfectionFormulaLatex", "MinimumEccentricityFormulaLatex", "MinimumEccentricityRuleText",
         "ImperfectionCalculationText", "MinimumEccentricityCalculationText",
         "ImperfectionXCalculationLatex", "ImperfectionYCalculationLatex",
         "MinimumEccentricityXCalculationLatex", "MinimumEccentricityYCalculationLatex",
@@ -1316,7 +1390,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         // Section geometry alias/derived properties — underlying properties (Width, Height, etc.) still trigger correctly
         "SectionWidth", "SectionHeight", "NumberOfBars", "SelectedRebarSize", "SelectedRebarLayout",
         "CircularHoopCentrelineDiameter", "CircularHoopCentrelineDiameterText",
-        "LinkSpacing",
+        "LinkSpacing", "MaxInnerLegsX", "MaxInnerLegsY", "TotalLegsX", "TotalLegsY",
         // LoadCaseViewModel — computed slenderness results, not user input
         "Status", "HasValidationError", "SlendernessStatusText", "CalculationStatusText",
         "LambdaX", "LambdaLimitX", "LambdaY", "LambdaLimitY",
@@ -1352,8 +1426,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     private void OnInputChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (IsDisplayOnlyChange(sender, e.PropertyName)) return;
-        MarkCalculationOutdated();
-        MarkProjectModified();
+        PersistCurrentInputChange();
     }
 
     private static bool IsDisplayOnlyChange(object? sender, string? propertyName)
@@ -1363,33 +1436,10 @@ public sealed class MainWindowViewModel : ViewModelBase
         return sender is RebarSideInputViewModel && s_rebarSideDisplayOnlyProperties.Contains(propertyName);
     }
 
-    private void MarkCalculationOutdated()
-    {
-        if (suppressModified) return;
-
-        if (currentColumn is null)
-        {
-            if (!Result.HasResult) return;
-            IsCalculationOutdated = true;
-            Report.MarkOutdated();
-            return;
-        }
-
-        if (!projectSession.CurrentColumnHasResult()) return;
-        if (CurrentInputMatchesSnapshotBaseline()) return;
-
-        projectSession.MarkCurrentColumnOutdated();
-        Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Outdated);
-        IsCalculationOutdated = true;
-        Report.MarkOutdated();
-    }
-
-    private void MarkProjectModified()
+    private void PersistCurrentInputChange()
     {
         if (suppressModified || currentColumn is null) return;
-        if (CurrentInputMatchesSnapshotBaseline()) return;
-
-        projectService.MarkModified();
+        SaveCurrentColumnInput();
     }
 
     private void RaiseCommandStates()
@@ -1442,8 +1492,20 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         if (projectSession.TryGetCurrentColumnResult(out var cachedResult))
         {
+            var isOutdated = projectSession.IsCurrentColumnOutdated();
+            if (isOutdated && currentColumn is not null && CurrentInputMatchesSnapshotBaseline())
+            {
+                var persisted = projectService.LoadColumnResult(currentColumn.Id);
+                if (persisted is not null)
+                {
+                    projectSession.StoreColumnResult(currentColumn.Id, persisted);
+                    cachedResult = persisted;
+                    isOutdated = false;
+                }
+            }
+
             Result.Result = cachedResult;
-            IsCalculationOutdated = projectSession.IsCurrentColumnOutdated();
+            IsCalculationOutdated = isOutdated;
             if (Explorer is not null && currentColumn is not null)
             {
                 Explorer.SetSectionStatus(
@@ -1466,11 +1528,20 @@ public sealed class MainWindowViewModel : ViewModelBase
             else
             {
                 Result.Result = null;
-                IsCalculationOutdated = false;
-                if (Explorer is not null)
-                    Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.NotCalculated);
-                if (SelectedMainTabIndex == ResultsTabIndex)
-                    SelectedMainTabIndex = InputTabIndex;
+                if (projectService.HasColumnResult(currentColumn.Id))
+                {
+                    IsCalculationOutdated = true;
+                    if (Explorer is not null)
+                        Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.Outdated);
+                }
+                else
+                {
+                    IsCalculationOutdated = false;
+                    if (Explorer is not null)
+                        Explorer.SetSectionStatus(currentColumn.Id, SectionStatus.NotCalculated);
+                    if (SelectedMainTabIndex == ResultsTabIndex)
+                        SelectedMainTabIndex = InputTabIndex;
+                }
             }
         }
         else
@@ -1524,6 +1595,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public override void Dispose()
     {
+        projectService.ColumnInputChanged -= OnColumnInputChanged;
         saveNotificationCts?.Cancel();
         saveNotificationCts?.Dispose();
         saveNotificationCts = null;

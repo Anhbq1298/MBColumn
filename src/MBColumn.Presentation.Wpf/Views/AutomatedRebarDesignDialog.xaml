@@ -161,12 +161,12 @@
                             <DataGridTextColumn Header="#"       Binding="{Binding Rank}"                Width="28" />
                             <DataGridTextColumn Header="Config"  Binding="{Binding Config}"              Width="65" />
                             <DataGridTextColumn Header="Layout"  Binding="{Binding LayoutTypeLabel}"     Width="45" />
-                            <DataGridTextColumn Header="As mm²"  Binding="{Binding AsMm2Display}"        Width="60" />
+                            <DataGridTextColumn Header="As"       Binding="{Binding AsMm2Display}"        Width="74" />
                             <DataGridTextColumn Header="ρ %"     Binding="{Binding RhoDisplay}"          Width="50" />
                             <DataGridTextColumn Header="PMM"     Binding="{Binding PmmDisplay}"          Width="46" />
-                            <DataGridTextColumn Header="Clr mm"  Binding="{Binding MinClearSpacingDisplay}" Width="50" />
+                            <DataGridTextColumn Header="Clr"     Binding="{Binding MinClearSpacingDisplay}" Width="58" />
                             <DataGridTextColumn Header="Link"    Binding="{Binding LinkLabel}"           Width="46" />
-                            <DataGridTextColumn Header="Sv mm"   Binding="{Binding LinkSpacingDisplay}"  Width="46" />
+                            <DataGridTextColumn Header="Sv"      Binding="{Binding LinkSpacingDisplay}"  Width="58" />
                             <DataGridTextColumn Header="X-ties"  Binding="{Binding InternalLinksDisplay}" Width="46" />
                             <DataGridTextColumn Header="Status"  Binding="{Binding StatusLabel}"         Width="46"
                                                 CellStyle="{StaticResource StatusCellStyle}" />
@@ -196,10 +196,10 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <controls:SectionPreviewCanvas Grid.Row="0"
-                            SectionWidth="{Binding PreviewSectionWidthMm}"
-                            SectionHeight="{Binding PreviewSectionHeightMm}"
-                            Cover="{Binding PreviewCoverMm}"
-                            UnitSystem="Metric"
+                            SectionWidth="{Binding PreviewSectionWidthDisplay}"
+                            SectionHeight="{Binding PreviewSectionHeightDisplay}"
+                            Cover="{Binding PreviewCoverDisplay}"
+                            UnitSystem="{Binding PreviewUnitSystem}"
                             Rebars="{Binding PreviewRebars}"
                             SectionLabel="{Binding PreviewSectionLabel}"
                             RebarLabel="{Binding PreviewRebarLabel}"
@@ -245,12 +245,12 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Initial spacing (mm)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding InitialSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding InitialSpacingLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding InitialSpacingDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Reduction step (mm)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding SpacingStepMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding SpacingStepLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding SpacingStepDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
                             <Grid Margin="0,0,0,8">
@@ -259,22 +259,22 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Min spacing limit (mm)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MinSpacingLimitMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding MinSpacingLimitLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MinSpacingLimitDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Max bar spacing (mm)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MaxBarSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding MaxBarSpacingLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MaxBarSpacingDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
 
                             <!-- Longitudinal bar sizes -->
                             <TextBlock Text="Allowed longitudinal bar sizes" Style="{StaticResource SectionLabelStyle}" />
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Min diameter (mm)"
+                                <TextBlock Text="{Binding MinDiameterLabel}"
                                            Style="{StaticResource FieldLabelTextStyle}"
                                            VerticalAlignment="Center" Width="120" />
-                                <TextBox Text="{Binding MinBarDiameterMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding MinBarDiameterDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}"
                                          Width="70" />
                             </StackPanel>
                             <ItemsControl ItemsSource="{Binding AllowedBarToggles}" Margin="0,0,0,8">
@@ -309,12 +309,12 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Min link dia. (mm, 0=auto)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MinLinkDiameterMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding MinLinkDiameterLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MinLinkDiameterDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Max link spacing (mm, 0=auto)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding MaxLinkSpacingMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding MaxLinkSpacingLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding MaxLinkSpacingDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
                             <Grid Margin="0,0,0,10">
@@ -323,8 +323,8 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="Cross-tie threshold (mm)" Style="{StaticResource FieldLabelTextStyle}" />
-                                    <TextBox Text="{Binding CrossTieThresholdMm, StringFormat=F0, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="{Binding CrossTieThresholdLabel}" Style="{StaticResource FieldLabelTextStyle}" />
+                                    <TextBox Text="{Binding CrossTieThresholdDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="Target shear utilization" Style="{StaticResource FieldLabelTextStyle}" />
@@ -369,10 +369,10 @@
                             <TextBlock Text="Clear spacing" Style="{StaticResource SectionLabelStyle}" />
                             <CheckBox Content="Check clear spacing" IsChecked="{Binding CheckClearSpacing}" Margin="0,0,0,4" />
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock Text="Aggregate size (mm)"
+                                <TextBlock Text="{Binding AggregateSizeLabel}"
                                            Style="{StaticResource FieldLabelTextStyle}"
                                            VerticalAlignment="Center" Width="130" />
-                                <TextBox Text="{Binding AggregateSize, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                                <TextBox Text="{Binding AggregateSizeDisplay, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" Width="70" />
                             </StackPanel>
 
                             <TextBlock Text="Cover and link checks" Style="{StaticResource SectionLabelStyle}" />

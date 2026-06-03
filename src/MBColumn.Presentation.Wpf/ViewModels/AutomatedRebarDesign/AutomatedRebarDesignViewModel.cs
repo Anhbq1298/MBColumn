@@ -2,6 +2,8 @@ using MBColumn.Application.DTOs;
 using MBColumn.Application.RebarSuggestion;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
+using MBColumn.Domain.Units;
+using MBColumn.Infrastructure.Math;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -15,6 +17,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     private readonly IReadOnlyList<RebarDefinition> _allAvailableBars;
     private readonly IReadOnlyList<RebarDefinition> _shearLinkBars;
     private readonly CalculationResultDto? _beforeResult;
+    private readonly UnitProfile _unitProfile;
 
     private bool _isRunning;
     private bool _hasResults;
@@ -23,6 +26,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     private RebarSuggestionOption? _selectedOption;
     private RebarSuggestionOption? _appliedOption;
     private CancellationTokenSource? _cts;
+    private static readonly IUnitConversionService DisplayUnits = new UnitConversionService();
 
     // ── Preview canvas state ───────────────────────────────────────────────────
     private IReadOnlyList<RebarCoordinateDto> _previewRebars = [];
@@ -83,6 +87,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         _allAvailableBars = allAvailableBars;
         _shearLinkBars    = shearLinkBars ?? Array.Empty<RebarDefinition>();
         _beforeResult     = beforeResult;
+        _unitProfile      = UnitProfile.For(baseInput.BaseInput.UnitSystem);
 
         InitialiseBarToggles(allAvailableBars);
         InitialiseLinkBarToggles(_shearLinkBars);
@@ -102,9 +107,30 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     public ICommand CancelCommand { get; }
 
     // ── Preview canvas ────────────────────────────────────────────────────────
+    public UnitSystem PreviewUnitSystem => _unitProfile.UnitSystem;
+    public string LengthLabel => _unitProfile.SectionSizeLabel;
+    public string AreaLabel => _unitProfile.RebarAreaLabel;
+    public string StressLabel => _unitProfile.StressLabel;
+    public string AswsLabel => $"{AreaLabel}/{LengthLabel}";
+    public string CandidateSteelAreaHeader => $"As {AreaLabel}";
+    public string CandidateClearSpacingHeader => $"Clr {LengthLabel}";
+    public string CandidateLinkSpacingHeader => $"Sv {LengthLabel}";
+    public string InitialSpacingLabel => $"Initial spacing ({LengthLabel})";
+    public string SpacingStepLabel => $"Reduction step ({LengthLabel})";
+    public string MinSpacingLimitLabel => $"Min spacing limit ({LengthLabel})";
+    public string MaxBarSpacingLabel => $"Max bar spacing ({LengthLabel})";
+    public string MinDiameterLabel => $"Min diameter ({LengthLabel})";
+    public string MinLinkDiameterLabel => $"Min link dia. ({LengthLabel}, 0=auto)";
+    public string MaxLinkSpacingLabel => $"Max link spacing ({LengthLabel}, 0=auto)";
+    public string CrossTieThresholdLabel => $"Cross-tie threshold ({LengthLabel})";
+    public string AggregateSizeLabel => $"Aggregate size ({LengthLabel})";
+
     public double PreviewSectionWidthMm    => _baseInput.BaseInput.Width;
     public double PreviewSectionHeightMm   => _baseInput.BaseInput.Height;
     public double PreviewCoverMm           => _baseInput.BaseInput.Cover;
+    public double PreviewSectionWidthDisplay => DisplayLength(PreviewSectionWidthMm);
+    public double PreviewSectionHeightDisplay => DisplayLength(PreviewSectionHeightMm);
+    public double PreviewCoverDisplay => DisplayLength(PreviewCoverMm);
     public double PreviewStirrupDiameterMm => _baseInput.BaseInput.LinkDiameterMm > 0
         ? _baseInput.BaseInput.LinkDiameterMm : 10.0;
 
@@ -189,6 +215,11 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     public double MinSpacingLimitMm  { get => _minSpacingLimitMm;  set => Set(ref _minSpacingLimitMm, value); }
     public double MaxBarSpacingMm    { get => _maxBarSpacingMm;    set => Set(ref _maxBarSpacingMm, value); }
     public double MinBarDiameterMm   { get => _minBarDiameterMm;   set => Set(ref _minBarDiameterMm, value); }
+    public double InitialSpacingDisplay { get => DisplayLength(_initialSpacingMm); set => SetLengthFromDisplay(ref _initialSpacingMm, value, nameof(InitialSpacingDisplay)); }
+    public double SpacingStepDisplay { get => DisplayLength(_spacingStepMm); set => SetLengthFromDisplay(ref _spacingStepMm, value, nameof(SpacingStepDisplay)); }
+    public double MinSpacingLimitDisplay { get => DisplayLength(_minSpacingLimitMm); set => SetLengthFromDisplay(ref _minSpacingLimitMm, value, nameof(MinSpacingLimitDisplay)); }
+    public double MaxBarSpacingDisplay { get => DisplayLength(_maxBarSpacingMm); set => SetLengthFromDisplay(ref _maxBarSpacingMm, value, nameof(MaxBarSpacingDisplay)); }
+    public double MinBarDiameterDisplay { get => DisplayLength(_minBarDiameterMm); set => SetLengthFromDisplay(ref _minBarDiameterMm, value, nameof(MinBarDiameterDisplay)); }
 
     public bool AllowAllSidesEqual  { get => _allowAllSidesEqual;  set => Set(ref _allowAllSidesEqual, value); }
     public bool AllowSidesDifferent { get => _allowSidesDifferent; set => Set(ref _allowSidesDifferent, value); }
@@ -209,7 +240,11 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     public double MinLinkDiameterMm   { get => _minLinkDiameterMm;   set => Set(ref _minLinkDiameterMm, value); }
     public double MaxLinkSpacingMm    { get => _maxLinkSpacingMm;    set => Set(ref _maxLinkSpacingMm, value); }
     public double CrossTieThresholdMm { get => _crossTieThresholdMm; set => Set(ref _crossTieThresholdMm, value); }
+    public double MinLinkDiameterDisplay { get => DisplayLength(_minLinkDiameterMm); set => SetLengthFromDisplay(ref _minLinkDiameterMm, value, nameof(MinLinkDiameterDisplay)); }
+    public double MaxLinkSpacingDisplay { get => DisplayLength(_maxLinkSpacingMm); set => SetLengthFromDisplay(ref _maxLinkSpacingMm, value, nameof(MaxLinkSpacingDisplay)); }
+    public double CrossTieThresholdDisplay { get => DisplayLength(_crossTieThresholdMm); set => SetLengthFromDisplay(ref _crossTieThresholdMm, value, nameof(CrossTieThresholdDisplay)); }
     public double TargetShearUtil     { get => _targetShearUtil;     set => Set(ref _targetShearUtil, value); }
+    public double AggregateSizeDisplay { get => DisplayLength(_aggregateSize); set => SetLengthFromDisplay(ref _aggregateSize, value, nameof(AggregateSizeDisplay)); }
 
     // ── Design Summary ────────────────────────────────────────────────────────
     private string _candidateCountsText = "—";
@@ -356,22 +391,22 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             nxBefore = nyBefore = $"{nx}";
         }
 
-        Add("Width b",               $"{dto.Width:F0}",    "mm",  frozen: true);
-        Add("Depth h",               $"{dto.Height:F0}",   "mm",  frozen: true);
-        Add("Concrete cover",        $"{dto.Cover:F0}",    "mm",  frozen: true);
-        Add("Link diameter",         dto.LinkDiameterMm > 0 ? $"{dto.LinkDiameterMm:F0}" : "—", "mm", frozen: true);
+        Add("Width b",               FormatLength(dto.Width),    LengthLabel,  frozen: true);
+        Add("Depth h",               FormatLength(dto.Height),   LengthLabel,  frozen: true);
+        Add("Concrete cover",        FormatLength(dto.Cover),    LengthLabel,  frozen: true);
+        Add("Link diameter",         dto.LinkDiameterMm > 0 ? FormatLength(dto.LinkDiameterMm) : "—", LengthLabel, frozen: true);
         Add("Longitudinal bar dia.", dto.BarSize,          "—",   frozen: false);
         Add("No. of bars",           $"{dto.BarCount}",    "—",   frozen: false);
         Add("Bars along X face",     nxBefore,             "—",   frozen: false);
         Add("Bars along Y face",     nyBefore,             "—",   frozen: false);
         Add("Layout type",           "Perimeter",          "—",   frozen: true);
-        Add("Total steel area As",   $"{totalAs:F0}",      "mm²", frozen: false);
+        Add("Total steel area As",   FormatArea(totalAs),  AreaLabel, frozen: false);
         Add("Steel ratio ρ",         $"{rho:F2}",          "%",   frozen: false);
         Add("Link bar (auto)",       "—",                  "—",   frozen: false);
-        Add("Link spacing (auto)",   "—",                  "mm",  frozen: false);
+        Add("Link spacing (auto)",   "—",                  LengthLabel,  frozen: false);
         Add("Internal cross-ties",   "—",                  "—",   frozen: false);
-        Add("fck",                   $"{dto.Fc:F0}",       "MPa", frozen: true);
-        Add("fyk",                   $"{dto.Fy:F0}",       "MPa", frozen: true);
+        Add("fck",                   FormatStress(dto.Fc), StressLabel, frozen: true);
+        Add("fyk",                   FormatStress(dto.Fy), StressLabel, frozen: true);
 
         void Add(string param, string before, string unit, bool frozen)
         {
@@ -455,11 +490,11 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             };
 
             string clearDisplay = opt.MinimumClearSpacingMm is > 0 and < double.PositiveInfinity
-                ? $"{opt.MinimumClearSpacingMm:F0}" : "—";
+                ? $"{FormatLength(opt.MinimumClearSpacingMm)} {LengthLabel}" : "—";
 
             var lnk = opt.ShearLinkDesign;
             string linkLabel    = lnk is not null ? lnk.LinkBarLabel : "—";
-            string linkSpacing  = lnk is not null ? $"{lnk.LinkSpacingMm:F0}" : "—";
+            string linkSpacing  = lnk is not null ? $"{FormatLength(lnk.LinkSpacingMm)} {LengthLabel}" : "—";
             string intLinks = lnk is not null
                 ? $"X:{lnk.InternalLinksX} Y:{lnk.InternalLinksY}"
                 : "—";
@@ -470,6 +505,7 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
                 Config                    = opt.ConfigurationName,
                 LayoutTypeLabel           = layoutLabel,
                 TotalSteelAreaMm2         = opt.TotalSteelAreaMm2,
+                SteelAreaDisplay          = $"{FormatArea(opt.TotalSteelAreaMm2)} {AreaLabel}",
                 ReinforcementRatioPercent = opt.ReinforcementRatio * 100,
                 MaxPmmUtilization         = opt.MaximumPmmUtilization,
                 MaxShearDisplay           = shearDisplay,
@@ -498,9 +534,9 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         CandidateCountsText = $"{result.TotalCandidateCount} candidates — " +
                               $"{result.PassedCandidateCount} passed, {result.FailedCandidateCount} filtered";
 
-        static string FormatLink(RebarSuggestionOption? opt) =>
+        string FormatLink(RebarSuggestionOption? opt) =>
             opt?.ShearLinkDesign is { } lnk
-                ? $"{lnk.LinkBarLabel} @ {lnk.LinkSpacingMm:F0} mm" +
+                ? $"{lnk.LinkBarLabel} @ {FormatLength(lnk.LinkSpacingMm)} {LengthLabel}" +
                   (lnk.InternalLinkCount > 0
                       ? $" + {lnk.InternalLinksX}x/{lnk.InternalLinksY}y cross-ties"
                       : string.Empty)
@@ -542,13 +578,13 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         SetAfter("No. of bars",            $"{opt.TotalBarCount}");
         SetAfter("Bars along X face",      $"{opt.BarsOnTopBottomFace}");
         SetAfter("Bars along Y face",      $"{opt.BarsOnLeftRightFace}");
-        SetAfter("Total steel area As",    $"{opt.TotalSteelAreaMm2:F0}");
+        SetAfter("Total steel area As",    FormatArea(opt.TotalSteelAreaMm2));
         SetAfter("Steel ratio ρ",          $"{opt.ReinforcementRatio * 100:F2}");
 
         if (opt.ShearLinkDesign is { } lnk)
         {
             SetAfter("Link bar (auto)",      lnk.LinkBarLabel);
-            SetAfter("Link spacing (auto)",  $"{lnk.LinkSpacingMm:F0}");
+            SetAfter("Link spacing (auto)",  FormatLength(lnk.LinkSpacingMm));
             SetAfter("Internal cross-ties",
                 lnk.InternalLinkCount > 0
                     ? $"X:{lnk.InternalLinksX}  Y:{lnk.InternalLinksY}"
@@ -596,9 +632,9 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         {
             bool noBar = ld.NoSuitableLinkBarFound;
             UpdateCheckRow("Link bar (auto)",    ld.LinkBarLabel,                 !noBar);
-            UpdateCheckRow("Link spacing (auto)", $"{ld.LinkSpacingMm:F0} mm",    true);
+            UpdateCheckRow("Link spacing (auto)", $"{FormatLength(ld.LinkSpacingMm)} {LengthLabel}", true);
             UpdateCheckRow("Cross-ties",
-                $"ΔX={ld.ActualGapX:F0} ΔY={ld.ActualGapY:F0} mm" +
+                $"ΔX={FormatLength(ld.ActualGapX)} ΔY={FormatLength(ld.ActualGapY)} {LengthLabel}" +
                 (ld.GapCheckPass ? " ✓" : " ✗") +
                 $"  (X:{ld.InternalLinksX} Y:{ld.InternalLinksY})",
                 ld.GapCheckPass);
@@ -606,10 +642,10 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             if (ld.HasShearDemand)
             {
                 UpdateCheckRow("Asw/s (X) demand",
-                    $"req {ld.RequiredAswsX:F3}  prov {ld.ProvidedAswsX:F3} mm²/mm",
+                    $"req {FormatAsws(ld.RequiredAswsX)}  prov {FormatAsws(ld.ProvidedAswsX)} {AswsLabel}",
                     ld.ProvidedAswsX >= ld.RequiredAswsX - 1e-9);
                 UpdateCheckRow("Asw/s (Y) demand",
-                    $"req {ld.RequiredAswsY:F3}  prov {ld.ProvidedAswsY:F3} mm²/mm",
+                    $"req {FormatAsws(ld.RequiredAswsY)}  prov {FormatAsws(ld.ProvidedAswsY)} {AswsLabel}",
                     ld.ProvidedAswsY >= ld.RequiredAswsY - 1e-9);
             }
         }
@@ -632,8 +668,8 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
     {
         var dto = _baseInput.BaseInput;
         PreviewRebars       = opt.Coordinates;
-        PreviewSectionLabel = $"b = {dto.Width:F0} × h = {dto.Height:F0} mm";
-        PreviewCoverLabel   = $"Cover = {dto.Cover:F0} mm";
+        PreviewSectionLabel = $"b = {FormatLength(dto.Width)} x h = {FormatLength(dto.Height)} {LengthLabel}";
+        PreviewCoverLabel   = $"Cover = {FormatLength(dto.Cover)} {LengthLabel}";
         PreviewIsValid      = opt.Status != Domain.Enums.RebarSuggestionStatus.Failed;
 
         if (opt.ShearLinkDesign is { } lnk)
@@ -643,17 +679,17 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
             PreviewInnerLegsY     = lnk.InternalLinksY;
 
             string crossTieNote = lnk.InternalLinkCount > 0
-                ? $"  X-ties: X{lnk.InternalLinksX}/Y{lnk.InternalLinksY}  ΔX={lnk.ActualGapX:F0} ΔY={lnk.ActualGapY:F0} mm"
+                ? $"  X-ties: X{lnk.InternalLinksX}/Y{lnk.InternalLinksY}  ΔX={FormatLength(lnk.ActualGapX)} ΔY={FormatLength(lnk.ActualGapY)} {LengthLabel}"
                 : string.Empty;
             PreviewRebarLabel = $"{opt.TotalBarCount}{opt.BarSizeName}  ρ={opt.ReinforcementRatio * 100:F2}%  |  " +
-                                $"{lnk.LinkBarLabel}@{lnk.LinkSpacingMm:F0}mm{crossTieNote}";
+                                $"{lnk.LinkBarLabel}@{FormatLength(lnk.LinkSpacingMm)}{LengthLabel}{crossTieNote}";
         }
         else
         {
             PreviewLinkDiameterMm = PreviewStirrupDiameterMm;
             PreviewInnerLegsX     = 0;
             PreviewInnerLegsY     = 0;
-            PreviewRebarLabel = $"{opt.TotalBarCount}{opt.BarSizeName}   As = {opt.TotalSteelAreaMm2:F0} mm²   ρ = {opt.ReinforcementRatio * 100:F2}%";
+            PreviewRebarLabel = $"{opt.TotalBarCount}{opt.BarSizeName}   As = {FormatArea(opt.TotalSteelAreaMm2)} {AreaLabel}   ρ = {opt.ReinforcementRatio * 100:F2}%";
         }
 
         string tagNote = string.IsNullOrEmpty(opt.RecommendationTag) ? string.Empty : $"  [{opt.RecommendationTag}]";
@@ -672,6 +708,47 @@ public sealed class AutomatedRebarDesignViewModel : ViewModelBase
         PreviewInnerLegsX     = 0;
         PreviewInnerLegsY     = 0;
     }
+
+    private double DisplayLength(double valueMm)
+        => DisplayUnits.LengthFromMm(valueMm, _unitProfile.SectionSizeUnit);
+
+    private double LengthToMm(double displayValue)
+        => DisplayUnits.LengthToMm(displayValue, _unitProfile.SectionSizeUnit);
+
+    private bool SetLengthFromDisplay(ref double storageMm, double displayValue, string propertyName)
+        => Set(ref storageMm, LengthToMm(displayValue), propertyName);
+
+    private double DisplayArea(double valueMm2)
+    {
+        double scale = DisplayLength(1.0);
+        return valueMm2 * scale * scale;
+    }
+
+    private double DisplayAsws(double valueMm2PerMm)
+        => valueMm2PerMm * DisplayLength(1.0);
+
+    private double DisplayStress(double valueMpa)
+        => DisplayUnits.StressFromMpa(valueMpa, _unitProfile.StressUnit);
+
+    private string FormatLength(double valueMm)
+        => _unitProfile.SectionSizeUnit == LengthUnit.Millimeter
+            ? $"{DisplayLength(valueMm):F0}"
+            : $"{DisplayLength(valueMm):F2}";
+
+    private string FormatArea(double valueMm2)
+        => _unitProfile.SectionSizeUnit == LengthUnit.Millimeter
+            ? $"{DisplayArea(valueMm2):F0}"
+            : $"{DisplayArea(valueMm2):F3}";
+
+    private string FormatAsws(double valueMm2PerMm)
+        => _unitProfile.SectionSizeUnit == LengthUnit.Millimeter
+            ? $"{DisplayAsws(valueMm2PerMm):F3}"
+            : $"{DisplayAsws(valueMm2PerMm):F4}";
+
+    private string FormatStress(double valueMpa)
+        => _unitProfile.StressUnit == StressUnit.MPa
+            ? $"{DisplayStress(valueMpa):F0}"
+            : $"{DisplayStress(valueMpa):F2}";
 
     private RebarSuggestionConstraintSet BuildConstraintSet()
     {

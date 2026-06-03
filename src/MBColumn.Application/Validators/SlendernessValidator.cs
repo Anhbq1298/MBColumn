@@ -22,7 +22,8 @@ internal static class SlendernessValidator
         foreach (var lc in activeCases)
         {
             if (!double.IsFinite(lc.Pu)) ctx.Error($"{lc.Name}: NEd is required.", "LoadCases");
-            if (lc.Pu <= 0) ctx.Error($"{lc.Name}: NEd must be compression for EC2 column slenderness.", "LoadCases");
+            if (lc.Pu < 0) continue; // tension — slenderness not applicable, skip validation
+            if (lc.Pu == 0) ctx.Error($"{lc.Name}: NEd must be compression for EC2 column slenderness.", "LoadCases");
             if (lc.MxTop is null) ctx.Error($"{lc.Name}: Mx Top is required when EC2 slenderness amplification is enabled.", "LoadCases");
             if (lc.MxBottom is null) ctx.Error($"{lc.Name}: Mx Bottom is required when EC2 slenderness amplification is enabled.", "LoadCases");
             if (lc.MyTop is null) ctx.Error($"{lc.Name}: My Top is required when EC2 slenderness amplification is enabled.", "LoadCases");

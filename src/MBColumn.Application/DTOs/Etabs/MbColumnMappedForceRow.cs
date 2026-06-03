@@ -10,6 +10,8 @@ public sealed class MbColumnMappedForceRow
     public string LoadCombo { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public double P { get; set; }
+    public double Vx { get; set; }
+    public double Vy { get; set; }
     public double Mx { get; set; }
     public double My { get; set; }
 }

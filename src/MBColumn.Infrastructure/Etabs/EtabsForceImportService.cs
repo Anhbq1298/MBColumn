@@ -201,6 +201,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var m2Idx = IndexOf(fields, "M2", "M2 Top", "M2-Top", "Mu2");
         var m3Idx = IndexOf(fields, "M3", "M3 Top", "M3-Top", "Mu3");
         var v2Idx = IndexOf(fields, "V2", "Vu2");
+        var v3Idx = IndexOf(fields, "V3", "Vu3");
         var locIdx = IndexOf(fields, "Station", "Location");
 
         if (storyIdx < 0 || labelIdx < 0 || comboIdx < 0 || pIdx < 0)
@@ -216,7 +217,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
         // Phase 1: collect matching candidates
         var candidates = new List<(EtabsColumnImportDto Col, string Combo, string RawLoc,
-                                   double P, double M2, double M3, double V2)>();
+                                   double P, double M2, double M3, double V2, double V3)>();
 
         for (var r = 0; r < numRecords; r++)
         {
@@ -235,13 +236,14 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 ParseDouble(tableData[b + pIdx]),
                 m2Idx >= 0 ? ParseDouble(tableData[b + m2Idx]) : 0.0,
                 m3Idx >= 0 ? ParseDouble(tableData[b + m3Idx]) : 0.0,
-                v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0));
+                v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0,
+                v3Idx >= 0 ? ParseDouble(tableData[b + v3Idx]) : 0.0));
         }
 
         var results = new List<EtabsForceResultDto>(candidates.Count);
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var (column, combo, rawLoc, p, m2, m3, v2) in candidates)
+        foreach (var (column, combo, rawLoc, p, m2, m3, v2, v3) in candidates)
         {
             var station = TryParseDouble(rawLoc) is double sv
                 ? sv.ToString("G6", CultureInfo.InvariantCulture)
@@ -257,7 +259,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
-                0.0,
+                SMath.Round(v3 * forceToKn,   3),
                 station,
                 "Design Force"));
         }
@@ -383,6 +385,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var m2Idx    = IndexOf(fields, "M2", "M22", "Moment 2", "Mu2", "M2 Top", "M2-Top");
         var m3Idx    = IndexOf(fields, "M3", "M33", "Moment 3", "Mu3", "M3 Top", "M3-Top");
         var v2Idx    = IndexOf(fields, "V2", "V22", "Shear 2", "Vu2");
+        var v3Idx    = IndexOf(fields, "V3", "V33", "Shear 3", "Vu3");
         var locIdx   = IndexOf(fields, "Station", "Location", "Loc", "Item", "ElemStation", "ObjSta");
 
         if (storyIdx < 0 || labelIdx < 0 || comboIdx < 0 || pIdx < 0)
@@ -396,7 +399,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
 
         // Phase 1: collect candidates and build numeric station ranges per (objectName, effectiveCombo)
         var candidates = new List<(EtabsColumnImportDto Col, string Combo, string StepType,
-                                   string RawLoc, double P, double M2, double M3, double V2)>();
+                                   string RawLoc, double P, double M2, double M3, double V2, double V3)>();
         var stationRanges = new Dictionary<string, (double Min, double Max)>(StringComparer.OrdinalIgnoreCase);
 
         for (var r = 0; r < numRecords; r++)
@@ -417,7 +420,8 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 ParseDouble(tableData[b + pIdx]),
                 m2Idx >= 0 ? ParseDouble(tableData[b + m2Idx]) : 0.0,
                 m3Idx >= 0 ? ParseDouble(tableData[b + m3Idx]) : 0.0,
-                v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0));
+                v2Idx >= 0 ? ParseDouble(tableData[b + v2Idx]) : 0.0,
+                v3Idx >= 0 ? ParseDouble(tableData[b + v3Idx]) : 0.0));
 
             if (TryParseDouble(rawLoc) is double sv)
             {
@@ -435,7 +439,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var results = new List<EtabsForceResultDto>(candidates.Count);
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var (col, combo, stepType, rawLoc, p, m2, m3, v2) in candidates)
+        foreach (var (col, combo, stepType, rawLoc, p, m2, m3, v2, v3) in candidates)
         {
             // Envelope combos produce Max and Min rows — append step type to distinguish them
             var isSingleStep = string.IsNullOrEmpty(stepType)
@@ -467,7 +471,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
-                0.0,
+                SMath.Round(v3 * forceToKn,   3),
                 station,
                 "Element Force"));
         }

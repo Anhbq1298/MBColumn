@@ -3,6 +3,7 @@ using MBColumn.Application.Services;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
+using MBColumn.Domain.Units;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Rebar;
@@ -53,6 +54,8 @@ var tests = new List<(string Name, Action Test)>
 {
     ("mm to inch", () => AreClose(1, GetUnits().LengthFromMm(25.4, LengthUnit.Inch), 1e-12)),
     ("inch to mm", () => AreClose(25.4, GetUnits().LengthToMm(1, LengthUnit.Inch), 1e-12)),
+    ("meter to mm", () => AreClose(1000, GetUnits().LengthToMm(1, LengthUnit.Meter), 1e-12)),
+    ("foot to mm", () => AreClose(304.8, GetUnits().LengthToMm(1, LengthUnit.Foot), 1e-12)),
     ("kN to kip", () => AreClose(1, GetUnits().ForceFromN(GetUnits().ForceToN(1, ForceUnit.Kip), ForceUnit.Kip), 1e-12)),
     ("kip to kN", () => AreClose(4.4482216152605, GetUnits().ForceFromN(GetUnits().ForceToN(1, ForceUnit.Kip), ForceUnit.kN), 1e-9)),
     ("MPa to ksi", () => AreClose(1, GetUnits().StressFromMpa(6.894757293168, StressUnit.Ksi), 1e-12)),
@@ -82,6 +85,7 @@ var tests = new List<(string Name, Action Test)>
     ("Section preview perimeter bars", TestSectionPreviewPerimeterBars),
     ("Section preview invalid geometry", TestSectionPreviewInvalidGeometry),
     ("Section preview unit labels", TestSectionPreviewUnitLabels),
+    ("Unit profile labels", TestUnitProfileLabels),
     ("Unit system dependent labels update", TestUnitSystemDependentLabelsUpdate),
     ("Circular section excludes side layouts", TestCircularSectionExcludesSideLayouts),
     ("Material library metric presets", TestMaterialLibraryMetricPresets),
@@ -734,14 +738,41 @@ static void TestSectionPreviewUnitLabels()
     IsTrue(vm.RebarPreviewLabel.Contains("8-#6"));
 }
 
+static void TestUnitProfileLabels()
+{
+    var metric = UnitProfile.For(UnitSystem.Metric);
+    IsTrue(metric.SectionSizeUnit == LengthUnit.Millimeter);
+    IsTrue(metric.MemberLengthUnit == LengthUnit.Meter);
+    IsTrue(metric.ForceUnit == ForceUnit.kN);
+    IsTrue(metric.MomentUnit == MomentUnit.kNm);
+    IsTrue(metric.StressUnit == StressUnit.MPa);
+    IsTrue(metric.Label(EngineeringUnitCategory.SectionSize) == "mm");
+    IsTrue(metric.Label(EngineeringUnitCategory.MemberLength) == "m");
+    IsTrue(metric.Label(EngineeringUnitCategory.Moment) == "kN-m");
+
+    var imperial = UnitProfile.For(UnitSystem.Imperial);
+    IsTrue(imperial.SectionSizeUnit == LengthUnit.Inch);
+    IsTrue(imperial.MemberLengthUnit == LengthUnit.Foot);
+    IsTrue(imperial.ForceUnit == ForceUnit.Kip);
+    IsTrue(imperial.MomentUnit == MomentUnit.KipFt);
+    IsTrue(imperial.StressUnit == StressUnit.Ksi);
+    IsTrue(imperial.Label(EngineeringUnitCategory.SectionSize) == "in");
+    IsTrue(imperial.Label(EngineeringUnitCategory.MemberLength) == "ft");
+    IsTrue(imperial.Label(EngineeringUnitCategory.Moment) == "kip-ft");
+}
+
 static void TestUnitSystemDependentLabelsUpdate()
 {
     var vm = new InputViewModel(new SingaporeRebarDatabase(), new ImperialRebarDatabase());
 
     IsTrue(vm.LengthLabel == "mm");
+    IsTrue(vm.MemberLengthLabel == "m");
     IsTrue(vm.ForceLabel == "kN");
     IsTrue(vm.MomentLabel == "kN-m");
     IsTrue(vm.StressLabel == "MPa");
+    IsTrue(vm.CurrentSectionSizeUnit == LengthUnit.Millimeter);
+    IsTrue(vm.CurrentMemberLengthUnit == LengthUnit.Meter);
+    IsTrue(vm.CurrentStressUnit == StressUnit.MPa);
     IsTrue(vm.DemandForceHeader == "NEd (kN)");
     IsTrue(vm.DemandMomentXHeader == "Mx (kN-m)");
     IsTrue(vm.DemandMomentYHeader == "My (kN-m)");
@@ -750,13 +781,19 @@ static void TestUnitSystemDependentLabelsUpdate()
     IsTrue(vm.RebarDiameterUnitLabel == "mm");
     IsTrue(vm.LinkSpacingUnitLabel == "mm");
     AreClose(200.0, vm.LinkSpacing, 1e-12);
+    AreClose(3.5, vm.MemberLengthDisplay ?? 0, 1e-12);
+    IsTrue(vm.L0xText == "3.50");
 
     vm.UnitSystem = UnitSystem.Imperial;
 
     IsTrue(vm.LengthLabel == "in");
+    IsTrue(vm.MemberLengthLabel == "ft");
     IsTrue(vm.ForceLabel == "kip");
     IsTrue(vm.MomentLabel == "kip-ft");
     IsTrue(vm.StressLabel == "ksi");
+    IsTrue(vm.CurrentSectionSizeUnit == LengthUnit.Inch);
+    IsTrue(vm.CurrentMemberLengthUnit == LengthUnit.Foot);
+    IsTrue(vm.CurrentStressUnit == StressUnit.Ksi);
     IsTrue(vm.DemandForceHeader == "NEd (kip)");
     IsTrue(vm.DemandMomentXHeader == "Mx (kip-ft)");
     IsTrue(vm.DemandMomentYHeader == "My (kip-ft)");
@@ -765,6 +802,9 @@ static void TestUnitSystemDependentLabelsUpdate()
     IsTrue(vm.RebarDiameterUnitLabel == "in");
     IsTrue(vm.LinkSpacingUnitLabel == "in");
     AreClose(8.0, vm.LinkSpacing, 1e-12);
+    AreClose(140.0 / 12.0, vm.MemberLengthDisplay ?? 0, 1e-12);
+    IsTrue(vm.L0xText == "11.67");
+    IsTrue(vm.FcdDisplayText.StartsWith("2.27", StringComparison.Ordinal));
 }
 
 static void TestCircularSectionExcludesSideLayouts()

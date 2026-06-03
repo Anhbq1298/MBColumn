@@ -3,6 +3,7 @@ using MBColumn.Application.RebarSuggestion;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
+using MBColumn.Infrastructure.Math;
 using MBColumn.Presentation.Wpf.ViewModels.AutomatedRebarDesign;
 using MBColumn.Presentation.Wpf.Views;
 using System.Windows;
@@ -14,6 +15,8 @@ public sealed class AutoDesignRebarDialogService(
     IRebarDatabase metricBars,
     IRebarDatabase imperialBars) : IAutoDesignRebarDialogService
 {
+    private static readonly UnitConversionService Units = new();
+
     public RebarSuggestionOption? ShowDialog(ColumnInputDto currentInput, Window? owner)
     {
         var barDb = currentInput.RebarSetLibrary == RebarSetLibraryType.UnitedStatesImperial
@@ -71,7 +74,34 @@ public sealed class AutoDesignRebarDialogService(
     }
 
     private static ColumnInputDto NormaliseToMm(ColumnInputDto input)
-        => input.LengthUnit == LengthUnit.Millimeter ? input : input;
+    {
+        RebarSideInputDto? ConvertSide(RebarSideInputDto? side)
+            => side is null
+                ? null
+                : side with { Cover = Units.LengthToMm(side.Cover, input.LengthUnit) };
+
+        double? memberLengthMm = input.MemberLengthL.HasValue
+            ? Units.LengthToMm(input.MemberLengthL.Value, input.LengthUnit)
+            : null;
+
+        return input with
+        {
+            Width = Units.LengthToMm(input.Width, input.LengthUnit),
+            Height = Units.LengthToMm(input.Height, input.LengthUnit),
+            Cover = Units.LengthToMm(input.Cover, input.LengthUnit),
+            Diameter = Units.LengthToMm(input.Diameter, input.LengthUnit),
+            Fc = Units.StressToMpa(input.Fc, input.StressUnit),
+            Fy = Units.StressToMpa(input.Fy, input.StressUnit),
+            Es = Units.StressToMpa(input.Es, input.StressUnit),
+            LengthUnit = LengthUnit.Millimeter,
+            StressUnit = StressUnit.MPa,
+            MemberLengthL = memberLengthMm,
+            TopRebarSide = ConvertSide(input.TopRebarSide),
+            BottomRebarSide = ConvertSide(input.BottomRebarSide),
+            LeftRebarSide = ConvertSide(input.LeftRebarSide),
+            RightRebarSide = ConvertSide(input.RightRebarSide)
+        };
+    }
 
     private static RebarSuggestionConstraintSet BuildDefaultConstraints(
         IReadOnlyList<RebarDefinition> longitudinalBars,

@@ -9,8 +9,22 @@ public sealed class UnitConversionService : IUnitConversionService
     private const double NPerKip = 4448.2216152605;
     private const double MpaPerKsi = 6.894757293168;
 
-    public double LengthToMm(double value, LengthUnit unit) => unit == LengthUnit.Inch ? value * MmPerInch : value;
-    public double LengthFromMm(double valueMm, LengthUnit unit) => unit == LengthUnit.Inch ? valueMm / MmPerInch : valueMm;
+    public double LengthToMm(double value, LengthUnit unit) => unit switch
+    {
+        LengthUnit.Millimeter => value,
+        LengthUnit.Meter => value * 1000.0,
+        LengthUnit.Inch => value * MmPerInch,
+        LengthUnit.Foot => value * 12.0 * MmPerInch,
+        _ => value
+    };
+    public double LengthFromMm(double valueMm, LengthUnit unit) => unit switch
+    {
+        LengthUnit.Millimeter => valueMm,
+        LengthUnit.Meter => valueMm / 1000.0,
+        LengthUnit.Inch => valueMm / MmPerInch,
+        LengthUnit.Foot => valueMm / (12.0 * MmPerInch),
+        _ => valueMm
+    };
     public double ConvertLength(double value, LengthUnit fromUnit, LengthUnit toUnit) => LengthFromMm(LengthToMm(value, fromUnit), toUnit);
     public double ForceToN(double value, ForceUnit unit) => unit switch { ForceUnit.N => value, ForceUnit.kN => value * 1000.0, ForceUnit.Kip => value * NPerKip, _ => value };
     public double ForceFromN(double valueN, ForceUnit unit) => unit switch { ForceUnit.N => valueN, ForceUnit.kN => valueN / 1000.0, ForceUnit.Kip => valueN / NPerKip, _ => valueN };

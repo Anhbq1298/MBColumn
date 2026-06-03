@@ -85,7 +85,8 @@
                           HorizontalAlignment="Stretch"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          VirtualizingStackPanel.IsVirtualizing="False"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
                           Visibility="{Binding HasSectionToggles,
                               Converter={StaticResource BoolToVisibilityConverter}}">
                     <TreeView.ItemContainerStyle>

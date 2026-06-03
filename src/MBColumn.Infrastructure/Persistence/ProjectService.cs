@@ -2,6 +2,7 @@ using Dapper;
 using MBColumn.Application.DTOs;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
+using MBColumn.Domain.Enums;
 using Microsoft.Data.Sqlite;
 using System.Text.Json;
 
@@ -20,6 +21,7 @@ public sealed class ProjectService : IProjectService, IDisposable
 
     public event EventHandler? ProjectChanged;
     public event EventHandler? ColumnsChanged;
+    public event EventHandler<ColumnInputChangedEventArgs>? ColumnInputChanged;
 
     public void Dispose()
     {
@@ -335,13 +337,21 @@ public sealed class ProjectService : IProjectService, IDisposable
     public void SaveColumnInput(int columnId, ColumnInputSnapshot snapshot)
     {
         EnsureConnection();
+        var previousSnapshot = LoadColumnInput(columnId);
+        var previousHash = previousSnapshot is null ? null : ComputeHash(previousSnapshot);
+        var currentHash = ComputeHash(snapshot);
+        if (string.Equals(previousHash, currentHash, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         using var conn = new SqliteConnection(connectionString);
         DatabaseSchema.Open(conn);
 
-        var loadCases = snapshot.LoadCases.ToList();
-        snapshot.LoadCases.Clear();
-        var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
-        snapshot.LoadCases = loadCases;
+        var persistedSnapshot = CloneSnapshot(snapshot);
+        var loadCases = persistedSnapshot.LoadCases.ToList();
+        persistedSnapshot.LoadCases.Clear();
+        var json = JsonSerializer.Serialize(persistedSnapshot, ResultJsonOptions);
 
         using var tx = conn.BeginTransaction();
 
@@ -367,6 +377,7 @@ public sealed class ProjectService : IProjectService, IDisposable
 
         tx.Commit();
         MarkModified();
+        ColumnInputChanged?.Invoke(this, new ColumnInputChangedEventArgs(columnId, previousHash, currentHash));
     }
 
     public ColumnInputSnapshot? LoadColumnInput(int columnId)
@@ -390,13 +401,66 @@ public sealed class ProjectService : IProjectService, IDisposable
         return snapshot;
     }
 
+    public string ComputeColumnInputHash(ColumnInputSnapshot snapshot)
+        => ComputeHash(snapshot);
+
     private static string ComputeHash(ColumnInputSnapshot snapshot)
+    {
+        var freshnessSnapshot = CreateFreshnessSnapshot(snapshot);
+        var json = JsonSerializer.Serialize(freshnessSnapshot, ResultJsonOptions);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        var hash = sha256.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
+    }
+
+    private static string ComputeLegacyHash(ColumnInputSnapshot snapshot)
     {
         var json = JsonSerializer.Serialize(snapshot, ResultJsonOptions);
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var bytes = System.Text.Encoding.UTF8.GetBytes(json);
         var hash = sha256.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
+    }
+
+    private static ColumnInputSnapshot CreateFreshnessSnapshot(ColumnInputSnapshot source)
+    {
+        var snapshot = CloneSnapshot(source);
+
+        var shape = Enum.TryParse<SectionShapeType>(snapshot.SectionShape, out var parsedShape)
+            ? parsedShape
+            : SectionShapeType.Rectangular;
+        var layoutType = Enum.TryParse<RebarLayoutType>(snapshot.RebarLayoutType, out var parsedLayoutType)
+            ? parsedLayoutType
+            : RebarLayoutType.AllSidesEqual;
+
+        bool usesCustomCoordinates = layoutType == RebarLayoutType.CustomCoordinates;
+        if (shape != SectionShapeType.Irregular)
+        {
+            snapshot.BoundaryPoints = [];
+            snapshot.OpeningPoints = [];
+            snapshot.IrregularBarSize = "";
+            snapshot.IrregularSpacing = 0;
+            snapshot.IrregularRebarMode = "";
+
+            if (!usesCustomCoordinates)
+                snapshot.Rebars = [];
+
+            return snapshot;
+        }
+
+        snapshot.OpeningPoints ??= [];
+        if (!usesCustomCoordinates)
+            snapshot.Rebars = [];
+
+        return snapshot;
+    }
+
+    private static ColumnInputSnapshot CloneSnapshot(ColumnInputSnapshot source)
+    {
+        var json = JsonSerializer.Serialize(source, ResultJsonOptions);
+        return JsonSerializer.Deserialize<ColumnInputSnapshot>(json, ResultJsonOptions)
+            ?? new ColumnInputSnapshot();
     }
 
     public void SaveColumnResult(int columnId, CalculationResultDto result)
@@ -432,7 +496,7 @@ public sealed class ProjectService : IProjectService, IDisposable
             "SELECT InputHash, ResultJson FROM ColumnResult WHERE ColumnId = @id", new { id = columnId });
 
         string? json = null;
-        if (row is not null && row.InputHash == hash)
+        if (row is not null && (row.InputHash == hash || row.InputHash == ComputeLegacyHash(snapshot)))
         {
             json = row.ResultJson;
         }
@@ -451,6 +515,24 @@ public sealed class ProjectService : IProjectService, IDisposable
             return JsonSerializer.Deserialize<CalculationResultDto>(decompressedJson, ResultJsonOptions); 
         }
         catch { return null; }
+    }
+
+    public bool HasColumnResult(int columnId)
+    {
+        if (connectionString is null || resultConnectionString is null) return false;
+
+        using var rConn = new SqliteConnection(resultConnectionString);
+        DatabaseSchema.OpenResultDb(rConn);
+
+        var hasCached = rConn.ExecuteScalar<int>(
+            "SELECT COUNT(1) FROM ColumnResult WHERE ColumnId = @id", new { id = columnId }) > 0;
+        if (hasCached) return true;
+
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var legacyJson = conn.ExecuteScalar<string>(
+            "SELECT ResultJson FROM Column WHERE Id = @id", new { id = columnId });
+        return !string.IsNullOrWhiteSpace(legacyJson);
     }
 
     private static string CompressBase64(string text)

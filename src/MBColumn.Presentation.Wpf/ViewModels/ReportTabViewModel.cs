@@ -4,10 +4,12 @@ using MBColumn.Application.Reports.Models;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
+using MBColumn.Domain.Units;
 using MBColumn.Infrastructure.DesignCodes;
 using MBColumn.Infrastructure.Math;
 using MBColumn.Infrastructure.Reports.Graphics;
 using MBColumn.Infrastructure.Reports.Html;
+using MBColumn.Presentation.Wpf.Collections;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
 using MBColumn.Presentation.Wpf.Views;
@@ -57,6 +59,7 @@ public sealed class ReportTabViewModel : ViewModelBase
     private string rebarSummary = "";
     private string forceUnit = "";
     private string momentUnit = "";
+    private bool _suppressToggleUpdate;
     private bool isExportBusy;
     private bool isGeneratingReport;
     private bool isReportPreviewVisible;
@@ -111,9 +114,9 @@ public sealed class ReportTabViewModel : ViewModelBase
     public ICommand DeselectAllSectionsCommand { get; }
     public ICommand ScrollToSectionCommand { get; }
 
-    public ObservableCollection<ReportSection> ReportSections { get; } = [];
-    public ObservableCollection<ReportSectionToggleViewModel> SectionToggles { get; } = [];
-    public ObservableCollection<ReportTreeItemViewModel> ReportTreeNodes { get; } = [];
+    public BulkObservableCollection<ReportSection> ReportSections { get; } = [];
+    public BulkObservableCollection<ReportSectionToggleViewModel> SectionToggles { get; } = [];
+    public BulkObservableCollection<ReportTreeItemViewModel> ReportTreeNodes { get; } = [];
     public bool HasSectionToggles => SectionToggles.Count > 0;
     public int VisibleSectionCount => SectionToggles.Count(t => t.IsVisible);
 
@@ -184,10 +187,10 @@ public sealed class ReportTabViewModel : ViewModelBase
         }
     }
 
-    public ObservableCollection<ReportDemandCaseRowViewModel> DemandCases { get; } = [];
-    public ObservableCollection<ReportPm7RowViewModel> Pm7Rows { get; } = [];
-    public ObservableCollection<PreviewBoundaryPoint> BoundaryPoints { get; } = [];
-    public ObservableCollection<PreviewRebarPoint> Rebars { get; } = [];
+    public BulkObservableCollection<ReportDemandCaseRowViewModel> DemandCases { get; } = [];
+    public BulkObservableCollection<ReportPm7RowViewModel> Pm7Rows { get; } = [];
+    public BulkObservableCollection<PreviewBoundaryPoint> BoundaryPoints { get; } = [];
+    public BulkObservableCollection<PreviewRebarPoint> Rebars { get; } = [];
 
     public GoverningChartPreviewViewModel? GoverningChart
     {
@@ -251,8 +254,11 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     private void SetAllToggles(bool visible)
     {
+        _suppressToggleUpdate = true;
         foreach (var t in SectionToggles)
             t.IsVisible = visible;
+        _suppressToggleUpdate = false;
+        OnToggleVisibilityChanged();
     }
 
     private void ScrollToSection(string sectionNumber)
@@ -263,6 +269,7 @@ public sealed class ReportTabViewModel : ViewModelBase
 
     private void OnToggleVisibilityChanged()
     {
+        if (_suppressToggleUpdate) return;
         Raise(nameof(VisibleReportSections));
         Raise(nameof(VisibleSectionCount));
         Raise(nameof(ReportPreviewStatusText));
@@ -412,21 +419,23 @@ public sealed class ReportTabViewModel : ViewModelBase
         RaiseReportPreviewState();
         if (_cachedResult is not null) BuildChartData(_cachedResult);
 
-        bool isMetric = input.UnitSystem == Domain.Enums.UnitSystem.Metric;
-        ForceUnit  = isMetric ? "kN"   : "kip";
-        MomentUnit = isMetric ? "kNm"  : "kip-ft";
+        var unitProfile = UnitProfile.For(input.UnitSystem);
+        ForceUnit = unitProfile.ForceLabel;
+        MomentUnit = unitProfile.MomentLabel;
 
         BoundaryPoints.Clear();
-        foreach (var p in input.PreviewBoundaryPoints) BoundaryPoints.Add(p);
+        BoundaryPoints.AddRange(input.PreviewBoundaryPoints);
 
         Rebars.Clear();
-        foreach (var r in input.PreviewRebars) Rebars.Add(r);
+        Rebars.AddRange(input.PreviewRebars);
 
         DemandCases.Clear();
-        foreach (var lc in input.LoadCases)
+        var lcResultById = result.Result?.LoadCaseResults?.ToDictionary(r => r.LoadCaseId)
+            ?? new System.Collections.Generic.Dictionary<string, LoadCaseResultDto>();
+        DemandCases.AddRange(input.LoadCases.Select(lc =>
         {
-            var lcResult = result.Result?.LoadCaseResults?.FirstOrDefault(r => r.LoadCaseId == lc.Id);
-            DemandCases.Add(new ReportDemandCaseRowViewModel(
+            lcResultById.TryGetValue(lc.Id, out var lcResult);
+            return new ReportDemandCaseRowViewModel(
                 lc.Name,
                 lc.OriginalLoadCaseName,
                 lc.SourceObjectLabel,
@@ -439,8 +448,8 @@ public sealed class ReportTabViewModel : ViewModelBase
                 lcResult?.PmmRatio ?? 0,
                 lcResult?.CapacityPDisplay ?? 0,
                 lcResult?.CapacityMxDisplay ?? 0,
-                lcResult?.CapacityMyDisplay ?? 0));
-        }
+                lcResult?.CapacityMyDisplay ?? 0);
+        }));
 
         RefreshReportSummaryPreview();
         RaiseExportCanExecute();
@@ -543,16 +552,15 @@ public sealed class ReportTabViewModel : ViewModelBase
 
             _cachedReportData = reportData;
             ReportHtmlContent = reportHtml;
-            foreach (var section in reportData.Sections)
-                ReportSections.Add(section);
+            ReportSections.AddRange(reportData.Sections);
 
             SectionToggles.Clear();
-            foreach (var section in reportData.Sections)
+            SectionToggles.AddRange(reportData.Sections.Select(s =>
             {
-                var toggle = new ReportSectionToggleViewModel(section);
+                var toggle = new ReportSectionToggleViewModel(s);
                 toggle.PropertyChanged += (_, _) => OnToggleVisibilityChanged();
-                SectionToggles.Add(toggle);
-            }
+                return toggle;
+            }));
             BuildReportTree();
             Raise(nameof(HasSectionToggles));
             Raise(nameof(VisibleSectionCount));
@@ -814,33 +822,28 @@ public sealed class ReportTabViewModel : ViewModelBase
         var mainReportRoot = new ReportTreeItemViewModel { Title = "Main report" };
         var appendixRoot = new ReportTreeItemViewModel { Title = "Annex" };
 
+        var mainChildren = new List<ReportTreeItemViewModel>();
+        var annexChildren = new List<ReportTreeItemViewModel>();
+
         foreach (var toggle in SectionToggles)
         {
             var treeItem = new ReportTreeItemViewModel();
             treeItem.InitializeFromToggle(toggle);
-
             bool isAppendix = toggle.SectionNumber.StartsWith("A", StringComparison.OrdinalIgnoreCase);
-
-            if (isAppendix)
-            {
-                treeItem.Parent = appendixRoot;
-                appendixRoot.Children.Add(treeItem);
-            }
-            else
-            {
-                treeItem.Parent = mainReportRoot;
-                mainReportRoot.Children.Add(treeItem);
-            }
+            treeItem.Parent = isAppendix ? appendixRoot : mainReportRoot;
+            (isAppendix ? annexChildren : mainChildren).Add(treeItem);
         }
 
-        if (mainReportRoot.Children.Count > 0)
+        if (mainChildren.Count > 0)
         {
+            mainReportRoot.Children.AddRange(mainChildren);
             mainReportRoot.VerifyCheckedState();
             ReportTreeNodes.Add(mainReportRoot);
         }
 
-        if (appendixRoot.Children.Count > 0)
+        if (annexChildren.Count > 0)
         {
+            appendixRoot.Children.AddRange(annexChildren);
             appendixRoot.VerifyCheckedState();
             ReportTreeNodes.Add(appendixRoot);
         }
@@ -860,24 +863,21 @@ public sealed class ReportTabViewModel : ViewModelBase
         Pm7Rows.Clear();
         if (_cachedResult?.SevenPointValidationRows is not { Count: > 0 } rows) return;
 
-        bool isMetric = ForceUnit == "kN";
+        bool isMetric = _cachedResult?.UnitSystem == Domain.Enums.UnitSystem.Metric;
         var mapped = _pm7Mapper.Map(rows, _units, isMetric);
-        foreach (var r in mapped)
+        Pm7Rows.AddRange(mapped.Select(r => new ReportPm7RowViewModel
         {
-            Pm7Rows.Add(new ReportPm7RowViewModel
-            {
-                Index = r.Index,
-                PointCode = r.PointCode,
-                PointName = r.PointName,
-                StrainDescription = r.StrainDescription,
-                HandCalcPDisplay = PmSevenPointReportMapper.FormatOrNa(r.HandCalcAxialForce),
-                HandCalcMDisplay = PmSevenPointReportMapper.FormatOrNa(r.HandCalcMoment),
-                SolverPDisplay   = PmSevenPointReportMapper.FormatOrNa(r.SolverAxialForce),
-                SolverMDisplay   = PmSevenPointReportMapper.FormatOrNa(r.SolverMoment),
-                DeviationPDisplay = PmSevenPointReportMapper.FormatPctOrNa(r.AxialForceDeviationPct),
-                DeviationMDisplay = PmSevenPointReportMapper.FormatPctOrNa(r.MomentDeviationPct),
-            });
-        }
+            Index = r.Index,
+            PointCode = r.PointCode,
+            PointName = r.PointName,
+            StrainDescription = r.StrainDescription,
+            HandCalcPDisplay = PmSevenPointReportMapper.FormatOrNa(r.HandCalcAxialForce),
+            HandCalcMDisplay = PmSevenPointReportMapper.FormatOrNa(r.HandCalcMoment),
+            SolverPDisplay   = PmSevenPointReportMapper.FormatOrNa(r.SolverAxialForce),
+            SolverMDisplay   = PmSevenPointReportMapper.FormatOrNa(r.SolverMoment),
+            DeviationPDisplay = PmSevenPointReportMapper.FormatPctOrNa(r.AxialForceDeviationPct),
+            DeviationMDisplay = PmSevenPointReportMapper.FormatPctOrNa(r.MomentDeviationPct),
+        }));
     }
 
     private void BuildGoverningChart()
@@ -1040,7 +1040,7 @@ public sealed class ReportTreeItemViewModel : ViewModelBase
 
     public ReportSectionToggleViewModel? SectionToggle { get; set; }
 
-    public ObservableCollection<ReportTreeItemViewModel> Children { get; } = [];
+    public BulkObservableCollection<ReportTreeItemViewModel> Children { get; } = [];
 
     public bool HasChildren => Children.Count > 0;
 

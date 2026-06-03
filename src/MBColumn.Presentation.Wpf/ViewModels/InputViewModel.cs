@@ -7,7 +7,9 @@ using MBColumn.Application.Services;
 using MBColumn.Application.Services.ImportExport;
 using MBColumn.Domain.Enums;
 using MBColumn.Domain.Interfaces;
+using MBColumn.Domain.Units;
 using MBColumn.Infrastructure.Math;
+using MBColumn.Presentation.Wpf.Collections;
 using MBColumn.Presentation.Wpf.Commands;
 using System.Collections;
 using System.Collections.ObjectModel;
@@ -124,6 +126,9 @@ public sealed class InputViewModel : ViewModelBase
     private readonly System.Collections.Specialized.NotifyCollectionChangedEventHandler _onBoundaryPointsChanged;
     private readonly System.ComponentModel.PropertyChangedEventHandler _onIrregularInputPropertyChanged;
     private readonly System.Collections.Specialized.NotifyCollectionChangedEventHandler _onIrregularRebarsChanged;
+    private static readonly IUnitConversionService DisplayUnits = new UnitConversionService();
+    private const double PoundsPerKilogram = 2.2046226218487757;
+    private const double FeetPerMeter = 3.280839895013123;
 
     private static readonly IReadOnlyList<MaterialGradeOption> AmericanConcreteGrades =
     [
@@ -409,6 +414,7 @@ public sealed class InputViewModel : ViewModelBase
         set
         {
             if (!Set(ref memberLengthL, value)) return;
+            Raise(nameof(MemberLengthDisplay));
             Raise(nameof(MemberLengthLInM));
             Raise(nameof(L0xText));
             Raise(nameof(L0yText));
@@ -418,10 +424,15 @@ public sealed class InputViewModel : ViewModelBase
             RefreshSlendernessUiState();
         }
     }
+    public double? MemberLengthDisplay
+    {
+        get => memberLengthL.HasValue ? SectionLengthToMemberLengthDisplay(memberLengthL.Value) : (double?)null;
+        set => MemberLengthL = value.HasValue ? MemberLengthDisplayToSectionLength(value.Value) : (double?)null;
+    }
     public double? MemberLengthLInM
     {
-        get => memberLengthL.HasValue ? memberLengthL / 1000.0 : (double?)null;
-        set => MemberLengthL = value.HasValue ? value * 1000.0 : (double?)null;
+        get => MemberLengthDisplay;
+        set => MemberLengthDisplay = value;
     }
     public bool IncludeEc2Slenderness
     {
@@ -487,16 +498,13 @@ public sealed class InputViewModel : ViewModelBase
         ? "Demand input mode: Member end forces"
         : "Demand input mode: Direct section forces";
     public bool SlendernessSettingsVisibility => IncludeEc2Slenderness;
-    public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{Kx.Value * MemberLengthL.Value / 1000.0:F2}" : "auto";
-    public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{Ky.Value * MemberLengthL.Value / 1000.0:F2}" : "auto";
-    public string L0xLatex => MemberLengthL is > 0 && Kx is > 0
-        ? $@"l_{{0x}}=k_xL={Kx.Value:F2}\times{MemberLengthL.Value:F0}={Kx.Value * MemberLengthL.Value:F0}\;\mathrm{{mm}}"
-        : @"l_{0x}=k_xL";
-    public string L0yLatex => MemberLengthL is > 0 && Ky is > 0
-        ? $@"l_{{0y}}=k_yL={Ky.Value:F2}\times{MemberLengthL.Value:F0}={Ky.Value * MemberLengthL.Value:F0}\;\mathrm{{mm}}"
-        : @"l_{0y}=k_yL";
+    public string L0xText => MemberLengthL is > 0 && Kx is > 0 ? $"{SectionLengthToMemberLengthDisplay(Kx.Value * MemberLengthL.Value):F2}" : "auto";
+    public string L0yText => MemberLengthL is > 0 && Ky is > 0 ? $"{SectionLengthToMemberLengthDisplay(Ky.Value * MemberLengthL.Value):F2}" : "auto";
+    public string L0xLatex => BuildEffectiveLengthLatex("x", Kx);
+    public string L0yLatex => BuildEffectiveLengthLatex("y", Ky);
     public string ImperfectionFormulaLatex => @"e_i=\frac{l_0}{400},\quad M_i=N_{Ed}e_i";
-    public string MinimumEccentricityFormulaLatex => @"e_0=\max\left(\frac{h}{30},20\;\text{mm}\right),\quad M_{used}\geq N_{Ed}e_0";
+    public string MinimumEccentricityFormulaLatex => $@"e_0=\max\left(\frac{{h}}{{30}},{MinimumEccentricityDisplayValue:F2}\;{LatexSectionLengthUnit}\right),\quad M_{{used}}\geq N_{{Ed}}e_0";
+    public string MinimumEccentricityRuleText => $" = max(section dimension / 30, {MinimumEccentricityDisplayValue:0.##} {LengthLabel}). The final M";
     public string ImperfectionXCalculationLatex => BuildImperfectionAxisLatex("x", Kx);
     public string ImperfectionYCalculationLatex => BuildImperfectionAxisLatex("y", Ky);
     public string MinimumEccentricityXCalculationLatex => BuildMinimumEccentricityAxisLatex("x", CurrentSectionHeightMm());
@@ -564,10 +572,10 @@ public sealed class InputViewModel : ViewModelBase
 
     public double LinkSpacing
     {
-        get => UnitSystem == UnitSystem.Metric ? linkSpacingMm : linkSpacingMm / 25.4;
+        get => DisplayUnits.LengthFromMm(linkSpacingMm, CurrentSectionSizeUnit);
         set
         {
-            double valueMm = UnitSystem == UnitSystem.Metric ? value : value * 25.4;
+            double valueMm = DisplayUnits.LengthToMm(value, CurrentSectionSizeUnit);
             if (Math.Abs(linkSpacingMm - valueMm) <= 1e-9) return;
             linkSpacingMm = valueMm;
             Raise();
@@ -669,11 +677,18 @@ public sealed class InputViewModel : ViewModelBase
     public IReadOnlyList<SectionShapeType> SectionShapes { get; } =
         [SectionShapeType.Rectangular, SectionShapeType.Circular, SectionShapeType.Irregular];
     public IReadOnlyList<RebarDefinition> AvailableBars => ActiveRebarDatabase.GetBars();
-    public string LengthLabel => UnitSystem == UnitSystem.Metric ? "mm" : "in";
-    public string AreaLabel => UnitSystem == UnitSystem.Metric ? "mm²" : "in²";
-    public string ForceLabel => UnitSystem == UnitSystem.Metric ? "kN" : "kip";
-    public string MomentLabel => UnitSystem == UnitSystem.Metric ? "kN-m" : "kip-ft";
-    public string StressLabel => UnitSystem == UnitSystem.Metric ? "MPa" : "ksi";
+    private UnitProfile CurrentUnitProfile => UnitProfile.For(UnitSystem);
+    public LengthUnit CurrentSectionSizeUnit => CurrentUnitProfile.SectionSizeUnit;
+    public LengthUnit CurrentMemberLengthUnit => CurrentUnitProfile.MemberLengthUnit;
+    public ForceUnit CurrentForceUnit => CurrentUnitProfile.ForceUnit;
+    public MomentUnit CurrentMomentUnit => CurrentUnitProfile.MomentUnit;
+    public StressUnit CurrentStressUnit => CurrentUnitProfile.StressUnit;
+    public string LengthLabel => CurrentUnitProfile.SectionSizeLabel;
+    public string MemberLengthLabel => CurrentUnitProfile.MemberLengthLabel;
+    public string AreaLabel => CurrentUnitProfile.SectionAreaLabel;
+    public string ForceLabel => CurrentUnitProfile.ForceLabel;
+    public string MomentLabel => CurrentUnitProfile.MomentLabel;
+    public string StressLabel => CurrentUnitProfile.StressLabel;
     public string DemandForceHeader => $"NEd ({ForceLabel})";
     public string DemandMomentXHeader => $"Mx ({MomentLabel})";
     public string DemandMomentYHeader => $"My ({MomentLabel})";
@@ -685,7 +700,10 @@ public sealed class InputViewModel : ViewModelBase
     public string MyBottomHeader => $"My Bottom ({MomentLabel})";
     public string MxUsedHeader => $"Mx Used ({MomentLabel})";
     public string MyUsedHeader => $"My Used ({MomentLabel})";
-    public string RebarDiameterUnitLabel => selectedRebarSetLibrary == RebarSetLibraryType.SingaporeMetric ? "mm" : "in";
+    public string RebarDiameterUnitLabel => UnitProfile.Label(
+        selectedRebarSetLibrary == RebarSetLibraryType.SingaporeMetric
+            ? LengthUnit.Millimeter
+            : LengthUnit.Inch);
     public string LinkSpacingUnitLabel => LengthLabel;
 
     public UnitSystem UnitSystem
@@ -702,10 +720,13 @@ public sealed class InputViewModel : ViewModelBase
             Raise(nameof(AvailableStirrupBars));
             Raise(nameof(SelectedStirrupBar));
             Raise(nameof(LengthLabel));
+            Raise(nameof(MemberLengthLabel));
             Raise(nameof(AreaLabel));
             Raise(nameof(ForceLabel));
             Raise(nameof(MomentLabel));
             Raise(nameof(StressLabel));
+            Raise(nameof(MemberLengthDisplay));
+            Raise(nameof(MemberLengthLInM));
             RaiseUnitDependentLabels();
             Raise(nameof(SelectedUnitSystem));
             UpdateSectionPreview();
@@ -972,7 +993,7 @@ public sealed class InputViewModel : ViewModelBase
     }
     public ObservableCollection<PreviewRebarPoint> PreviewRebars { get; } = [];
     public ObservableCollection<PreviewBoundaryPoint> PreviewBoundaryPoints { get; } = [];
-    public ObservableCollection<LoadCaseViewModel> LoadCases { get; } = [];
+    public BulkObservableCollection<LoadCaseViewModel> LoadCases { get; } = [];
     public ICommand AddLoadCaseCommand { get; }
     public ICommand DuplicateLoadCaseCommand { get; }
     public ICommand DeleteLoadCaseCommand { get; }
@@ -1036,9 +1057,15 @@ public sealed class InputViewModel : ViewModelBase
     }
     public string SlendernessWarningText => BuildSlendernessWarningText();
     public bool HasSlendernessWarnings => !string.IsNullOrWhiteSpace(SlendernessWarningText);
-    public string FcdDisplayText => Fc > 0 && GammaC > 0 ? $"{AlphaCc * StressInputToMpa(Fc) / GammaC:F2}" : "auto";
-    public string FcmDisplayText => Fc > 0 ? $"{StressInputToMpa(Fc) + 8.0:F2}" : "auto";
-    public string EcmDisplayText => Fc > 0 ? $"{22000.0 * Math.Pow((StressInputToMpa(Fc) + 8.0) / 10.0, 0.3):F0}" : "auto";
+    public string FcdDisplayText => Fc > 0 && GammaC > 0
+        ? FormatStressValue(AlphaCc * StressInputToMpa(Fc) / GammaC, 2)
+        : "auto";
+    public string FcmDisplayText => Fc > 0
+        ? FormatStressValue(StressInputToMpa(Fc) + 8.0, 2)
+        : "auto";
+    public string EcmDisplayText => Fc > 0
+        ? FormatStressValue(22000.0 * Math.Pow((StressInputToMpa(Fc) + 8.0) / 10.0, 0.3), 0)
+        : "auto";
 
     public bool IsEc2 => SelectedDesignCode == DesignCodeType.Ec2;
     public string ConcreteUltimateStrainSubscript => IsEc2 && selectedEurocodeConcreteStrainProfile == EurocodeConcreteStrainProfile.Ec3 ? "cu3" : IsEc2 ? "cu2" : "cu";
@@ -1091,9 +1118,6 @@ public sealed class InputViewModel : ViewModelBase
 
     public double EpsilonUd => IsEc2 ? 0.045 : 0.08;
 
-    public ForceUnit CurrentForceUnit => UnitSystem == UnitSystem.Metric ? ForceUnit.kN : ForceUnit.Kip;
-    public MomentUnit CurrentMomentUnit => UnitSystem == UnitSystem.Metric ? MomentUnit.kNm : MomentUnit.KipFt;
-
     public ColumnInputDto ToDto()
     {
         var forceUnit = CurrentForceUnit;
@@ -1101,8 +1125,8 @@ public sealed class InputViewModel : ViewModelBase
         var lcDtos = LoadCases.Count > 0
             ? LoadCases.Select(lc => lc.ToDto(forceUnit, momentUnit)).ToList()
             : null;
-        var layoutLengthUnit = UnitSystem == UnitSystem.Metric ? LengthUnit.Millimeter : LengthUnit.Inch;
-        var stressUnit = UnitSystem == UnitSystem.Metric ? StressUnit.MPa : StressUnit.Ksi;
+        var layoutLengthUnit = CurrentSectionSizeUnit;
+        var stressUnit = CurrentStressUnit;
 
         if (SelectedSectionShape == SectionShapeType.Irregular)
         {
@@ -1437,7 +1461,7 @@ public sealed class InputViewModel : ViewModelBase
         IReadOnlyList<RebarCoordinateDto> bars;
         try
         {
-            bars = rebarCoordinateBuilder.Build(CreateRebarLayoutInput(), Width, Height, UnitSystem == UnitSystem.Metric ? LengthUnit.Millimeter : LengthUnit.Inch, UnitSystem, selectedRebarSetLibrary);
+            bars = rebarCoordinateBuilder.Build(CreateRebarLayoutInput(), Width, Height, CurrentSectionSizeUnit, UnitSystem, selectedRebarSetLibrary);
         }
         catch (Exception ex)
         {
@@ -1465,7 +1489,7 @@ public sealed class InputViewModel : ViewModelBase
         var selectedBar = AvailableBars.FirstOrDefault(b => string.Equals(b.Name, BarSize, StringComparison.OrdinalIgnoreCase));
         double barAreaMm2 = selectedBar?.AreaMm2 ?? 0;
         double totalAsMm2 = PreviewRebars.Count * barAreaMm2;
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double factor = DisplayUnits.LengthToMm(1.0, CurrentSectionSizeUnit);
         double agMm2 = (Width * factor) * (Height * factor);
         double rho = agMm2 > 0 ? (totalAsMm2 / agMm2) : 0;
 
@@ -1540,7 +1564,7 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double factor = DisplayUnits.LengthToMm(1.0, CurrentSectionSizeUnit);
         double diameterMm = Diameter * factor;
         double coverMm = Cover * factor;
         double barDiameterMm = bar.DiameterMm;
@@ -1805,15 +1829,32 @@ public sealed class InputViewModel : ViewModelBase
 
     private void RaiseImperfectionLatex()
     {
+        Raise(nameof(ImperfectionFormulaLatex));
+        Raise(nameof(MinimumEccentricityFormulaLatex));
+        Raise(nameof(MinimumEccentricityRuleText));
         Raise(nameof(ImperfectionXCalculationLatex));
         Raise(nameof(ImperfectionYCalculationLatex));
         Raise(nameof(MinimumEccentricityXCalculationLatex));
         Raise(nameof(MinimumEccentricityYCalculationLatex));
     }
 
-    private string LatexLengthUnit => UnitSystem == UnitSystem.Metric ? @"\text{mm}" : @"\text{in}";
+    private string LatexSectionLengthUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.SectionSize);
 
-    private string LatexMomentUnit => UnitSystem == UnitSystem.Metric ? @"\mathrm{kN\cdot m}" : @"\mathrm{kip\cdot in}";
+    private string LatexLengthUnit => LatexSectionLengthUnit;
+
+    private string LatexMemberLengthUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.MemberLength);
+
+    private string LatexMomentUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.Moment);
+
+    private string BuildEffectiveLengthLatex(string axis, double? k)
+    {
+        if (MemberLengthL is not > 0 || k is not > 0)
+            return $@"l_{{0{axis}}}=k_{axis}L";
+
+        double memberLength = SectionLengthToMemberLengthDisplay(MemberLengthL.Value);
+        double effectiveLength = SectionLengthToMemberLengthDisplay(k.Value * MemberLengthL.Value);
+        return $@"l_{{0{axis}}}=k_{axis}L={k.Value:F2}\times{memberLength:F2}={effectiveLength:F2}\;{LatexMemberLengthUnit}";
+    }
 
     private string BuildImperfectionAxisLatex(string axis, double? k)
     {
@@ -1829,8 +1870,8 @@ public sealed class InputViewModel : ViewModelBase
 
     private string BuildMinimumEccentricityAxisLatex(string axis, double dimensionMm)
     {
-        double dimension = UnitSystem == UnitSystem.Metric ? dimensionMm : dimensionMm / 25.4;
-        double minE = UnitSystem == UnitSystem.Metric ? 20.0 : 20.0 / 25.4;
+        double dimension = SectionLengthFromMm(dimensionMm);
+        double minE = MinimumEccentricityDisplayValue;
         double e0 = Math.Max(dimension / 30.0, minE);
         var lc = SlendernessCalculationLoadCase;
         if (lc?.NEd is not double nEd)
@@ -1882,9 +1923,9 @@ public sealed class InputViewModel : ViewModelBase
 
     private string BuildMinimumEccentricityCalculationText()
     {
-        double dimensionX = UnitSystem == UnitSystem.Metric ? CurrentSectionHeightMm() : CurrentSectionHeightMm() / 25.4;
-        double dimensionY = UnitSystem == UnitSystem.Metric ? CurrentSectionWidthMm() : CurrentSectionWidthMm() / 25.4;
-        double minE = UnitSystem == UnitSystem.Metric ? 20.0 : 20.0 / 25.4;
+        double dimensionX = SectionLengthFromMm(CurrentSectionHeightMm());
+        double dimensionY = SectionLengthFromMm(CurrentSectionWidthMm());
+        double minE = MinimumEccentricityDisplayValue;
         double e0x = Math.Max(dimensionX / 30.0, minE);
         double e0y = Math.Max(dimensionY / 30.0, minE);
         var lc = SlendernessCalculationLoadCase;
@@ -1976,9 +2017,8 @@ public sealed class InputViewModel : ViewModelBase
                 if (imported.Count > 0)
                 {
                     LoadCases.Clear();
-                    foreach (var lc in imported) LoadCases.Add(lc);
+                    LoadCases.AddRange(imported);
                     SelectedLoadCase = LoadCases.FirstOrDefault();
-                    RefreshSlendernessUiState();
                 }
             }
             catch (Exception ex)
@@ -2210,6 +2250,17 @@ public sealed class InputViewModel : ViewModelBase
 
     private void RaiseUnitDependentLabels()
     {
+        Raise(nameof(CurrentSectionSizeUnit));
+        Raise(nameof(CurrentMemberLengthUnit));
+        Raise(nameof(CurrentForceUnit));
+        Raise(nameof(CurrentMomentUnit));
+        Raise(nameof(CurrentStressUnit));
+        Raise(nameof(LengthLabel));
+        Raise(nameof(MemberLengthLabel));
+        Raise(nameof(AreaLabel));
+        Raise(nameof(ForceLabel));
+        Raise(nameof(MomentLabel));
+        Raise(nameof(StressLabel));
         Raise(nameof(DemandForceHeader));
         Raise(nameof(DemandMomentXHeader));
         Raise(nameof(DemandMomentYHeader));
@@ -2226,8 +2277,15 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(LinkSpacing));
         Raise(nameof(CircularHoopCentrelineDiameter));
         Raise(nameof(CircularHoopCentrelineDiameterText));
-        Raise(nameof(CurrentForceUnit));
-        Raise(nameof(CurrentMomentUnit));
+        Raise(nameof(MemberLengthDisplay));
+        Raise(nameof(MemberLengthLInM));
+        Raise(nameof(L0xText));
+        Raise(nameof(L0yText));
+        Raise(nameof(L0xLatex));
+        Raise(nameof(L0yLatex));
+        Raise(nameof(MinimumEccentricityFormulaLatex));
+        Raise(nameof(MinimumEccentricityRuleText));
+        RaiseImperfectionLatex();
     }
 
     private void ApplyMetricDefaults()
@@ -2602,7 +2660,7 @@ public sealed class InputViewModel : ViewModelBase
             return;
         }
 
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double factor = DisplayUnits.LengthToMm(1.0, CurrentSectionSizeUnit);
 
         if (IsCircularSection)
         {
@@ -2614,13 +2672,13 @@ public sealed class InputViewModel : ViewModelBase
             // Check 1: tie Ø ≥ max(6, 0.25·dMain)  EC2 §9.5.3(1)
             double minDiam0 = Math.Max(6.0, 0.25 * dMain0);
             bool c10 = dSw0 >= minDiam0 - 1e-6;
-            Ec2Check1Text = $"Ø{dSw0:0} ≥ max(6, 0.25·Ø{dMain0:0.#}) = {minDiam0:0.#} mm  {(c10 ? "✓" : "✗")}";
+            Ec2Check1Text = $"Ø{FormatLengthNumber(dSw0)} ≥ max({FormatLengthNumber(6.0)}, 0.25·Ø{FormatLengthNumber(dMain0, 1)}) = {FormatLengthNumber(minDiam0, 1)} {LengthLabel}  {(c10 ? "✓" : "✗")}";
             Ec2Check1Pass = c10;
 
             // Check 2: pitch ≤ min(20·dMain, D, 400)  EC2 §9.5.3(3)
             double sMax0 = Math.Min(Math.Min(20.0 * dMain0, diamMm), 400.0);
             bool c20 = linkSpacingMm <= sMax0 + 1e-6;
-            Ec2Check2Text = $"s = {linkSpacingMm:0} ≤ min(20·{dMain0:0.#}, D={diamMm:0}, 400) = {sMax0:0} mm  {(c20 ? "✓" : "✗")}";
+            Ec2Check2Text = $"s = {FormatLengthNumber(linkSpacingMm)} ≤ min(20·{FormatLengthNumber(dMain0, 1)}, D={FormatLengthNumber(diamMm)}, {FormatLengthNumber(400.0)}) = {FormatLengthNumber(sMax0)} {LengthLabel}  {(c20 ? "✓" : "✗")}";
             Ec2Check2Pass = c20;
 
             // No inner-legs check for circular
@@ -2629,9 +2687,9 @@ public sealed class InputViewModel : ViewModelBase
             // Asw/s for circular tie (1 closed ring per pitch)
             double aSwMm2_0 = Math.PI * dSw0 * dSw0 / 4.0;
             double asws0 = linkSpacingMm > 0 ? aSwMm2_0 / linkSpacingMm : 0;
-            Ec2AswsXText = $"Asw/s (circular tie) = {aSwMm2_0:0.##}/{linkSpacingMm:0} = {asws0:0.###} mm²/mm";
+            Ec2AswsXText = $"Asw/s (circular tie) = {FormatAreaNumber(aSwMm2_0)}/{FormatLengthNumber(linkSpacingMm)} = {FormatAreaPerLengthValue(asws0)}";
             Ec2AswsYText = "—";
-            Ec2AswsXLatex = $@"\frac{{A_h}}{{s}}=\frac{{{aSwMm2_0:0.##}}}{{{linkSpacingMm:0}}}={asws0:0.###}\;\mathrm{{mm^2/mm}}";
+            Ec2AswsXLatex = $@"\frac{{A_h}}{{s}}=\frac{{{FormatAreaNumber(aSwMm2_0)}}}{{{FormatLengthNumber(linkSpacingMm)}}}={SectionAreaPerLengthFromMm2PerMm(asws0):0.###}\;{LatexAreaPerLengthUnit}";
             Ec2AswsYLatex = "";
             return;
         }
@@ -2646,14 +2704,14 @@ public sealed class InputViewModel : ViewModelBase
         // Check 1: d_sw ≥ max(6, 0.25 × d_main)  EC2 §9.5.3(1)
         double minDiam = Math.Max(6.0, 0.25 * dMain);
         bool c1 = dSw >= minDiam - 1e-6;
-        Ec2Check1Text = $"Ø{dSw:0} ≥ max(6, 0.25·Ø{dMain:0.#}) = {minDiam:0.#} mm  {(c1 ? "✓" : "✗")}";
+        Ec2Check1Text = $"Ø{FormatLengthNumber(dSw)} ≥ max({FormatLengthNumber(6.0)}, 0.25·Ø{FormatLengthNumber(dMain, 1)}) = {FormatLengthNumber(minDiam, 1)} {LengthLabel}  {(c1 ? "✓" : "✗")}";
         Ec2Check1Pass = c1;
 
         // Check 2: s ≤ min(20×d_main, b_min, 400)  EC2 §9.5.3(3)
         double bMin = Math.Min(widthMm, heightMm);
         double sMax = Math.Min(Math.Min(20.0 * dMain, bMin), 400.0);
         bool c2 = linkSpacingMm <= sMax + 1e-6;
-        Ec2Check2Text = $"s = {linkSpacingMm:0} ≤ min(20·{dMain:0.#}, {bMin:0}, 400) = {sMax:0} mm  {(c2 ? "✓" : "✗")}";
+        Ec2Check2Text = $"s = {FormatLengthNumber(linkSpacingMm)} ≤ min(20·{FormatLengthNumber(dMain, 1)}, {FormatLengthNumber(bMin)}, {FormatLengthNumber(400.0)}) = {FormatLengthNumber(sMax)} {LengthLabel}  {(c2 ? "✓" : "✗")}";
         Ec2Check2Pass = c2;
 
         // Check 3: gap between restrained positions ≤ 150 mm  EC2 §9.5.3(6)
@@ -2664,24 +2722,24 @@ public sealed class InputViewModel : ViewModelBase
         double gX = totX > 1 && xClear > 0 ? xClear / (totX - 1) : double.PositiveInfinity;
         double gY = totY > 1 && yClear > 0 ? yClear / (totY - 1) : double.PositiveInfinity;
         bool c3 = gX <= 150.0 + 1e-6 && gY <= 150.0 + 1e-6;
-        string gXStr = double.IsInfinity(gX) ? "∞" : $"{gX:0}";
-        string gYStr = double.IsInfinity(gY) ? "∞" : $"{gY:0}";
-        Ec2Check3Text = $"ΔX = {gXStr} mm,  ΔY = {gYStr} mm  (≤ 150 mm)  {(c3 ? "✓" : "✗")}";
+        string gXStr = double.IsInfinity(gX) ? "∞" : FormatLengthNumber(gX);
+        string gYStr = double.IsInfinity(gY) ? "∞" : FormatLengthNumber(gY);
+        Ec2Check3Text = $"ΔX = {gXStr} {LengthLabel},  ΔY = {gYStr} {LengthLabel}  (≤ {FormatLengthNumber(150.0)} {LengthLabel})  {(c3 ? "✓" : "✗")}";
         Ec2Check3Pass = c3;
 
         // Check 4 (info): Asw/s in X and Y directions  EC2 §9.5.3
         double aSwMm2 = Math.PI * dSw * dSw / 4.0;
         double aswX = linkSpacingMm > 0 ? totX * aSwMm2 / linkSpacingMm : 0;
         double aswY = linkSpacingMm > 0 ? totY * aSwMm2 / linkSpacingMm : 0;
-        Ec2AswsXText = $"Asw/s (X) = {totX}×{aSwMm2:0.##}/{linkSpacingMm:0} = {aswX:0.###} mm²/mm";
-        Ec2AswsYText = $"Asw/s (Y) = {totY}×{aSwMm2:0.##}/{linkSpacingMm:0} = {aswY:0.###} mm²/mm";
-        Ec2AswsXLatex = $@"\left(\frac{{A_{{sw}}}}{{s}}\right)_x=\frac{{{totX}\times{aSwMm2:0.##}}}{{{linkSpacingMm:0}}}={aswX:0.###}\;\mathrm{{mm^2/mm}}";
-        Ec2AswsYLatex = $@"\left(\frac{{A_{{sw}}}}{{s}}\right)_y=\frac{{{totY}\times{aSwMm2:0.##}}}{{{linkSpacingMm:0}}}={aswY:0.###}\;\mathrm{{mm^2/mm}}";
+        Ec2AswsXText = $"Asw/s (X) = {totX}×{FormatAreaNumber(aSwMm2)}/{FormatLengthNumber(linkSpacingMm)} = {FormatAreaPerLengthValue(aswX)}";
+        Ec2AswsYText = $"Asw/s (Y) = {totY}×{FormatAreaNumber(aSwMm2)}/{FormatLengthNumber(linkSpacingMm)} = {FormatAreaPerLengthValue(aswY)}";
+        Ec2AswsXLatex = $@"\left(\frac{{A_{{sw}}}}{{s}}\right)_x=\frac{{{totX}\times{FormatAreaNumber(aSwMm2)}}}{{{FormatLengthNumber(linkSpacingMm)}}}={SectionAreaPerLengthFromMm2PerMm(aswX):0.###}\;{LatexAreaPerLengthUnit}";
+        Ec2AswsYLatex = $@"\left(\frac{{A_{{sw}}}}{{s}}\right)_y=\frac{{{totY}\times{FormatAreaNumber(aSwMm2)}}}{{{FormatLengthNumber(linkSpacingMm)}}}={SectionAreaPerLengthFromMm2PerMm(aswY):0.###}\;{LatexAreaPerLengthUnit}";
     }
 
     private void UpdateSectionPropertiesPanel()
     {
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        double factor = DisplayUnits.LengthToMm(1.0, CurrentSectionSizeUnit);
         double agMm2 = 0;
         double ixxMm4 = 0;
         double iyyMm4 = 0;
@@ -2718,11 +2776,11 @@ public sealed class InputViewModel : ViewModelBase
 
         if (agMm2 > 0)
         {
-            PreviewAreaText = $"{agMm2:N0} mm²";
+            PreviewAreaText = FormatAreaValue(agMm2);
             PreviewIxxText = FormatInertia(ixxMm4);
             PreviewIyyText = FormatInertia(iyyMm4);
-            PreviewIxText = ixxMm4 > 0 ? $"{Math.Sqrt(ixxMm4 / agMm2):F1} mm" : "—";
-            PreviewIyText = iyyMm4 > 0 ? $"{Math.Sqrt(iyyMm4 / agMm2):F1} mm" : "—";
+            PreviewIxText = ixxMm4 > 0 ? FormatLengthValue(Math.Sqrt(ixxMm4 / agMm2), 1) : "—";
+            PreviewIyText = iyyMm4 > 0 ? FormatLengthValue(Math.Sqrt(iyyMm4 / agMm2), 1) : "—";
         }
         else
         {
@@ -2736,21 +2794,21 @@ public sealed class InputViewModel : ViewModelBase
         // Diameter in PreviewRebarPoint is always in mm
         double totalAsMm2 = PreviewRebars.Sum(r => Math.PI * Math.Pow(r.Diameter / 2.0, 2));
         int rebarCount = PreviewRebars.Count;
-        PreviewAsTotalText = totalAsMm2 > 0 ? $"{totalAsMm2:N0} mm²" : "—";
+        PreviewAsTotalText = totalAsMm2 > 0 ? FormatAreaValue(totalAsMm2) : "—";
 
         double fckMpa = StressInputToMpa(Fc);
         double fykMpa = StressInputToMpa(Fy);
         double fcd = GammaC > 0 ? AlphaCc * fckMpa / GammaC : 0.0;
         double fyd = fykMpa / 1.15;
         double ecm = fckMpa > 0 ? 22000.0 * Math.Pow((fckMpa + 8.0) / 10.0, 0.3) : 0.0;
-        PreviewFcdText = fcd > 0 ? $"{fcd:F2} MPa" : "—";
-        PreviewFydText = fyd > 0 ? $"{fyd:F2} MPa" : "—";
-        PreviewEcmText = ecm > 0 ? $"{ecm:F0} MPa" : "—";
+        PreviewFcdText = fcd > 0 ? $"{FormatStressValue(fcd, 2)} {StressLabel}" : "—";
+        PreviewFydText = fyd > 0 ? $"{FormatStressValue(fyd, 2)} {StressLabel}" : "—";
+        PreviewEcmText = ecm > 0 ? $"{FormatStressValue(ecm, 0)} {StressLabel}" : "—";
 
         double dxMm = RebarSpreadMm(PreviewRebars.Select(r => r.Y), 0.8 * CurrentSectionHeightMm());
         double dyMm = RebarSpreadMm(PreviewRebars.Select(r => r.X), 0.8 * CurrentSectionWidthMm());
-        PreviewDxText = dxMm > 0 ? $"{dxMm:F1} mm" : "—";
-        PreviewDyText = dyMm > 0 ? $"{dyMm:F1} mm" : "—";
+        PreviewDxText = dxMm > 0 ? FormatLengthValue(dxMm, 1) : "—";
+        PreviewDyText = dyMm > 0 ? FormatLengthValue(dyMm, 1) : "—";
 
         double omega = agMm2 > 0 && fcd > 0
             ? totalAsMm2 * fyd / (agMm2 * fcd)
@@ -2783,8 +2841,8 @@ public sealed class InputViewModel : ViewModelBase
             double netConcreteArea = Math.Max(agMm2 - totalAsMm2, 0.0);
             double concreteKgPerM = netConcreteArea * 2.4e-3;
             double steelKgPerM = totalAsMm2 * 7.85e-3;
-            PreviewConcreteQuantityText = $"{concreteKgPerM:F2} kg/m";
-            PreviewSteelQuantityText = totalAsMm2 > 0 ? $"{steelKgPerM:F2} kg/m" : "—";
+            PreviewConcreteQuantityText = FormatLinearWeight(concreteKgPerM);
+            PreviewSteelQuantityText = totalAsMm2 > 0 ? FormatLinearWeight(steelKgPerM) : "—";
         }
         else
         {
@@ -2797,19 +2855,25 @@ public sealed class InputViewModel : ViewModelBase
 
     private void LoadCases_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        if (e.OldItems is not null)
+        if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
         {
-            foreach (LoadCaseViewModel item in e.OldItems)
-            {
-                item.PropertyChanged -= LoadCase_PropertyChanged;
-            }
-        }
-
-        if (e.NewItems is not null)
-        {
-            foreach (LoadCaseViewModel item in e.NewItems)
-            {
+            // Fired by BulkObservableCollection.AddRange or Clear — subscribe to all current items.
+            // Old items are untracked; they'll be GC'd and their subscriptions are harmless.
+            foreach (var item in LoadCases)
                 item.PropertyChanged += LoadCase_PropertyChanged;
+        }
+        else
+        {
+            if (e.OldItems is not null)
+            {
+                foreach (LoadCaseViewModel item in e.OldItems)
+                    item.PropertyChanged -= LoadCase_PropertyChanged;
+            }
+
+            if (e.NewItems is not null)
+            {
+                foreach (LoadCaseViewModel item in e.NewItems)
+                    item.PropertyChanged += LoadCase_PropertyChanged;
             }
         }
 
@@ -2863,7 +2927,13 @@ public sealed class InputViewModel : ViewModelBase
                     loadCase.MyTop is null ||
                     loadCase.MyBottom is null;
 
-                if (loadCase.NEd <= 0)
+                if (loadCase.NEd < 0)
+                {
+                    // Tension case: imperfection and slenderness do not apply — not an error
+                    loadCase.Status = "Tension";
+                    loadCase.HasValidationError = false;
+                }
+                else if (loadCase.NEd == 0)
                 {
                     loadCase.Status = "Invalid NEd";
                     loadCase.HasValidationError = true;
@@ -2938,7 +3008,7 @@ public sealed class InputViewModel : ViewModelBase
 
                         var forceUnit = CurrentForceUnit;
                         var momentUnit = CurrentMomentUnit;
-                        var lcDtos = LoadCases.Where(lc => lc.IsActive).Select(lc => lc.ToDto(forceUnit, momentUnit)).ToList();
+                        var lcDtos = LoadCases.Where(lc => lc.IsActive && lc.NEd > 0).Select(lc => lc.ToDto(forceUnit, momentUnit)).ToList();
 
                         var units = new UnitConversionService();
                         var service = new Ec2NominalCurvatureService(units);
@@ -3038,8 +3108,9 @@ public sealed class InputViewModel : ViewModelBase
 
         foreach (var loadCase in LoadCases.Where(lc => lc.IsActive))
         {
-            if (loadCase.NEd <= 0)
-                warnings.Add($"{loadCase.Name}: NEd is tensile or zero; EC2 column slenderness check is not applicable.");
+            if (loadCase.NEd < 0) continue; // tension case — slenderness not applicable, no warning
+            if (loadCase.NEd == 0)
+                warnings.Add($"{loadCase.Name}: NEd is zero; EC2 column slenderness check is not applicable.");
             if (loadCase.MxTop is null || loadCase.MxBottom is null)
                 warnings.Add($"{loadCase.Name}: Mx Top and Mx Bottom are required because slenderness is enabled.");
             if (loadCase.MyTop is null || loadCase.MyBottom is null)
@@ -3070,28 +3141,95 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(EpsilonUd));
     }
 
+    private double MinimumEccentricityDisplayValue
+        => DisplayUnits.LengthFromMm(20.0, CurrentSectionSizeUnit);
+
+    private double SectionLengthToMemberLengthDisplay(double value)
+    {
+        double valueMm = DisplayUnits.LengthToMm(value, CurrentSectionSizeUnit);
+        return DisplayUnits.LengthFromMm(valueMm, CurrentMemberLengthUnit);
+    }
+
+    private double MemberLengthDisplayToSectionLength(double value)
+    {
+        double valueMm = DisplayUnits.LengthToMm(value, CurrentMemberLengthUnit);
+        return DisplayUnits.LengthFromMm(valueMm, CurrentSectionSizeUnit);
+    }
+
+    private double SectionLengthFromMm(double valueMm)
+        => DisplayUnits.LengthFromMm(valueMm, CurrentSectionSizeUnit);
+
+    private double SectionAreaFromMm2(double valueMm2)
+    {
+        double scale = SectionLengthFromMm(1.0);
+        return valueMm2 * scale * scale;
+    }
+
+    private double SectionInertiaFromMm4(double valueMm4)
+    {
+        double scale = SectionLengthFromMm(1.0);
+        return valueMm4 * scale * scale * scale * scale;
+    }
+
+    private double StressFromMpa(double valueMpa)
+        => DisplayUnits.StressFromMpa(valueMpa, CurrentStressUnit);
+
+    private string FormatStressValue(double valueMpa, int decimals)
+        => StressFromMpa(valueMpa).ToString($"F{decimals}");
+
+    private string FormatLengthValue(double valueMm, int decimals)
+        => $"{SectionLengthFromMm(valueMm).ToString($"F{decimals}")} {LengthLabel}";
+
+    private string FormatAreaValue(double valueMm2, int decimals = 0)
+        => $"{SectionAreaFromMm2(valueMm2).ToString($"N{decimals}")} {AreaLabel}";
+
+    private string FormatLengthNumber(double valueMm, int decimals = 0)
+        => SectionLengthFromMm(valueMm).ToString($"F{decimals}");
+
+    private string FormatAreaNumber(double valueMm2, int decimals = 2)
+        => SectionAreaFromMm2(valueMm2).ToString($"F{decimals}");
+
+    private double SectionAreaPerLengthFromMm2PerMm(double valueMm2PerMm)
+    {
+        double scale = SectionLengthFromMm(1.0);
+        return valueMm2PerMm * scale;
+    }
+
+    private string FormatAreaPerLengthValue(double valueMm2PerMm)
+        => $"{SectionAreaPerLengthFromMm2PerMm(valueMm2PerMm):0.###} {AreaLabel}/{LengthLabel}";
+
+    private string LatexAreaPerLengthUnit => $@"\mathrm{{{LengthLabel}^2/{LengthLabel}}}";
+
+    private string FormatLinearWeight(double kgPerMeter)
+    {
+        if (UnitSystem == UnitSystem.Metric)
+        {
+            return $"{kgPerMeter:F2} {CurrentUnitProfile.LinearWeightLabel}";
+        }
+
+        double poundsPerFoot = kgPerMeter * PoundsPerKilogram / FeetPerMeter;
+        return $"{poundsPerFoot:F2} {CurrentUnitProfile.LinearWeightLabel}";
+    }
+
     private double StressInputToMpa(double value)
-        => UnitSystem == UnitSystem.Metric ? value : value * 6.894757293168;
+        => DisplayUnits.StressToMpa(value, CurrentStressUnit);
 
     private double ForceInputToN(double value)
-        => UnitSystem == UnitSystem.Metric ? value * 1000.0 : value * 4448.2216152605;
+        => DisplayUnits.ForceToN(value, CurrentForceUnit);
 
     private double CurrentSectionWidthMm()
     {
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
-        return (IsCircularSection ? Diameter : Width) * factor;
+        return DisplayUnits.LengthToMm(IsCircularSection ? Diameter : Width, CurrentSectionSizeUnit);
     }
 
     private double CurrentSectionHeightMm()
     {
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
-        return (IsCircularSection ? Diameter : Height) * factor;
+        return DisplayUnits.LengthToMm(IsCircularSection ? Diameter : Height, CurrentSectionSizeUnit);
     }
 
     private double RebarSpreadMm(IEnumerable<double> values, double fallbackMm)
     {
-        double factor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
-        var list = values.Select(v => v * factor).ToList();
+        var list = values.Select(v => DisplayUnits.LengthToMm(v, CurrentSectionSizeUnit)).ToList();
         if (list.Count < 2)
         {
             return fallbackMm;
@@ -3139,13 +3277,15 @@ public sealed class InputViewModel : ViewModelBase
         return (ixxC, iyyC);
     }
 
-    private static string FormatInertia(double value)
+    private string FormatInertia(double valueMm4)
     {
-        if (value <= 0) return "—";
-        if (value >= 1e12) return $"{value / 1e12:F3}×10¹² mm⁴";
-        if (value >= 1e9) return $"{value / 1e9:F3}×10⁹ mm⁴";
-        if (value >= 1e6) return $"{value / 1e6:F3}×10⁶ mm⁴";
-        return $"{value:N0} mm⁴";
+        if (valueMm4 <= 0) return "—";
+        double value = SectionInertiaFromMm4(valueMm4);
+        string label = CurrentUnitProfile.SectionInertiaLabel;
+        if (value >= 1e12) return $"{value / 1e12:F3}×10¹² {label}";
+        if (value >= 1e9) return $"{value / 1e9:F3}×10⁹ {label}";
+        if (value >= 1e6) return $"{value / 1e6:F3}×10⁶ {label}";
+        return $"{value:N0} {label}";
     }
 
     public ColumnInputSnapshot ToSnapshot() => new()
@@ -3298,9 +3438,10 @@ public sealed class InputViewModel : ViewModelBase
 
         LoadCases.Clear();
         nextLoadCaseIndex = 2;
+        var snapshotLoadCases = new System.Collections.Generic.List<LoadCaseViewModel>(s.LoadCases.Count);
         foreach (var lc in s.LoadCases)
         {
-            LoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive)
+            snapshotLoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive)
             {
                 Vux = lc.Vux,
                 Vuy = lc.Vuy,
@@ -3320,6 +3461,7 @@ public sealed class InputViewModel : ViewModelBase
             if (int.TryParse(lc.Label.Replace("LC", ""), out var n) && n >= nextLoadCaseIndex)
                 nextLoadCaseIndex = n + 1;
         }
+        LoadCases.AddRange(snapshotLoadCases);
 
         if (LoadCases.Count == 0) AddPrimaryLoadCase();
         SelectedLoadCase = LoadCases.FirstOrDefault();

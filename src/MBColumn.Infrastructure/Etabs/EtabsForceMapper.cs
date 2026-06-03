@@ -28,6 +28,8 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
                 LoadCombo = f.LoadCombination,
                 Location = location,
                 P = MapAxialForce(f.P, forceSource),
+                Vx = f.V2,
+                Vy = f.V3,
                 Mx = f.M2,
                 My = f.M3
             });
@@ -56,6 +58,8 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
                 LoadCombo = f.LoadCombination,
                 Location = location,
                 P = MapAxialForce(f.P, forceSource),
+                Vx = f.V2,
+                Vy = f.V3,
                 Mx = f.M2,
                 My = f.M3
             });
@@ -69,6 +73,10 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
         return rows.Select((r, i) =>
         {
             endMoments.TryGetValue(RowGroupKey(r), out var e);
+            double? mxTop    = e.HasValue ? e.Value.TopMx : null;
+            double? mxBottom = e.HasValue ? e.Value.BotMx : null;
+            double? myTop    = e.HasValue ? e.Value.TopMy : null;
+            double? myBottom = e.HasValue ? e.Value.BotMy : null;
             return new SnapshotLoadCase
             {
                 Id = $"etabs_{i + 1}",
@@ -82,10 +90,18 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
                 Pu = r.P,
                 Mux = r.Mx,
                 Muy = r.My,
-                MxTop = e.HasValue ? e.Value.TopMx : null,
-                MxBottom = e.HasValue ? e.Value.BotMx : null,
-                MyTop = e.HasValue ? e.Value.TopMy : null,
-                MyBottom = e.HasValue ? e.Value.BotMy : null,
+                Vux = r.Vx,
+                Vuy = r.Vy,
+                MxTop    = mxTop,
+                MxBottom = mxBottom,
+                MyTop    = myTop,
+                MyBottom = myBottom,
+                MxUsed = mxTop.HasValue && mxBottom.HasValue
+                    ? Max(Abs(mxTop.Value), Abs(mxBottom.Value))
+                    : null,
+                MyUsed = myTop.HasValue && myBottom.HasValue
+                    ? Max(Abs(myTop.Value), Abs(myBottom.Value))
+                    : null,
                 IsActive = true
             };
         }).ToList();

@@ -174,7 +174,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
 
         // Phase 1: collect matching candidates with raw station string
         var candidates = new List<(EtabsColumnImportDto Col, string Combo, string RawStation,
-                                   double P, double M2, double M3, double V2)>();
+                                   double P, double M2, double M3, double V2, double V3)>();
 
         foreach (var record in database.ColumnForces.Records)
         {
@@ -194,13 +194,14 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
                 ParseDouble(GetFieldAny(f, "P", "Pu")),
                 ParseDouble(GetFieldAny(f, "M2", "M2 Top", "M2-Top", "Mu2")),
                 ParseDouble(GetFieldAny(f, "M3", "M3 Top", "M3-Top", "Mu3")),
-                ParseDouble(GetFieldAny(f, "V2", "Vu2"))));
+                ParseDouble(GetFieldAny(f, "V2", "Vu2")),
+                ParseDouble(GetFieldAny(f, "V3", "Vu3"))));
         }
 
         var results = new List<EtabsForceResultDto>(candidates.Count);
         var seen    = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var (col, combo, rawStation, p, m2, m3, v2) in candidates)
+        foreach (var (col, combo, rawStation, p, m2, m3, v2, v3) in candidates)
         {
             var station = TryParseDouble(rawStation) is double sv
                 ? sv.ToString("G6", CultureInfo.InvariantCulture)
@@ -216,7 +217,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
-                0.0,
+                SMath.Round(v3 * forceToKn,   3),
                 station,
                 "Design Force"));
         }

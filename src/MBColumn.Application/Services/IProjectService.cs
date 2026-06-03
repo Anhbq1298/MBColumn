@@ -5,6 +5,7 @@ namespace MBColumn.Application.Services;
 
 public sealed record ColumnRecord(int Id, int? GroupId, string Name, int SortOrder);
 public sealed record GroupRecord(int Id, string Name, int SortOrder);
+public sealed record ColumnInputChangedEventArgs(int ColumnId, string? PreviousInputHash, string CurrentInputHash);
 
 public interface IProjectService
 {
@@ -35,12 +36,15 @@ public interface IProjectService
 
     void SaveColumnInput(int columnId, ColumnInputSnapshot snapshot);
     ColumnInputSnapshot? LoadColumnInput(int columnId);
+    string ComputeColumnInputHash(ColumnInputSnapshot snapshot);
 
     void SaveColumnResult(int columnId, CalculationResultDto result);
     CalculationResultDto? LoadColumnResult(int columnId);
+    bool HasColumnResult(int columnId);
 
     void MarkModified();
 
     event EventHandler? ProjectChanged;
     event EventHandler? ColumnsChanged;
+    event EventHandler<ColumnInputChangedEventArgs>? ColumnInputChanged;
 }

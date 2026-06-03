@@ -1,16 +1,19 @@
 using MBColumn.Application.DTOs;
 using MBColumn.Domain.Enums;
+using MBColumn.Domain.Units;
+using MBColumn.Infrastructure.Math;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
 
 /// <summary>
 /// Display ViewModel for the governing shear check result (Results tab sidebar).
-/// All force values in the user's display unit; lengths/stresses in mm / MPa.
+/// Force values arrive in display units; length/stress intermediates arrive in base units and are formatted through UnitProfile.
 /// </summary>
 public sealed class ShearResultViewModel : ViewModelBase
 {
     private ShearResultDto? dto;
     private IReadOnlyList<ShearEnvelopeSummaryRowViewModel> envelopeSummaryRows = [];
+    private static readonly UnitConversionService DisplayUnits = new();
 
     public void Load(ShearResultDto? result)
         => Load(result, []);
@@ -27,22 +30,31 @@ public sealed class ShearResultViewModel : ViewModelBase
     public bool HasEnvelopeSummary => envelopeSummaryRows.Count > 0;
     public bool HasDemand => dto?.HasDemand == true;
     public bool HasLinks => dto?.HasLinks == true;
-    public string ForceUnit => dto?.ForceUnit ?? "kN";
+    private UnitProfile CurrentUnitProfile =>
+        string.Equals(dto?.ForceUnit, "kip", StringComparison.OrdinalIgnoreCase)
+            ? UnitProfile.Imperial
+            : UnitProfile.Metric;
+
+    public string ForceUnit => dto?.ForceUnit ?? CurrentUnitProfile.ForceLabel;
+    public string LengthUnitLabel => CurrentUnitProfile.SectionSizeLabel;
+    public string AreaUnitLabel => CurrentUnitProfile.RebarAreaLabel;
+    public string StressUnitLabel => CurrentUnitProfile.StressLabel;
+    public string AswsUnitLabel => $"{AreaUnitLabel}/{LengthUnitLabel}";
 
     public bool IsCircularSection => dto?.SectionShape == SectionShapeType.Circular;
     public bool IsRectangularSection => !IsCircularSection;
     public bool IsCircularHoop => dto?.IsCircularHoop == true;
-    public string DiameterText => dto is null ? "-" : $"{dto.DiameterMm:F0} mm";
+    public string DiameterText => dto is null ? "-" : $"{FormatLength(dto.DiameterMm)} {LengthUnitLabel}";
     public string CircularBwNote => dto is null ? "" :
-        $"EC2 6.2.2(5): bw = 0.8D = 0.8 x {dto.DiameterMm:F0} = {dto.BwXMm:F0} mm";
+        $"EC2 6.2.2(5): bw = 0.8D = 0.8 x {FormatLength(dto.DiameterMm)} = {FormatLength(dto.BwXMm)} {LengthUnitLabel}";
 
-    public string BwXText => dto is null ? "-" : $"{dto.BwXMm:F0} mm";
-    public string BwYText => dto is null ? "-" : $"{dto.BwYMm:F0} mm";
-    public string DEffXText => dto is null ? "-" : $"{dto.DEffXMm:F0} mm";
-    public string DEffYText => dto is null ? "-" : $"{dto.DEffYMm:F0} mm";
+    public string BwXText => dto is null ? "-" : $"{FormatLength(dto.BwXMm)} {LengthUnitLabel}";
+    public string BwYText => dto is null ? "-" : $"{FormatLength(dto.BwYMm)} {LengthUnitLabel}";
+    public string DEffXText => dto is null ? "-" : $"{FormatLength(dto.DEffXMm)} {LengthUnitLabel}";
+    public string DEffYText => dto is null ? "-" : $"{FormatLength(dto.DEffYMm)} {LengthUnitLabel}";
     public string KFactorXText => dto is null ? "-" : $"{dto.KFactorX:F3}";
     public string KFactorYText => dto is null ? "-" : $"{dto.KFactorY:F3}";
-    public string SigCpText => dto is null ? "-" : $"{dto.SigCpMpa:F3} MPa";
+    public string SigCpText => dto is null ? "-" : $"{FormatStress(dto.SigCpMpa, 3)} {StressUnitLabel}";
 
     public string VEdXText => dto is null ? "-" : $"{dto.VEdXDisplay:F1}";
     public string VRdcXText => dto is null ? "-" : $"{dto.VRdcXDisplay:F1}";
@@ -53,11 +65,11 @@ public sealed class ShearResultViewModel : ViewModelBase
     public bool IsLinksReqX => dto?.LinksRequiredX == true;
     public bool IsLinksReqY => dto?.LinksRequiredY == true;
 
-    public string AswSXText => dto is null || !HasLinks ? "-" : $"{dto.AswSX:F4} mm2/mm";
-    public string AswSYText => dto is null || !HasLinks ? "-" : $"{dto.AswSY:F4} mm2/mm";
-    public string FywdText => dto is null || !HasLinks ? "-" : $"{dto.FywdMpa:F1} MPa";
-    public string ZXText => dto is null || !HasLinks ? "-" : $"{dto.ZXMm:F0} mm";
-    public string ZYText => dto is null || !HasLinks ? "-" : $"{dto.ZYMm:F0} mm";
+    public string AswSXText => dto is null || !HasLinks ? "-" : $"{FormatAsws(dto.AswSX)} {AswsUnitLabel}";
+    public string AswSYText => dto is null || !HasLinks ? "-" : $"{FormatAsws(dto.AswSY)} {AswsUnitLabel}";
+    public string FywdText => dto is null || !HasLinks ? "-" : $"{FormatStress(dto.FywdMpa, 1)} {StressUnitLabel}";
+    public string ZXText => dto is null || !HasLinks ? "-" : $"{FormatLength(dto.ZXMm)} {LengthUnitLabel}";
+    public string ZYText => dto is null || !HasLinks ? "-" : $"{FormatLength(dto.ZYMm)} {LengthUnitLabel}";
     public string CotThetaXText => dto is null || dto.CotThetaX == 0 ? "-"
         : $"{dto.CotThetaX:F2} (theta={ThetaDeg(dto.CotThetaX):F1} deg)";
     public string CotThetaYText => dto is null || dto.CotThetaY == 0 ? "-"
@@ -76,8 +88,8 @@ public sealed class ShearResultViewModel : ViewModelBase
         ? "Strut crushing - increase bw or fck"
         : "";
 
-    public string AswSMinReqdXText => dto is null || !HasLinks ? "-" : $"{dto.AswSMinRequiredX:F4} mm2/mm";
-    public string AswSMinReqdYText => dto is null || !HasLinks ? "-" : $"{dto.AswSMinRequiredY:F4} mm2/mm";
+    public string AswSMinReqdXText => dto is null || !HasLinks ? "-" : $"{FormatAsws(dto.AswSMinRequiredX)} {AswsUnitLabel}";
+    public string AswSMinReqdYText => dto is null || !HasLinks ? "-" : $"{FormatAsws(dto.AswSMinRequiredY)} {AswsUnitLabel}";
     public bool AswSMinPassX => dto?.AswSMinPassX != false;
     public bool AswSMinPassY => dto?.AswSMinPassY != false;
     public bool AnyMinAswSFail => dto?.AnyMinAswSFail == true;
@@ -98,9 +110,9 @@ public sealed class ShearResultViewModel : ViewModelBase
     public string ConcreteYSubLatex => BuildConcreteSubLatex(isX: false);
     public string LinkAreaLatex => @"A_h=\frac{\pi\phi_h^2}{4}";
     public string LinkAreaSubLatex => dto is null || !HasLinks ? "" :
-        $@"A_h=\frac{{\pi({F(dto.LinkAhMm2 > 0 ? System.Math.Sqrt(4.0 * dto.LinkAhMm2 / System.Math.PI) : 0, 1)})^2}}{{4}}={F(dto.LinkAhMm2, 2)}\;\mathrm{{mm^2}}";
+        $@"A_h=\frac{{\pi({FormatLength(dto.LinkAhMm2 > 0 ? System.Math.Sqrt(4.0 * dto.LinkAhMm2 / System.Math.PI) : 0)})^2}}{{4}}={FormatArea(dto.LinkAhMm2)}\;{LatexAreaUnit}";
     public string LinkSteelSubLatex => dto is null || !HasLinks ? "" :
-        $@"s={F(dto.LinkSpacingMm, 0)}\;\mathrm{{mm}},\qquad f_{{ywd}}=\frac{{f_{{yk}}}}{{\gamma_s}}=\frac{{{F(dto.FywkMpa, 1)}}}{{1.15}}={F(dto.FywdMpa, 1)}\;\mathrm{{MPa}}";
+        $@"s={FormatLength(dto.LinkSpacingMm)}\;{LatexLengthUnit},\qquad f_{{ywd}}=\frac{{f_{{yk}}}}{{\gamma_s}}=\frac{{{FormatStress(dto.FywkMpa, 1)}}}{{1.15}}={FormatStress(dto.FywdMpa, 1)}\;{LatexStressUnit}";
     public string CircularHoopFormulaLatex => @"V_{Rd,s}=\frac{\pi}{2}\frac{A_h}{s}D'f_{ywd}\cot\theta";
     public string CircularHoopXSubLatex => BuildCircularHoopSubLatex(isX: true);
     public string CircularHoopYSubLatex => BuildCircularHoopSubLatex(isX: false);
@@ -142,6 +154,46 @@ public sealed class ShearResultViewModel : ViewModelBase
     private static string F(double value, int digits) =>
         value.ToString($"F{digits}", System.Globalization.CultureInfo.InvariantCulture);
 
+    private double DisplayLength(double valueMm)
+        => DisplayUnits.LengthFromMm(valueMm, CurrentUnitProfile.SectionSizeUnit);
+
+    private double DisplayArea(double valueMm2)
+    {
+        double scale = DisplayLength(1.0);
+        return valueMm2 * scale * scale;
+    }
+
+    private double DisplayAsws(double valueMm2PerMm)
+        => valueMm2PerMm * DisplayLength(1.0);
+
+    private double DisplayStress(double valueMpa)
+        => DisplayUnits.StressFromMpa(valueMpa, CurrentUnitProfile.StressUnit);
+
+    private string FormatLength(double valueMm)
+        => CurrentUnitProfile.SectionSizeUnit == LengthUnit.Millimeter
+            ? F(DisplayLength(valueMm), 0)
+            : F(DisplayLength(valueMm), 2);
+
+    private string FormatArea(double valueMm2)
+        => CurrentUnitProfile.SectionSizeUnit == LengthUnit.Millimeter
+            ? F(DisplayArea(valueMm2), 2)
+            : F(DisplayArea(valueMm2), 4);
+
+    private string FormatAsws(double valueMm2PerMm)
+        => CurrentUnitProfile.SectionSizeUnit == LengthUnit.Millimeter
+            ? F(DisplayAsws(valueMm2PerMm), 4)
+            : F(DisplayAsws(valueMm2PerMm), 5);
+
+    private string FormatStress(double valueMpa, int metricDigits)
+        => CurrentUnitProfile.StressUnit == StressUnit.MPa
+            ? F(DisplayStress(valueMpa), metricDigits)
+            : F(DisplayStress(valueMpa), Math.Max(metricDigits, 2));
+
+    private string LatexLengthUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.SectionSize);
+    private string LatexAreaUnit => $@"\mathrm{{{LengthUnitLabel}^2}}";
+    private string LatexAswsUnit => $@"\mathrm{{{LengthUnitLabel}^2/{LengthUnitLabel}}}";
+    private string LatexStressUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.Stress);
+
     private string BuildConcreteSubLatex(bool isX)
     {
         if (dto is null) return "";
@@ -151,7 +203,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double rho = isX ? dto.RhoLX : dto.RhoLY;
         double v = isX ? dto.VRdcXDisplay : dto.VRdcYDisplay;
         string axis = isX ? "x" : "y";
-        return $@"k={F(k, 3)},\;\rho_l={F(rho, 4)},\;b_w={F(bw, 0)}\;\mathrm{{mm}},\;d={F(d, 0)}\;\mathrm{{mm}}\Rightarrow V_{{Rd,c}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"k={F(k, 3)},\;\rho_l={F(rho, 4)},\;b_w={FormatLength(bw)}\;{LatexLengthUnit},\;d={FormatLength(d)}\;{LatexLengthUnit}\Rightarrow V_{{Rd,c}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildCircularHoopSubLatex(bool isX)
@@ -160,7 +212,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
         double v = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
         string axis = isX ? "x" : "y";
-        return $@"V_{{Rd,s}}=\frac{{\pi}}{{2}}\frac{{{F(dto.LinkAhMm2, 2)}}}{{{F(dto.LinkSpacingMm, 0)}}}({F(dto.CircularHoopCentrelineDiameterMm, 0)})({F(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"V_{{Rd,s}}=\frac{{\pi}}{{2}}\frac{{{FormatArea(dto.LinkAhMm2)}}}{{{FormatLength(dto.LinkSpacingMm)}}}({FormatLength(dto.CircularHoopCentrelineDiameterMm)})({FormatStress(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildRectangularLinkSubLatex(bool isX)
@@ -170,7 +222,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double z = isX ? dto.ZXMm : dto.ZYMm;
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
         double v = isX ? dto.VRdsXDisplay : dto.VRdsYDisplay;
-        return $@"V_{{Rd,s}}={F(aswS, 4)}({F(z, 0)})({F(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"V_{{Rd,s}}={FormatAsws(aswS)}({FormatLength(z)})({FormatStress(dto.FywdMpa, 1)})({F(cot, 2)})={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildRectangularLinkInputSubLatex(bool isX)
@@ -179,7 +231,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double aswS = isX ? dto.AswSX : dto.AswSY;
         double z = isX ? dto.ZXMm : dto.ZYMm;
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
-        return $@"\frac{{A_{{sw}}}}{{s}}={F(aswS, 4)}\;\mathrm{{mm^2/mm}},\quad z={F(z, 0)}\;\mathrm{{mm}},\quad \cot\theta={F(cot, 2)}";
+        return $@"\frac{{A_{{sw}}}}{{s}}={FormatAsws(aswS)}\;{LatexAswsUnit},\quad z={FormatLength(z)}\;{LatexLengthUnit},\quad \cot\theta={F(cot, 2)}";
     }
 
     private string BuildVRdMaxSubLatex(bool isX)
@@ -190,7 +242,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double cot = isX ? dto.CotThetaX : dto.CotThetaY;
         double v = isX ? dto.VRdMaxXDisplay : dto.VRdMaxYDisplay;
         string axis = isX ? "x" : "y";
-        return $@"b_w={F(bw, 0)},\;z={F(z, 0)},\;f_{{cd}}={F(dto.FcdMpa, 2)},\;\cot\theta={F(cot, 2)}\Rightarrow V_{{Rd,max}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
+        return $@"b_w={FormatLength(bw)},\;z={FormatLength(z)},\;f_{{cd}}={FormatStress(dto.FcdMpa, 2)},\;\cot\theta={F(cot, 2)}\Rightarrow V_{{Rd,max}}={F(v, 1)}\;\mathrm{{{ForceUnit}}}";
     }
 
     private string BuildMinAswSubLatex(bool isX)
@@ -200,7 +252,7 @@ public sealed class ShearResultViewModel : ViewModelBase
         double req = isX ? dto.AswSMinRequiredX : dto.AswSMinRequiredY;
         double prov = isX ? dto.AswSX : dto.AswSY;
         string axis = isX ? "x" : "y";
-        return $@"\frac{{A_{{sw}}}}{{s}}_{{min}}=\frac{{0.08\sqrt{{{F(dto.FckMpa, 1)}}}}}{{{F(dto.FywkMpa, 1)}}}({F(bw, 0)})={F(req, 4)}\;\mathrm{{mm^2/mm}},\quad \frac{{A_{{sw}}}}{{s}}={F(prov, 4)}";
+        return $@"\frac{{A_{{sw}}}}{{s}}_{{min}}=\frac{{0.08\sqrt{{{FormatStress(dto.FckMpa, 1)}}}}}{{{FormatStress(dto.FywkMpa, 1)}}}({FormatLength(bw)})={FormatAsws(req)}\;{LatexAswsUnit},\quad \frac{{A_{{sw}}}}{{s}}={FormatAsws(prov)}";
     }
 
     private string BuildUtilSubLatex(bool isX)
