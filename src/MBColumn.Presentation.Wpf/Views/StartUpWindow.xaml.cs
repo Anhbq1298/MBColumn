@@ -115,8 +115,10 @@ public partial class StartUpWindow : Window
             using var conn = new SqliteConnection(connectionString);
             conn.Open();
 
-            var projectName = conn.QuerySingleOrDefault<string>(
-                "SELECT Name FROM Project LIMIT 1") ?? Path.GetFileNameWithoutExtension(filePath);
+            var project = conn.QuerySingleOrDefault<ProjectPreviewRow>(
+                "SELECT Name FROM Project LIMIT 1");
+
+            var projectName = project?.Name ?? Path.GetFileNameWithoutExtension(filePath);
 
             var columns = conn.Query<string>(
                 "SELECT Name FROM Column ORDER BY SortOrder, Id").ToList();
@@ -132,6 +134,7 @@ public partial class StartUpWindow : Window
 
             PreviewColumnsList.ItemsSource = columns;
             TxtPreviewColCount.Text = $"Sections ({columns.Count})";
+
         }
         catch (Exception ex)
         {
@@ -146,6 +149,11 @@ public partial class StartUpWindow : Window
         PreviewPanel.Visibility = Visibility.Collapsed;
         NoSelectionText.Visibility = Visibility.Visible;
         NoSelectionText.Text = "Select a recent project to preview its details and sections.";
+    }
+
+    private sealed class ProjectPreviewRow
+    {
+        public string Name { get; set; } = "";
     }
 
     private void BtnNew_Click(object? sender, RoutedEventArgs e)

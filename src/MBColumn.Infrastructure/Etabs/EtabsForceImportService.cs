@@ -28,22 +28,14 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var originalUnits = model.GetPresentUnits();
-        var (targetUnits, forceFactor, _, momentFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
+        // GetTableForDisplayArray returns data in database units regardless of SetPresentUnits
+        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
-        try
-        {
-            model.SetPresentUnits(targetUnits);
-            ConfigureOutput(model, loadCombinations);
-
-            var selectedComboSet = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
-
-            return QueryDesignForcesTable(model, columns, selectedComboSet, forceFactor, momentFactor);
-        }
-        finally
-        {
-            model.SetPresentUnits(originalUnits);
-        }
+        ConfigureOutput(model, loadCombinations);
+        var selectedComboSet = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+        return QueryDesignForcesTable(model, columns, selectedComboSet, forceFactor, momentFactor);
     }
 
     public IReadOnlyList<EtabsForceResultDto> GetPierForces(
@@ -57,25 +49,16 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var originalUnits = model.GetPresentUnits();
-        var (targetUnits, forceFactor, _, momentFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
+        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
-        try
-        {
-            model.SetPresentUnits(targetUnits);
-            ConfigureOutput(model, loadCombinations);
-
-            var requestedPiers = new HashSet<string>(
-                piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
-                StringComparer.OrdinalIgnoreCase);
-            var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
-
-            return QueryPierDesignForcesTable(model, requestedPiers, selectedCombos, forceFactor, momentFactor);
-        }
-        finally
-        {
-            model.SetPresentUnits(originalUnits);
-        }
+        ConfigureOutput(model, loadCombinations);
+        var requestedPiers = new HashSet<string>(
+            piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
+            StringComparer.OrdinalIgnoreCase);
+        var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+        return QueryPierDesignForcesTable(model, requestedPiers, selectedCombos, forceFactor, momentFactor);
     }
 
     public IReadOnlyList<EtabsForceResultDto> GetElementForces(
@@ -89,21 +72,13 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (columns.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var originalUnits = model.GetPresentUnits();
-        var (targetUnits, forceFactor, lengthFactor, momentFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
+        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
-        try
-        {
-            model.SetPresentUnits(targetUnits);
-            ConfigureOutput(model, loadCombinations);
-
-            var selectedComboSet = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
-            return QueryElementForcesTable(model, columns, selectedComboSet, forceFactor, momentFactor, lengthFactor);
-        }
-        finally
-        {
-            model.SetPresentUnits(originalUnits);
-        }
+        ConfigureOutput(model, loadCombinations);
+        var selectedComboSet = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+        return QueryElementForcesTable(model, columns, selectedComboSet, forceFactor, momentFactor, lengthFactor);
     }
 
     public IReadOnlyList<EtabsForceResultDto> GetPierElementForces(
@@ -117,25 +92,16 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var originalUnits = model.GetPresentUnits();
-        var (targetUnits, forceFactor, _, momentFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
+        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
-        try
-        {
-            model.SetPresentUnits(targetUnits);
-            ConfigureOutput(model, loadCombinations);
-
-            var requestedPiers = new HashSet<string>(
-                piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
-                StringComparer.OrdinalIgnoreCase);
-            var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
-
-            return QueryPierElementForcesTable(model, requestedPiers, selectedCombos, forceFactor, momentFactor);
-        }
-        finally
-        {
-            model.SetPresentUnits(originalUnits);
-        }
+        ConfigureOutput(model, loadCombinations);
+        var requestedPiers = new HashSet<string>(
+            piers.Select(x => $"{x.PierLabel.Trim()}|{x.StoryName.Trim()}"),
+            StringComparer.OrdinalIgnoreCase);
+        var selectedCombos = new HashSet<string>(loadCombinations, StringComparer.OrdinalIgnoreCase);
+        return QueryPierElementForcesTable(model, requestedPiers, selectedCombos, forceFactor, momentFactor);
     }
 
     private static string GetAvailableTablesErrorMsg(cSapModel model, string label)

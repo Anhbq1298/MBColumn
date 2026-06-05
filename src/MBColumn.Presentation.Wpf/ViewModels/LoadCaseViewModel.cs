@@ -50,8 +50,11 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private string story = "";
     private string station = "";
     private string source = "Manual";
+    private double? memberLengthOverrideMm;
+    private readonly double lengthDisplayScale;
 
-    public LoadCaseViewModel(string id, string name, double pu, double mux, double muy, bool isActive = true)
+    public LoadCaseViewModel(string id, string name, double pu, double mux, double muy, bool isActive = true,
+        MBColumn.Domain.Enums.UnitSystem unitSystem = MBColumn.Domain.Enums.UnitSystem.Metric)
     {
         this.id = id;
         this.name = name;
@@ -63,6 +66,8 @@ public sealed class LoadCaseViewModel : ViewModelBase
         this.myTop = muy;
         this.myBottom = muy;
         this.isActive = isActive;
+        // mm → m for metric; mm → ft for imperial (1 ft = 304.8 mm)
+        lengthDisplayScale = unitSystem == MBColumn.Domain.Enums.UnitSystem.Metric ? 0.001 : 1.0 / 304.8;
     }
 
     public string Id { get => id; set => Set(ref id, value); }
@@ -210,6 +215,29 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string Station { get => station; set => Set(ref station, value); }
     public string Source { get => source; set => Set(ref source, value); }
 
+    /// <summary>Per-case member length in the user's member-length display unit (m or ft). Null = use global length.</summary>
+    public double? MemberLengthOverrideDisplay
+    {
+        get => memberLengthOverrideMm.HasValue ? memberLengthOverrideMm.Value * lengthDisplayScale : (double?)null;
+        set
+        {
+            var mm = value.HasValue ? value.Value / lengthDisplayScale : (double?)null;
+            if (Set(ref memberLengthOverrideMm, mm))
+                Raise(nameof(MemberLengthOverrideDisplay));
+        }
+    }
+
+    /// <summary>Per-case member length in mm (internal unit). Null = use global length.</summary>
+    public double? MemberLengthOverrideMm
+    {
+        get => memberLengthOverrideMm;
+        set
+        {
+            if (Set(ref memberLengthOverrideMm, value))
+                Raise(nameof(MemberLengthOverrideDisplay));
+        }
+    }
+
     public LoadCaseDto ToDto(ForceUnit forceUnit, MomentUnit momentUnit)
         => new(Id, Name, Pu, Mux, Muy, IsActive, forceUnit, momentUnit)
         {
@@ -220,7 +248,8 @@ public sealed class LoadCaseViewModel : ViewModelBase
             MyTop = MyTop,
             MyBottom = MyBottom,
             MxUsed = MxUsed,
-            MyUsed = MyUsed
+            MyUsed = MyUsed,
+            MemberLengthOverrideMm = memberLengthOverrideMm
         };
 
     public void ClearEc2SlendernessResults()

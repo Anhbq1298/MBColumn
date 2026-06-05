@@ -531,6 +531,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **Migration005_DemandCase** | Represents the Migration005_DemandCase class. Key methods: Apply. Key properties: Version. | `Migration005_DemandCase.cs` |
 | `class` | **Migration006_TopBottomMomentsAndShear** | Represents the Migration006_TopBottomMomentsAndShear class. Key methods: Apply. Key properties: Version. | `Migration006_TopBottomMomentsAndShear.cs` |
 | `class` | **Migration007_ForceSourceMetadata** | /// Adds force source traceability columns to DemandCase so each load case knows /// whether it came from ETABS element forces or design forces, and which combination/location. ///. Key methods: Apply. Key properties: Version. | `Migration007_ForceSourceMetadata.cs` |
+| `class` | **Migration008_EtabsModelInfo** | Represents the Migration008_EtabsModelInfo class. Key methods: Apply. Key properties: Version. | `Migration008_EtabsModelInfo.cs` |
+| `class` | **Migration009_DemandCaseMemberLength** | Represents the Migration009_DemandCaseMemberLength class. Key methods: Apply. Key properties: Version. | `Migration009_DemandCaseMemberLength.cs` |
 | `class` | **MigrationRunner** | Represents the MigrationRunner class. Key methods: Run. | `MigrationRunner.cs` |
 
 ### Rebar
@@ -879,6 +881,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PMDiagramView** | Represents the PMDiagramView class. | `PMDiagramView.xaml.cs` |
 | `class` | **PmmInteractionWindow** | Represents the PmmInteractionWindow class. Key methods: CapturePmChartDataUri, CaptureMmChartDataUri. | `PmmInteractionWindow.xaml.cs` |
 | `class` | **ProjectNameDialog** | Represents the ProjectNameDialog class. Key properties: ProjectName. | `ProjectNameDialog.xaml.cs` |
+| `class` | **ProjectPreviewRow** | Data structure representing a row for ProjectPreview. Key properties: Name. | `StartUpWindow.xaml.cs` |
 | `class` | **RebarComplianceDetailView** | Represents the RebarComplianceDetailView class. | `RebarComplianceDetailView.xaml.cs` |
 | `class` | **RecentFileItem** | Represents the RecentFileItem class. Key properties: FilePath, FileName, FolderPath, LastModified. | `StartUpWindow.xaml.cs` |
 | `class` | **ReportTabView** | Represents the ReportTabView class. | `ReportTabView.xaml.cs` |

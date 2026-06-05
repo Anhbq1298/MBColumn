@@ -5,7 +5,7 @@ namespace MBColumn.Infrastructure.Persistence;
 
 internal static class DatabaseSchema
 {
-    private const int CurrentVersion = 7;
+    private const int CurrentVersion = 9;
     public const string AppVersion = "1.0.0";
 
     private static readonly IReadOnlyList<IDatabaseMigration> s_migrations =
@@ -15,7 +15,9 @@ internal static class DatabaseSchema
         new Migration004_ResultJson(),
         new Migration005_DemandCase(),
         new Migration006_TopBottomMomentsAndShear(),
-        new Migration007_ForceSourceMetadata()
+        new Migration007_ForceSourceMetadata(),
+        new Migration008_EtabsModelInfo(),
+        new Migration009_DemandCaseMemberLength()
     ];
 
     public static void EnsureCreated(SqliteConnection connection, string projectName)

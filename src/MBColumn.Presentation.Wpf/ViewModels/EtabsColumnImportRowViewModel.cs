@@ -72,7 +72,7 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
     public double LengthMm { get; }
     public string LengthDisplay => unitProfile.UnitSystem == UnitSystem.Metric
         ? $"{LengthMm:N0} {unitProfile.SectionSizeLabel}"
-        : $"{LengthMm:N2} {unitProfile.SectionSizeLabel}";
+        : $"{LengthMm / 25.4:N2} {unitProfile.SectionSizeLabel}";
     public string LinkedSection { get; }
     public string Status { get; }
     public bool IsRectangular => SectionType == SectionShapeType.Rectangular;

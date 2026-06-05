@@ -67,7 +67,14 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         var results = new List<Ec2SlendernessLoadCaseResultDto>();
         foreach (var loadCase in loadCases.Where(lc => lc.IsActive))
         {
-            results.Add(CalculateLoadCase(section, sectionValues, concrete, steel, loadCase, l0x, l0y, settings));
+            double? caseL0x = l0x;
+            double? caseL0y = l0y;
+            if (loadCase.MemberLengthOverrideMm is > 0)
+            {
+                caseL0x = settings.Kx is > 0 ? settings.Kx.Value * loadCase.MemberLengthOverrideMm.Value : null;
+                caseL0y = settings.Ky is > 0 ? settings.Ky.Value * loadCase.MemberLengthOverrideMm.Value : null;
+            }
+            results.Add(CalculateLoadCase(section, sectionValues, concrete, steel, loadCase, caseL0x, caseL0y, settings));
         }
 
         warnings.AddRange(results.SelectMany(r => r.Warnings));

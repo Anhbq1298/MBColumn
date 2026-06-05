@@ -2019,6 +2019,19 @@
                                                             Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
                                                             Width="110"
                                                             ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Binding="{Binding MemberLengthOverrideDisplay, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F3}"
+                                                            Width="65"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MemberLengthOverrideHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding NEd, UpdateSourceTrigger=LostFocus, StringFormat=F1}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
@@ -2213,6 +2226,19 @@
                                                             Binding="{Binding Name, UpdateSourceTrigger=LostFocus}"
                                                             Width="110"
                                                             ElementStyle="{StaticResource LeftAlignText}" />
+                                        <DataGridTextColumn Binding="{Binding MemberLengthOverrideDisplay, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F3}"
+                                                            Width="65"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MemberLengthOverrideHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Binding="{Binding NEd, UpdateSourceTrigger=LostFocus, StringFormat=F1}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"

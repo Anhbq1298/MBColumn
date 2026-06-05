@@ -959,11 +959,14 @@ public sealed class MainWindowViewModel : ViewModelBase
                 Explorer.SelectColumnById(lastImportedId.Value);
             }
 
+            if (result.ModelInfo is { } etabsInfo)
+                projectService.SaveEtabsModelInfo(etabsInfo.ModelName, etabsInfo.ModelPath, etabsInfo.PresentUnits, etabsInfo.StoryCount, etabsInfo.PierCount, etabsInfo.FrameObjectCount);
+
             SelectedMainTabIndex = InputTabIndex;
             ValidationMessage = "";
             RaiseStatusProperties();
             var importedTier = result.Sections.Count == 1 ? result.Sections[0] : null;
-            
+
             // Hide progress overlay before showing dialog
             IsImporting = false;
             

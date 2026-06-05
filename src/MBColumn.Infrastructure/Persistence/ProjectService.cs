@@ -364,14 +364,15 @@ public sealed class ProjectService : IProjectService, IDisposable
         foreach (var lc in loadCases)
         {
             conn.Execute(@"
-                INSERT INTO DemandCase (ColumnId, IdString, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive, MxTop, MxBottom, MyTop, MyBottom, MxUsed, MyUsed, Vux, Vuy)
-                VALUES (@cid, @idstr, @label, @orig, @son, @sol, @story, @station, @source, @pu, @mux, @muy, @active, @mxTop, @mxBottom, @myTop, @myBottom, @mxUsed, @myUsed, @vux, @vuy)",
+                INSERT INTO DemandCase (ColumnId, IdString, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive, MxTop, MxBottom, MyTop, MyBottom, MxUsed, MyUsed, Vux, Vuy, MemberLengthOverride)
+                VALUES (@cid, @idstr, @label, @orig, @son, @sol, @story, @station, @source, @pu, @mux, @muy, @active, @mxTop, @mxBottom, @myTop, @myBottom, @mxUsed, @myUsed, @vux, @vuy, @lenOverride)",
                 new {
                     cid = columnId, idstr = lc.Id, label = lc.Label, orig = lc.OriginalLoadCaseName,
                     son = lc.SourceObjectName, sol = lc.SourceObjectLabel, story = lc.Story,
                     station = lc.Station, source = lc.Source, pu = lc.Pu, mux = lc.Mux, muy = lc.Muy, active = lc.IsActive ? 1 : 0,
                     mxTop = lc.MxTop, mxBottom = lc.MxBottom, myTop = lc.MyTop, myBottom = lc.MyBottom,
-                    mxUsed = lc.MxUsed, myUsed = lc.MyUsed, vux = lc.Vux, vuy = lc.Vuy
+                    mxUsed = lc.MxUsed, myUsed = lc.MyUsed, vux = lc.Vux, vuy = lc.Vuy,
+                    lenOverride = lc.MemberLengthOverride
                 }, tx);
         }
 
@@ -394,7 +395,7 @@ public sealed class ProjectService : IProjectService, IDisposable
         if (snapshot.LoadCases.Count == 0)
         {
             var cases = conn.Query<SnapshotLoadCase>(@"
-                SELECT IdString as Id, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive, MxTop, MxBottom, MyTop, MyBottom, MxUsed, MyUsed, Vux, Vuy
+                SELECT IdString as Id, Label, OriginalLoadCaseName, SourceObjectName, SourceObjectLabel, Story, Station, Source, Pu, Mux, Muy, IsActive, MxTop, MxBottom, MyTop, MyBottom, MxUsed, MyUsed, Vux, Vuy, MemberLengthOverride
                 FROM DemandCase WHERE ColumnId = @id", new { id = columnId });
             snapshot.LoadCases.AddRange(cases);
         }
@@ -689,6 +690,27 @@ public sealed class ProjectService : IProjectService, IDisposable
             new { pid = projectId, name, excludeId });
         if (count > 0)
             throw new InvalidOperationException($"Section name '{name}' already exists.");
+    }
+
+    public void SaveEtabsModelInfo(string modelName, string modelPath, string units, int storyCount, int pierCount, int frameCount)
+    {
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        conn.Execute(
+            """
+            UPDATE Project
+            SET EtabsModelName  = @modelName,
+                EtabsModelPath  = @modelPath,
+                EtabsUnits      = @units,
+                EtabsStoryCount = @storyCount,
+                EtabsPierCount  = @pierCount,
+                EtabsFrameCount = @frameCount,
+                ModifiedAt      = @now
+            WHERE Id = (SELECT Id FROM Project LIMIT 1)
+            """,
+            new { modelName, modelPath, units, storyCount, pierCount, frameCount, now = DateTime.UtcNow.ToString("O") });
+        MarkModified();
     }
 
     private sealed class GroupRow { public int Id { get; set; } public string Name { get; set; } = ""; public int SortOrder { get; set; } }

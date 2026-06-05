@@ -135,33 +135,40 @@
                 Background="{DynamicResource PanelBackgroundBrush}"
                 BorderBrush="{DynamicResource BorderGreyBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="16,8">
+                Padding="16,6">
             <DockPanel VerticalAlignment="Center">
 
                 <!-- Right: Connection controls -->
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                <StackPanel DockPanel.Dock="Right" Orientation="Vertical"
                             VerticalAlignment="Center" Margin="0,0,4,0">
-                    <Button Content="Connect"
-                            Command="{Binding ConnectCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Padding="10,4"
-                            MinHeight="28"
-                            FontSize="{StaticResource FontSizeBody}"
-                            ToolTip="{Binding UnitConversionMessage}" />
-                    <Button Content="Disconnect"
-                            Command="{Binding DisconnectCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Padding="10,4"
-                            MinHeight="28"
-                            FontSize="{StaticResource FontSizeBody}"
-                            Margin="6,0,0,0" />
-                    <TextBlock Text="{Binding ModelName}"
-                               VerticalAlignment="Center"
-                               FontSize="{StaticResource FontSizeBody}"
-                               Foreground="{DynamicResource TextDarkBrush}"
-                               Margin="10,0,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
+
+                    <!-- Row 1: Connect / Reconnect / Disconnect -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <Button Content="Connect"
+                                Command="{Binding ConnectCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,3" MinHeight="26"
+                                FontSize="{StaticResource FontSizeBody}"
+                                ToolTip="{Binding UnitConversionMessage}" />
+                        <Button Content="Reconnect"
+                                Command="{Binding ReconnectCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,3" MinHeight="26"
+                                FontSize="{StaticResource FontSizeBody}"
+                                Margin="6,0,0,0"
+                                ToolTip="Disconnect and reconnect to ETABS, reloading all model data" />
+                        <Button Content="Disconnect"
+                                Command="{Binding DisconnectCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="10,3" MinHeight="26"
+                                FontSize="{StaticResource FontSizeBody}"
+                                Margin="6,0,0,0" />
+                    </StackPanel>
+
+                    <!-- Row 2: Reload actions (only when connected) -->
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
                                 <Setter Property="Visibility" Value="Collapsed" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsConnected}" Value="True">
@@ -169,9 +176,69 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                        </StackPanel.Style>
+                        <Button Content="Load Story Definition"
+                                Command="{Binding ReloadStoryDefinitionsCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="8,3" MinHeight="24"
+                                FontSize="{StaticResource FontSizeBody}"
+                                ToolTip="Reload story levels from the connected ETABS model" />
+                        <Button Content="Load Column / Pier Connectivity"
+                                Command="{Binding ReloadColumnConnectivityCommand}"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Padding="8,3" MinHeight="24"
+                                FontSize="{StaticResource FontSizeBody}"
+                                Margin="6,0,0,0"
+                                ToolTip="Reload frame columns and pier labels from the connected ETABS model" />
+                    </StackPanel>
                 </StackPanel>
+
+                <!-- Model info strip (visible when connected) -->
+                <Border DockPanel.Dock="Right"
+                        Background="{DynamicResource LightBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderGreyBrush}"
+                        BorderThickness="1" CornerRadius="3"
+                        Padding="8,4" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Model:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding ModelName}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryNavyBrush}" VerticalAlignment="Center" MaxWidth="160" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="4" Text="Units:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="6" Text="{Binding PresentUnits}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="8" Text="Stories:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="10" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" VerticalAlignment="Center">
+                            <Run Text="{Binding StoryCount, Mode=OneWay}" /><Run Text=" / " /><Run Text="{Binding PierCount, Mode=OneWay}" /><Run Text=" piers" />
+                        </TextBlock>
+                        <TextBlock Grid.Column="12" Text="Frames:" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="14" Text="{Binding FrameObjectCount}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
 
                 <!-- Center: Step buttons -->
                 <StackPanel Orientation="Horizontal"
@@ -321,9 +388,157 @@
         </Border>
 
         <!-- ═══════════════════════════════════════════════════════
+             Content area: Model Info Sidebar + Flows
+             ═══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ── ETABS Model Info Sidebar ── -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource PanelBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderGreyBrush}"
+                    BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="20" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Info content panel -->
+                    <ScrollViewer Grid.Column="0"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Width="180" Margin="12,12,4,12" VerticalAlignment="Top">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsModelInfoPanelOpen}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <TextBlock Text="ETABS Model"
+                                       FontWeight="SemiBold" FontSize="12"
+                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       Margin="0,0,0,10" />
+
+                            <!-- Connection status badge -->
+                            <Border CornerRadius="3" Padding="6,3" Margin="0,0,0,12"
+                                    HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#FFEBEE" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="Background" Value="#E8F5E9" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock FontSize="10" FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="● Not connected" />
+                                            <Setter Property="Foreground" Value="#C62828" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                    <Setter Property="Text" Value="● Connected" />
+                                                    <Setter Property="Foreground" Value="#2E7D32" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Model fields — visible only when connected -->
+                            <StackPanel>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <TextBlock Text="Name" FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="{Binding ModelName}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding ModelName}"
+                                           Margin="0,1,0,8" />
+
+                                <TextBlock Text="Units" FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="{Binding PresentUnits}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Margin="0,1,0,8" />
+
+                                <TextBlock Text="Stories / Piers" FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock FontSize="11" FontWeight="SemiBold" Margin="0,1,0,8">
+                                    <Run Text="{Binding StoryCount, Mode=OneWay}" /><Run Text=" / " /><Run Text="{Binding PierCount, Mode=OneWay}" />
+                                </TextBlock>
+
+                                <TextBlock Text="Frames" FontSize="10"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="{Binding FrameObjectCount}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Margin="0,1,0,0" />
+                            </StackPanel>
+
+                            <!-- Status text -->
+                            <Separator Margin="0,10,0,8" />
+                            <TextBlock Text="{Binding ConnectionStatus}"
+                                       FontSize="10" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextMutedBrush}" />
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Toggle button -->
+                    <Button Grid.Column="1"
+                            Command="{Binding ToggleModelInfoPanelCommand}"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource BorderGreyBrush}"
+                            BorderThickness="1,0,0,0"
+                            Padding="0"
+                            MinHeight="0"
+                            Cursor="Hand"
+                            VerticalAlignment="Stretch"
+                            ToolTip="Toggle model info">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                                   FontSize="9"
+                                   VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="&#xE76C;" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsModelInfoPanelOpen}" Value="True">
+                                            <Setter Property="Text" Value="&#xE76B;" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
+                </Grid>
+            </Border>
+
+        <!-- ═══════════════════════════════════════════════════════
              FLOW 1 — MB Column Section Assignment
              ═══════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="2"
+        <Grid Grid.Column="1"
               Margin="12,10,12,8"
               Visibility="{Binding IsFlow1, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -785,44 +1000,6 @@
                     </DockPanel>
                 </Border>
 
-                <!-- Import Summary -->
-                <Border Grid.Row="1"
-                        Style="{StaticResource PanelBorderStyle}"
-                        Margin="0,8,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Import Summary" Style="{StaticResource SectionHeaderStyle}" />
-                        <UniformGrid Columns="3">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding UnassignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Unassigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding AssignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Assigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding MbColumnSectionsReadyCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Sections ready" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </UniformGrid>
-                        <Border Margin="0,8,0,0">
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource WarningBannerStyle}">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasFlow1Warning}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="{Binding Flow1ValidationMessage}"
-                                       FontSize="{StaticResource FontSizeBody}"
-                                       TextWrapping="Wrap"
-                                       Foreground="#7B5E00" />
-                        </Border>
-                    </StackPanel>
-                </Border>
 
                 <!-- Section Preview — secondary, smaller, at the bottom -->
                 <Border Grid.Row="2"
@@ -848,7 +1025,7 @@
         <!-- ═══════════════════════════════════════════════════════
              FLOW 2 — Force Import
              ═══════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="2"
+        <Grid Grid.Column="1"
               Margin="12,10,12,8"
               Visibility="{Binding IsFlow2, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -1121,7 +1298,7 @@
         <!-- ═══════════════════════════════════════════════════════
              FLOW 3 — Review &amp; Import
              ═══════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="2"
+        <Grid Grid.Column="1"
               Margin="12,10,12,8"
               Visibility="{Binding IsFlow3, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
@@ -1268,6 +1445,28 @@
 
             <!-- Right panel: Target Group + Model Info -->
             <StackPanel Grid.Column="2">
+
+                <!-- Import Summary -->
+                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Import Summary" Style="{StaticResource SectionHeaderStyle}" />
+                        <UniformGrid Columns="3">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding UnassignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Text="Unassigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding AssignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Text="Assigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding MbColumnSectionsReadyCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Text="Sections ready" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
                 <!-- Model Info -->
                 <GroupBox Header="Model"
                           BorderBrush="{DynamicResource BorderGreyBrush}"
@@ -1403,6 +1602,8 @@
                 </Border>
             </StackPanel>
         </Grid>
+
+        </Grid><!-- /Content area -->
 
         <!-- ─── Bottom Navigation Bar ─── -->
         <Border Grid.Row="3"

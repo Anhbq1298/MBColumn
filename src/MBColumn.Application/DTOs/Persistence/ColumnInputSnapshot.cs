@@ -110,4 +110,6 @@ public sealed class SnapshotLoadCase
     /// <summary>Shear force in Y direction in the snapshot's force unit. Defaults to 0.</summary>
     public double Vuy { get; set; } = 0.0;
     public bool IsActive { get; set; } = true;
+    /// <summary>Per-case member clear height override in mm. Null means use the section's global MemberLengthL.</summary>
+    public double? MemberLengthOverride { get; set; }
 }

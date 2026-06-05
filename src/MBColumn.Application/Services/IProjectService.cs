@@ -42,6 +42,8 @@ public interface IProjectService
     CalculationResultDto? LoadColumnResult(int columnId);
     bool HasColumnResult(int columnId);
 
+    void SaveEtabsModelInfo(string modelName, string modelPath, string units, int storyCount, int pierCount, int frameCount);
+
     void MarkModified();
 
     event EventHandler? ProjectChanged;

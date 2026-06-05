@@ -692,6 +692,7 @@ public sealed class InputViewModel : ViewModelBase
     public string DemandForceHeader => $"NEd ({ForceLabel})";
     public string DemandMomentXHeader => $"Mx ({MomentLabel})";
     public string DemandMomentYHeader => $"My ({MomentLabel})";
+    public string MemberLengthOverrideHeader => $"L ({MemberLengthLabel})";
     public string ShearVuxHeader => $"Vx ({ForceLabel})";
     public string ShearVuyHeader => $"Vy ({ForceLabel})";
     public string MxTopHeader => $"Mx Top ({MomentLabel})";
@@ -2264,6 +2265,7 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(DemandForceHeader));
         Raise(nameof(DemandMomentXHeader));
         Raise(nameof(DemandMomentYHeader));
+        Raise(nameof(MemberLengthOverrideHeader));
         Raise(nameof(ShearVuxHeader));
         Raise(nameof(ShearVuyHeader));
         Raise(nameof(MxTopHeader));
@@ -3358,7 +3360,8 @@ public sealed class InputViewModel : ViewModelBase
                 MyUsed = lc.MyUsed,
                 Vux = lc.Vux,
                 Vuy = lc.Vuy,
-                IsActive = lc.IsActive
+                IsActive = lc.IsActive,
+                MemberLengthOverride = lc.MemberLengthOverrideMm
             })
             .ToList()
     };
@@ -3425,7 +3428,7 @@ public sealed class InputViewModel : ViewModelBase
         includeEc2Slenderness = s.IncludeEc2Slenderness;
         kx = s.Kx ?? 1.0;
         ky = s.Ky ?? 1.0;
-        phiEff = s.PhiEff;
+        phiEff = s.PhiEff ?? 1.0;
         useDefaultAWhenPhiEffUnknown = s.UseDefaultAWhenPhiEffUnknown;
         selectedPmAngleDegrees = s.PmAngleDegrees;
         selectedAxialLoad = s.AxialLoad;
@@ -3441,7 +3444,7 @@ public sealed class InputViewModel : ViewModelBase
         var snapshotLoadCases = new System.Collections.Generic.List<LoadCaseViewModel>(s.LoadCases.Count);
         foreach (var lc in s.LoadCases)
         {
-            snapshotLoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive)
+            snapshotLoadCases.Add(new LoadCaseViewModel(lc.Id, lc.Label, lc.Pu, lc.Mux, lc.Muy, lc.IsActive, unitSystem)
             {
                 Vux = lc.Vux,
                 Vuy = lc.Vuy,
@@ -3456,7 +3459,8 @@ public sealed class InputViewModel : ViewModelBase
                 SourceObjectLabel = lc.SourceObjectLabel,
                 Story = lc.Story,
                 Station = lc.Station,
-                Source = string.IsNullOrWhiteSpace(lc.Source) ? "Manual" : lc.Source
+                Source = string.IsNullOrWhiteSpace(lc.Source) ? "Manual" : lc.Source,
+                MemberLengthOverrideMm = lc.MemberLengthOverride is > 0 ? lc.MemberLengthOverride : null
             });
             if (int.TryParse(lc.Label.Replace("LC", ""), out var n) && n >= nextLoadCaseIndex)
                 nextLoadCaseIndex = n + 1;

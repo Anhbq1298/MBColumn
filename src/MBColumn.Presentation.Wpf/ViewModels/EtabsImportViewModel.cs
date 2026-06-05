@@ -71,6 +71,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly RelayCommand goToFlow2Command;
     private readonly RelayCommand goToFlow3Command;
     private readonly RelayCommand goBackCommand;
+    private readonly RelayCommand reconnectCommand;
+    private readonly RelayCommand reloadStoryDefinitionsCommand;
+    private readonly RelayCommand reloadColumnConnectivityCommand;
+    private readonly RelayCommand toggleModelInfoPanelCommand;
 
     private int currentFlow = 1;
     private bool isConnected;
@@ -108,6 +112,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private MaterialGradeOption? selectedImportRebarGrade;
     private UnitSystem selectedImportUnitSystem = UnitSystem.Metric;
     private bool importIncludeSlenderness;
+    private bool isModelInfoPanelOpen;
 
     private static readonly IReadOnlyList<MaterialGradeOption> AciRebarGrades =
     [
@@ -228,9 +233,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
         goToFlow2Command = new RelayCommand(GoToFlow2, () => IsConnected);
         goToFlow3Command = new RelayCommand(GoToFlow3);
         goBackCommand = new RelayCommand(() => SetFlow(currentFlow - 1), () => currentFlow > 1);
+        reconnectCommand = new RelayCommand(Reconnect);
+        reloadStoryDefinitionsCommand = new RelayCommand(ReloadStoryDefinitions, () => IsConnected);
+        reloadColumnConnectivityCommand = new RelayCommand(ReloadColumnConnectivity, () => IsConnected);
+        toggleModelInfoPanelCommand = new RelayCommand(() => IsModelInfoPanelOpen = !IsModelInfoPanelOpen);
     }
 
     public event EventHandler<bool>? RequestClose;
+
+    /// <summary>Set by the View to prompt the user for a group name. Returns null if cancelled.</summary>
+    public Func<string, string?>? RequestGroupName { get; set; }
 
     public EtabsImportDialogResult? ImportResult { get; private set; }
     public BulkObservableCollection<EtabsColumnImportRowViewModel> Columns { get; }
@@ -260,6 +272,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     public ICommand ConnectCommand => connectCommand;
     public ICommand DisconnectCommand => disconnectCommand;
+    public ICommand ReconnectCommand => reconnectCommand;
+    public ICommand ReloadStoryDefinitionsCommand => reloadStoryDefinitionsCommand;
+    public ICommand ReloadColumnConnectivityCommand => reloadColumnConnectivityCommand;
+    public ICommand ToggleModelInfoPanelCommand => toggleModelInfoPanelCommand;
+
+    public bool IsModelInfoPanelOpen
+    {
+        get => isModelInfoPanelOpen;
+        private set => Set(ref isModelInfoPanelOpen, value);
+    }
     public ICommand CancelCommand => cancelCommand;
     public ICommand SelectAllCombosCommand => selectAllCombosCommand;
     public ICommand ClearAllCombosCommand => clearAllCombosCommand;
@@ -1143,6 +1165,66 @@ public sealed class EtabsImportViewModel : ViewModelBase
         RaiseTierProperties();
     }
 
+    private void Reconnect()
+    {
+        if (IsConnected) Disconnect();
+        Connect();
+    }
+
+    private void ReloadStoryDefinitions()
+    {
+        if (!IsConnected) return;
+        ConnectionStatus = "Reloading story definitions...";
+        try
+        {
+            storyOrderMap.Clear();
+            var storyElevations = columnImportService.GetStoryElevations();
+            for (int i = 0; i < storyElevations.Count; i++)
+                storyOrderMap[storyElevations[i].Name] = i;
+            RebuildStoryOptions();
+            RebuildStoryFilters();
+            ConnectionStatus = $"Story definitions reloaded — {storyElevations.Count} stories.";
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatus = $"Failed to reload story definitions: {ex.Message}";
+        }
+    }
+
+    private void ReloadColumnConnectivity()
+    {
+        if (!IsConnected) return;
+        ConnectionStatus = "Reloading column/pier connectivity...";
+        try
+        {
+            using (FilteredColumns.DeferRefresh())
+            using (TierObjectCandidatesView.DeferRefresh())
+            {
+                Columns.Clear();
+                Columns.AddRange(columnImportService.GetCandidateColumns(targetUnitSystem)
+                    .Select(dto => new EtabsColumnImportRowViewModel(
+                        OnColumnSelectionChanged,
+                        dto.ObjectName, dto.PierName, dto.StoryName, dto.Label,
+                        dto.UniqueSectionDisplayName, dto.EtabsSectionName, dto.MaterialName,
+                        dto.SectionType, dto.Width, dto.Height, dto.Diameter, dto.LengthMm,
+                        dto.LinkedSection, dto.Status, targetUnitSystem)));
+            }
+            pierGroupsLoaded = false;
+            pierBoundaryCache.Clear();
+            RebuildUniqueSectionOptions();
+            RebuildStoryOptions();
+            SelectedColumn = Columns.FirstOrDefault();
+            Raise(nameof(SelectedColumnCount));
+            RaiseTierProperties();
+            RaiseCommandStates();
+            ConnectionStatus = $"Column/pier connectivity reloaded — {Columns.Count} items.";
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatus = $"Failed to reload column/pier connectivity: {ex.Message}";
+        }
+    }
+
     private void CreateNewMbColumnSection()
     {
         var existingNames = MbColumnSections.Select(g => g.SectionName).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1244,7 +1326,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         if (sections.Count == 0) return;
 
-        ImportResult = new EtabsImportDialogResult(sections);
+        ImportResult = new EtabsImportDialogResult(
+            sections,
+            new Application.DTOs.Etabs.EtabsModelInfoDto(ModelName, ModelPath, PresentUnits, StoryCount, PierCount, FrameObjectCount));
         RequestClose?.Invoke(this, true);
     }
 
@@ -1268,7 +1352,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
         if (mapping is null) return null;
 
         var selectedForces = GetSelectedForcesForItems(group.Items);
-        var loadCases = BuildSnapshotLoadCases(selectedForces);
+        var objectLengthByNameMm = group.Items
+            .Where(i => i.LengthMm > 0)
+            .GroupBy(i => i.ObjectName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().LengthMm, StringComparer.OrdinalIgnoreCase);
+        var loadCases = BuildSnapshotLoadCases(selectedForces, objectLengthByNameMm);
 
         IReadOnlyList<Point2D> boundary;
         IReadOnlyList<IReadOnlyList<Point2D>> openings = [];
@@ -1720,8 +1808,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var existingNames = TargetGroups
             .Select(g => g.GroupName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var name = NextAvailableGroupName("ETABS Import", existingNames);
-        var option = new ProjectGroupOptionViewModel(null, name, true);
+        var suggested = NextAvailableGroupName("ETABS Import", existingNames);
+        var name = RequestGroupName?.Invoke(suggested) ?? suggested;
+        if (string.IsNullOrWhiteSpace(name)) return;
+        var option = new ProjectGroupOptionViewModel(null, name.Trim(), true);
         TargetGroups.Add(option);
         SelectedTargetGroup = option;
     }
@@ -2151,7 +2241,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         var mapping = row.Mapping;
         var selectedForces = GetSelectedForcesForItems(new[] { row.SourceColumn });
-        var loadCases = BuildSnapshotLoadCases(selectedForces);
+        var rowLengthByNameMm = row.SourceColumn.LengthMm > 0
+            ? new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase) { [row.SourceColumn.ObjectName] = row.SourceColumn.LengthMm }
+            : null;
+        var loadCases = BuildSnapshotLoadCases(selectedForces, rowLengthByNameMm);
         var primaryForce = loadCases.FirstOrDefault();
 
         IReadOnlyList<Point2D> boundary;
@@ -2274,7 +2367,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var snapshot = CreateSnapshot(row);
         var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
         var selectedForces = GetSelectedForcesForItems(selectedColumns);
-        var loadCases = BuildSnapshotLoadCases(selectedForces);
+        var tierLengthByNameMm = selectedColumns
+            .Where(c => c.LengthMm > 0)
+            .GroupBy(c => c.ObjectName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().LengthMm, StringComparer.OrdinalIgnoreCase);
+        var loadCases = BuildSnapshotLoadCases(selectedForces, tierLengthByNameMm.Count > 0 ? tierLengthByNameMm : null);
 
         var primaryForce = loadCases.FirstOrDefault();
         snapshot.Pu = primaryForce?.Pu ?? 0;
@@ -2984,7 +3081,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
             .ToList();
     }
 
-    private static List<SnapshotLoadCase> BuildSnapshotLoadCases(IReadOnlyList<EtabsForceImportRowViewModel> forces)
+    private static List<SnapshotLoadCase> BuildSnapshotLoadCases(
+        IReadOnlyList<EtabsForceImportRowViewModel> forces,
+        IReadOnlyDictionary<string, double>? objectLengthByNameMm = null)
     {
         var result = new List<SnapshotLoadCase>();
         int index = 0;
@@ -3010,6 +3109,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
             double vux = rows.OrderByDescending(r => Math.Abs(r.V2)).First().V2;
             double vuy = rows.OrderByDescending(r => Math.Abs(r.V3)).First().V3;
 
+            // Per-case length from the source ETABS column object
+            double? lengthOverrideMm = null;
+            if (objectLengthByNameMm is not null
+                && objectLengthByNameMm.TryGetValue(anyRow.ObjectName, out var objLen)
+                && objLen > 0)
+            {
+                lengthOverrideMm = objLen;
+            }
+
             var sourceLabel = ForceSourceLabel(anyRow);
             result.Add(new SnapshotLoadCase
             {
@@ -3032,7 +3140,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 MyBottom = myBottom,
                 MxUsed   = mxUsed,
                 MyUsed   = myUsed,
-                IsActive = true
+                IsActive = true,
+                MemberLengthOverride = lengthOverrideMm
             });
         }
 
@@ -3163,6 +3272,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         connectCommand.RaiseCanExecuteChanged();
         disconnectCommand.RaiseCanExecuteChanged();
+        reloadStoryDefinitionsCommand.RaiseCanExecuteChanged();
+        reloadColumnConnectivityCommand.RaiseCanExecuteChanged();
         applyImportCommand.RaiseCanExecuteChanged();
         selectAllCombosCommand.RaiseCanExecuteChanged();
         clearAllCombosCommand.RaiseCanExecuteChanged();

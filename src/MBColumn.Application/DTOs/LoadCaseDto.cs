@@ -36,4 +36,6 @@ public sealed record LoadCaseDto(
     /// <summary>Final My demand after EC2 slenderness amplification in the user's current MomentUnit.</summary>
     public double? MyUsed { get; init; }
 
+    /// <summary>Per-case member clear height override in mm. Null means use the section's global MemberLengthL.</summary>
+    public double? MemberLengthOverrideMm { get; init; }
 }

@@ -34,6 +34,15 @@ public partial class EtabsImportWindow : Window
 
             vm.UniqueSectionOptions.CollectionChanged += OnUniqueSectionOptionsCollectionChanged;
             SyncUniqueSectionListBoxToVm(vm);
+
+            vm.RequestGroupName = defaultName =>
+            {
+                var dlg = new ProjectNameDialog(defaultName, "New Project Group", "Group name:")
+                {
+                    Owner = this
+                };
+                return dlg.ShowDialog() == true ? dlg.ProjectName : null;
+            };
         }
     }
 
