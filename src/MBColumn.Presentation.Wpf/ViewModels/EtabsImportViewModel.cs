@@ -54,6 +54,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly Dictionary<string, (IReadOnlyList<Point2D> Outer, IReadOnlyList<IReadOnlyList<Point2D>> Openings)>
         pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
     private bool pierGroupsLoaded;
+    private readonly Dictionary<string, int> storyOrderMap = new(StringComparer.OrdinalIgnoreCase);
     private readonly RelayCommand connectCommand;
     private readonly RelayCommand disconnectCommand;
     private readonly RelayCommand cancelCommand;
@@ -65,7 +66,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly RelayCommand<MbColumnSectionViewModel> assignToSectionCommand;
     private readonly RelayCommand<MbColumnSectionViewModel> deleteMbColumnSectionCommand;
     private readonly AsyncRelayCommand buildForceCacheCommand;
-    private readonly RelayCommand loadForcesCommand;
+    private readonly AsyncRelayCommand loadForcesCommand;
     private readonly RelayCommand goToFlow1Command;
     private readonly RelayCommand goToFlow2Command;
     private readonly RelayCommand goToFlow3Command;
@@ -90,12 +91,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private string selectedLabelFilter = AllLabels;
     private string loadCombinationFilterText = "";
     private string selectedForceType = "Design Forces";
+    private bool isLoadingForces;
     private ProjectGroupOptionViewModel? selectedTargetGroup;
     private EtabsUniqueSectionOptionViewModel? selectedUniqueSection;
     private string tierName = "";
     private string lastGeneratedTierName = "";
-    private string storyFrom = "";
-    private string storyTo = "";
     private string labelTextFilter = "";
     private EtabsColumnImportRowViewModel? selectedColumn;
     private EtabsSectionMappingViewModel? selectedMapping;
@@ -104,9 +104,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private double previewCanvasWidth = 200;
     private double previewCanvasHeight = 200;
     private string previewStatusText = "Select a row to preview boundary.";
-    private DesignCodeType selectedImportDesignCode = DesignCodeType.Aci318Style;
+    private DesignCodeType selectedImportDesignCode = DesignCodeType.Ec2;
     private MaterialGradeOption? selectedImportRebarGrade;
-    private UnitSystem selectedImportUnitSystem;
+    private UnitSystem selectedImportUnitSystem = UnitSystem.Metric;
+    private bool importIncludeSlenderness;
 
     private static readonly IReadOnlyList<MaterialGradeOption> AciRebarGrades =
     [
@@ -155,7 +156,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         this.importedForceCache = importedForceCache;
         this.targetUnitSystem = targetUnitSystem;
         selectedImportUnitSystem = targetUnitSystem;
-        selectedImportRebarGrade = AciRebarGrades[1]; // Grade 60 / 420 MPa default
+        selectedImportRebarGrade = Ec2RebarGrades[2]; // B500B default
         this.forceCacheResolver = forceCacheResolver;
         this.sectionForceFilter = sectionForceFilter;
         this.forceTableService = forceTableService;
@@ -221,8 +222,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         deleteMbColumnSectionCommand = new RelayCommand<MbColumnSectionViewModel>(DeleteMbColumnSection);
         buildForceCacheCommand = new AsyncRelayCommand(BuildForceCacheAsync,
             () => IsConnected && forceCacheService is not null && LoadCombinations.Count > 0);
-        loadForcesCommand = new RelayCommand(GenerateForceRows,
-            () => IsConnected && LoadCombinations.Any(c => c.IsSelected));
+        loadForcesCommand = new AsyncRelayCommand(GenerateForcesAsync,
+            () => IsConnected && !IsLoadingForces && LoadCombinations.Any(c => c.IsSelected));
         goToFlow1Command = new RelayCommand(() => SetFlow(1));
         goToFlow2Command = new RelayCommand(GoToFlow2, () => IsConnected);
         goToFlow3Command = new RelayCommand(GoToFlow3);
@@ -388,9 +389,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
             selectedImportDesignCode = value;
             Raise();
             Raise(nameof(AvailableImportRebarGrades));
+            Raise(nameof(IsImportDesignCodeEc2));
             SelectedImportRebarGrade = AvailableImportRebarGrades.FirstOrDefault();
         }
     }
+
+    public bool IsImportDesignCodeEc2 => selectedImportDesignCode == DesignCodeType.Ec2;
 
     public UnitSystem SelectedImportUnitSystem
     {
@@ -406,6 +410,13 @@ public sealed class EtabsImportViewModel : ViewModelBase
         get => selectedImportRebarGrade;
         set => Set(ref selectedImportRebarGrade, value);
     }
+
+    public bool ImportIncludeSlenderness
+    {
+        get => importIncludeSlenderness;
+        set => Set(ref importIncludeSlenderness, value);
+    }
+
     public bool IsBoundaryPreviewValid
         => SelectedColumn is not null
            && (SelectedColumn.IsIrregular
@@ -416,6 +427,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
     {
         get => selectedMbColumnSection;
         set => Set(ref selectedMbColumnSection, value);
+    }
+
+    public bool IsLoadingForces
+    {
+        get => isLoadingForces;
+        private set => Set(ref isLoadingForces, value);
     }
 
     public string ForceCacheStatus
@@ -519,6 +536,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
             RebuildStoryFilters();
             RebuildUniqueSectionOptions();
+            RebuildStoryOptions();
         }
     }
 
@@ -534,6 +552,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             Raise();
             RebuildStoryFilters();
             RebuildUniqueSectionOptions();
+            RebuildStoryOptions();
         }
     }
 
@@ -594,7 +613,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
             if (selectedUniqueSection == value) return;
             selectedUniqueSection = value;
             Raise();
-            RebuildStoryOptions();
             ApplyTierObjectFilter();
             UpdateDefaultTierName();
             UpdateBoundaryPreviewFromUniqueSection();
@@ -616,34 +634,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
     }
 
     public string StoryFrom
-    {
-        get => storyFrom;
-        set
-        {
-            if (storyFrom == value) return;
-            storyFrom = value;
-            Raise();
-            ApplyTierObjectFilter();
-            UpdateDefaultTierName();
-            RaiseTierProperties();
-            RaiseCommandStates();
-        }
-    }
+        => StoryOptions.Where(s => s.IsSelected).OrderBy(s => s.SortIndex).FirstOrDefault()?.StoryName
+           ?? StoryOptions.OrderBy(s => s.SortIndex).FirstOrDefault()?.StoryName ?? "";
 
     public string StoryTo
-    {
-        get => storyTo;
-        set
-        {
-            if (storyTo == value) return;
-            storyTo = value;
-            Raise();
-            ApplyTierObjectFilter();
-            UpdateDefaultTierName();
-            RaiseTierProperties();
-            RaiseCommandStates();
-        }
-    }
+        => StoryOptions.Where(s => s.IsSelected).OrderBy(s => s.SortIndex).LastOrDefault()?.StoryName
+           ?? StoryOptions.OrderBy(s => s.SortIndex).LastOrDefault()?.StoryName ?? "";
 
     public string LabelTextFilter
     {
@@ -827,8 +823,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         IsConnected = true;
         ConnectionStatus = result.Message;
+
+        storyOrderMap.Clear();
+        var storyElevations = columnImportService.GetStoryElevations();
+        for (int i = 0; i < storyElevations.Count; i++)
+            storyOrderMap[storyElevations[i].Name] = i;
+
         ResetColumnFilters();
         RebuildUniqueSectionOptions();
+        RebuildStoryOptions();
         SelectedColumn = Columns.FirstOrDefault();
         Raise(nameof(SelectedColumnCount));
         RaiseTierProperties();
@@ -1021,6 +1024,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
                     RebuildStoryFilters();
                     RebuildUniqueSectionOptions();
+                    RebuildStoryOptions();
                     Raise(nameof(SelectedColumnCount));
                     RaiseTierProperties();
                     RaiseCommandStates();
@@ -1078,11 +1082,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         {
             LoadCombinations.AddRange(
                 combosToShow.Select(name =>
-                {
-                    var vm = new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged);
-                    vm.IsSelected = true;
-                    return vm;
-                }));
+                    new EtabsLoadCombinationViewModel(name, OnLoadCombinationSelectionChanged)));
         }
         FilteredLoadCombinations.Refresh();
 
@@ -1090,8 +1090,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IsConnected      = true;
         ConnectionStatus = "Connected to ETABS.";
 
+        storyOrderMap.Clear();
+        var storyElevations = columnImportService.GetStoryElevations();
+        for (int i = 0; i < storyElevations.Count; i++)
+            storyOrderMap[storyElevations[i].Name] = i;
+
         ResetColumnFilters();
         RebuildUniqueSectionOptions();
+        RebuildStoryOptions();
         SelectedColumn = Columns.FirstOrDefault();
         Raise(nameof(SelectedColumnCount));
         Raise(nameof(DesignForcesStatusText));
@@ -1099,6 +1105,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         RaiseCounts();
         RaiseTierProperties();
         RaiseCommandStates();
+
+        PreloadDesignForcesInBackground(data.ModelPath, data.ModelName);
     }
 
     private void Disconnect()
@@ -1312,6 +1320,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             Diameter = Math.Max(boundingWidth, boundingHeight),
             Cover = mapping.Cover,
             MemberLengthL = importMemberLength,
+            IncludeEc2Slenderness = selectedImportDesignCode == DesignCodeType.Ec2 && importIncludeSlenderness,
             Fc = InferConcreteStrength(mapping.Material),
             Fy = importFy,
             Es = importEs,
@@ -1492,16 +1501,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 if (useRawPath)
                 {
                     if (columnDtos.Count > 0)
-                    {
-                        // DBG: show first raw record fields vs what we look for
-                        var firstRec = rawDb!.ColumnForces.Records.FirstOrDefault();
-                        var dbgFields = firstRec is null ? "NO_RECORDS"
-                            : string.Join("|", firstRec.Fields.Take(6).Select(kv => $"{kv.Key}={kv.Value}"));
-                        var dbgLooking = $"looking:{columnDtos[0].StoryName}/{columnDtos[0].Label} combo[0]={allCombos.FirstOrDefault()}";
-                        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-                            ForceCacheStatus = $"[DBG-CACHE] rawRec={dbgFields} || {dbgLooking}");
                         forces.AddRange(designForceImportService!.ParseColumnForces(rawDb!, columnDtos, allCombos, targetUnitSystem));
-                    }
                     if (piers.Count > 0)
                         forces.AddRange(designForceImportService!.ParsePierForces(rawDb!, piers, allCombos, targetUnitSystem));
                 }
@@ -1752,41 +1752,37 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 first.UniqueSection,
                 first.EtabsSectionName,
                 first.SectionType,
-                group.Count()));
+                group.Count(),
+                ApplyTierObjectFilter));
         }
 
         SelectedUniqueSection = UniqueSectionOptions.FirstOrDefault(s =>
                 string.Equals(s.SectionName, previous, StringComparison.OrdinalIgnoreCase))
             ?? UniqueSectionOptions.FirstOrDefault();
+
+        foreach (var vm in UniqueSectionOptions)
+            vm.IsSelected = vm == SelectedUniqueSection;
     }
 
     private void RebuildStoryOptions()
     {
         StoryOptions.Clear();
 
-        var stories = Columns
-            .Where(c => SelectedUniqueSection is not null
-                        && string.Equals(c.UniqueSection, SelectedUniqueSection.SectionName, StringComparison.OrdinalIgnoreCase))
+        // All stories from all columns matching element/type filter — not section-dependent
+        var ascending = FilteredByType()
             .Select(c => c.Story)
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select((story, index) => new EtabsStoryOptionViewModel(story, 0, index))
+            .OrderBy(s => storyOrderMap.TryGetValue(s, out var idx) ? idx : int.MaxValue)
             .ToList();
 
-        foreach (var story in stories)
-            StoryOptions.Add(story);
-
-        if (StoryOptions.Count == 0)
+        // Display descending (highest elevation first = top of list), all selected by default
+        void OnStorySelectionChanged() { TierObjectCandidatesView.Refresh(); UpdateDefaultTierName(); }
+        for (int i = ascending.Count - 1; i >= 0; i--)
         {
-            storyFrom = "";
-            storyTo = "";
-        }
-        else
-        {
-            if (!StoryOptions.Any(s => string.Equals(s.StoryName, storyFrom, StringComparison.OrdinalIgnoreCase)))
-                storyFrom = StoryOptions.First().StoryName;
-            if (!StoryOptions.Any(s => string.Equals(s.StoryName, storyTo, StringComparison.OrdinalIgnoreCase)))
-                storyTo = StoryOptions.Last().StoryName;
+            var vm = new EtabsStoryOptionViewModel(ascending[i], 0, i, OnStorySelectionChanged);
+            vm.IsSelected = true;
+            StoryOptions.Add(vm);
         }
 
         Raise(nameof(StoryFrom));
@@ -1802,10 +1798,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private bool FilterTierObjectCandidate(object item)
     {
-        if (item is not EtabsColumnImportRowViewModel column || SelectedUniqueSection is null)
+        if (item is not EtabsColumnImportRowViewModel column)
             return false;
 
-        if (!string.Equals(column.UniqueSection, SelectedUniqueSection.SectionName, StringComparison.OrdinalIgnoreCase))
+        if (!UniqueSectionOptions.Any(s => s.IsSelected &&
+                string.Equals(s.SectionName, column.UniqueSection, StringComparison.OrdinalIgnoreCase)))
             return false;
 
         if (!IsStoryWithinRange(column.Story))
@@ -1817,18 +1814,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private bool IsStoryWithinRange(string story)
     {
-        if (StoryOptions.Count == 0 || string.IsNullOrWhiteSpace(story))
-            return true;
-
-        var storyIndex = StoryIndex(story);
-        var fromIndex = StoryIndex(StoryFrom);
-        var toIndex = StoryIndex(StoryTo);
-        if (storyIndex < 0 || fromIndex < 0 || toIndex < 0)
-            return true;
-
-        var min = Math.Min(fromIndex, toIndex);
-        var max = Math.Max(fromIndex, toIndex);
-        return storyIndex >= min && storyIndex <= max;
+        if (StoryOptions.Count == 0 || string.IsNullOrWhiteSpace(story)) return true;
+        var all = StoryOptions.All(s => s.IsSelected);
+        if (all) return true;
+        return StoryOptions.Any(s => s.IsSelected && string.Equals(s.StoryName, story, StringComparison.OrdinalIgnoreCase));
     }
 
     private int StoryIndex(string story)
@@ -1941,10 +1930,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         }
     }
 
-    private void GenerateForceRows()
+    private async Task GenerateForcesAsync()
     {
-        ForceRows.Clear();
-
         var selectedCombos = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList();
         if (selectedCombos.Count == 0)
         {
@@ -1953,107 +1940,67 @@ public sealed class EtabsImportViewModel : ViewModelBase
             return;
         }
 
-        var selectedObjects = AllAssignedItems.Select(c => c.ObjectName).ToList();
-        var rows = new List<EtabsForceImportRowViewModel>();
+        // Snapshot inputs on UI thread before going async
+        var isElementForces = selectedForceType == "Element Forces";
+        var frameColumnDtos = AllAssignedItems
+            .Where(c => !c.IsIrregular)
+            .Select(c => new EtabsColumnImportDto(
+                c.ObjectName, c.Pier, c.Story, c.Label,
+                c.UniqueSection, c.EtabsSectionName, c.Material,
+                c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status))
+            .ToList();
+        var pierPairs = AllAssignedItems
+            .Where(c => c.IsIrregular)
+            .Select(c => (c.Pier, c.Story))
+            .ToList();
 
-        if (selectedForceType == "Element Forces")
+        ForceRows.Clear();
+        IsLoadingForces = true;
+        ForceCacheStatus = "Fetching forces from ETABS…";
+        RaiseCommandStates();
+
+        List<EtabsForceImportRowViewModel> rows = [];
+        string? errorMsg = null;
+
+        try
         {
-            var selectedFrameColumns = AllAssignedItems.Where(c => !c.IsIrregular).ToList();
-            var selectedPiers = AllAssignedItems.Where(c => c.IsIrregular)
-                .Select(c => (c.Pier, c.Story)).ToList();
-
-            var rawDb = importedForceCache?.Current;
-            if (rawDb is not null && designForceImportService is not null)
+            rows = await Task.Run(() =>
             {
-                var elemRecCount = rawDb.ColumnElementForces.Records.Count;
-                var firstRecord  = elemRecCount > 0 ? rawDb.ColumnElementForces.Records[0] : null;
-                var firstFields  = firstRecord is not null ? string.Join(" | ", firstRecord.Fields.Select(kv => $"{kv.Key}={kv.Value}").Take(15)) : "(empty table)";
-                ConnectionStatus = $"[DBG-ELEM] records={elemRecCount}  first row: {firstFields}";
-                if (selectedFrameColumns.Count > 0)
+                var result = new List<EtabsForceImportRowViewModel>();
+
+                if (isElementForces)
                 {
-                    var columnDtos = selectedFrameColumns.Select(c => new EtabsColumnImportDto(
-                        c.ObjectName, c.Pier, c.Story, c.Label,
-                        c.UniqueSection, c.EtabsSectionName, c.Material,
-                        c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
-                    rows.AddRange(designForceImportService.ParseColumnElementForces(rawDb, columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    if (frameColumnDtos.Count > 0)
+                        result.AddRange(forceImportService.GetElementForces(frameColumnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    if (pierPairs.Count > 0)
+                        result.AddRange(forceImportService.GetPierElementForces(pierPairs, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
-                if (selectedPiers.Count > 0)
+                else
                 {
-                    rows.AddRange(designForceImportService.ParsePierElementForces(rawDb, selectedPiers, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    if (frameColumnDtos.Count > 0)
+                        result.AddRange(forceImportService.GetForces(frameColumnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                    if (pierPairs.Count > 0)
+                        result.AddRange(forceImportService.GetPierForces(pierPairs, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }
-            }
+
+                return result;
+            });
         }
-        else
+        catch (Exception ex)
         {
-            // Design forces: SQLite cache → preloaded raw DB → live COM fallback
-            var selectedFrameColumns2 = AllAssignedItems.Where(c => !c.IsIrregular).ToList();
-            var selectedPiers2 = AllAssignedItems.Where(c => c.IsIrregular)
-                .Select(c => (c.Pier, c.Story)).ToList();
+            errorMsg = ex.Message;
+        }
+        finally
+        {
+            IsLoadingForces = false;
+        }
 
-            if (forceCacheService?.IsBuilt == true)
-            {
-                ForceCacheStatus = $"[DBG] PATH=SQLiteCache cols={selectedFrameColumns2.Count} combos={selectedCombos.Count}";
-                var query = new EtabsForceCacheQuery(selectedObjects, selectedCombos);
-                rows.AddRange(forceCacheService.Query(query).Select(CreateForceRow));
-                ForceCacheStatus += $" → {rows.Count} rows";
-            }
-            else if (importedForceCache?.HasValidCache(ModelPath) == true && designForceImportService is not null)
-            {
-                var rawDb = importedForceCache.Current!;
-                ForceCacheStatus = $"[DBG] PATH=RawDB cols={selectedFrameColumns2.Count} combos={selectedCombos.Count} hasRec={rawDb.ColumnForces.HasRecords} ModelPath={ModelPath?.Length}chars";
-                if (selectedFrameColumns2.Count > 0)
-                {
-                    var columnDtos = selectedFrameColumns2.Select(c => new EtabsColumnImportDto(
-                        c.ObjectName, c.Pier, c.Story, c.Label,
-                        c.UniqueSection, c.EtabsSectionName, c.Material,
-                        c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
-                    var colRows = designForceImportService.ParseColumnForces(rawDb, columnDtos, selectedCombos, targetUnitSystem);
-                    ForceCacheStatus += $" → ParseCol={colRows.Count} [story={columnDtos[0].StoryName}|label={columnDtos[0].Label}|combo={selectedCombos[0]}]";
-                    if (colRows.Count == 0)
-                    {
-                        var firstRec = rawDb.ColumnForces.Records.FirstOrDefault();
-                        var tableRow0 = firstRec is null ? "NO_RECORDS"
-                            : string.Join("|", firstRec.Fields.Take(5).Select(kv => $"{kv.Key}={kv.Value}"));
-                        var searchedKeys = string.Join(", ", columnDtos.Take(3).Select(d => $"{d.StoryName}/{d.Label}"));
-                        System.Windows.MessageBox.Show(
-                            $"ParseColumnForces returned 0.\n\nSearching for:\n  {searchedKeys}\n\nCombos[0]: {selectedCombos[0]}\n\nTable Row[0]:\n  {tableRow0}",
-                            "Debug: No Match", System.Windows.MessageBoxButton.OK);
-                    }
-                    rows.AddRange(colRows.Select(CreateForceRow));
-                }
-                if (selectedPiers2.Count > 0)
-                    rows.AddRange(designForceImportService.ParsePierForces(rawDb, selectedPiers2, selectedCombos, targetUnitSystem).Select(CreateForceRow));
-            }
-            else
-            {
-                ForceCacheStatus = $"[DBG] PATH=LiveCOM cols={selectedFrameColumns2.Count} combos={selectedCombos.Count} cacheNull={importedForceCache is null} hasValid={importedForceCache?.HasValidCache(ModelPath)} svcNull={designForceImportService is null}";
-                if (selectedFrameColumns2.Count > 0)
-                {
-                    try
-                    {
-                        var columnDtos = selectedFrameColumns2.Select(c => new EtabsColumnImportDto(
-                            c.ObjectName, c.Pier, c.Story, c.Label,
-                            c.UniqueSection, c.EtabsSectionName, c.Material,
-                            c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
-                        rows.AddRange(forceImportService.GetForces(columnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
-                    }
-                    catch (Exception ex)
-                    {
-                        ConnectionStatus = $"Warning: could not load column forces — {ex.Message}";
-                    }
-                }
-                if (selectedPiers2.Count > 0)
-                {
-                    try
-                    {
-                        rows.AddRange(forceImportService.GetPierForces(selectedPiers2, selectedCombos, targetUnitSystem).Select(CreateForceRow));
-                    }
-                    catch (Exception ex)
-                    {
-                        ConnectionStatus = $"Warning: could not load pier forces — {ex.Message}";
-                    }
-                }
-            }
+        if (errorMsg is not null)
+        {
+            ForceCacheStatus = $"Error loading forces: {errorMsg}";
+            RaiseCounts();
+            RaiseCommandStates();
+            return;
         }
 
         ForceRows.AddRange(rows);
@@ -2062,11 +2009,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
         RaiseCommandStates();
 
         ForceCacheStatus = rows.Count == 0
-            ? "No forces returned — check that columns are assigned to sections in Flow 1 and the model has been designed in ETABS."
-            : $"{rows.Count} row(s) loaded.";
+            ? "No forces returned — check that columns are assigned to sections and the model has been designed in ETABS."
+            : $"{rows.Count} row(s) loaded from live ETABS API.";
 
         GenerateSectionForceRows();
         UpdateFlow2Validation();
+    }
+
+    private void GenerateForceRows()
+    {
+        _ = GenerateForcesAsync();
     }
 
     public void GenerateSectionForceRows()
@@ -3343,18 +3295,23 @@ public sealed class ProjectGroupOptionViewModel
     public string DisplayName => CreateGroup ? $"{GroupName} (new)" : GroupName;
 }
 
-public sealed class EtabsUniqueSectionOptionViewModel
+public sealed class EtabsUniqueSectionOptionViewModel : ViewModelBase
 {
+    private readonly Action? onChange;
+    private bool isSelected;
+
     public EtabsUniqueSectionOptionViewModel(
         string sectionName,
         string sourceSectionName,
         SectionShapeType shapeType,
-        int objectCount)
+        int objectCount,
+        Action? onChange = null)
     {
         SectionName = sectionName;
         SourceSectionName = sourceSectionName;
         ShapeType = shapeType;
         ObjectCount = objectCount;
+        this.onChange = onChange;
     }
 
     public string SectionName { get; }
@@ -3362,21 +3319,45 @@ public sealed class EtabsUniqueSectionOptionViewModel
     public SectionShapeType ShapeType { get; }
     public int ObjectCount { get; }
     public string DisplayName => $"{SectionName} ({ObjectCount} objects)";
+
+    public bool IsSelected
+    {
+        get => isSelected;
+        set
+        {
+            if (!Set(ref isSelected, value)) return;
+            onChange?.Invoke();
+        }
+    }
 }
 
-public sealed class EtabsStoryOptionViewModel
+public sealed class EtabsStoryOptionViewModel : ViewModelBase
 {
-    public EtabsStoryOptionViewModel(string storyName, double elevation, int sortIndex)
+    private readonly Action? onChange;
+    private bool isSelected = true;
+
+    public EtabsStoryOptionViewModel(string storyName, double elevation, int sortIndex, Action? onChange = null)
     {
         StoryName = storyName;
         Elevation = elevation;
         SortIndex = sortIndex;
+        this.onChange = onChange;
     }
 
     public string StoryName { get; }
     public double Elevation { get; }
     public int SortIndex { get; }
     public string DisplayName => StoryName;
+
+    public bool IsSelected
+    {
+        get => isSelected;
+        set
+        {
+            if (!Set(ref isSelected, value)) return;
+            onChange?.Invoke();
+        }
+    }
 }
 
 public enum EtabsDuplicateHandlingMode

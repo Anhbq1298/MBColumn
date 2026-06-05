@@ -25,6 +25,8 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
 
         var originalUnits = model.GetPresentUnits();
         var (targetUnits, _, lengthFactor, _) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
+        // GetCoordCartesian returns coordinates in the model's original units regardless of SetPresentUnits.
+        var geoLengthFactor = EtabsConnectionService.GetConversionFactors(originalUnits, targetSystem).LengthFactor;
 
         try
         {
@@ -64,7 +66,7 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
                 model.PointObj.GetCoordCartesian(point1, ref x1, ref y1, ref z1);
                 double x2 = 0, y2 = 0, z2 = 0;
                 model.PointObj.GetCoordCartesian(point2, ref x2, ref y2, ref z2);
-                double lengthMm = System.Math.Sqrt(System.Math.Pow(x1 - x2, 2) + System.Math.Pow(y1 - y2, 2) + System.Math.Pow(z1 - z2, 2)) * lengthFactor;
+                double lengthMm = System.Math.Sqrt(System.Math.Pow(x1 - x2, 2) + System.Math.Pow(y1 - y2, 2) + System.Math.Pow(z1 - z2, 2)) * geoLengthFactor;
 
                 var uniqueSection = BuildUniqueSectionKey(sectionName, sec.Type, sec.Width, sec.Height, sec.Diameter);
 
@@ -102,6 +104,26 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         string[] names = [];
         model.RespCombo.GetNameList(ref count, ref names);
         return names ?? [];
+    }
+
+    public IReadOnlyList<(string Name, double Elevation)> GetStoryElevations()
+    {
+        var model = connection.Model
+            ?? throw new InvalidOperationException("Not connected to ETABS.");
+
+        int count = 0;
+        string[] names = [];
+        model.Story.GetNameList(ref count, ref names);
+        if (names is null || names.Length == 0) return [];
+
+        var result = new List<(string, double)>(names.Length);
+        foreach (var name in names)
+        {
+            double elev = 0;
+            model.Story.GetElevation(name, ref elev);
+            result.Add((name, elev));
+        }
+        return [.. result.OrderBy(s => s.Item2)];
     }
 
     private static Dictionary<string, ConcreteSectionInfo> LoadConcreteSections(cSapModel model, double lengthToMm)

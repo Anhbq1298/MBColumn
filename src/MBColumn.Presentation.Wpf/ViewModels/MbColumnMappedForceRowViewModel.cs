@@ -18,6 +18,8 @@ public sealed class MbColumnMappedForceRowViewModel
         MxBottom            = row.MxBottom;
         MyTop               = row.MyTop;
         MyBottom            = row.MyBottom;
+        MxUsed              = row.MxUsed;
+        MyUsed              = row.MyUsed;
     }
 
     public string MbColumnSectionName { get; }
@@ -32,4 +34,6 @@ public sealed class MbColumnMappedForceRowViewModel
     public double MxBottom   { get; }
     public double MyTop      { get; }
     public double MyBottom   { get; }
+    public double MxUsed     { get; }
+    public double MyUsed     { get; }
 }

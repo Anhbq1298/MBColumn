@@ -26,4 +26,9 @@ public sealed class MbColumnMappedForceRow
     public double MxBottom { get; set; }
     public double MyTop    { get; set; }
     public double MyBottom { get; set; }
+
+    /// <summary>Governing Mx end moment: the value whose absolute magnitude is larger, sign preserved.</summary>
+    public double MxUsed { get; set; }
+    /// <summary>Governing My end moment: the value whose absolute magnitude is larger, sign preserved.</summary>
+    public double MyUsed { get; set; }
 }

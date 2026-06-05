@@ -5,9 +5,8 @@
         xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels"
         xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
         Title="Import from ETABS"
-        Width="1200"
+        Width="1300"
         Height="820"
-        MinWidth="1060"
         MinHeight="700"
         WindowStartupLocation="CenterOwner"
         Loaded="OnWindowLoaded">
@@ -125,12 +124,9 @@
                         Height="26"
                         Padding="0"
                         Style="{StaticResource SecondaryButtonStyle}" />
-                <StackPanel>
-                    <TextBlock Text="Import from ETABS"
-                               Style="{StaticResource DialogHeaderTitleTextStyle}" />
-                    <TextBlock Text="{Binding ConnectionStatus}"
-                               Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
-                </StackPanel>
+                <TextBlock Text="Import from ETABS"
+                           Style="{StaticResource DialogHeaderTitleTextStyle}"
+                           VerticalAlignment="Center" />
             </DockPanel>
         </Border>
 
@@ -139,10 +135,48 @@
                 Background="{DynamicResource PanelBackgroundBrush}"
                 BorderBrush="{DynamicResource BorderGreyBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="16,10">
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
+                Padding="16,8">
+            <DockPanel VerticalAlignment="Center">
+
+                <!-- Right: Connection controls -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            VerticalAlignment="Center" Margin="0,0,4,0">
+                    <Button Content="Connect"
+                            Command="{Binding ConnectCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="10,4"
+                            MinHeight="28"
+                            FontSize="{StaticResource FontSizeBody}"
+                            ToolTip="{Binding UnitConversionMessage}" />
+                    <Button Content="Disconnect"
+                            Command="{Binding DisconnectCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Padding="10,4"
+                            MinHeight="28"
+                            FontSize="{StaticResource FontSizeBody}"
+                            Margin="6,0,0,0" />
+                    <TextBlock Text="{Binding ModelName}"
+                               VerticalAlignment="Center"
+                               FontSize="{StaticResource FontSizeBody}"
+                               Foreground="{DynamicResource TextDarkBrush}"
+                               Margin="10,0,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Center: Step buttons -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
 
                 <!-- Step 1 -->
                 <Button Command="{Binding GoToFlow1Command}" Style="{StaticResource StepButtonStyle}">
@@ -282,7 +316,8 @@
                         </TextBlock>
                     </StackPanel>
                 </Button>
-            </StackPanel>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
         <!-- ═══════════════════════════════════════════════════════
@@ -292,55 +327,20 @@
               Margin="12,10,12,8"
               Visibility="{Binding IsFlow1, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2.2*" />
+                <ColumnDefinition Width="65*" />
                 <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="1.8*" />
+                <ColumnDefinition Width="35*" />
             </Grid.ColumnDefinitions>
 
-            <!-- ── LEFT: Connection + Filter + Available Items ── -->
+            <!-- ── LEFT: Filter bar + Stories sidebar + Available Items ── -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Connection -->
+                <!-- Filter — single row: Element | Section Type | Label Filter -->
                 <GroupBox Grid.Row="0"
-                          Header="Connection"
-                          BorderBrush="{DynamicResource BorderGreyBrush}"
-                          Foreground="{DynamicResource DarkNavyBrush}"
-                          Padding="10"
-                          Margin="0,0,0,8">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Bottom"
-                                   Text="{Binding UnitConversionMessage}"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   FontSize="{StaticResource FontSizeBody}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,0" />
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="Connect to running ETABS"
-                                    Command="{Binding ConnectCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="10,5"
-                                    MinHeight="30" />
-                            <Button Content="Disconnect"
-                                    Command="{Binding DisconnectCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="10,5"
-                                    MinHeight="30"
-                                    Margin="8,0,0,0" />
-                            <TextBlock Text="{Binding ModelName, StringFormat='  {0}'}"
-                                       VerticalAlignment="Center"
-                                       FontSize="{StaticResource FontSizeBody}"
-                                       Foreground="{DynamicResource TextDarkBrush}" />
-                        </StackPanel>
-                    </DockPanel>
-                </GroupBox>
-
-                <!-- Filter -->
-                <GroupBox Grid.Row="1"
                           Header="Filter"
                           BorderBrush="{DynamicResource BorderGreyBrush}"
                           Foreground="{DynamicResource DarkNavyBrush}"
@@ -348,181 +348,230 @@
                           Margin="0,0,0,8">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="85" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="80" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="85" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="70" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="ETABS Element"
+                        <TextBlock Grid.Column="0" Text="ETABS Element"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox Grid.Row="0" Grid.Column="1"
+                        <ComboBox Grid.Column="1"
                                   ItemsSource="{Binding EtabsElementFilters}"
                                   SelectedItem="{Binding SelectedEtabsElementFilter}" />
 
-                        <TextBlock Grid.Row="0" Grid.Column="3"
-                                   Text="Section Type"
+                        <TextBlock Grid.Column="3" Text="Section Type"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox Grid.Row="0" Grid.Column="4"
+                        <ComboBox Grid.Column="4"
                                   ItemsSource="{Binding SectionTypeFilters}"
                                   SelectedItem="{Binding SelectedSectionTypeFilter}"
                                   IsEnabled="{Binding IsSectionTypeFilterEnabled}" />
 
-                        <TextBlock Grid.Row="0" Grid.Column="6"
-                                   Text="Unique Section"
+                        <TextBlock Grid.Column="6" Text="Label Filter"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox Grid.Row="0" Grid.Column="7"
-                                  ItemsSource="{Binding UniqueSectionOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedItem="{Binding SelectedUniqueSection}" />
-
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                   Text="Story From"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox Grid.Row="2" Grid.Column="1"
-                                  ItemsSource="{Binding StoryOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="StoryName"
-                                  SelectedValue="{Binding StoryFrom, Mode=TwoWay}" />
-
-                        <TextBlock Grid.Row="2" Grid.Column="3"
-                                   Text="Story To"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <ComboBox Grid.Row="2" Grid.Column="4"
-                                  ItemsSource="{Binding StoryOptions}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValuePath="StoryName"
-                                  SelectedValue="{Binding StoryTo, Mode=TwoWay}" />
-
-                        <TextBlock Grid.Row="2" Grid.Column="6"
-                                   Text="Label Filter"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource FieldLabelTextStyle}" />
-                        <TextBox Grid.Row="2" Grid.Column="7"
+                        <TextBox Grid.Column="7"
                                  Text="{Binding LabelTextFilter, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                 </GroupBox>
 
-                <!-- Available Items -->
-                <GroupBox Grid.Row="2"
-                          Header="Available Items"
-                          BorderBrush="{DynamicResource BorderGreyBrush}"
-                          Foreground="{DynamicResource DarkNavyBrush}"
-                          Padding="0">
-                    <DataGrid ItemsSource="{Binding TierObjectCandidatesView}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              SelectionMode="Extended"
-                              SelectionChanged="OnDataGridSelectionChanged"
-                              ContextMenuOpening="OnAvailableItemsContextMenuOpening"
-                              EnableRowVirtualization="True"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Type" Binding="{Binding SectionTypeDisplay}" Width="90" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Section / Pier" Binding="{Binding EtabsSectionName}" Width="130" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="80" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Length" Binding="{Binding LengthDisplay}" Width="88" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Section" Binding="{Binding ImportGroupName}" Width="*" IsReadOnly="True">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="{DynamicResource AccentBlueBrush}" />
-                                        <Setter Property="FontStyle" Value="Italic" />
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </GroupBox>
+                <!-- Stories sidebar + Unique Section + Available Items side by side -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="115" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Stories column -->
+                    <DockPanel Grid.Column="0">
+                        <TextBlock DockPanel.Dock="Top"
+                                   Text="Stories"
+                                   FontSize="{StaticResource FontSizeBody}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource DarkNavyBrush}"
+                                   Margin="0,0,0,4" />
+                        <ListBox x:Name="StoryListBox"
+                                 ItemsSource="{Binding StoryOptions}"
+                                 SelectionMode="Extended"
+                                 BorderBrush="{DynamicResource BorderGreyBrush}"
+                                 BorderThickness="1"
+                                 FontSize="{StaticResource FontSizeBody}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="OnStoryListBoxSelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,3" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <!-- Unique Section column -->
+                    <DockPanel Grid.Column="2">
+                        <TextBlock DockPanel.Dock="Top"
+                                   Text="Unique Section"
+                                   FontSize="{StaticResource FontSizeBody}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource DarkNavyBrush}"
+                                   Margin="0,0,0,4" />
+                        <ListBox x:Name="UniqueSectionListBox"
+                                 ItemsSource="{Binding UniqueSectionOptions}"
+                                 SelectedItem="{Binding SelectedUniqueSection}"
+                                 SelectionMode="Extended"
+                                 BorderBrush="{DynamicResource BorderGreyBrush}"
+                                 BorderThickness="1"
+                                 FontSize="{StaticResource FontSizeBody}"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="OnUniqueSectionListBoxSelectionChanged">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,3" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               VerticalAlignment="Center"
+                                               TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <!-- Available Items -->
+                    <GroupBox Grid.Column="4"
+                              Header="Available Items"
+                              BorderBrush="{DynamicResource BorderGreyBrush}"
+                              Foreground="{DynamicResource DarkNavyBrush}"
+                              Padding="0">
+                        <DataGrid ItemsSource="{Binding TierObjectCandidatesView}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserReorderColumns="False"
+                                  HeadersVisibility="Column"
+                                  SelectionMode="Extended"
+                                  SelectionChanged="OnDataGridSelectionChanged"
+                                  ContextMenuOpening="OnAvailableItemsContextMenuOpening"
+                                  EnableRowVirtualization="True"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  VirtualizingPanel.VirtualizationMode="Recycling"
+                                  RowHeight="24"
+                                  FontSize="{StaticResource FontSizeBody}"
+                                  GridLinesVisibility="Horizontal"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                    <Setter Property="Padding" Value="6,4" />
+                                    <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Type" Binding="{Binding SectionTypeDisplay}" Width="85" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Section / Pier" Binding="{Binding EtabsSectionName}" Width="135" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="75" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="70" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Material" Binding="{Binding Material}" Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Length" Binding="{Binding LengthDisplay}" Width="90" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Assigned Section" Binding="{Binding ImportGroupName}" Width="*" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentBlueBrush}" />
+                                            <Setter Property="FontStyle" Value="Italic" />
+                                            <Setter Property="Padding" Value="4,0" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+                </Grid>
             </Grid>
 
-            <!-- ── RIGHT: Section Preview + Summary + Import Groups ── -->
+            <!-- ── RIGHT: MB Column Sections (top) + Summary + Section Preview (bottom) ── -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="240" />
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="170" />
                 </Grid.RowDefinitions>
 
-                <!-- Section Preview (SectionPreviewCanvas style) -->
+                <!-- MB Column Sections — prominent, at the top -->
                 <Border Grid.Row="0"
                         Style="{StaticResource PanelBorderStyle}"
-                        Padding="6">
-                    <controls:SectionPreviewCanvas
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        SectionWidth="{Binding BoundaryPreviewWidth}"
-                        SectionHeight="{Binding BoundaryPreviewHeight}"
-                        Cover="{Binding BoundaryPreviewCover}"
-                        UnitSystem="{Binding TargetUnitSystem}"
-                        SectionShape="{Binding BoundaryPreviewSectionShape}"
-                        BoundaryPoints="{Binding BoundaryPreviewPoints}"
-                        SectionLabel="{Binding BoundaryPreviewSectionLabel}"
-                        IsValid="{Binding IsBoundaryPreviewValid}"
-                        ErrorMessage="{Binding PreviewStatusText}" />
-                </Border>
-
-                <!-- Import Summary -->
-                <Border Grid.Row="1"
-                        Style="{StaticResource PanelBorderStyle}"
-                        Margin="0,8,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Import Summary" Style="{StaticResource SectionHeaderStyle}" />
-                        <UniformGrid Columns="3">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding UnassignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Unassigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding AssignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Assigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding MbColumnSectionsReadyCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Sections ready" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </UniformGrid>
-                        <!-- Flow 1 validation warning -->
-                        <Border Margin="0,8,0,0">
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource WarningBannerStyle}">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasFlow1Warning}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <TextBlock Text="{Binding Flow1ValidationMessage}"
-                                       FontSize="{StaticResource FontSizeBody}"
-                                       TextWrapping="Wrap"
-                                       Foreground="#7B5E00" />
-                        </Border>
-                    </StackPanel>
-                </Border>
-
-                <!-- Import Groups -->
-                <Border Grid.Row="2"
-                        Style="{StaticResource PanelBorderStyle}"
-                        Margin="0,8,0,0">
+                        Margin="0,0,0,0">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                             <Button DockPanel.Dock="Right"
@@ -735,6 +784,64 @@
                         </ListBox>
                     </DockPanel>
                 </Border>
+
+                <!-- Import Summary -->
+                <Border Grid.Row="1"
+                        Style="{StaticResource PanelBorderStyle}"
+                        Margin="0,8,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Import Summary" Style="{StaticResource SectionHeaderStyle}" />
+                        <UniformGrid Columns="3">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding UnassignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Text="Unassigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding AssignedCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Text="Assigned" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding MbColumnSectionsReadyCount}" Style="{StaticResource SummaryValueStyle}" HorizontalAlignment="Center" />
+                                <TextBlock Text="Sections ready" Style="{StaticResource SummaryLabelStyle}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </UniformGrid>
+                        <Border Margin="0,8,0,0">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource WarningBannerStyle}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasFlow1Warning}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding Flow1ValidationMessage}"
+                                       FontSize="{StaticResource FontSizeBody}"
+                                       TextWrapping="Wrap"
+                                       Foreground="#7B5E00" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Section Preview — secondary, smaller, at the bottom -->
+                <Border Grid.Row="2"
+                        Style="{StaticResource PanelBorderStyle}"
+                        Padding="6"
+                        Margin="0,8,0,0">
+                    <controls:SectionPreviewCanvas
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        SectionWidth="{Binding BoundaryPreviewWidth}"
+                        SectionHeight="{Binding BoundaryPreviewHeight}"
+                        Cover="{Binding BoundaryPreviewCover}"
+                        UnitSystem="{Binding TargetUnitSystem}"
+                        SectionShape="{Binding BoundaryPreviewSectionShape}"
+                        BoundaryPoints="{Binding BoundaryPreviewPoints}"
+                        SectionLabel="{Binding BoundaryPreviewSectionLabel}"
+                        IsValid="{Binding IsBoundaryPreviewValid}"
+                        ErrorMessage="{Binding PreviewStatusText}" />
+                </Border>
             </Grid>
         </Grid>
 
@@ -747,7 +854,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250" />
                 <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="170" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -815,44 +922,49 @@
                 </DockPanel>
             </GroupBox>
 
-            <!-- Selected Story/Label Items -->
+            <!-- MB Column Sections from Step 1 -->
             <GroupBox Grid.Column="2"
-                      Header="Selected Items"
+                      Header="MB Column Sections"
                       BorderBrush="{DynamicResource BorderGreyBrush}"
                       Foreground="{DynamicResource DarkNavyBrush}"
                       Padding="6">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top"
-                               Text="{Binding AllAssignedItems.Count, StringFormat='{}{0} item(s)'}"
+                               Text="{Binding MbColumnSections.Count, StringFormat='{}{0} section(s)'}"
                                FontSize="{StaticResource FontSizeBody}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
-                    <DataGrid ItemsSource="{Binding AllAssignedItems}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              CanUserReorderColumns="False"
-                              HeadersVisibility="Column"
-                              SelectionMode="Single"
-                              FontSize="{StaticResource FontSizeBody}"
-                              RowHeight="22"
-                              BorderBrush="{DynamicResource BorderGreyBrush}"
-                              EnableRowVirtualization="True"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Section"
-                                                Binding="{Binding ImportGroupName}"
-                                                Width="*" />
-                            <DataGridTextColumn Header="Story"
-                                                Binding="{Binding Story}"
-                                                Width="65" />
-                            <DataGridTextColumn Header="Label"
-                                                Binding="{Binding Label}"
-                                                Width="55" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <ListBox ItemsSource="{Binding MbColumnSections}"
+                             BorderBrush="{DynamicResource BorderGreyBrush}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource FontSizeBody}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="6,4" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:MbColumnSectionViewModel}">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right"
+                                               Text="{Binding Items.Count, StringFormat='({0})'}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               Foreground="{DynamicResource TextMutedBrush}"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0,0,0" />
+                                    <TextBlock Text="{Binding SectionName}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </DockPanel>
             </GroupBox>
 
@@ -879,59 +991,15 @@
                             </Grid.ColumnDefinitions>
                             <!-- Design Forces -->
                             <StackPanel Grid.Column="0">
-                                <DockPanel Margin="0,0,0,4">
-                                    <TextBlock DockPanel.Dock="Right"
-                                               FontSize="{StaticResource FontSizeBody}"
-                                               VerticalAlignment="Center"
-                                               Margin="6,0,0,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{Binding DesignForcesStatusText}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsDesignForcesImported}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Text="Design Forces:" FontSize="{StaticResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center" />
-                                </DockPanel>
                                 <RadioButton Content="Use Design Forces"
                                              IsChecked="{Binding UseDesignForces, Mode=TwoWay}"
-                                             IsEnabled="{Binding IsDesignForcesImported}"
                                              FontSize="{StaticResource FontSizeBody}"
                                              Margin="0,2" />
                             </StackPanel>
                             <!-- Element Forces -->
                             <StackPanel Grid.Column="2">
-                                <DockPanel Margin="0,0,0,4">
-                                    <TextBlock DockPanel.Dock="Right"
-                                               FontSize="{StaticResource FontSizeBody}"
-                                               VerticalAlignment="Center"
-                                               Margin="6,0,0,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{Binding ElementForcesStatusText}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsElementForcesAvailable}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource AccentGreenBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Text="Element Forces:" FontSize="{StaticResource FontSizeBody}"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center" />
-                                </DockPanel>
                                 <RadioButton Content="Use Element Forces"
                                              IsChecked="{Binding UseElementForces, Mode=TwoWay}"
-                                             IsEnabled="{Binding IsElementForcesAvailable}"
                                              FontSize="{StaticResource FontSizeBody}"
                                              Margin="0,2" />
                             </StackPanel>
@@ -945,6 +1013,16 @@
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Padding="14,5"
                                 MinHeight="28" />
+                        <ProgressBar DockPanel.Dock="Left"
+                                     IsIndeterminate="True"
+                                     Width="80"
+                                     Height="4"
+                                     Margin="10,0,0,0"
+                                     VerticalAlignment="Center"
+                                     Foreground="{DynamicResource PrimaryNavyBrush}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     Visibility="{Binding IsLoadingForces, Converter={StaticResource BoolToVisibilityConverter}}" />
                         <TextBlock Text="{Binding ForceCacheStatus}"
                                    FontSize="{StaticResource FontSizeBody}"
                                    Foreground="{DynamicResource TextMutedBrush}"
@@ -973,7 +1051,7 @@
 
                     <!-- Force rows TabControl -->
                     <TabControl FontSize="{StaticResource FontSizeBody}">
-                        <!-- Tab 1: Column Forces (filtered by ObjectType == Column) -->
+                        <!-- Tab 1: Column Forces -->
                         <TabItem Header="Column Forces">
                             <DataGrid ItemsSource="{Binding FilteredColumnMappedForceRows}"
                                       AutoGenerateColumns="False"
@@ -990,21 +1068,21 @@
                                       VirtualizingPanel.IsVirtualizing="True"
                                       VirtualizingPanel.VirtualizationMode="Recycling">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Case Name"     Binding="{Binding CaseName}"               Width="*"  />
-                                    <DataGridTextColumn Header="Col Label"     Binding="{Binding Label}"                  Width="72" />
-                                    <DataGridTextColumn Header="Story"         Binding="{Binding Story}"                  Width="72" />
-                                    <DataGridTextColumn Header="NEd (kN)"      Binding="{Binding NEd,      StringFormat=N2}" Width="78" />
-                                    <DataGridTextColumn Header="Vx (kN)"       Binding="{Binding Vx,       StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="Vy (kN)"       Binding="{Binding Vy,       StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="Mx Top"        Binding="{Binding MxTop,    StringFormat=N2}" Width="72" />
-                                    <DataGridTextColumn Header="Mx Bottom"     Binding="{Binding MxBottom, StringFormat=N2}" Width="78" />
-                                    <DataGridTextColumn Header="My Top"        Binding="{Binding MyTop,    StringFormat=N2}" Width="72" />
-                                    <DataGridTextColumn Header="My Bottom"     Binding="{Binding MyBottom, StringFormat=N2}" Width="78" />
+                                    <DataGridTextColumn Header="Case Name"        Binding="{Binding CaseName}"                  Width="*" MinWidth="130" />
+                                    <DataGridTextColumn Header="Col Label"        Binding="{Binding Label}"                     Width="62" />
+                                    <DataGridTextColumn Header="Story"            Binding="{Binding Story}"                     Width="60" />
+                                    <DataGridTextColumn Header="NEd (kN)"         Binding="{Binding NEd,      StringFormat=N2}" Width="74" />
+                                    <DataGridTextColumn Header="Vx (kN)"          Binding="{Binding Vx,       StringFormat=N2}" Width="64" />
+                                    <DataGridTextColumn Header="Vy (kN)"          Binding="{Binding Vy,       StringFormat=N2}" Width="64" />
+                                    <DataGridTextColumn Header="Mx Top (kN·m)"    Binding="{Binding MxTop,    StringFormat=N2}" Width="86" />
+                                    <DataGridTextColumn Header="Mx Bot (kN·m)"    Binding="{Binding MxBottom, StringFormat=N2}" Width="86" />
+                                    <DataGridTextColumn Header="My Top (kN·m)"    Binding="{Binding MyTop,    StringFormat=N2}" Width="86" />
+                                    <DataGridTextColumn Header="My Bot (kN·m)"    Binding="{Binding MyBottom, StringFormat=N2}" Width="86" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
 
-                        <!-- Tab 3: Pier Forces (filtered by ObjectType == Pier) -->
+                        <!-- Tab 2: Pier Forces -->
                         <TabItem Header="Pier Forces">
                             <DataGrid ItemsSource="{Binding FilteredPierMappedForceRows}"
                                       AutoGenerateColumns="False"
@@ -1021,16 +1099,16 @@
                                       VirtualizingPanel.IsVirtualizing="True"
                                       VirtualizingPanel.VirtualizationMode="Recycling">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Case Name"     Binding="{Binding CaseName}"               Width="*"  />
-                                    <DataGridTextColumn Header="Pier Label"    Binding="{Binding Label}"                  Width="72" />
-                                    <DataGridTextColumn Header="Story"         Binding="{Binding Story}"                  Width="72" />
-                                    <DataGridTextColumn Header="NEd (kN)"      Binding="{Binding NEd,      StringFormat=N2}" Width="78" />
-                                    <DataGridTextColumn Header="Vx (kN)"       Binding="{Binding Vx,       StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="Vy (kN)"       Binding="{Binding Vy,       StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="Mx Top"        Binding="{Binding MxTop,    StringFormat=N2}" Width="72" />
-                                    <DataGridTextColumn Header="Mx Bottom"     Binding="{Binding MxBottom, StringFormat=N2}" Width="78" />
-                                    <DataGridTextColumn Header="My Top"        Binding="{Binding MyTop,    StringFormat=N2}" Width="72" />
-                                    <DataGridTextColumn Header="My Bottom"     Binding="{Binding MyBottom, StringFormat=N2}" Width="78" />
+                                    <DataGridTextColumn Header="Case Name"        Binding="{Binding CaseName}"                  Width="*" MinWidth="130" />
+                                    <DataGridTextColumn Header="Pier Label"       Binding="{Binding Label}"                     Width="62" />
+                                    <DataGridTextColumn Header="Story"            Binding="{Binding Story}"                     Width="60" />
+                                    <DataGridTextColumn Header="NEd (kN)"         Binding="{Binding NEd,      StringFormat=N2}" Width="74" />
+                                    <DataGridTextColumn Header="Vx (kN)"          Binding="{Binding Vx,       StringFormat=N2}" Width="64" />
+                                    <DataGridTextColumn Header="Vy (kN)"          Binding="{Binding Vy,       StringFormat=N2}" Width="64" />
+                                    <DataGridTextColumn Header="Mx Top (kN·m)"    Binding="{Binding MxTop,    StringFormat=N2}" Width="86" />
+                                    <DataGridTextColumn Header="Mx Bot (kN·m)"    Binding="{Binding MxBottom, StringFormat=N2}" Width="86" />
+                                    <DataGridTextColumn Header="My Top (kN·m)"    Binding="{Binding MyTop,    StringFormat=N2}" Width="86" />
+                                    <DataGridTextColumn Header="My Bot (kN·m)"    Binding="{Binding MyBottom, StringFormat=N2}" Width="86" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
@@ -1256,6 +1334,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <!-- Unit System -->
@@ -1293,12 +1372,32 @@
                                        Text="Rebar Grade"
                                        FontSize="{StaticResource FontSizeBody}"
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,6" />
                             <ComboBox Grid.Row="2" Grid.Column="1"
                                       ItemsSource="{Binding AvailableImportRebarGrades}"
                                       DisplayMemberPath="DisplayName"
                                       SelectedItem="{Binding SelectedImportRebarGrade, Mode=TwoWay}"
-                                      FontSize="{StaticResource FontSizeBody}" />
+                                      FontSize="{StaticResource FontSizeBody}"
+                                      Margin="0,0,0,6" />
+
+                            <!-- Slenderness check (EC2 only) -->
+                            <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                      Content="Consider slenderness check"
+                                      IsChecked="{Binding ImportIncludeSlenderness, Mode=TwoWay}"
+                                      FontSize="{StaticResource FontSizeBody}"
+                                      Margin="0,2,0,0">
+                                <CheckBox.Style>
+                                    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsImportDesignCodeEc2}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </CheckBox.Style>
+                            </CheckBox>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -1360,11 +1459,6 @@
                             Margin="8,0,0,0"
                             Visibility="{Binding IsFlow3, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </StackPanel>
-
-                <TextBlock Text="{Binding ConnectionStatus}"
-                           VerticalAlignment="Center"
-                           FontSize="{StaticResource FontSizeBody}"
-                           Foreground="{DynamicResource TextDarkBrush}" />
             </DockPanel>
         </Border>
     </Grid>

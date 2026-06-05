@@ -59,6 +59,9 @@ public sealed class EtabsSectionForceFilterService : IEtabsSectionForceFilterSer
             double myBot = bot?.M3 ?? top!.M3;
             double myTop = top?.M3 ?? bot!.M3;
 
+            double mxUsed = SMath.Abs(mxTop) >= SMath.Abs(mxBot) ? mxTop : mxBot;
+            double myUsed = SMath.Abs(myTop) >= SMath.Abs(myBot) ? myTop : myBot;
+
             results.Add(new MbColumnMappedForceRow
             {
                 MbColumnSectionName = section.SectionName,
@@ -72,7 +75,9 @@ public sealed class EtabsSectionForceFilterService : IEtabsSectionForceFilterSer
                 MxTop      = SMath.Round(mxTop, 3),
                 MxBottom   = SMath.Round(mxBot, 3),
                 MyTop      = SMath.Round(myTop, 3),
-                MyBottom   = SMath.Round(myBot, 3)
+                MyBottom   = SMath.Round(myBot, 3),
+                MxUsed     = SMath.Round(mxUsed, 3),
+                MyUsed     = SMath.Round(myUsed, 3)
             });
         }
 

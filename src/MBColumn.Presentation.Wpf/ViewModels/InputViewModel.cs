@@ -68,8 +68,8 @@ public sealed class InputViewModel : ViewModelBase
     private bool includeEc2Slenderness;
     private double? kx = 1.0;
     private double? ky = 1.0;
-    private double? phiEff;
-    private bool useDefaultAWhenPhiEffUnknown = true;
+    private double? phiEff = 1.0;
+    private bool useDefaultAWhenPhiEffUnknown = false;
     private double stirrupDiameterMm = 10.0;
     private RebarDefinition? selectedStirrupBar;
     private double linkSpacingMm = 200.0;
@@ -2299,7 +2299,7 @@ public sealed class InputViewModel : ViewModelBase
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
         memberLengthL = 3500.0;
         includeEc2Slenderness = false;
-        kx = 1.0; ky = 1.0; phiEff = null; useDefaultAWhenPhiEffUnknown = true;
+        kx = 1.0; ky = 1.0; phiEff = 1.0; useDefaultAWhenPhiEffUnknown = false;
         stirrupDiameterMm = 10.0; metricBars.TryGet("T10", out var _t10); selectedStirrupBar = _t10;
         linkSpacingMm = 200.0; innerLegsX = 0; innerLegsY = 0;
         selectedMaterialLibrary = MaterialLibraryType.Europe;
@@ -2328,7 +2328,7 @@ public sealed class InputViewModel : ViewModelBase
         selectedIntegrationMethod = SectionIntegrationMethod.Fiber;
         memberLengthL = 140.0;
         includeEc2Slenderness = false;
-        kx = 1.0; ky = 1.0; phiEff = null; useDefaultAWhenPhiEffUnknown = true;
+        kx = 1.0; ky = 1.0; phiEff = 1.0; useDefaultAWhenPhiEffUnknown = false;
         stirrupDiameterMm = 9.525; selectedStirrupBar = imperialBars.GetBars().FirstOrDefault();
         linkSpacingMm = 8.0 * 25.4; innerLegsX = 0; innerLegsY = 0;
         selectedMaterialLibrary = MaterialLibraryType.America;

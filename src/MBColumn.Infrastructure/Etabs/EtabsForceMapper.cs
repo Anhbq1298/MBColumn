@@ -83,6 +83,11 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
             double nedBot = MapAxialForce(bot?.P ?? top!.P, forceSource);
             double nedTop = MapAxialForce(top?.P ?? bot!.P, forceSource);
 
+            double mxTop    = top?.M2 ?? bot!.M2;
+            double mxBottom = bot?.M2 ?? top!.M2;
+            double myTop    = top?.M3 ?? bot!.M3;
+            double myBottom = bot?.M3 ?? top!.M3;
+
             rows.Add(new MbColumnMappedForceRow
             {
                 MbColumnSectionName = sectionName,
@@ -93,10 +98,12 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
                 NEd        = Min(nedBot, nedTop),
                 Vx         = Max(Abs(bot?.V2 ?? 0), Abs(top?.V2 ?? 0)),
                 Vy         = Max(Abs(bot?.V3 ?? 0), Abs(top?.V3 ?? 0)),
-                MxTop      = top?.M2 ?? bot!.M2,
-                MxBottom   = bot?.M2 ?? top!.M2,
-                MyTop      = top?.M3 ?? bot!.M3,
-                MyBottom   = bot?.M3 ?? top!.M3
+                MxTop      = mxTop,
+                MxBottom   = mxBottom,
+                MyTop      = myTop,
+                MyBottom   = myBottom,
+                MxUsed     = Abs(mxTop) >= Abs(mxBottom) ? mxTop : mxBottom,
+                MyUsed     = Abs(myTop) >= Abs(myBottom) ? myTop : myBottom
             });
         }
 

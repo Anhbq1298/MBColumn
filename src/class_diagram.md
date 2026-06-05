@@ -784,7 +784,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsLoadCombinationViewModel** | Represents the EtabsLoadCombinationViewModel class. Key methods: SetSelectedSilently. Key properties: Name, IsSelected. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsPreloadData** | Represents the EtabsPreloadData class. Key properties: ModelName, ModelPath, PresentUnits, StoryCount. | `EtabsPreloadData.cs` |
 | `class` | **EtabsPreloadStep** | Represents the EtabsPreloadStep class. Key methods: SetRunning, SetDone, SetError, UpdateDetail. Key properties: Label, IsSubStep, Status, Detail. | `EtabsPreloadStep.cs` |
-| `class` | **EtabsPreloadViewModel** | Represents the EtabsPreloadViewModel class. Key methods: StartAsync, Cancel. Key properties: Steps, AvailableCombinations, FilteredCombinations, CompletedCount. | `EtabsPreloadViewModel.cs` |
+| `class` | **EtabsPreloadViewModel** | Represents the EtabsPreloadViewModel class. Key methods: StartAsync, Cancel. Key properties: Steps, CompletedCount, CompletedStepsText, Result. | `EtabsPreloadViewModel.cs` |
 | `class` | **EtabsSectionMappingViewModel** | Represents the EtabsSectionMappingViewModel class. Key properties: SectionTypes, EtabsSectionName, UniqueSection, SectionType. | `EtabsSectionMappingViewModel.cs` |
 | `class` | **EtabsStoryOptionViewModel** | Represents the EtabsStoryOptionViewModel class. Key properties: StoryName, Elevation, SortIndex, DisplayName. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsUniqueSectionOptionViewModel** | Represents the EtabsUniqueSectionOptionViewModel class. Key properties: SectionName, SourceSectionName, ShapeType, ObjectCount. | `EtabsImportViewModel.cs` |
@@ -845,7 +845,6 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **UnitSystemOption** | Represents the UnitSystemOption record. | `InputViewModel.cs` |
 | `class` | **ViewModelBase** | Represents the ViewModelBase class. Key methods: Dispose. | `ViewModelBase.cs` |
 | `class` | **ViewportOptionViewModel** | Represents the ViewportOptionViewModel class. Key properties: Type, DisplayName, IsSelected. | `ViewportOptionViewModel.cs` |
-| `record` | **fields** | Represents the fields record. Key methods: GenerateSectionForceRows. | `EtabsImportViewModel.cs` |
 | `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions, GetSelectedColumnIds. | `ProjectExplorerViewModel.cs` |
 
 ### ViewModels/AutomatedRebarDesign
