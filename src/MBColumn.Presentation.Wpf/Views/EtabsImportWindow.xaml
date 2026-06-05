@@ -429,7 +429,10 @@
                               CanUserAddRows="False"
                               SelectionMode="Extended"
                               SelectionChanged="OnDataGridSelectionChanged"
-                              ContextMenuOpening="OnAvailableItemsContextMenuOpening">
+                              ContextMenuOpening="OnAvailableItemsContextMenuOpening"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Type" Binding="{Binding SectionTypeDisplay}" Width="90" IsReadOnly="True" />
                             <DataGridTextColumn Header="Section / Pier" Binding="{Binding EtabsSectionName}" Width="130" IsReadOnly="True" />
@@ -552,10 +555,27 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding MbColumnSections}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:MbColumnSectionViewModel}">
+                        <ListBox ItemsSource="{Binding MbColumnSections}"
+                                 VirtualizingPanel.IsVirtualizing="True"
+                                 VirtualizingPanel.VirtualizationMode="Recycling"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 Background="Transparent"
+                                 BorderThickness="0">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <ContentPresenter />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:MbColumnSectionViewModel}">
                                         <Border Style="{StaticResource GroupCardStyle}">
                                             <StackPanel>
                                                 <DockPanel Margin="0,0,0,4">
@@ -711,9 +731,8 @@
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                                </ListBox.ItemTemplate>
+                        </ListBox>
                     </DockPanel>
                 </Border>
             </Grid>
@@ -818,7 +837,10 @@
                               SelectionMode="Single"
                               FontSize="{StaticResource FontSizeBody}"
                               RowHeight="22"
-                              BorderBrush="{DynamicResource BorderGreyBrush}">
+                              BorderBrush="{DynamicResource BorderGreyBrush}"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Section"
                                                 Binding="{Binding ImportGroupName}"
@@ -963,14 +985,21 @@
                                       SelectionMode="Single"
                                       FontSize="{StaticResource FontSizeBody}"
                                       RowHeight="22"
-                                      BorderBrush="{DynamicResource BorderGreyBrush}">
+                                      BorderBrush="{DynamicResource BorderGreyBrush}"
+                                      EnableRowVirtualization="True"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding LoadCaseName}" Width="*" />
-                                    <DataGridTextColumn Header="Col Label" Binding="{Binding Label}" Width="80" />
-                                    <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
-                                    <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="Mx" Binding="{Binding Mx, StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="My" Binding="{Binding My, StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Case Name"     Binding="{Binding CaseName}"               Width="*"  />
+                                    <DataGridTextColumn Header="Col Label"     Binding="{Binding Label}"                  Width="72" />
+                                    <DataGridTextColumn Header="Story"         Binding="{Binding Story}"                  Width="72" />
+                                    <DataGridTextColumn Header="NEd (kN)"      Binding="{Binding NEd,      StringFormat=N2}" Width="78" />
+                                    <DataGridTextColumn Header="Vx (kN)"       Binding="{Binding Vx,       StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Vy (kN)"       Binding="{Binding Vy,       StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Mx Top"        Binding="{Binding MxTop,    StringFormat=N2}" Width="72" />
+                                    <DataGridTextColumn Header="Mx Bottom"     Binding="{Binding MxBottom, StringFormat=N2}" Width="78" />
+                                    <DataGridTextColumn Header="My Top"        Binding="{Binding MyTop,    StringFormat=N2}" Width="72" />
+                                    <DataGridTextColumn Header="My Bottom"     Binding="{Binding MyBottom, StringFormat=N2}" Width="78" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
@@ -987,14 +1016,21 @@
                                       SelectionMode="Single"
                                       FontSize="{StaticResource FontSizeBody}"
                                       RowHeight="22"
-                                      BorderBrush="{DynamicResource BorderGreyBrush}">
+                                      BorderBrush="{DynamicResource BorderGreyBrush}"
+                                      EnableRowVirtualization="True"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="MBCLCName" Binding="{Binding LoadCaseName}" Width="*" />
-                                    <DataGridTextColumn Header="Pier Label" Binding="{Binding Label}" Width="80" />
-                                    <DataGridTextColumn Header="Story" Binding="{Binding Story}" Width="80" />
-                                    <DataGridTextColumn Header="P" Binding="{Binding P, StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="Mx" Binding="{Binding Mx, StringFormat=N2}" Width="70" />
-                                    <DataGridTextColumn Header="My" Binding="{Binding My, StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Case Name"     Binding="{Binding CaseName}"               Width="*"  />
+                                    <DataGridTextColumn Header="Pier Label"    Binding="{Binding Label}"                  Width="72" />
+                                    <DataGridTextColumn Header="Story"         Binding="{Binding Story}"                  Width="72" />
+                                    <DataGridTextColumn Header="NEd (kN)"      Binding="{Binding NEd,      StringFormat=N2}" Width="78" />
+                                    <DataGridTextColumn Header="Vx (kN)"       Binding="{Binding Vx,       StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Vy (kN)"       Binding="{Binding Vy,       StringFormat=N2}" Width="70" />
+                                    <DataGridTextColumn Header="Mx Top"        Binding="{Binding MxTop,    StringFormat=N2}" Width="72" />
+                                    <DataGridTextColumn Header="Mx Bottom"     Binding="{Binding MxBottom, StringFormat=N2}" Width="78" />
+                                    <DataGridTextColumn Header="My Top"        Binding="{Binding MyTop,    StringFormat=N2}" Width="72" />
+                                    <DataGridTextColumn Header="My Bottom"     Binding="{Binding MyBottom, StringFormat=N2}" Width="78" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
@@ -1053,52 +1089,68 @@
                     <TabControl FontSize="{StaticResource FontSizeBody}">
                         <!-- Tab 1: Section list with Project Group assignment -->
                         <TabItem Header="Sections">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding MbColumnSections}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="{x:Type vm:MbColumnSectionViewModel}">
-                                            <Border Style="{StaticResource GroupCardStyle}">
-                                                <StackPanel>
-                                                    <DockPanel>
-                                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <TextBlock Text="Project Group:" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" />
-                                                            <ComboBox ItemsSource="{Binding DataContext.TargetGroups, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                      DisplayMemberPath="DisplayName"
-                                                                      SelectedItem="{Binding SelectedTargetGroup, Mode=TwoWay}"
-                                                                      Width="130"
-                                                                      Margin="6,0,0,0" />
-                                                            <Button Content="+"
-                                                                    Command="{Binding DataContext.AddTargetGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                    Style="{StaticResource SecondaryButtonStyle}"
-                                                                    Margin="4,0,0,0" Padding="6,2" />
-                                                        </StackPanel>
-                                                        <TextBlock Text="{Binding SectionName}"
-                                                                   FontSize="{StaticResource FontSizeBody}"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource PrimaryNavyBrush}"
-                                                                   VerticalAlignment="Center" />
-                                                    </DockPanel>
-                                                    <ItemsControl ItemsSource="{Binding Items}" Margin="0,4,0,0">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate DataType="{x:Type vm:EtabsColumnImportRowViewModel}">
-                                                                <TextBlock FontSize="{StaticResource FontSizeBody}"
-                                                                           Foreground="{DynamicResource TextDarkBrush}"
-                                                                           Margin="0,1">
-                                                                    <Run Text="{Binding EtabsSectionName, Mode=OneWay}" />
-                                                                    <Run Text=" | " Foreground="{DynamicResource TextMutedBrush}" />
-                                                                    <Run Text="{Binding Story, Mode=OneWay}" />
-                                                                    <Run Text=" / " Foreground="{DynamicResource TextMutedBrush}" />
-                                                                    <Run Text="{Binding Label, Mode=OneWay}" />
-                                                                </TextBlock>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
+                            <ListBox ItemsSource="{Binding MbColumnSections}"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     Background="Transparent"
+                                     BorderThickness="0">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:MbColumnSectionViewModel}">
+                                        <Border Style="{StaticResource GroupCardStyle}">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="Project Group:" VerticalAlignment="Center" FontSize="{StaticResource FontSizeBody}" Foreground="{DynamicResource TextMutedBrush}" />
+                                                        <ComboBox ItemsSource="{Binding DataContext.TargetGroups, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                  DisplayMemberPath="DisplayName"
+                                                                  SelectedItem="{Binding SelectedTargetGroup, Mode=TwoWay}"
+                                                                  Width="130"
+                                                                  Margin="6,0,0,0" />
+                                                        <Button Content="+"
+                                                                Command="{Binding DataContext.AddTargetGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                                Margin="4,0,0,0" Padding="6,2" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding SectionName}"
+                                                               FontSize="{StaticResource FontSizeBody}"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                                               VerticalAlignment="Center" />
+                                                </DockPanel>
+                                                <ItemsControl ItemsSource="{Binding Items}" Margin="0,4,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:EtabsColumnImportRowViewModel}">
+                                                            <TextBlock FontSize="{StaticResource FontSizeBody}"
+                                                                       Foreground="{DynamicResource TextDarkBrush}"
+                                                                       Margin="0,1">
+                                                                <Run Text="{Binding EtabsSectionName, Mode=OneWay}" />
+                                                                <Run Text=" | " Foreground="{DynamicResource TextMutedBrush}" />
+                                                                <Run Text="{Binding Story, Mode=OneWay}" />
+                                                                <Run Text=" / " Foreground="{DynamicResource TextMutedBrush}" />
+                                                                <Run Text="{Binding Label, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </TabItem>
                         <!-- Tab 2: Force mapping summary -->
                         <TabItem Header="Force Summary">
@@ -1187,6 +1239,66 @@
                             <TextBlock Grid.Row="0" Grid.Column="1"
                                        Text="{Binding SelectedLoadCombinationCount, StringFormat='{}{0} selected'}"
                                        FontSize="{StaticResource FontSizeBody}" Margin="0,0,0,4" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Design Settings -->
+                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,10,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Design Settings" Style="{StaticResource SectionHeaderStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Unit System -->
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                       Text="Unit System"
+                                       FontSize="{StaticResource FontSizeBody}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,6" />
+                            <ComboBox Grid.Row="0" Grid.Column="1"
+                                      ItemsSource="{Binding ImportUnitSystems}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="System"
+                                      SelectedValue="{Binding SelectedImportUnitSystem, Mode=TwoWay}"
+                                      FontSize="{StaticResource FontSizeBody}"
+                                      Margin="0,0,0,6" />
+
+                            <!-- Design Code -->
+                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                       Text="Design Code"
+                                       FontSize="{StaticResource FontSizeBody}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,6" />
+                            <ComboBox Grid.Row="1" Grid.Column="1"
+                                      ItemsSource="{Binding ImportDesignCodes}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Code"
+                                      SelectedValue="{Binding SelectedImportDesignCode, Mode=TwoWay}"
+                                      FontSize="{StaticResource FontSizeBody}"
+                                      Margin="0,0,0,6" />
+
+                            <!-- Rebar Grade -->
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Text="Rebar Grade"
+                                       FontSize="{StaticResource FontSizeBody}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="2" Grid.Column="1"
+                                      ItemsSource="{Binding AvailableImportRebarGrades}"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedItem="{Binding SelectedImportRebarGrade, Mode=TwoWay}"
+                                      FontSize="{StaticResource FontSizeBody}" />
                         </Grid>
                     </StackPanel>
                 </Border>

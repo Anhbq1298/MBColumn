@@ -60,8 +60,8 @@ public sealed record CalculationResultDto(
         ? "EC2 Slenderness: Enabled"
         : "EC2 Slenderness: Disabled";
     public string DemandSourceDetail => IncludeEc2Slenderness
-        ? "Method: Nominal Curvature"
-        : "PMM uses direct section moments Mx and My.";
+        ? "MxUsed / MyUsed: EC2 nominal curvature amplification."
+        : "MxUsed / MyUsed: governing end moment (max-abs of MxTop / MxBot), sign preserved.";
     public Ec2SlendernessBatchResultDto Ec2Slenderness { get; init; } = Ec2SlendernessBatchResultDto.Empty;
 
     /// <summary>

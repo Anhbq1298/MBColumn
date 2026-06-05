@@ -585,30 +585,26 @@ public class DiagramCanvas2D : FrameworkElement
     private void DrawSpecialPoints(DrawingContext dc, ChartTransformHelper transform, IReadOnlyList<ControlPointDto> points)
     {
         var demandPoints = ShowDemandPoint ? points.Where(p => p.IsDemand).ToList() : [];
-        var highlighted = HighlightedDemandLabel;
-        var hasHighlight = !string.IsNullOrEmpty(highlighted);
 
-        // Draw non-highlighted demand points first (behind the highlighted one)
+        // Governing point: explicit user selection first, else highest utilization ratio.
+        var highlighted = HighlightedDemandLabel;
+        var governing = !string.IsNullOrEmpty(highlighted)
+            ? highlighted
+            : demandPoints.OrderByDescending(p => p.Utilization).FirstOrDefault()?.Label;
+        var hasGoverning = !string.IsNullOrEmpty(governing);
+
+        // Draw non-governing demand points dimmed (always, so the critical one stands out)
         foreach (var p in demandPoints)
         {
-            var isHighlighted = hasHighlight && string.Equals(p.Label, highlighted, StringComparison.OrdinalIgnoreCase);
-            if (isHighlighted) continue;
+            var isGoverning = hasGoverning && string.Equals(p.Label, governing, StringComparison.OrdinalIgnoreCase);
+            if (isGoverning) continue;
 
             var pt = transform.ToScreen(p.X, p.Y);
-            if (hasHighlight)
-            {
-                // Dim unselected points when something is highlighted
-                dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(80, 227, 27, 35)), null, pt, 3.5, 3.5);
-            }
-            else
-            {
-                // Normal: solid dot, no label
-                dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(227, 27, 35)), new Pen(Brushes.White, 1), pt, 5, 5);
-            }
+            dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(80, 227, 27, 35)), null, pt, 3.5, 3.5);
         }
 
-        // Draw highlighted demand point on top with ring + label
-        foreach (var p in demandPoints.Where(p => hasHighlight && string.Equals(p.Label, highlighted, StringComparison.OrdinalIgnoreCase)))
+        // Draw governing demand point on top with ring + label
+        foreach (var p in demandPoints.Where(p => hasGoverning && string.Equals(p.Label, governing, StringComparison.OrdinalIgnoreCase)))
         {
             if (p.Utilization > 0)
             {

@@ -16,6 +16,8 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
     private readonly IIrregularPierGeometryBuilder? irregularGeometryBuilder;
     private readonly IEtabsDesignForceImportService? designForceImportService;
     private readonly IImportedEtabsForceCache? importedForceCache;
+    private readonly IEtabsForceTableService? forceTableService;
+    private readonly IEtabsColumnIdentityService? columnIdentityService;
 
     public EtabsImportDialogService(
         IEtabsConnectionService connectionService,
@@ -25,7 +27,9 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         IEtabsPierShellImportService? pierShellImportService = null,
         IIrregularPierGeometryBuilder? irregularGeometryBuilder = null,
         IEtabsDesignForceImportService? designForceImportService = null,
-        IImportedEtabsForceCache? importedForceCache = null)
+        IImportedEtabsForceCache? importedForceCache = null,
+        IEtabsForceTableService? forceTableService = null,
+        IEtabsColumnIdentityService? columnIdentityService = null)
     {
         this.connectionService = connectionService;
         this.columnImportService = columnImportService;
@@ -35,6 +39,8 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
         this.irregularGeometryBuilder = irregularGeometryBuilder;
         this.designForceImportService = designForceImportService;
         this.importedForceCache = importedForceCache;
+        this.forceTableService = forceTableService;
+        this.columnIdentityService = columnIdentityService;
     }
 
     public EtabsImportDialogResult? ShowDialog(
@@ -79,7 +85,9 @@ public sealed class EtabsImportDialogService : IEtabsImportDialogService
             importedForceCache,
             targetSystem,
             forceCacheResolver,
-            sectionForceFilter);
+            sectionForceFilter,
+            forceTableService,
+            columnIdentityService);
 
         vm.ApplyPreloadData(preloadVm.Result);
 

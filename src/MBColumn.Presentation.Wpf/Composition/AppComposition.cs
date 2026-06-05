@@ -46,9 +46,12 @@ public sealed class AppComposition : IDisposable
         var irregularGeometry = new IrregularPierGeometryBuilder();
         var etabsDesignForceImport = new EtabsDesignForceImportService(etabsConnection);
         var importedForceCache = new ImportedEtabsForceCache();
+        IEtabsForceTableService etabsForceTableService = new EtabsForceTableService(etabsConnection);
+        IEtabsColumnIdentityService etabsColumnIdentityService = new EtabsColumnIdentityService(etabsConnection);
         EtabsImportDialogService = new EtabsImportDialogService(
             etabsConnection, etabsColumns, etabsForces, etabsForceCache, etabsPierShells, irregularGeometry,
-            etabsDesignForceImport, importedForceCache);
+            etabsDesignForceImport, importedForceCache,
+            etabsForceTableService, etabsColumnIdentityService);
 
         var forceMapper = new EtabsForceMapper();
         var changeDetector = new EtabsForceChangeDetector();

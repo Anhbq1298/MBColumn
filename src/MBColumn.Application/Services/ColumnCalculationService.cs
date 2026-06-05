@@ -202,6 +202,22 @@ public sealed class ColumnCalculationService(
                 };
             }).ToList();
         }
+        else
+        {
+            // Slenderness OFF: MxUsed/MyUsed = sign-preserving max-abs governing end moment.
+            // This recomputes from MxTop/MxBottom each time so results are correct regardless of
+            // how the snapshot was saved (guards against old data with unsigned values).
+            activeCases = activeCases.Select(lc =>
+            {
+                double? mxUsed = (lc.MxTop.HasValue && lc.MxBottom.HasValue)
+                    ? (Math.Abs(lc.MxTop.Value) >= Math.Abs(lc.MxBottom.Value) ? lc.MxTop : lc.MxBottom)
+                    : lc.MxUsed;
+                double? myUsed = (lc.MyTop.HasValue && lc.MyBottom.HasValue)
+                    ? (Math.Abs(lc.MyTop.Value) >= Math.Abs(lc.MyBottom.Value) ? lc.MyTop : lc.MyBottom)
+                    : lc.MyUsed;
+                return lc with { MxUsed = mxUsed, MyUsed = myUsed };
+            }).ToList();
+        }
 
         // Check every load case against the surface using batch processing
         var demands = activeCases.Select(lc => new LoadDemand(
@@ -245,9 +261,16 @@ public sealed class ColumnCalculationService(
         var rebarCompliance = complianceCheckService?.Check(input, coordinateList, maxCompNedN);
 
         // Build per-case result DTOs
+        string mxUsedSource = input.IncludeEc2Slenderness ? "Slenderness" : "DirectEnvelope";
         var lcResultDtos = caseResults.Select((r, i) =>
         {
             var govPt = r.Ratio.GoverningPoint ?? surface.Points.OrderByDescending(p => p.PhiPn).First();
+            double? mxUsedDisplay = r.Case.MxUsed.HasValue
+                ? units.MomentFromNmm(units.MomentToNmm(r.Case.MxUsed.Value, r.Case.MomentUnit), input.MomentUnit)
+                : null;
+            double? myUsedDisplay = r.Case.MyUsed.HasValue
+                ? units.MomentFromNmm(units.MomentToNmm(r.Case.MyUsed.Value, r.Case.MomentUnit), input.MomentUnit)
+                : null;
             return new LoadCaseResultDto(
                 r.Case.Id,
                 r.Case.Name,
@@ -274,7 +297,10 @@ public sealed class ColumnCalculationService(
                     : null,
                 M2yDisplay = TryGetSlenderness(slendernessResult, r.Case.Id)?.Y is { } y
                     ? units.MomentFromNmm(y.M2Nmm, input.MomentUnit)
-                    : null
+                    : null,
+                MxUsedDisplay = mxUsedDisplay,
+                MyUsedDisplay = myUsedDisplay,
+                MxUsedSource = mxUsedSource
             };
         }).ToList();
 

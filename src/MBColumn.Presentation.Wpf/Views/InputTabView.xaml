@@ -2058,31 +2058,93 @@
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding Mx, UpdateSourceTrigger=LostFocus, StringFormat=F1}"
+                                        <DataGridTextColumn Binding="{Binding MxTop, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F1}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
                                             <DataGridTextColumn.HeaderTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding DataContext.DemandMomentXHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    <TextBlock Text="{Binding DataContext.MxTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                                TextWrapping="Wrap"
                                                                TextAlignment="Center"
                                                                HorizontalAlignment="Center" />
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Binding="{Binding My, UpdateSourceTrigger=LostFocus, StringFormat=F1}"
+                                        <DataGridTextColumn Binding="{Binding MxBottom, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F1}"
                                                             Width="*"
                                                             ElementStyle="{StaticResource RightAlignText}"
                                                             EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
                                             <DataGridTextColumn.HeaderTemplate>
                                                 <DataTemplate>
-                                                    <TextBlock Text="{Binding DataContext.DemandMomentYHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    <TextBlock Text="{Binding DataContext.MxBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                                TextWrapping="Wrap"
                                                                TextAlignment="Center"
                                                                HorizontalAlignment="Center" />
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MyTop, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F1}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MyTopHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MyBottom, UpdateSourceTrigger=LostFocus, TargetNullValue='', StringFormat=F1}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource RightAlignText}"
+                                                            EditingElementStyle="{StaticResource RightAlignEditingTextBox}">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MyBottomHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MxUsed, TargetNullValue=auto, StringFormat=F1}"
+                                                            Width="*"
+                                                            IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MxUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                            <DataGridTextColumn.CellStyle>
+                                                <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                                    <Setter Property="Background" Value="#EBEBEB" />
+                                                </Style>
+                                            </DataGridTextColumn.CellStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Binding="{Binding MyUsed, TargetNullValue=auto, StringFormat=F1}"
+                                                            Width="*"
+                                                            IsReadOnly="True"
+                                                            ElementStyle="{StaticResource RightAlignText}">
+                                            <DataGridTextColumn.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding DataContext.MyUsedHeader, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                               TextWrapping="Wrap"
+                                                               TextAlignment="Center"
+                                                               HorizontalAlignment="Center" />
+                                                </DataTemplate>
+                                            </DataGridTextColumn.HeaderTemplate>
+                                            <DataGridTextColumn.CellStyle>
+                                                <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                                    <Setter Property="Background" Value="#EBEBEB" />
+                                                </Style>
+                                            </DataGridTextColumn.CellStyle>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Header="Status"
                                                             Binding="{Binding Status}"
@@ -3440,7 +3502,7 @@
                                             <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                             <Run Text="e" />
                                             <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
-                                            <Run Text="{Binding MinimumEccentricityRuleText}" />
+                                            <Run Text="{Binding MinimumEccentricityRuleText, Mode=OneWay}" />
                                             <Run Text="used" BaselineAlignment="Subscript" FontSize="9" />
                                             <Run Text=" is never less than N" />
                                             <Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" />

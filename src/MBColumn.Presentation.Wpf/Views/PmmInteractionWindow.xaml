@@ -514,9 +514,9 @@
                     <StackPanel>
                         <!-- Active Loadcase & Angle Info -->
                         <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource TextDarkBrush}" Margin="0,0,0,6">
-                            <Run Text="{Binding SelectedLoadCaseRow.Name, FallbackValue=''}" />
+                            <Run Text="{Binding SelectedLoadCaseRow.Name, FallbackValue='', Mode=OneWay}" />
                             <Run Text=" θ = " />
-                            <Run Text="{Binding SelectedSliceAngleDegrees, StringFormat=F1}" />
+                            <Run Text="{Binding SelectedSliceAngleDegrees, StringFormat=F1, Mode=OneWay}" />
                             <Run Text="°" />
                         </TextBlock>
 
@@ -679,7 +679,7 @@
                         <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsCritical}" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource SuccessGreenSoftBrush}" />
+                                    <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
                                     <Setter Property="FontWeight" Value="SemiBold" />
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding IsFailing}" Value="True">
@@ -690,6 +690,10 @@
                         </Style>
                     </DataGrid.RowStyle>
                     <DataGrid.Columns>
+                        <DataGridTextColumn Header="#" Binding="{Binding Index}"
+                                            Width="28"
+                                            ElementStyle="{StaticResource CenterCellTextStyle}"
+                                            HeaderStyle="{StaticResource CenterColumnHeaderStyle}" />
                         <DataGridTextColumn Header="LC Name" Binding="{Binding Name}"
                                             Width="*" MinWidth="80"
                                             ElementStyle="{StaticResource LeftCellTextStyle}" />

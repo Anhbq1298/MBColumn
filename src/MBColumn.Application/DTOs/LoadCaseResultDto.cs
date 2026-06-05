@@ -27,5 +27,22 @@ public sealed record LoadCaseResultDto(
 
     /// <summary>Shear check result for this load case; null when shear forces are zero or not checked.</summary>
     public ShearResultDto? ShearResult { get; init; }
+
+    /// <summary>
+    /// Mx design moment actually used for the interaction check, in the display moment unit.
+    /// When slenderness is OFF: governing end moment (max-abs of MxTop/MxBottom), sign preserved.
+    /// When slenderness is ON: EC2 amplified moment.
+    /// </summary>
+    public double? MxUsedDisplay { get; init; }
+
+    /// <summary>
+    /// My design moment actually used for the interaction check, in the display moment unit.
+    /// When slenderness is OFF: governing end moment (max-abs of MyTop/MyBottom), sign preserved.
+    /// When slenderness is ON: EC2 amplified moment.
+    /// </summary>
+    public double? MyUsedDisplay { get; init; }
+
+    /// <summary>"DirectEnvelope" when MxUsed/MyUsed come from the end-moment envelope; "Slenderness" when from EC2 calculation.</summary>
+    public string MxUsedSource { get; init; } = "DirectEnvelope";
 }
 

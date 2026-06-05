@@ -15,55 +15,59 @@ public sealed class EtabsForceChangeDetector : IEtabsForceChangeDetector
         IReadOnlyList<MbColumnMappedForceRow> newForceRows,
         EtabsBindingHealthStatus bindingStatus)
     {
-        var oldByKey = existingLoadCases.ToDictionary(lc => lc.Label, StringComparer.OrdinalIgnoreCase);
-        var newByKey = newForceRows.ToDictionary(r => r.LoadCaseName, StringComparer.OrdinalIgnoreCase);
+        // Match key: OriginalLoadCaseName|Story|SourceObjectLabel ↔ CaseName|Story|Label
+        var oldByKey = existingLoadCases.ToDictionary(
+            lc => RowKey(lc.OriginalLoadCaseName, lc.Story, lc.SourceObjectLabel ?? lc.Label),
+            StringComparer.OrdinalIgnoreCase);
+
+        var newByKey = newForceRows.ToDictionary(
+            r => RowKey(r.CaseName, r.Story, r.Label),
+            StringComparer.OrdinalIgnoreCase);
 
         var changes = new List<EtabsForceRowChange>();
-        int changedCount = 0;
-        int addedCount = 0;
-        int removedCount = 0;
+        int changedCount = 0, addedCount = 0, removedCount = 0;
 
-        // Check new rows vs existing
         foreach (var kvp in newByKey)
         {
             if (oldByKey.TryGetValue(kvp.Key, out var old))
             {
-                bool hasChange = Abs(kvp.Value.P - old.Pu) > Tolerance
-                    || Abs(kvp.Value.Mx - old.Mux) > Tolerance
-                    || Abs(kvp.Value.My - old.Muy) > Tolerance;
+                var row = kvp.Value;
+                bool hasChange =
+                    Abs(row.NEd - old.Pu) > Tolerance
+                    || Abs(row.MxTop    - (old.MxTop    ?? 0)) > Tolerance
+                    || Abs(row.MxBottom - (old.MxBottom ?? 0)) > Tolerance
+                    || Abs(row.MyTop    - (old.MyTop    ?? 0)) > Tolerance
+                    || Abs(row.MyBottom - (old.MyBottom ?? 0)) > Tolerance;
 
-                var status = hasChange ? EtabsForceRowChangeStatus.Changed : EtabsForceRowChangeStatus.Unchanged;
                 if (hasChange) changedCount++;
 
                 changes.Add(new EtabsForceRowChange
                 {
                     LoadCaseName = kvp.Key,
-                    Location = kvp.Value.Location,
-                    OldP = old.Pu,
-                    NewP = kvp.Value.P,
-                    OldMx = old.Mux,
-                    NewMx = kvp.Value.Mx,
-                    OldMy = old.Muy,
-                    NewMy = kvp.Value.My,
-                    Status = status
+                    OldP  = old.Pu,
+                    NewP  = row.NEd,
+                    OldMx = old.MxTop,
+                    NewMx = row.MxTop,
+                    OldMy = old.MyTop,
+                    NewMy = row.MyTop,
+                    Status = hasChange ? EtabsForceRowChangeStatus.Changed : EtabsForceRowChangeStatus.Unchanged
                 });
             }
             else
             {
                 addedCount++;
+                var row = kvp.Value;
                 changes.Add(new EtabsForceRowChange
                 {
                     LoadCaseName = kvp.Key,
-                    Location = kvp.Value.Location,
-                    NewP = kvp.Value.P,
-                    NewMx = kvp.Value.Mx,
-                    NewMy = kvp.Value.My,
+                    NewP  = row.NEd,
+                    NewMx = row.MxTop,
+                    NewMy = row.MyTop,
                     Status = EtabsForceRowChangeStatus.Added
                 });
             }
         }
 
-        // Check for removed rows
         foreach (var kvp in oldByKey)
         {
             if (!newByKey.ContainsKey(kvp.Key))
@@ -72,9 +76,9 @@ public sealed class EtabsForceChangeDetector : IEtabsForceChangeDetector
                 changes.Add(new EtabsForceRowChange
                 {
                     LoadCaseName = kvp.Key,
-                    OldP = kvp.Value.Pu,
-                    OldMx = kvp.Value.Mux,
-                    OldMy = kvp.Value.Muy,
+                    OldP  = kvp.Value.Pu,
+                    OldMx = kvp.Value.MxTop,
+                    OldMy = kvp.Value.MyTop,
                     Status = EtabsForceRowChangeStatus.Removed
                 });
             }
@@ -82,29 +86,33 @@ public sealed class EtabsForceChangeDetector : IEtabsForceChangeDetector
 
         var action = bindingStatus switch
         {
-            EtabsBindingHealthStatus.Ok => EtabsSectionRefreshAction.Update,
-            EtabsBindingHealthStatus.PossibleRemap => EtabsSectionRefreshAction.NeedsRemap,
-            EtabsBindingHealthStatus.MultipleRemapCandidates => EtabsSectionRefreshAction.NeedsRemap,
-            EtabsBindingHealthStatus.MissingObject => EtabsSectionRefreshAction.KeepOld,
-            EtabsBindingHealthStatus.ModelChanged => EtabsSectionRefreshAction.KeepOld,
-            _ => EtabsSectionRefreshAction.KeepOld
+            EtabsBindingHealthStatus.Ok                         => EtabsSectionRefreshAction.Update,
+            EtabsBindingHealthStatus.PossibleRemap              => EtabsSectionRefreshAction.NeedsRemap,
+            EtabsBindingHealthStatus.MultipleRemapCandidates    => EtabsSectionRefreshAction.NeedsRemap,
+            EtabsBindingHealthStatus.MissingObject              => EtabsSectionRefreshAction.KeepOld,
+            EtabsBindingHealthStatus.ModelChanged               => EtabsSectionRefreshAction.KeepOld,
+            _                                                   => EtabsSectionRefreshAction.KeepOld
         };
 
-        var missingObjects = newForceRows.Count == 0 && existingLoadCases.Count > 0 ? existingLoadCases.Count : 0;
+        var missingObjects = newForceRows.Count == 0 && existingLoadCases.Count > 0
+            ? existingLoadCases.Count : 0;
 
         return new EtabsSectionRefreshSummary
         {
-            SectionName = sectionName,
-            Status = bindingStatus,
-            OldRowCount = existingLoadCases.Count,
-            NewRowCount = newForceRows.Count,
-            ChangedRows = changedCount,
-            AddedRows = addedCount,
-            RemovedRows = removedCount,
-            MissingObjects = missingObjects,
+            SectionName       = sectionName,
+            Status            = bindingStatus,
+            OldRowCount       = existingLoadCases.Count,
+            NewRowCount       = newForceRows.Count,
+            ChangedRows       = changedCount,
+            AddedRows         = addedCount,
+            RemovedRows       = removedCount,
+            MissingObjects    = missingObjects,
             RecommendedAction = action,
-            RowChanges = changes,
-            NewForceRows = newForceRows.ToList()
+            RowChanges        = changes,
+            NewForceRows      = newForceRows.ToList()
         };
     }
+
+    private static string RowKey(string caseName, string story, string? label)
+        => $"{caseName}|{story}|{label ?? ""}";
 }

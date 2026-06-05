@@ -47,6 +47,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly IImportedEtabsForceCache? importedForceCache;
     private readonly IEtabsForceCacheResolver? forceCacheResolver;
     private readonly IEtabsSectionForceFilterService? sectionForceFilter;
+    private readonly IEtabsForceTableService? forceTableService;
+    private readonly IEtabsColumnIdentityService? columnIdentityService;
     private readonly UnitSystem targetUnitSystem;
     private const int PierBoundaryCacheLimit = 500;
     private readonly Dictionary<string, (IReadOnlyList<Point2D> Outer, IReadOnlyList<IReadOnlyList<Point2D>> Openings)>
@@ -102,6 +104,27 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private double previewCanvasWidth = 200;
     private double previewCanvasHeight = 200;
     private string previewStatusText = "Select a row to preview boundary.";
+    private DesignCodeType selectedImportDesignCode = DesignCodeType.Aci318Style;
+    private MaterialGradeOption? selectedImportRebarGrade;
+    private UnitSystem selectedImportUnitSystem;
+
+    private static readonly IReadOnlyList<MaterialGradeOption> AciRebarGrades =
+    [
+        new("Grade 40 / 280 MPa",  280.0,  40.0, 200000.0, 29000.0),
+        new("Grade 60 / 420 MPa",  420.0,  60.0, 200000.0, 29000.0),
+        new("Grade 75 / 520 MPa",  520.0,  75.0, 200000.0, 29000.0),
+        new("Grade 80 / 550 MPa",  550.0,  80.0, 200000.0, 29000.0),
+        new("Grade 100 / 690 MPa", 690.0, 100.0, 200000.0, 29000.0),
+    ];
+
+    private static readonly IReadOnlyList<MaterialGradeOption> Ec2RebarGrades =
+    [
+        new("B400",  400.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B500A", 500.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B500B", 500.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B500C", 500.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+        new("B550",  550.0, MetricModulus: 200000.0, ImperialModulus: 29000.0),
+    ];
 
     public EtabsImportViewModel(
         IReadOnlyCollection<string> existingSectionNames,
@@ -117,7 +140,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IImportedEtabsForceCache? importedForceCache = null,
         UnitSystem targetUnitSystem = UnitSystem.Metric,
         IEtabsForceCacheResolver? forceCacheResolver = null,
-        IEtabsSectionForceFilterService? sectionForceFilter = null)
+        IEtabsSectionForceFilterService? sectionForceFilter = null,
+        IEtabsForceTableService? forceTableService = null,
+        IEtabsColumnIdentityService? columnIdentityService = null)
     {
         this.existingSectionNames = existingSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         this.connectionService = connectionService;
@@ -129,8 +154,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
         this.designForceImportService = designForceImportService;
         this.importedForceCache = importedForceCache;
         this.targetUnitSystem = targetUnitSystem;
+        selectedImportUnitSystem = targetUnitSystem;
+        selectedImportRebarGrade = AciRebarGrades[1]; // Grade 60 / 420 MPa default
         this.forceCacheResolver = forceCacheResolver;
         this.sectionForceFilter = sectionForceFilter;
+        this.forceTableService = forceTableService;
+        this.columnIdentityService = columnIdentityService;
 
         Columns = new BulkObservableCollection<EtabsColumnImportRowViewModel>();
         FilteredColumns = new ListCollectionView(Columns);
@@ -258,7 +287,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
             Raise(nameof(UseDesignForces));
             Raise(nameof(UseElementForces));
             ForceRows.Clear();
-            ForceCacheStatus = "Select load cases then click Load Forces.";
+            if (IsConnected && LoadCombinations.Any(c => c.IsSelected))
+                GenerateForceRows();
+            else
+                ForceCacheStatus = "Select load cases then click Load Forces.";
         }
     }
 
@@ -333,6 +365,47 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private UnitProfile TargetUnitProfile => UnitProfile.For(targetUnitSystem);
     private string TargetGeometryUnitSummary => $"{TargetUnitProfile.ForceLabel}, {TargetUnitProfile.SectionSizeLabel}";
     private string TargetForceMomentUnitSummary => $"{TargetUnitProfile.ForceLabel}, {TargetUnitProfile.MomentLabel}";
+
+    // Design settings selected in Step 3 (Review & Import)
+    public IReadOnlyList<DesignCodeOption> ImportDesignCodes { get; } =
+    [
+        new(DesignCodeType.Aci318Style, "ACI 318"),
+        new(DesignCodeType.Ec2,         "Eurocode 2"),
+    ];
+
+    public IReadOnlyList<UnitSystemOption> ImportUnitSystems { get; } =
+    [
+        new(UnitSystem.Metric,   "Metric (kN, m)"),
+        new(UnitSystem.Imperial, "Imperial (kip, ft)"),
+    ];
+
+    public DesignCodeType SelectedImportDesignCode
+    {
+        get => selectedImportDesignCode;
+        set
+        {
+            if (selectedImportDesignCode == value) return;
+            selectedImportDesignCode = value;
+            Raise();
+            Raise(nameof(AvailableImportRebarGrades));
+            SelectedImportRebarGrade = AvailableImportRebarGrades.FirstOrDefault();
+        }
+    }
+
+    public UnitSystem SelectedImportUnitSystem
+    {
+        get => selectedImportUnitSystem;
+        set => Set(ref selectedImportUnitSystem, value);
+    }
+
+    public IReadOnlyList<MaterialGradeOption> AvailableImportRebarGrades
+        => selectedImportDesignCode == DesignCodeType.Ec2 ? Ec2RebarGrades : AciRebarGrades;
+
+    public MaterialGradeOption? SelectedImportRebarGrade
+    {
+        get => selectedImportRebarGrade;
+        set => Set(ref selectedImportRebarGrade, value);
+    }
     public bool IsBoundaryPreviewValid
         => SelectedColumn is not null
            && (SelectedColumn.IsIrregular
@@ -1218,10 +1291,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var boundingHeight = mapping.IsCircular ? mapping.Diameter : (mapping.IsIrregular ? bbox.Height : mapping.Height);
         var primaryForce = loadCases.FirstOrDefault();
 
+        var importFy = selectedImportRebarGrade?.StressValue(selectedImportUnitSystem) ?? 420;
+        var importEs = selectedImportRebarGrade?.ModulusValue(selectedImportUnitSystem) ?? 200000;
+        var rawLengthGroup = group.Items.FirstOrDefault(i => i.LengthMm > 0)?.LengthMm ?? 0;
+        var importMemberLength = rawLengthGroup > 0
+            ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthGroup / 1000.0 : rawLengthGroup / 12.0)
+            : (double?)null;
         var snapshot = new ColumnInputSnapshot
         {
-            UnitSystem = targetUnitSystem.ToString(),
-            DesignCode = DesignCodeType.Aci318Style.ToString(),
+            UnitSystem = selectedImportUnitSystem.ToString(),
+            DesignCode = selectedImportDesignCode.ToString(),
             Ec2Solver = Ec2SolverType.Fiber.ToString(),
             IntegrationMethod = (mapping.IsRectangular ? SectionIntegrationMethod.Polygon : SectionIntegrationMethod.Fiber).ToString(),
             AlphaCc = 0.85,
@@ -1232,9 +1311,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
             Height = boundingHeight,
             Diameter = Math.Max(boundingWidth, boundingHeight),
             Cover = mapping.Cover,
+            MemberLengthL = importMemberLength,
             Fc = InferConcreteStrength(mapping.Material),
-            Fy = 420,
-            Es = 200000,
+            Fy = importFy,
+            Es = importEs,
             MaterialLibrary = MaterialLibraryType.Custom.ToString(),
             BarSize = mapping.BarSize,
             BarCount = mapping.IsRectangular ? mapping.RectangularBarCount
@@ -2149,10 +2229,16 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var boundingWidth = mapping.IsCircular ? mapping.Diameter : (mapping.IsIrregular ? bbox.Width : mapping.Width);
         var boundingHeight = mapping.IsCircular ? mapping.Diameter : (mapping.IsIrregular ? bbox.Height : mapping.Height);
 
+        var snapshotFy = selectedImportRebarGrade?.StressValue(selectedImportUnitSystem) ?? 420;
+        var snapshotEs = selectedImportRebarGrade?.ModulusValue(selectedImportUnitSystem) ?? 200000;
+        var rawLengthRow = row.SourceColumn.LengthMm;
+        var rowMemberLength = rawLengthRow > 0
+            ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthRow / 1000.0 : rawLengthRow / 12.0)
+            : (double?)null;
         var snapshot = new ColumnInputSnapshot
         {
-            UnitSystem = targetUnitSystem.ToString(),
-            DesignCode = DesignCodeType.Aci318Style.ToString(),
+            UnitSystem = selectedImportUnitSystem.ToString(),
+            DesignCode = selectedImportDesignCode.ToString(),
             Ec2Solver = Ec2SolverType.Fiber.ToString(),
             IntegrationMethod = (mapping.IsRectangular ? SectionIntegrationMethod.Polygon : SectionIntegrationMethod.Fiber).ToString(),
             AlphaCc = 0.85,
@@ -2163,9 +2249,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
             Height = boundingHeight,
             Diameter = Math.Max(boundingWidth, boundingHeight),
             Cover = mapping.Cover,
+            MemberLengthL = rowMemberLength,
             Fc = InferConcreteStrength(mapping.Material),
-            Fy = 420,
-            Es = 200000,
+            Fy = snapshotFy,
+            Es = snapshotEs,
             MaterialLibrary = MaterialLibraryType.Custom.ToString(),
             BarSize = mapping.BarSize,
             BarCount = mapping.IsRectangular ? mapping.RectangularBarCount
@@ -2947,48 +3034,57 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private static List<SnapshotLoadCase> BuildSnapshotLoadCases(IReadOnlyList<EtabsForceImportRowViewModel> forces)
     {
-        var endMoments = BuildEndMomentLookup(forces);
+        var result = new List<SnapshotLoadCase>();
+        int index = 0;
 
-        return forces
-            .Select((force, index) =>
+        foreach (var group in forces.GroupBy(BuildEndMomentKey, StringComparer.OrdinalIgnoreCase))
+        {
+            var rows      = group.ToList();
+            var topRow    = FindEndMomentRow(rows, top: true)  ?? rows[0];
+            var bottomRow = FindEndMomentRow(rows, top: false) ?? rows[0];
+            var anyRow    = rows[0];
+
+            double mxTop    = topRow.M2;
+            double mxBottom = bottomRow.M2;
+            double myTop    = topRow.M3;
+            double myBottom = bottomRow.M3;
+
+            // Sign-preserving max-abs: keep the value whose magnitude is larger
+            double mxUsed = Math.Abs(mxTop) >= Math.Abs(mxBottom) ? mxTop : mxBottom;
+            double myUsed = Math.Abs(myTop) >= Math.Abs(myBottom) ? myTop : myBottom;
+
+            // Most critical axial and shear: largest absolute value, sign preserved
+            double pu  = rows.OrderByDescending(r => Math.Abs(r.P )).First().P;
+            double vux = rows.OrderByDescending(r => Math.Abs(r.V2)).First().V2;
+            double vuy = rows.OrderByDescending(r => Math.Abs(r.V3)).First().V3;
+
+            var sourceLabel = ForceSourceLabel(anyRow);
+            result.Add(new SnapshotLoadCase
             {
-                var station = NormalizeDemandStation(force.Station, force.Status);
-                var sourceLabel = ForceSourceLabel(force);
-                var hasEndMoments = endMoments.TryGetValue(BuildEndMomentKey(force), out var ends);
+                Id                   = $"etabs_{++index}",
+                OriginalLoadCaseName = anyRow.LoadCombination,
+                SourceObjectName     = anyRow.ObjectName,
+                SourceObjectLabel    = sourceLabel,
+                Story                = anyRow.Story,
+                Station              = "",
+                Source               = "ETABS",
+                Label = BuildDemandCaseLabel(anyRow.LoadCombination, sourceLabel, anyRow.Story, ""),
+                Pu   = pu,
+                Mux  = mxUsed,
+                Muy  = myUsed,
+                Vux  = vux,
+                Vuy  = vuy,
+                MxTop    = mxTop,
+                MxBottom = mxBottom,
+                MyTop    = myTop,
+                MyBottom = myBottom,
+                MxUsed   = mxUsed,
+                MyUsed   = myUsed,
+                IsActive = true
+            });
+        }
 
-                double? mxTop    = hasEndMoments ? ends.MxTop    : force.M2;
-                double? mxBottom = hasEndMoments ? ends.MxBottom : force.M2;
-                double? myTop    = hasEndMoments ? ends.MyTop    : force.M3;
-                double? myBottom = hasEndMoments ? ends.MyBottom : force.M3;
-                return new SnapshotLoadCase
-                {
-                    Id = $"etabs_{index + 1}",
-                    OriginalLoadCaseName = force.LoadCombination,
-                    SourceObjectName = force.ObjectName,
-                    SourceObjectLabel = sourceLabel,
-                    Story = force.Story,
-                    Station = station,
-                    Source = "ETABS",
-                    Label = BuildDemandCaseLabel(force.LoadCombination, sourceLabel, force.Story, station),
-                    Pu = force.P,
-                    Mux = force.M2,
-                    Muy = force.M3,
-                    Vux = force.V2,
-                    Vuy = force.V3,
-                    MxTop    = mxTop,
-                    MxBottom = mxBottom,
-                    MyTop    = myTop,
-                    MyBottom = myBottom,
-                    MxUsed = mxTop.HasValue && mxBottom.HasValue
-                        ? Math.Max(Math.Abs(mxTop.Value), Math.Abs(mxBottom.Value))
-                        : null,
-                    MyUsed = myTop.HasValue && myBottom.HasValue
-                        ? Math.Max(Math.Abs(myTop.Value), Math.Abs(myBottom.Value))
-                        : null,
-                    IsActive = true
-                };
-            })
-            .ToList();
+        return result;
     }
 
     private static Dictionary<string, (double MxTop, double MxBottom, double MyTop, double MyBottom)>

@@ -42,6 +42,7 @@ public sealed record SevenPointValidationRowViewModel(
 }
 
 public sealed record LoadCaseResultRowViewModel(
+    int Index,
     string Id,
     string Name,
     double Pu,
@@ -207,16 +208,16 @@ public sealed class ResultViewModel : ViewModelBase
             Raise(nameof(SelectedSliceAngleDegrees));
             Raise(nameof(SelectedAxialLoad));
             // Build load case result rows
-            var govId = value?.GoverningLoadCaseId ?? "";
             var fUnit = value?.ControlPointTable?.ForceUnitLabel ?? value?.MxMyDiagram?.PUnit ?? "";
             var mUnit = value?.ControlPointTable?.MomentUnitLabel ?? value?.MxMyDiagram?.MUnit ?? "";
+            var maxUtil = value?.LoadCaseResults?.Count > 0 ? value.LoadCaseResults.Max(r => r.PmmRatio) : double.MinValue;
             loadCaseRows = value?.LoadCaseResults?.Count > 0
-                ? value.LoadCaseResults.Select(r => new LoadCaseResultRowViewModel(
-                    r.LoadCaseId, r.LoadCaseName,
+                ? value.LoadCaseResults.Select((r, i) => new LoadCaseResultRowViewModel(
+                    i + 1, r.LoadCaseId, r.LoadCaseName,
                     r.PuDisplay, r.MuxDisplay, r.MuyDisplay,
                     DemandVectorAngle(r.MuxDisplay, r.MuyDisplay),
                     r.PmmRatio, r.Status == CapacityStatus.Pass,
-                    r.LoadCaseId == govId, fUnit, mUnit,
+                    r.PmmRatio == maxUtil, fUnit, mUnit,
                     string.IsNullOrWhiteSpace(r.SlendernessStatus) ? "-" : r.SlendernessStatus,
                     r.LambdaX,
                     r.LambdaLimitX,

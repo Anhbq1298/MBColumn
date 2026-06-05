@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs.Etabs;
+using SMath = System.Math;
 
 namespace MBColumn.Application.Services.Etabs;
 
@@ -13,31 +14,65 @@ public sealed class EtabsSectionForceFilterService : IEtabsSectionForceFilterSer
             return [];
 
         var selectedKeys = section.SelectedItems
-            .ToLookup(
-                item => item.ForceLookupKey,
-                StringComparer.OrdinalIgnoreCase);
+            .ToLookup(item => item.ForceLookupKey, StringComparer.OrdinalIgnoreCase);
 
-        var results = new List<MbColumnMappedForceRow>();
+        // Collect matching rows keyed by (story|label|combo) → (Bottom, Top)
+        var groups = new Dictionary<string, (EtabsForceResultDto? Bottom, EtabsForceResultDto? Top)>(
+            StringComparer.OrdinalIgnoreCase);
 
-        foreach (var forceRow in allForceRows)
+        foreach (var row in allForceRows)
         {
-            var lookupKey = $"{forceRow.StoryName}|{forceRow.Label}";
+            var lookupKey = $"{row.StoryName}|{row.Label}";
             if (!selectedKeys.Contains(lookupKey)) continue;
 
-            var (mx, my) = MapEtabsMomentsToMbColumn(forceRow.M2, forceRow.M3);
+            var groupKey = $"{row.StoryName}|{row.Label}|{row.LoadCombination}";
+            groups.TryGetValue(groupKey, out var pair);
+
+            if (string.Equals(row.Station, "Bottom", StringComparison.OrdinalIgnoreCase))
+                groups[groupKey] = (row, pair.Top);
+            else if (string.Equals(row.Station, "Top", StringComparison.OrdinalIgnoreCase))
+                groups[groupKey] = (pair.Bottom, row);
+            // rows that are neither Bottom nor Top (already filtered upstream) are ignored
+        }
+
+        var results = new List<MbColumnMappedForceRow>(groups.Count);
+
+        foreach (var (_, pair) in groups)
+        {
+            var bot = pair.Bottom;
+            var top = pair.Top;
+            var ref_ = bot ?? top;
+            if (ref_ is null) continue;
+
+            // NEd = min(bottom, top) — positive = compression
+            double nedBot = bot?.P ?? top!.P;
+            double nedTop = top?.P ?? bot!.P;
+            double ned = SMath.Min(nedBot, nedTop);
+
+            // Vx/Vy = max absolute value between stations
+            double vx = SMath.Max(SMath.Abs(bot?.V2 ?? 0), SMath.Abs(top?.V2 ?? 0));
+            double vy = SMath.Max(SMath.Abs(bot?.V3 ?? 0), SMath.Abs(top?.V3 ?? 0));
+
+            // Moments kept per end
+            double mxBot = bot?.M2 ?? top!.M2;
+            double mxTop = top?.M2 ?? bot!.M2;
+            double myBot = bot?.M3 ?? top!.M3;
+            double myTop = top?.M3 ?? bot!.M3;
 
             results.Add(new MbColumnMappedForceRow
             {
                 MbColumnSectionName = section.SectionName,
-                LoadCaseName        = BuildLoadCaseName(forceRow.LoadCombination, forceRow.StoryName, forceRow.Label, forceRow.Station),
-                ObjectType          = objectType,
-                Story               = forceRow.StoryName,
-                Label               = forceRow.Label,
-                LoadCombo           = forceRow.LoadCombination,
-                Location            = forceRow.Station,
-                P                   = forceRow.P,
-                Mx                  = mx,
-                My                  = my
+                CaseName   = ref_.LoadCombination,
+                ObjectType = objectType,
+                Story      = ref_.StoryName,
+                Label      = ref_.Label,
+                NEd        = SMath.Round(ned, 3),
+                Vx         = SMath.Round(vx, 3),
+                Vy         = SMath.Round(vy, 3),
+                MxTop      = SMath.Round(mxTop, 3),
+                MxBottom   = SMath.Round(mxBot, 3),
+                MyTop      = SMath.Round(myTop, 3),
+                MyBottom   = SMath.Round(myBot, 3)
             });
         }
 
@@ -57,23 +92,5 @@ public sealed class EtabsSectionForceFilterService : IEtabsSectionForceFilterSer
         return section.SelectedItems
             .Where(item => !foundKeys.Contains(item.ForceLookupKey))
             .ToList();
-    }
-
-    private static string BuildLoadCaseName(string loadCombo, string story, string label, string location)
-    {
-        static string Clean(string s) => s
-            .Replace(" ", "")
-            .Replace("/", "_")
-            .Replace("\\", "_")
-            .Replace(":", "_")
-            .Replace(";", "_");
-
-        return $"{Clean(loadCombo)}-{Clean(label)}-{Clean(story)}-{Clean(location)}";
-    }
-
-    private static (double Mx, double My) MapEtabsMomentsToMbColumn(double m2, double m3)
-    {
-        // Default: M2 → Mx, M3 → My (confirm axis convention with project team if needed)
-        return (m2, m3);
     }
 }

@@ -225,8 +225,9 @@ public sealed class LoadCaseViewModel : ViewModelBase
 
     public void ClearEc2SlendernessResults()
     {
-        MxUsed = null;
-        MyUsed = null;
+        // Revert to direct end-moment envelope (sign-preserving max-abs governing value)
+        MxUsed = ComputeDefaultMxUsed();
+        MyUsed = ComputeDefaultMyUsed();
         LambdaX = null;
         LambdaLimitX = null;
         RmX = null;
@@ -251,6 +252,18 @@ public sealed class LoadCaseViewModel : ViewModelBase
         NominalCurvatureY = null;
         E2Y = null;
     }
+
+    /// <summary>Computes the default MxUsed as the end moment with the larger absolute value, preserving sign.</summary>
+    public double? ComputeDefaultMxUsed()
+        => (MxTop.HasValue && MxBottom.HasValue)
+            ? (Math.Abs(MxTop.Value) >= Math.Abs(MxBottom.Value) ? MxTop : MxBottom)
+            : null;
+
+    /// <summary>Computes the default MyUsed as the end moment with the larger absolute value, preserving sign.</summary>
+    public double? ComputeDefaultMyUsed()
+        => (MyTop.HasValue && MyBottom.HasValue)
+            ? (Math.Abs(MyTop.Value) >= Math.Abs(MyBottom.Value) ? MyTop : MyBottom)
+            : null;
 
     private static string Fmt(double? value) => value.HasValue ? value.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) : "-";
 

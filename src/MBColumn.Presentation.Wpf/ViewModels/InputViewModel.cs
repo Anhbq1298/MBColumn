@@ -3497,10 +3497,19 @@ public sealed class InputViewModel : ViewModelBase
         {
             if (!result.IncludeEc2Slenderness)
             {
+                var lcResultById = result.LoadCaseResults.ToDictionary(r => r.LoadCaseId);
                 foreach (var loadCase in LoadCases)
                 {
-                    loadCase.ClearEc2SlendernessResults();
+                    loadCase.ClearEc2SlendernessResults(); // computes default MxUsed/MyUsed from end moments
                     loadCase.Status = loadCase.IsActive ? "Ready" : "Excluded";
+
+                    // Override with the calculation service's authoritative governing values when available.
+                    // This handles old snapshots where MxUsed may have been stored without sign.
+                    if (loadCase.IsActive && lcResultById.TryGetValue(loadCase.Id, out var lcResult))
+                    {
+                        if (lcResult.MxUsedDisplay.HasValue) loadCase.MxUsed = lcResult.MxUsedDisplay;
+                        if (lcResult.MyUsedDisplay.HasValue) loadCase.MyUsed = lcResult.MyUsedDisplay;
+                    }
                 }
 
                 return;
@@ -3940,6 +3949,7 @@ internal static class EurocodeConcreteStrainProfileValues
 }
 
 public sealed record DesignCodeOption(DesignCodeType Code, string DisplayName);
+public sealed record UnitSystemOption(UnitSystem System, string DisplayName);
 public sealed record Ec2SolverOption(Ec2SolverType Solver, string DisplayName);
 public sealed record EurocodeConcreteStrainProfileOption(EurocodeConcreteStrainProfile Profile, string DisplayName);
 public sealed record SectionIntegrationMethodOption(SectionIntegrationMethod Method, string DisplayName);
