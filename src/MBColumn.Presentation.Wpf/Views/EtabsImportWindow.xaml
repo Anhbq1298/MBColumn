@@ -394,9 +394,9 @@
               Margin="12,10,12,8"
               Visibility="{Binding IsFlow1, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="65*" />
+                <ColumnDefinition Width="72*" />
                 <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="35*" />
+                <ColumnDefinition Width="28*" />
             </Grid.ColumnDefinitions>
 
             <!-- ── LEFT: Filter bar + Stories sidebar + Available Items ── -->
@@ -453,7 +453,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="115" />
                         <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="210" />
                         <ColumnDefinition Width="6" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
@@ -502,7 +502,7 @@
                         <DataGrid x:Name="UniqueSectionListBox"
                                   ItemsSource="{Binding UniqueSectionOptions}"
                                   SelectedItem="{Binding SelectedUniqueSection}"
-                                  SelectionMode="Extended"
+                                  SelectionMode="Single"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"

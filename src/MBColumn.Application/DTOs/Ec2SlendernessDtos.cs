@@ -52,6 +52,10 @@ public sealed record Ec2SlendernessAxisResultDto(
     double E2Mm,
     double M2Nmm,
     double MUsedNmm,
+    double Kr,
+    double KPhi,
+    double Beta,
+    double PhiEff,
     IReadOnlyList<string> Warnings);
 
 public sealed record Ec2SlendernessLoadCaseResultDto(

@@ -41,6 +41,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private double? e2X;
     private double? nominalCurvatureY;
     private double? e2Y;
+    private double? krX;
+    private double? kPhiX;
+    private double? krY;
+    private double? kPhiY;
     private bool isActive;
     private bool hasValidationError;
     private string status = "Ready";
@@ -154,6 +158,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public double? E2X { get => e2X; set { Set(ref e2X, value); RaiseSlendernessLatex(); } }
     public double? NominalCurvatureY { get => nominalCurvatureY; set { Set(ref nominalCurvatureY, value); RaiseSlendernessLatex(); } }
     public double? E2Y { get => e2Y; set { Set(ref e2Y, value); RaiseSlendernessLatex(); } }
+    public double? KrX { get => krX; set { Set(ref krX, value); RaiseSlendernessLatex(); } }
+    public double? KPhiX { get => kPhiX; set { Set(ref kPhiX, value); RaiseSlendernessLatex(); } }
+    public double? KrY { get => krY; set { Set(ref krY, value); RaiseSlendernessLatex(); } }
+    public double? KPhiY { get => kPhiY; set { Set(ref kPhiY, value); RaiseSlendernessLatex(); } }
 
     public string FactorNLatex => factorN.HasValue ? $@"n={factorN.Value:F3}" : "n=-";
     public string FactorALatex => factorA.HasValue ? $@"A={factorA.Value:F3}" : "A=-";
@@ -189,6 +197,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
         : $@"M_{{0e}}={Fmt(M0ey)}";
     public string NominalCurvatureXM2Latex => $@"M_2={Fmt(M2x)}";
     public string NominalCurvatureYM2Latex => $@"M_2={Fmt(M2y)}";
+    public string KrXLatex => krX.HasValue ? $@"K_{{r,x}}={krX.Value:F4}" : @"K_{r,x}=-";
+    public string KrYLatex => krY.HasValue ? $@"K_{{r,y}}={krY.Value:F4}" : @"K_{r,y}=-";
+    public string KPhiXLatex => kPhiX.HasValue ? $@"K_{{\varphi,x}}={kPhiX.Value:F4}" : @"K_{\varphi,x}=-";
+    public string KPhiYLatex => kPhiY.HasValue ? $@"K_{{\varphi,y}}={kPhiY.Value:F4}" : @"K_{\varphi,y}=-";
     public string MomentUsedFormulaLatex => @"M_{used}=\max(M_{02},M_{0e}+M_2,M_{01}+0.5M_2,N_{Ed}e_0)";
     public string MxUsedResultLatex => MxUsed.HasValue ? $@"M_x={MxUsed.Value:F2}" : @"M_x=\mathrm{auto}";
     public string MyUsedResultLatex => MyUsed.HasValue ? $@"M_y={MyUsed.Value:F2}" : @"M_y=\mathrm{auto}";
@@ -280,6 +292,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
         E2X = null;
         NominalCurvatureY = null;
         E2Y = null;
+        KrX = null;
+        KPhiX = null;
+        KrY = null;
+        KPhiY = null;
     }
 
     /// <summary>Computes the default MxUsed as the end moment with the larger absolute value, preserving sign.</summary>
@@ -318,6 +334,10 @@ public sealed class LoadCaseViewModel : ViewModelBase
         Raise(nameof(NominalCurvatureY1rLatex));
         Raise(nameof(NominalCurvatureXE2Latex));
         Raise(nameof(NominalCurvatureYE2Latex));
+        Raise(nameof(KrXLatex));
+        Raise(nameof(KrYLatex));
+        Raise(nameof(KPhiXLatex));
+        Raise(nameof(KPhiYLatex));
         Raise(nameof(MxUsedResultLatex));
         Raise(nameof(MyUsedResultLatex));
         Raise(nameof(IsAnyAxisSlender));

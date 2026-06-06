@@ -172,7 +172,7 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         if (radiusOfGyrationMm <= Tolerance)
         {
             warnings.Add("Radius of gyration is invalid.");
-            return new(0, 0, false, 0, 0.7, 1, 1.7, 0, 0, 1, 0, 0, 0, 0, 0, warnings);
+            return new(0, 0, false, 0, 0.7, 1, 1.7, 0, 0, 1, 0, 0, 0, 0, 0, 1.0, 1.0, 0, 0, warnings);
         }
 
         double lambda = l0Mm / radiusOfGyrationMm;
@@ -212,7 +212,7 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         if (!isSlender)
         {
             double used = sign * Math.Max(m02, minimumMomentNmm);
-            return new(lambda, lambdaLimit, false, n, a, b, c, m01Signed, m02Signed, rm, 0, 0, 0, 0, used, warnings);
+            return new(lambda, lambdaLimit, false, n, a, b, c, m01Signed, m02Signed, rm, 0, 0, 0, 0, used, 1.0, 1.0, 0, 0, warnings);
         }
 
         double m01Equivalent = rm * m02;
@@ -235,7 +235,7 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         double m2 = nEdN * e2Mm;
         double usedMagnitude = Math.Max(Math.Max(m02, m0e + m2), Math.Max(m01Equivalent + 0.5 * m2, minimumMomentNmm));
 
-        return new(lambda, lambdaLimit, true, n, a, b, c, m01Signed, m02Signed, rm, sign * m0e, nominalCurvature, e2Mm, m2, sign * usedMagnitude, warnings);
+        return new(lambda, lambdaLimit, true, n, a, b, c, m01Signed, m02Signed, rm, sign * m0e, nominalCurvature, e2Mm, m2, sign * usedMagnitude, kr, kPhi, beta, phiEff, warnings);
     }
 
     private static Ec2SlendernessSectionValuesDto ExtractSectionValues(

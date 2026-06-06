@@ -25,9 +25,9 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
 
         var originalUnits = model.GetPresentUnits();
         var (targetUnits, _, lengthFactor, _) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
-        // GetCoordCartesian returns coordinates in the model's original units regardless of SetPresentUnits.
-        // Use metric conversion so LengthMm is always in mm regardless of targetSystem.
-        var geoLengthFactor = EtabsConnectionService.GetConversionFactors(originalUnits, MBColumn.Domain.Enums.UnitSystem.Metric).LengthFactor;
+        // GetCoordCartesian returns coordinates in the present units (set by SetPresentUnits below).
+        // Convert from targetUnits to mm so LengthMm is always in mm regardless of targetSystem.
+        var geoLengthFactor = EtabsConnectionService.GetConversionFactors(targetUnits, MBColumn.Domain.Enums.UnitSystem.Metric).LengthFactor;
 
         try
         {

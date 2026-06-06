@@ -3040,6 +3040,8 @@ public sealed class InputViewModel : ViewModelBase
                                     : null;
                                 loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
                                 loadCase.E2X = slenderness.X?.E2Mm;
+                                loadCase.KrX = slenderness.X?.Kr;
+                                loadCase.KPhiX = slenderness.X?.KPhi;
 
                                 loadCase.LambdaY = slenderness.Y?.Lambda;
                                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
@@ -3058,6 +3060,8 @@ public sealed class InputViewModel : ViewModelBase
                                     : null;
                                 loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
                                 loadCase.E2Y = slenderness.Y?.E2Mm;
+                                loadCase.KrY = slenderness.Y?.Kr;
+                                loadCase.KPhiY = slenderness.Y?.KPhi;
 
                                 loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
                                 loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
@@ -3545,6 +3549,8 @@ public sealed class InputViewModel : ViewModelBase
                     : null;
                 loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
                 loadCase.E2X = slenderness.X?.E2Mm;
+                loadCase.KrX = slenderness.X?.Kr;
+                loadCase.KPhiX = slenderness.X?.KPhi;
 
                 loadCase.LambdaY = slenderness.Y?.Lambda;
                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
@@ -3563,6 +3569,8 @@ public sealed class InputViewModel : ViewModelBase
                     : null;
                 loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
                 loadCase.E2Y = slenderness.Y?.E2Mm;
+                loadCase.KrY = slenderness.Y?.Kr;
+                loadCase.KPhiY = slenderness.Y?.KPhi;
 
                 loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
                 loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;

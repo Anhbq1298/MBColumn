@@ -76,7 +76,7 @@ public partial class InputTabView : UserControl
         double minX = -centeredLeft - panelWidth + visibleMargin;
         double maxX = rootWidth - centeredLeft - visibleMargin;
         double minY = -centeredTop;
-        double maxY = rootHeight - centeredTop - visibleMargin;
+        double maxY = centeredTop - visibleMargin;
         return (minX, maxX, minY, maxY);
     }
 

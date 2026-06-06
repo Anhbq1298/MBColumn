@@ -97,16 +97,17 @@ public partial class EtabsImportWindow : Window
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Reset:
-                    UniqueSectionListBox.SelectedItems.Clear();
+                    UniqueSectionListBox.SelectedItem = null;
                     break;
                 case NotifyCollectionChangedAction.Add when e.NewItems is not null:
-                    foreach (var item in e.NewItems)
-                        if ((item as EtabsUniqueSectionOptionViewModel)?.IsSelected == true)
-                            UniqueSectionListBox.SelectedItems.Add(item);
+                    var newSelected = e.NewItems.OfType<EtabsUniqueSectionOptionViewModel>().FirstOrDefault(i => i.IsSelected);
+                    if (newSelected is not null)
+                        UniqueSectionListBox.SelectedItem = newSelected;
                     break;
                 case NotifyCollectionChangedAction.Remove when e.OldItems is not null:
-                    foreach (var item in e.OldItems)
-                        UniqueSectionListBox.SelectedItems.Remove(item);
+                    foreach (var item in e.OldItems.OfType<EtabsUniqueSectionOptionViewModel>())
+                        if (ReferenceEquals(UniqueSectionListBox.SelectedItem, item))
+                            UniqueSectionListBox.SelectedItem = null;
                     break;
             }
         }
@@ -121,10 +122,7 @@ public partial class EtabsImportWindow : Window
         _suppressUniqueSectionSync = true;
         try
         {
-            UniqueSectionListBox.SelectedItems.Clear();
-            foreach (var s in vm.UniqueSectionOptions)
-                if (s.IsSelected)
-                    UniqueSectionListBox.SelectedItems.Add(s);
+            UniqueSectionListBox.SelectedItem = vm.UniqueSectionOptions.FirstOrDefault(s => s.IsSelected);
         }
         finally
         {

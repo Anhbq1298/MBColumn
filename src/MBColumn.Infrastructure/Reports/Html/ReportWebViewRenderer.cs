@@ -247,12 +247,27 @@ document.addEventListener('DOMContentLoaded',function(){
 
             if (!slender) continue;
 
+            // Kr
+            double nu = 1.0 + (batch.SectionValues?.Omega ?? 0.0);
+            yield return new FormulaBlock(
+                "Correction factor  Kᵣ  (EC2 §5.8.8.3)",
+                @"K_r = \frac{n_u - n}{n_u - n_{bal}} \leq 1,\quad n_u=1+\omega,\quad n_{bal}=0.4",
+                $@"n_u = 1+{F(batch.SectionValues?.Omega ?? 0, 4)} = {F(nu, 4)},\quad n = {F(ax.FactorN, 4)},\quad n_{{bal}} = 0.4",
+                $@"K_r = \frac{{{F(nu, 4)} - {F(ax.FactorN, 4)}}}{{{F(nu, 4)} - 0.4}} = {F(ax.Kr, 4)}");
+
+            // KPhi
+            yield return new FormulaBlock(
+                "Creep factor  Kᵩ  (EC2 §5.8.8.3)",
+                @"K_\varphi = \max\!\left(1,\; 1 + \beta\,\varphi_{ef}\right),\quad \beta = 0.35 + \tfrac{f_{ck}}{200} - \tfrac{\lambda}{150}",
+                $@"\beta = {F(ax.Beta, 4)},\quad \varphi_{{ef}} = {F(ax.PhiEff, 3)}",
+                $@"K_\varphi = {F(ax.KPhi, 4)}");
+
             // Nominal curvature
             yield return new FormulaBlock(
                 "Nominal curvature  (EC2 §5.8.8.3)",
                 @"\frac{1}{r} = K_r K_\varphi \frac{\varepsilon_{yd}}{0.45\,d}",
-                $@"1/r = {ax.NominalCurvature1PerMm:F4e+0}\;\mathrm{{mm}}^{{-1}}",
-                "");
+                $@"K_r={F(ax.Kr,4)},\quad K_\varphi={F(ax.KPhi,4)}",
+                $@"\frac{{1}}{{r}} = {ax.NominalCurvature1PerMm:F5e+0}\;\mathrm{{mm}}^{{-1}}");
 
             // Deflection
             yield return new FormulaBlock(
