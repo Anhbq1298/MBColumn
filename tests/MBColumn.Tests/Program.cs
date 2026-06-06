@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
@@ -13,6 +14,7 @@ using MBColumn.Presentation.Wpf.Controls;
 using MBColumn.Presentation.Wpf.ViewModels;
 using MBColumn.Tests.Baseline;
 using MBColumn.Tests.Verification;
+using Microsoft.Data.Sqlite;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -39,6 +41,14 @@ if (args.Contains("--run-rebar-compliance-regressions"))
     TestEc2ComplianceIrregularUsesPolygonArea();
     TestEc2ComplianceFailsMissingLinkSpacing();
     Console.WriteLine("PASS EC2 rebar compliance regression checks");
+    return;
+}
+
+if (args.Contains("--run-project-save-regressions"))
+{
+    TestProjectSavePersistsMemberLengthOverride();
+    TestProjectOpenRepairsMemberLengthSchema();
+    Console.WriteLine("PASS project save regression checks");
     return;
 }
 
@@ -172,6 +182,8 @@ var tests = new List<(string Name, Action Test)>
     ("Multi-load case inactive excluded", TestMultiLoadCaseInactiveExcluded),
     ("Multi-load case fallback to single", TestMultiLoadCaseFallbackToSingle),
     ("Multi-load case governing id in result", TestMultiLoadCaseGoverningIdInResult),
+    ("Project save persists member length override", TestProjectSavePersistsMemberLengthOverride),
+    ("Project open repairs member length schema", TestProjectOpenRepairsMemberLengthSchema),
     ("EC2 circular hoop shear benchmark", TestEc2CircularHoopShearBenchmark),
     ("EC2 shear keeps VRd,c when links not required", TestEc2ShearKeepsConcreteCapacityWhenLinksNotRequired),
     ("EC2 circular shear without links uses circular geometry", TestEc2CircularShearWithoutLinksUsesCircularGeometry),
@@ -2250,6 +2262,169 @@ static void TestMultiLoadCaseGoverningIdInResult()
     IsTrue(result.GoverningLoadCaseId == govCase.LoadCaseId);
 }
 
+static void TestProjectSavePersistsMemberLengthOverride()
+{
+    var path = Path.Combine(Path.GetTempPath(), $"mbcolumn-member-length-{Guid.NewGuid():N}.mbc");
+
+    try
+    {
+        using var project = new MBColumn.Infrastructure.Persistence.ProjectService();
+        project.NewProject("Schema regression");
+        var column = project.AddColumn("C1");
+
+        project.SaveColumnInput(column.Id, new ColumnInputSnapshot
+        {
+            LoadCases =
+            [
+                new SnapshotLoadCase
+                {
+                    Id = "LC1",
+                    Label = "LC1",
+                    Pu = 1000,
+                    Mux = 100,
+                    Muy = 80,
+                    MemberLengthOverride = 4200
+                }
+            ]
+        });
+
+        project.SaveProjectAs(path);
+
+        using var reopened = new MBColumn.Infrastructure.Persistence.ProjectService();
+        reopened.OpenProject(path);
+        var snapshot = reopened.LoadColumnInput(column.Id) ?? throw new InvalidOperationException("Missing saved column input.");
+        AreClose(4200, snapshot.LoadCases.Single().MemberLengthOverride ?? 0, 1e-9);
+    }
+    finally
+    {
+        SqliteConnection.ClearAllPools();
+        if (File.Exists(path)) File.Delete(path);
+        if (File.Exists(path + "r")) File.Delete(path + "r");
+    }
+}
+
+static void TestProjectOpenRepairsMemberLengthSchema()
+{
+    var path = Path.Combine(Path.GetTempPath(), $"mbcolumn-member-length-repair-{Guid.NewGuid():N}.mbc");
+    var connectionString = new SqliteConnectionStringBuilder
+    {
+        DataSource = path,
+        Mode = SqliteOpenMode.ReadWriteCreate
+    }.ToString();
+
+    try
+    {
+        using (var conn = new SqliteConnection(connectionString))
+        {
+            conn.Open();
+            ExecuteSql(conn, "CREATE TABLE SchemaVersion (Version INTEGER NOT NULL, AppliedAt TEXT NOT NULL)");
+            ExecuteSql(conn, "INSERT INTO SchemaVersion (Version, AppliedAt) VALUES (9, '2026-01-01T00:00:00.0000000Z')");
+            ExecuteSql(conn, """
+                CREATE TABLE Project (
+                    Id INTEGER PRIMARY KEY,
+                    Name TEXT NOT NULL,
+                    Description TEXT,
+                    AppVersion TEXT NOT NULL DEFAULT '1.0.0',
+                    CreatedAt TEXT NOT NULL,
+                    ModifiedAt TEXT NOT NULL
+                )
+                """);
+            ExecuteSql(conn, "INSERT INTO Project (Id, Name, AppVersion, CreatedAt, ModifiedAt) VALUES (1, 'Repair', '1.0.0', '2026-01-01T00:00:00.0000000Z', '2026-01-01T00:00:00.0000000Z')");
+            ExecuteSql(conn, """
+                CREATE TABLE SectionGroup (
+                    Id INTEGER PRIMARY KEY,
+                    ProjectId INTEGER NOT NULL REFERENCES Project(Id) ON DELETE CASCADE,
+                    Name TEXT NOT NULL,
+                    SortOrder INTEGER NOT NULL DEFAULT 0,
+                    CreatedAt TEXT NOT NULL,
+                    ModifiedAt TEXT NOT NULL
+                )
+                """);
+            ExecuteSql(conn, """
+                CREATE TABLE Column (
+                    Id INTEGER PRIMARY KEY,
+                    ProjectId INTEGER NOT NULL REFERENCES Project(Id) ON DELETE CASCADE,
+                    GroupId INTEGER REFERENCES SectionGroup(Id) ON DELETE SET NULL,
+                    Name TEXT NOT NULL,
+                    SortOrder INTEGER NOT NULL DEFAULT 0,
+                    InputJson TEXT NOT NULL DEFAULT '{}',
+                    ResultJson TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    ModifiedAt TEXT NOT NULL
+                )
+                """);
+            ExecuteSql(conn, "INSERT INTO Column (Id, ProjectId, Name, SortOrder, InputJson, CreatedAt, ModifiedAt) VALUES (1, 1, 'C1', 0, '{}', '2026-01-01T00:00:00.0000000Z', '2026-01-01T00:00:00.0000000Z')");
+            ExecuteSql(conn, """
+                CREATE TABLE DemandCase (
+                    Id INTEGER PRIMARY KEY,
+                    ColumnId INTEGER NOT NULL REFERENCES Column(Id) ON DELETE CASCADE,
+                    IdString TEXT,
+                    Label TEXT,
+                    OriginalLoadCaseName TEXT,
+                    SourceObjectName TEXT,
+                    SourceObjectLabel TEXT,
+                    Story TEXT,
+                    Station TEXT,
+                    Source TEXT,
+                    Pu REAL NOT NULL,
+                    Mux REAL NOT NULL,
+                    Muy REAL NOT NULL,
+                    IsActive INTEGER NOT NULL DEFAULT 1,
+                    MxTop REAL,
+                    MxBottom REAL,
+                    MyTop REAL,
+                    MyBottom REAL,
+                    MxUsed REAL,
+                    MyUsed REAL,
+                    Vux REAL NOT NULL DEFAULT 0.0,
+                    Vuy REAL NOT NULL DEFAULT 0.0,
+                    ForceSourceType TEXT,
+                    SourceTableKey TEXT,
+                    SourceCombination TEXT,
+                    SourceLocation TEXT,
+                    ImportedAt TEXT
+                )
+                """);
+        }
+
+        using var project = new MBColumn.Infrastructure.Persistence.ProjectService();
+        project.OpenProject(path);
+        project.SaveColumnInput(1, CreateSnapshotWithMemberLengthOverride(3600));
+        var snapshot = project.LoadColumnInput(1) ?? throw new InvalidOperationException("Missing repaired column input.");
+        AreClose(3600, snapshot.LoadCases.Single().MemberLengthOverride ?? 0, 1e-9);
+    }
+    finally
+    {
+        SqliteConnection.ClearAllPools();
+        if (File.Exists(path)) File.Delete(path);
+        if (File.Exists(path + "r")) File.Delete(path + "r");
+    }
+}
+
+static ColumnInputSnapshot CreateSnapshotWithMemberLengthOverride(double memberLengthOverride)
+    => new()
+    {
+        LoadCases =
+        [
+            new SnapshotLoadCase
+            {
+                Id = "LC1",
+                Label = "LC1",
+                Pu = 1000,
+                Mux = 100,
+                Muy = 80,
+                MemberLengthOverride = memberLengthOverride
+            }
+        ]
+    };
+
+static void ExecuteSql(SqliteConnection connection, string sql)
+{
+    using var cmd = connection.CreateCommand();
+    cmd.CommandText = sql;
+    cmd.ExecuteNonQuery();
+}
+
 static void TestEc2SlendernessOffPreservesDirectMoments()
 {
     var loadCase = new LoadCaseDto("lc1", "LC1", 1200, 85, 35, true, ForceUnit.kN, MomentUnit.kNm)
@@ -4004,6 +4179,7 @@ sealed class StubEtabsColumnImportService : MBColumn.Application.Services.Etabs.
         => [new("pier:P1:Story1", "P1", "Story1", "P1", "P1|Story1", "CIRC800", "C40",
                 MBColumn.Domain.Enums.SectionShapeType.Irregular, 800, 800, 0, 0, "", "Ready")];
     public IReadOnlyList<string> GetLoadCombinations() => ["1.2D+1.6L"];
+    public IReadOnlyList<(string Name, double Elevation)> GetStoryElevations() => [("Story1", 0.0)];
 }
 
 sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.IEtabsForceImportService

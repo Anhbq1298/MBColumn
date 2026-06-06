@@ -59,6 +59,8 @@ internal static class DatabaseSchema
             // Existing database — run any pending migrations
             MigrationRunner.Run(connection, s_migrations);
         }
+
+        EnsureCurrentColumns(connection);
     }
 
     public static void Open(SqliteConnection connection)
@@ -99,7 +101,13 @@ internal static class DatabaseSchema
                 Description TEXT,
                 AppVersion  TEXT NOT NULL DEFAULT '1.0.0',
                 CreatedAt   TEXT NOT NULL,
-                ModifiedAt  TEXT NOT NULL
+                ModifiedAt  TEXT NOT NULL,
+                EtabsModelName TEXT,
+                EtabsModelPath TEXT,
+                EtabsUnits TEXT,
+                EtabsStoryCount INTEGER,
+                EtabsPierCount INTEGER,
+                EtabsFrameCount INTEGER
             )
             """);
 
@@ -156,9 +164,44 @@ internal static class DatabaseSchema
                 SourceTableKey TEXT,
                 SourceCombination TEXT,
                 SourceLocation TEXT,
-                ImportedAt TEXT
+                ImportedAt TEXT,
+                MemberLengthOverride REAL
             )
             """);
+    }
+
+    private static void EnsureCurrentColumns(SqliteConnection connection)
+    {
+        AddColumnIfMissing(connection, "Project", "EtabsModelName", "TEXT");
+        AddColumnIfMissing(connection, "Project", "EtabsModelPath", "TEXT");
+        AddColumnIfMissing(connection, "Project", "EtabsUnits", "TEXT");
+        AddColumnIfMissing(connection, "Project", "EtabsStoryCount", "INTEGER");
+        AddColumnIfMissing(connection, "Project", "EtabsPierCount", "INTEGER");
+        AddColumnIfMissing(connection, "Project", "EtabsFrameCount", "INTEGER");
+        AddColumnIfMissing(connection, "DemandCase", "MemberLengthOverride", "REAL");
+    }
+
+    private static void AddColumnIfMissing(SqliteConnection connection, string tableName, string columnName, string columnDefinition)
+    {
+        if (ColumnExists(connection, tableName, columnName))
+            return;
+
+        Exec(connection, $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition}");
+    }
+
+    private static bool ColumnExists(SqliteConnection connection, string tableName, string columnName)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = $"PRAGMA table_info({tableName})";
+        using var reader = cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            if (string.Equals(reader.GetString(1), columnName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     private static void Exec(SqliteConnection connection, string sql)

@@ -1390,8 +1390,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var importFy = selectedImportRebarGrade?.StressValue(selectedImportUnitSystem) ?? 420;
         var importEs = selectedImportRebarGrade?.ModulusValue(selectedImportUnitSystem) ?? 200000;
         var rawLengthGroup = group.Items.FirstOrDefault(i => i.LengthMm > 0)?.LengthMm ?? 0;
+        // MemberLengthL in the snapshot is stored in section-size unit (mm for Metric, inches for Imperial)
         var importMemberLength = rawLengthGroup > 0
-            ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthGroup / 1000.0 : rawLengthGroup / 12.0)
+            ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthGroup : rawLengthGroup / 25.4)
             : (double?)null;
         var snapshot = new ColumnInputSnapshot
         {
