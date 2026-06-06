@@ -36,6 +36,8 @@ public partial class MathEquationView : UserControl
     private string? queuedRenderSignature;
     private string? completedRenderSignature;
     private bool webViewReady;
+    private ScrollViewer? _ancestorScrollViewer;
+    private bool _clippedByScrollViewer;
 
     public MathEquationView()
     {
@@ -48,7 +50,8 @@ public partial class MathEquationView : UserControl
             _ = RenderAsync();
         };
 
-        Loaded += (_, _) => QueueRender();
+        Loaded += OnControlLoaded;
+        Unloaded += OnControlUnloaded;
         IsVisibleChanged += (_, _) =>
         {
             if (IsVisible)
@@ -57,6 +60,72 @@ public partial class MathEquationView : UserControl
             }
         };
         IsEnabledChanged += (_, _) => QueueRender();
+    }
+
+    private void OnControlLoaded(object sender, RoutedEventArgs e)
+    {
+        QueueRender();
+        try
+        {
+            var sv = FindAncestorScrollViewer();
+            if (sv != _ancestorScrollViewer)
+            {
+                if (_ancestorScrollViewer != null)
+                    _ancestorScrollViewer.ScrollChanged -= OnAncestorScrollChanged;
+                _ancestorScrollViewer = sv;
+                if (sv != null)
+                    sv.ScrollChanged += OnAncestorScrollChanged;
+            }
+        }
+        catch { }
+    }
+
+    private void OnControlUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_ancestorScrollViewer != null)
+        {
+            _ancestorScrollViewer.ScrollChanged -= OnAncestorScrollChanged;
+            _ancestorScrollViewer = null;
+        }
+        _clippedByScrollViewer = false;
+    }
+
+    private void OnAncestorScrollChanged(object sender, ScrollChangedEventArgs e)
+        => UpdateWebViewClipping();
+
+    private void UpdateWebViewClipping()
+    {
+        if (_ancestorScrollViewer == null || !IsLoaded) return;
+        try
+        {
+            var transform = TransformToAncestor(_ancestorScrollViewer);
+            var myBounds = transform.TransformBounds(new Rect(0, 0, Math.Max(1, ActualWidth), Math.Max(1, ActualHeight)));
+            var viewport = new Rect(0, 0, _ancestorScrollViewer.ViewportWidth, _ancestorScrollViewer.ViewportHeight);
+            bool inViewport = myBounds.IntersectsWith(viewport);
+
+            if (!inViewport && MathWebView.Visibility != Visibility.Collapsed)
+            {
+                _clippedByScrollViewer = true;
+                MathWebView.Visibility = Visibility.Collapsed;
+            }
+            else if (inViewport && _clippedByScrollViewer)
+            {
+                _clippedByScrollViewer = false;
+                QueueRender();
+            }
+        }
+        catch { }
+    }
+
+    private ScrollViewer? FindAncestorScrollViewer()
+    {
+        DependencyObject? parent = VisualTreeHelper.GetParent(this);
+        while (parent != null)
+        {
+            if (parent is ScrollViewer sv) return sv;
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+        return null;
     }
 
     public event EventHandler? RenderCompleted;

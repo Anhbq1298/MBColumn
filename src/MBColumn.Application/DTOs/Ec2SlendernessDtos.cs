@@ -51,6 +51,7 @@ public sealed record Ec2SlendernessAxisResultDto(
     double NominalCurvature1PerMm,
     double E2Mm,
     double M2Nmm,
+    double MinimumMomentNmm,
     double MUsedNmm,
     double Kr,
     double KPhi,

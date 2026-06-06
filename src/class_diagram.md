@@ -468,36 +468,71 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ShearDesignServiceFactory** | Represents the ShearDesignServiceFactory class. Key methods: Get. | `ShearDesignServiceFactory.cs` |
 | `record` | **struct** | Represents the struct record. | `Ec2ShearDesignService.cs` |
 
-### Etabs
+### Etabs/Binding
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `record` | **AreaRecord** | Represents the AreaRecord record. | `EtabsPierShellImportService.cs` |
-| `class` | **AreaScanCache** | Represents the AreaScanCache class. Key methods: GetOrFetchThickness. | `EtabsPierShellImportService.cs` |
 | `class` | **EtabsBindingReconciliationService** | Provides service logic and operations for EtabsBindingReconciliation. Key methods: ValidateBindings, ReconcileColumnObject, ReconcilePierObject. | `EtabsBindingReconciliationService.cs` |
-| `class` | **EtabsColumnIdentityService** | /// Builds and matches geometry-based identities for ETABS column objects. /// /// The permanent identity is a deterministic GUID derived from normalized endpoint /// coordinates (XBot/YBot/ZBot/XTop/YTop/ZTop), so it survives ETABS renames, /// re-meshes, and model transfers. /// /// XY + ZBot + ZTop is used instead of XY-only because columns from different /// stories share the same XY footprint. ///. Key methods: GetCurrentGeometryRecords, BuildIdentity, BuildGeometrySignature, BuildGuidFromSignature. | `EtabsColumnIdentityService.cs` |
-| `class` | **EtabsColumnImportService** | Provides service logic and operations for EtabsColumnImport. Key methods: GetCandidateColumns, GetLoadCombinations. | `EtabsColumnImportService.cs` |
-| `class` | **EtabsConnectionService** | Provides service logic and operations for EtabsConnection. Key methods: ConnectToRunningEtabs, Disconnect. Key properties: IsConnected. | `EtabsConnectionService.cs` |
-| `class` | **EtabsDesignForceImportService** | /// Preloads raw Design Forces - Columns and Design Forces - Piers tables from ETABS /// into ImportedEtabsForceDatabase without filtering or unit conversion, /// so the data can later be parsed on demand by the Force Filter without additional COM calls. ///. Key methods: ImportDesignForces, HasDesignResults, LoadColumnElementForcesTable, LoadPierElementForcesTable. | `EtabsDesignForceImportService.cs` |
+
+### Etabs/Cache
+
+| Type | Name | Description | File |
+|---|---|---|---|
 | `class` | **EtabsForceCacheResolver** | /// Resolves the correct cached force rows by source mode and object type. /// Design Forces use the preloaded ImportedEtabsForceDatabase. /// Element Forces require ETABS connection (live COM) and are not pre-cached. ///. Key methods: Resolve, HasData. | `EtabsForceCacheResolver.cs` |
 | `class` | **EtabsForceCacheService** | Provides service logic and operations for EtabsForceCache. Key methods: Build, Query, Clear, Dispose. Key properties: IsBuilt, StatusText. | `EtabsForceCacheService.cs` |
-| `class` | **EtabsForceChangeDetector** | Represents the EtabsForceChangeDetector class. Key methods: CompareSectionForces. | `EtabsForceChangeDetector.cs` |
-| `class` | **EtabsForceImportService** | Provides service logic and operations for EtabsForceImport. Key methods: GetForces, GetPierForces, GetElementForces, GetPierElementForces. | `EtabsForceImportService.cs` |
-| `class` | **EtabsForceMapper** | Maps data structures for EtabsForce. Key methods: MapColumnForces, MapPierForces, ToLoadCases. | `EtabsForceMapper.cs` |
-| `class` | **EtabsForceRefreshService** | Provides service logic and operations for EtabsForceRefresh. Key methods: CheckResultState, RunEtabsAnalysis, RunEtabsDesign, BuildPreview. | `EtabsForceRefreshService.cs` |
-| `class` | **EtabsForceSelectionService** | Provides service logic and operations for EtabsForceSelection. Key methods: BuildColumnScope. | `EtabsForceSelectionService.cs` |
-| `class` | **EtabsForceTableService** | /// Unified ETABS force import pipeline using cDatabaseTables. /// /// Pipeline: /// 1. Resolve table key from ForceSourceType + ObjectType. /// 2. Read raw ETABS table via GetTableForDisplayArray. /// 3. Normalize field names to EtabsForceRecord. /// 4. Apply EtabsForceFilterCriteria. /// 5. Group by (Story+Label+UniqueName+OutputCase), keep min/max stations (Bottom/Top). /// 6. Convert units and apply MB Column force convention. /// 7. Generate MB Column load case names. ///. Key methods: GetNormalizedRecords, MapToMbColumnRecords, GetMbColumnForceRecords. | `EtabsForceTableService.cs` |
-| `class` | **EtabsPierShellImportService** | Provides service logic and operations for EtabsPierShellImport. Key methods: GetStoryNames, GetSegments. | `EtabsPierShellImportService.cs` |
-| `class` | **EtabsResultStateService** | Provides service logic and operations for EtabsResultState. Key methods: CheckElementForceAvailability, CheckDesignForceAvailability. | `EtabsResultStateService.cs` |
 | `class` | **ImportedEtabsForceCache** | /// In-memory singleton cache for the raw ETABS design force database preloaded during Import ETABS. /// The cache is invalidated whenever the model file path changes or Clear is called. ///. Key methods: HasValidCache, Set, Clear. Key properties: Current, HasCache. | `ImportedEtabsForceCache.cs` |
-| `class` | **IrregularPierGeometryBuilder** | Represents the IrregularPierGeometryBuilder class. Key methods: BuildBoundary. | `IrregularPierGeometryBuilder.cs` |
+
+### Etabs/Columns
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **EtabsColumnIdentityService** | /// Builds and matches geometry-based identities for ETABS column objects. /// /// The permanent identity is a deterministic GUID derived from normalized endpoint /// coordinates (XBot/YBot/ZBot/XTop/YTop/ZTop), so it survives ETABS renames, /// re-meshes, and model transfers. /// /// XY + ZBot + ZTop is used instead of XY-only because columns from different /// stories share the same XY footprint. ///. Key methods: GetCurrentGeometryRecords, BuildIdentity, BuildGeometrySignature, BuildGuidFromSignature. | `EtabsColumnIdentityService.cs` |
+| `class` | **EtabsColumnImportService** | Provides service logic and operations for EtabsColumnImport. Key methods: GetCandidateColumns, GetLoadCombinations. | `EtabsColumnImportService.cs` |
+| `record` | **struct** | Represents the struct record. | `EtabsColumnImportService.cs` |
+
+### Etabs/Connection
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **EtabsConnectionService** | Provides service logic and operations for EtabsConnection. Key methods: ConnectToRunningEtabs, Disconnect. Key properties: IsConnected. | `EtabsConnectionService.cs` |
+
+### Etabs/Forces/Import
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **EtabsDesignForceImportService** | /// Preloads raw Design Forces - Columns and Design Forces - Piers tables from ETABS /// into ImportedEtabsForceDatabase without filtering or unit conversion, /// so the data can later be parsed on demand by the Force Filter without additional COM calls. ///. Key methods: ImportDesignForces, HasDesignResults, LoadColumnElementForcesTable, LoadPierElementForcesTable. | `EtabsDesignForceImportService.cs` |
+| `class` | **EtabsForceImportService** | Provides service logic and operations for EtabsForceImport. Key methods: GetForces, GetPierForces, GetElementForces, GetPierElementForces. | `EtabsForceImportService.cs` |
+| `class` | **EtabsForceTableService** | /// Unified ETABS force import pipeline using cDatabaseTables. /// /// Pipeline: /// 1. Resolve table key from ForceSourceType + ObjectType. /// 2. Read raw ETABS table via GetTableForDisplayArray. /// 3. Normalize field names to EtabsForceRecord. /// 4. Apply EtabsForceFilterCriteria. /// 5. Group by (Story+Label+UniqueName+OutputCase), keep min/max stations (Bottom/Top). /// 6. Convert units and apply MB Column force convention. /// 7. Generate MB Column load case names. ///. Key methods: GetNormalizedRecords, MapToMbColumnRecords, GetMbColumnForceRecords. | `EtabsForceTableService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParsePierForces. | `EtabsDesignForceImportService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParseAllColumnForces. | `EtabsDesignForceImportService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParseAllPierForces. | `EtabsDesignForceImportService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParseColumnElementForces. | `EtabsDesignForceImportService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParsePierElementForces. | `EtabsDesignForceImportService.cs` |
 | `record` | **in** | Represents the in record. | `EtabsDesignForceImportService.cs` |
-| `record` | **struct** | Represents the struct record. | `EtabsColumnImportService.cs` |
+
+### Etabs/Forces/Mapping
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **EtabsForceChangeDetector** | Represents the EtabsForceChangeDetector class. Key methods: CompareSectionForces. | `EtabsForceChangeDetector.cs` |
+| `class` | **EtabsForceMapper** | Maps data structures for EtabsForce. Key methods: MapColumnForces, MapPierForces, ToLoadCases. | `EtabsForceMapper.cs` |
+| `class` | **EtabsForceSelectionService** | Provides service logic and operations for EtabsForceSelection. Key methods: BuildColumnScope. | `EtabsForceSelectionService.cs` |
+
+### Etabs/Forces/Refresh
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **EtabsForceRefreshService** | Provides service logic and operations for EtabsForceRefresh. Key methods: CheckResultState, RunEtabsAnalysis, RunEtabsDesign, BuildPreview. | `EtabsForceRefreshService.cs` |
+| `class` | **EtabsResultStateService** | Provides service logic and operations for EtabsResultState. Key methods: CheckElementForceAvailability, CheckDesignForceAvailability. | `EtabsResultStateService.cs` |
+
+### Etabs/Piers
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `record` | **AreaRecord** | Represents the AreaRecord record. | `EtabsPierShellImportService.cs` |
+| `class` | **AreaScanCache** | Represents the AreaScanCache class. Key methods: GetOrFetchThickness. | `EtabsPierShellImportService.cs` |
+| `class` | **EtabsPierShellImportService** | Provides service logic and operations for EtabsPierShellImport. Key methods: GetStoryNames, GetSegments. | `EtabsPierShellImportService.cs` |
+| `class` | **IrregularPierGeometryBuilder** | Represents the IrregularPierGeometryBuilder class. Key methods: BuildBoundary. | `IrregularPierGeometryBuilder.cs` |
 
 ### Math
 
@@ -684,7 +719,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ChartTransformHelper** | Represents the ChartTransformHelper class. Key methods: AutoFit2D, ToScreen, ToData, TicksX. Key properties: MinX, MaxX, MinY, MaxY. | `ChartTransformHelper.cs` |
 | `class` | **DiagramCanvas2D** | Represents the DiagramCanvas2D class. Key methods: ResetView, ClipClosedPolylineBelowYForTesting, ClipOpenPolylineAboveYForTesting. Key properties: Points, ReferenceLines, XAxisLabel, YAxisLabel. | `DiagramCanvas2D.cs` |
 | `class` | **InteractionViewport3D** | Represents the InteractionViewport3D class. Key methods: ResetCamera, BuildEngineeringAxesForTesting. Key properties: Points, DemandPoint, DemandPoints, GoverningPoint. | `InteractionViewport3D.cs` |
-| `class` | **MomentDiagramControl** | /// Renders a bending moment diagram (BMD) for a column member end. /// Shows a vertical column stick with horizontal moment axes at top (y=0) /// and bottom (y=-L). Moment values are plotted as dots on the axes, /// scaled proportionally, with hatch-filled polygon area. /// Left = negative, Right = positive. ///. Key properties: MomentTop, MomentBottom, DiagramColor, Title. | `MomentDiagramControl.cs` |
+| `class` | **MomentDiagramControl** | /// Renders a bending moment diagram (BMD) for a column member end. /// Shows a vertical column stick with horizontal moment axes at top (y=0) /// and bottom (y=-L). Negative regions are hatched red, positive regions blue. /// Left = negative, Right = positive. ///. Key properties: MomentTop, MomentBottom, DiagramColor, Title. | `MomentDiagramControl.cs` |
 | `class` | **ReportBlockTemplateSelector** | Represents the ReportBlockTemplateSelector class. Key methods: SelectTemplate. Key properties: HeadingTemplate, ParagraphTemplate, NoteTemplate, FormulaTemplate. | `ReportBlockTemplateSelector.cs` |
 | `class` | **ReportPaginator** | /// Paginates a FrameworkElement across multiple printed pages by slicing it /// vertically after scaling to fit the page width. ///. Key methods: GetPage. Key properties: IsPageCountValid, PageCount, PageSize, Source. | `ReportPaginator.cs` |
 | `class` | **ReportTableControl** | /// Renders a TableBlock (string[][] rows) as a WPF Grid with headers and data rows. ///. Key properties: Block. | `ReportTableControl.cs` |

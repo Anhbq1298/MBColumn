@@ -1,9 +1,11 @@
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using MBColumn.Presentation.Wpf.ViewModels;
 
@@ -15,6 +17,11 @@ public partial class InputTabView : UserControl
     private Point slendernessDetailsDragStart;
     private double slendernessDetailsStartX;
     private double slendernessDetailsStartY;
+    private Window? slendernessDetailsWindow;
+
+    private DispatcherTimer? _calcRefreshTimer;
+    private InputViewModel? _subscribedInputVm;
+    private LoadCaseViewModel? _subscribedLoadCase;
 
     protected override void OnKeyDown(System.Windows.Input.KeyEventArgs e)
     {
@@ -27,7 +34,165 @@ public partial class InputTabView : UserControl
             e.Handled = true;
         }
     }
-    public InputTabView() => InitializeComponent();
+    public InputTabView()
+    {
+        InitializeComponent();
+        _calcRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _calcRefreshTimer.Tick += (_, _) => { _calcRefreshTimer.Stop(); RefreshCalculationFormulas(); };
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        UnsubscribeVm();
+        if (e.NewValue is InputViewModel vm)
+        {
+            _subscribedInputVm = vm;
+            vm.PropertyChanged += OnVmOrLcPropertyChanged;
+            ResubscribeLoadCase(vm.SelectedLoadCase);
+            RefreshCalculationFormulas();
+        }
+    }
+
+    private void ResubscribeLoadCase(LoadCaseViewModel? lc)
+    {
+        if (_subscribedLoadCase != null)
+            _subscribedLoadCase.PropertyChanged -= OnVmOrLcPropertyChanged;
+        _subscribedLoadCase = lc;
+        if (lc != null)
+            lc.PropertyChanged += OnVmOrLcPropertyChanged;
+    }
+
+    private void UnsubscribeVm()
+    {
+        if (_subscribedInputVm != null)
+        {
+            _subscribedInputVm.PropertyChanged -= OnVmOrLcPropertyChanged;
+            _subscribedInputVm = null;
+        }
+        ResubscribeLoadCase(null);
+    }
+
+    private void OnVmOrLcPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is InputViewModel vm && e.PropertyName == nameof(InputViewModel.SelectedLoadCase))
+            ResubscribeLoadCase(vm.SelectedLoadCase);
+
+        if (sender is InputViewModel detailsVm
+            && (e.PropertyName == nameof(InputViewModel.IsSlendernessCalculationDetailsOpen)
+                || e.PropertyName == nameof(InputViewModel.SlendernessCalculationLoadCase))
+            && detailsVm.IsSlendernessCalculationDetailsOpen)
+        {
+            OpenSlendernessDetailsWindow(detailsVm);
+        }
+
+        _calcRefreshTimer?.Stop();
+        _calcRefreshTimer?.Start();
+    }
+
+    private void RefreshCalculationFormulas()
+    {
+        if (DataContext is not InputViewModel vm) return;
+        var lc = vm.SelectedLoadCase;
+
+        CalcL0x.Formula = vm.L0xLatex;
+        CalcL0y.Formula = vm.L0yLatex;
+        CalcLambdaFormula.Formula = lc?.LambdaFormulaLatex ?? string.Empty;
+        CalcLambdaX.Formula = lc?.LambdaXResultLatex ?? string.Empty;
+        CalcLambdaY.Formula = lc?.LambdaYResultLatex ?? string.Empty;
+        CalcLimitFormula.Formula = lc?.LambdaLimitFormulaLatex ?? string.Empty;
+        CalcLimitX.Formula = lc?.LambdaLimitXResultLatex ?? string.Empty;
+        CalcLimitY.Formula = lc?.LambdaLimitYResultLatex ?? string.Empty;
+        CalcRmFormula.Formula = lc?.MomentRatioFormulaLatex ?? string.Empty;
+        CalcRmX.Formula = lc?.MomentRatioXResultLatex ?? string.Empty;
+        CalcRmY.Formula = lc?.MomentRatioYResultLatex ?? string.Empty;
+        CalcBranchFormula.Formula = lc?.BranchFormulaLatex ?? string.Empty;
+        CalcCurvFormula.Formula = lc?.NominalCurvatureFormulaLatex ?? string.Empty;
+        CalcCurvX.Formula = lc?.NominalCurvatureXResultLatex ?? string.Empty;
+        CalcCurvY.Formula = lc?.NominalCurvatureYResultLatex ?? string.Empty;
+        CalcMomentUsedFormula.Formula = lc?.MomentUsedFormulaLatex ?? string.Empty;
+        CalcMxUsed.Formula = lc?.MxUsedResultLatex ?? string.Empty;
+        CalcMyUsed.Formula = lc?.MyUsedResultLatex ?? string.Empty;
+        SumRmX.Formula = lc?.MomentRatioXResultLatex ?? string.Empty;
+        SumLambdaX.Formula = lc?.LambdaXResultLatex ?? string.Empty;
+        SumLimitX.Formula = lc?.LambdaLimitXResultLatex ?? string.Empty;
+        SumBranchX.Formula = lc?.Ec2BranchXLatex ?? string.Empty;
+        SumCurvX.Formula = lc?.NominalCurvatureXResultLatex ?? string.Empty;
+        SumMxUsed.Formula = lc?.MxUsedResultLatex ?? string.Empty;
+        SumRmY.Formula = lc?.MomentRatioYResultLatex ?? string.Empty;
+        SumLambdaY.Formula = lc?.LambdaYResultLatex ?? string.Empty;
+        SumLimitY.Formula = lc?.LambdaLimitYResultLatex ?? string.Empty;
+        SumBranchY.Formula = lc?.Ec2BranchYLatex ?? string.Empty;
+        SumCurvY.Formula = lc?.NominalCurvatureYResultLatex ?? string.Empty;
+        SumMyUsed.Formula = lc?.MyUsedResultLatex ?? string.Empty;
+    }
+
+    private void OpenSlendernessDetailsWindow(InputViewModel vm)
+    {
+        if (!vm.IncludeEc2Slenderness)
+            return;
+
+        if (vm.SlendernessCalculationLoadCase is not LoadCaseViewModel loadCase)
+            return;
+
+        if (slendernessDetailsWindow is not null)
+        {
+            slendernessDetailsWindow.Title = BuildSlendernessDetailsTitle(loadCase);
+            slendernessDetailsWindow.Activate();
+            return;
+        }
+
+        SlendernessDetailsPanelTransform.X = 0;
+        SlendernessDetailsPanelTransform.Y = 0;
+        SlendernessDetailsPanel.DataContext = vm;
+        SlendernessDetailsOverlay.Child = null;
+
+        var window = new Window
+        {
+            Title = BuildSlendernessDetailsTitle(loadCase),
+            Owner = Window.GetWindow(this),
+            Content = SlendernessDetailsPanel,
+            DataContext = vm,
+            Width = 1500,
+            Height = 920,
+            MinWidth = 1100,
+            MinHeight = 720,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.CanResize
+        };
+
+        window.Closed += (_, _) =>
+        {
+            window.Content = null;
+            if (SlendernessDetailsOverlay.Child is null)
+                SlendernessDetailsOverlay.Child = SlendernessDetailsPanel;
+
+            SlendernessDetailsPanel.DataContext = null;
+            slendernessDetailsWindow = null;
+            vm.IsSlendernessCalculationDetailsOpen = false;
+            vm.SlendernessCalculationLoadCase = null;
+        };
+
+        slendernessDetailsWindow = window;
+        window.Show();
+    }
+
+    private void CloseSlendernessDetailsWindow_Click(object sender, RoutedEventArgs e)
+        => slendernessDetailsWindow?.Close();
+
+    private static string BuildSlendernessDetailsTitle(LoadCaseViewModel loadCase)
+        => string.IsNullOrWhiteSpace(loadCase.Name)
+            ? "EC2 calculation breakdown"
+            : $"EC2 calculation breakdown - {loadCase.Name}";
+
+    private void SlendernessDetailsPanel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if ((bool)e.NewValue)
+        {
+            SlendernessDetailsPanelTransform.X = 0;
+            SlendernessDetailsPanelTransform.Y = 0;
+        }
+    }
 
     private void SlendernessDetailsHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -74,9 +239,9 @@ public partial class InputTabView : UserControl
         const double visibleMargin = 72.0;
 
         double minX = -centeredLeft - panelWidth + visibleMargin;
-        double maxX = rootWidth - centeredLeft - visibleMargin;
+        double maxX = Math.Max(minX, rootWidth - centeredLeft - visibleMargin);
         double minY = -centeredTop;
-        double maxY = centeredTop - visibleMargin;
+        double maxY = Math.Max(minY, centeredTop - visibleMargin);
         return (minX, maxX, minY, maxY);
     }
 
@@ -225,4 +390,3 @@ public partial class InputTabView : UserControl
         }
     }
 }
-

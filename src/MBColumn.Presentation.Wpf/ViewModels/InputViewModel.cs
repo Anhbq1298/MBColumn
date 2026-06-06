@@ -507,8 +507,24 @@ public sealed class InputViewModel : ViewModelBase
     public string MinimumEccentricityRuleText => $" = max(section dimension / 30, {MinimumEccentricityDisplayValue:0.##} {LengthLabel}). The final M";
     public string ImperfectionXCalculationLatex => BuildImperfectionAxisLatex("x", Kx);
     public string ImperfectionYCalculationLatex => BuildImperfectionAxisLatex("y", Ky);
+    public string ImperfectionMiXLatex => BuildImperfectionMiShortLatex("x", Kx);
+    public string ImperfectionMiYLatex => BuildImperfectionMiShortLatex("y", Ky);
+    public string M01M02AdjustedXLatex => BuildM01M02AdjustedLatex(
+        Kx, SlendernessCalculationLoadCase?.MxTop, SlendernessCalculationLoadCase?.MxBottom,
+        SlendernessCalculationLoadCase?.M01x, SlendernessCalculationLoadCase?.M02x);
+    public string M01M02AdjustedYLatex => BuildM01M02AdjustedLatex(
+        Ky, SlendernessCalculationLoadCase?.MyTop, SlendernessCalculationLoadCase?.MyBottom,
+        SlendernessCalculationLoadCase?.M01y, SlendernessCalculationLoadCase?.M02y);
     public string MinimumEccentricityXCalculationLatex => BuildMinimumEccentricityAxisLatex("x", CurrentSectionHeightMm());
     public string MinimumEccentricityYCalculationLatex => BuildMinimumEccentricityAxisLatex("y", CurrentSectionWidthMm());
+    public string MinimumEccentricityXe0Latex => BuildMinimumEccentricityE0Latex("x", CurrentSectionHeightMm());
+    public string MinimumEccentricityYe0Latex => BuildMinimumEccentricityE0Latex("y", CurrentSectionWidthMm());
+    public string MinimumEccentricityXMminLatex => BuildMinimumEccentricityMminLatex("x", CurrentSectionHeightMm());
+    public string MinimumEccentricityYMminLatex => BuildMinimumEccentricityMminLatex("y", CurrentSectionWidthMm());
+    public string ImperfectionMiXeiLatex => BuildImperfectionEiLatex("x", Kx);
+    public string ImperfectionMiYeiLatex => BuildImperfectionEiLatex("y", Ky);
+    public string ImperfectionMiXMiLatex => BuildImperfectionMiOnlyLatex("x", Kx);
+    public string ImperfectionMiYMiLatex => BuildImperfectionMiOnlyLatex("y", Ky);
     public string ImperfectionCalculationText => BuildImperfectionCalculationText();
     public string MinimumEccentricityCalculationText => BuildMinimumEccentricityCalculationText();
 
@@ -1835,8 +1851,20 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(MinimumEccentricityRuleText));
         Raise(nameof(ImperfectionXCalculationLatex));
         Raise(nameof(ImperfectionYCalculationLatex));
+        Raise(nameof(ImperfectionMiXLatex));
+        Raise(nameof(ImperfectionMiYLatex));
+        Raise(nameof(ImperfectionMiXeiLatex));
+        Raise(nameof(ImperfectionMiYeiLatex));
+        Raise(nameof(ImperfectionMiXMiLatex));
+        Raise(nameof(ImperfectionMiYMiLatex));
+        Raise(nameof(M01M02AdjustedXLatex));
+        Raise(nameof(M01M02AdjustedYLatex));
         Raise(nameof(MinimumEccentricityXCalculationLatex));
         Raise(nameof(MinimumEccentricityYCalculationLatex));
+        Raise(nameof(MinimumEccentricityXe0Latex));
+        Raise(nameof(MinimumEccentricityYe0Latex));
+        Raise(nameof(MinimumEccentricityXMminLatex));
+        Raise(nameof(MinimumEccentricityYMminLatex));
     }
 
     private string LatexSectionLengthUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.SectionSize);
@@ -1855,6 +1883,33 @@ public sealed class InputViewModel : ViewModelBase
         double memberLength = SectionLengthToMemberLengthDisplay(MemberLengthL.Value);
         double effectiveLength = SectionLengthToMemberLengthDisplay(k.Value * MemberLengthL.Value);
         return $@"l_{{0{axis}}}=k_{axis}L={k.Value:F2}\times{memberLength:F2}={effectiveLength:F2}\;{LatexMemberLengthUnit}";
+    }
+
+    private string BuildImperfectionMiShortLatex(string axis, double? k)
+    {
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd || k is not > 0 || MemberLengthL is not > 0)
+            return "";
+        double l0 = k.Value * MemberLengthL.Value;
+        double ei = l0 / 400.0;
+        double mi = ForceLengthToMoment(nEd, ei);
+        return $@"e_{{i{axis}}}=\frac{{l_{{0{axis}}}}}{{400}}={ei:F3}\,{LatexLengthUnit},\quad M_{{i{axis}}}={mi:F2}\,{LatexMomentUnit}";
+    }
+
+    private string BuildM01M02AdjustedLatex(double? k, double? mTop, double? mBot, double? m01, double? m02)
+    {
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd || k is not > 0 || MemberLengthL is not > 0
+            || !mTop.HasValue || !mBot.HasValue || !m01.HasValue || !m02.HasValue)
+            return "";
+        double l0 = k.Value * MemberLengthL.Value;
+        double ei = l0 / 400.0;
+        double mi = ForceLengthToMoment(nEd, ei);
+        double larger = Math.Abs(mTop.Value) >= Math.Abs(mBot.Value) ? mTop.Value : mBot.Value;
+        double sign = Math.Abs(larger) < 1e-9 ? 1.0 : Math.Sign(larger);
+        double addedMi = sign * mi;
+        string signStr = addedMi >= 0 ? $@"+{mi:F2}" : $@"-{mi:F2}";
+        return $@"M_{{top}}{signStr}={mTop.Value + addedMi:F2},\;M_{{bot}}{signStr}={mBot.Value + addedMi:F2}\;\Rightarrow M_{{01}}={m01.Value:F2},\;M_{{02}}={m02.Value:F2}";
     }
 
     private string BuildImperfectionAxisLatex(string axis, double? k)
@@ -1880,6 +1935,46 @@ public sealed class InputViewModel : ViewModelBase
 
         double minMoment = ForceLengthToMoment(nEd, e0);
         return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit},\quad N_{{Ed}}e_{{0{axis}}}={minMoment:F2}\,{LatexMomentUnit}";
+    }
+
+    private string BuildMinimumEccentricityE0Latex(string axis, double dimensionMm)
+    {
+        double dimension = SectionLengthFromMm(dimensionMm);
+        double minE = MinimumEccentricityDisplayValue;
+        double e0 = Math.Max(dimension / 30.0, minE);
+        return $@"e_{{0{axis}}}=\max\!\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit}";
+    }
+
+    private string BuildMinimumEccentricityMminLatex(string axis, double dimensionMm)
+    {
+        double dimension = SectionLengthFromMm(dimensionMm);
+        double minE = MinimumEccentricityDisplayValue;
+        double e0 = Math.Max(dimension / 30.0, minE);
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd)
+            return "";
+        double minMoment = ForceLengthToMoment(nEd, e0);
+        return $@"M_{{min{axis.ToUpper()}}}=N_{{Ed}}\cdot e_{{0{axis}}}={minMoment:F2}\,{LatexMomentUnit}";
+    }
+
+    private string BuildImperfectionEiLatex(string axis, double? k)
+    {
+        if (k is not > 0 || MemberLengthL is not > 0)
+            return "";
+        double l0 = k.Value * MemberLengthL.Value;
+        double ei = l0 / 400.0;
+        return $@"e_{{i{axis}}}=\frac{{l_{{0{axis}}}}}{{400}}={ei:F3}\,{LatexLengthUnit}";
+    }
+
+    private string BuildImperfectionMiOnlyLatex(string axis, double? k)
+    {
+        var lc = SlendernessCalculationLoadCase;
+        if (lc?.NEd is not double nEd || k is not > 0 || MemberLengthL is not > 0)
+            return "";
+        double l0 = k.Value * MemberLengthL.Value;
+        double ei = l0 / 400.0;
+        double mi = ForceLengthToMoment(nEd, ei);
+        return $@"M_{{i{axis}}}=N_{{Ed}}\cdot e_{{i{axis}}}={mi:F2}\,{LatexMomentUnit}";
     }
 
     private string BuildImperfectionCalculationText()
@@ -3042,6 +3137,11 @@ public sealed class InputViewModel : ViewModelBase
                                 loadCase.E2X = slenderness.X?.E2Mm;
                                 loadCase.KrX = slenderness.X?.Kr;
                                 loadCase.KPhiX = slenderness.X?.KPhi;
+                                loadCase.BetaX = slenderness.X?.Beta;
+                                loadCase.PhiEffX = slenderness.X?.PhiEff;
+                                loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
+                                    ? units.MomentFromNmm(minMomentXVal, momentUnit)
+                                    : null;
 
                                 loadCase.LambdaY = slenderness.Y?.Lambda;
                                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
@@ -3062,6 +3162,11 @@ public sealed class InputViewModel : ViewModelBase
                                 loadCase.E2Y = slenderness.Y?.E2Mm;
                                 loadCase.KrY = slenderness.Y?.Kr;
                                 loadCase.KPhiY = slenderness.Y?.KPhi;
+                                loadCase.BetaY = slenderness.Y?.Beta;
+                                loadCase.PhiEffY = slenderness.Y?.PhiEff;
+                                loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
+                                    ? units.MomentFromNmm(minMomentYVal, momentUnit)
+                                    : null;
 
                                 loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
                                 loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
@@ -3551,6 +3656,11 @@ public sealed class InputViewModel : ViewModelBase
                 loadCase.E2X = slenderness.X?.E2Mm;
                 loadCase.KrX = slenderness.X?.Kr;
                 loadCase.KPhiX = slenderness.X?.KPhi;
+                loadCase.BetaX = slenderness.X?.Beta;
+                loadCase.PhiEffX = slenderness.X?.PhiEff;
+                loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
+                    ? units.MomentFromNmm(minMomentXVal, CurrentMomentUnit)
+                    : null;
 
                 loadCase.LambdaY = slenderness.Y?.Lambda;
                 loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
@@ -3571,6 +3681,11 @@ public sealed class InputViewModel : ViewModelBase
                 loadCase.E2Y = slenderness.Y?.E2Mm;
                 loadCase.KrY = slenderness.Y?.Kr;
                 loadCase.KPhiY = slenderness.Y?.KPhi;
+                loadCase.BetaY = slenderness.Y?.Beta;
+                loadCase.PhiEffY = slenderness.Y?.PhiEff;
+                loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
+                    ? units.MomentFromNmm(minMomentYVal, CurrentMomentUnit)
+                    : null;
 
                 loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
                 loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;

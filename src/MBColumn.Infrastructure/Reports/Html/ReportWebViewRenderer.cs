@@ -277,11 +277,22 @@ document.addEventListener('DOMContentLoaded',function(){
                 "");
 
             // Moments
+            double m01 = ax.M01Nmm * mScale;
+            double m02 = ax.M02Nmm * mScale;
+            double m0e = ax.M0eNmm * mScale;
+            double m2 = ax.M2Nmm * mScale;
+            double minimumMoment = ax.MinimumMomentNmm * mScale;
+            double usedMoment = ax.MUsedNmm * mScale;
+            double m0eCandidate1 = 0.6 * m02 + 0.4 * m01;
+            double m0eCandidate2 = 0.4 * m02;
+            double usedCandidate2 = SystemMath.Abs(m0e) + SystemMath.Abs(m2);
+            double usedCandidate3 = SystemMath.Abs(m01) + 0.5 * SystemMath.Abs(m2);
+            string usedSign = usedMoment < -1e-9 ? "-" : "";
             yield return new FormulaBlock(
                 "Design moments",
-                @"M_{Ed,used} = \max\!\left(M_{0e} + N_{Ed}\,e_2,\;M_{02},\;N_{Ed}\cdot e_0\right)",
-                $@"M_{{01}}={F(ax.M01Nmm*mScale,2)}\;{sl.MomentUnit},\quad M_{{02}}={F(ax.M02Nmm*mScale,2)}\;{sl.MomentUnit},\quad M_{{0e}}={F(ax.M0eNmm*mScale,2)}\;{sl.MomentUnit}",
-                $@"M_2=N_{{Ed}}\cdot e_2={F(ax.M2Nmm*mScale,2)}\;{sl.MomentUnit},\quad M_{{Ed,used}}={F(ax.MUsedNmm*mScale,2)}\;{sl.MomentUnit}");
+                @"M_{0e}=\max(0.6M_{02}+0.4M_{01},0.4M_{02}),\quad M_{Ed,used}=\max(M_{02},|M_{0e}|+M_2,M_{01}+0.5M_2,N_{Ed}e_0)",
+                $@"M_{{0e}}={(m0e < -1e-9 ? "-" : "")}\max({F(m0eCandidate1,2)},{F(m0eCandidate2,2)})={F(m0e,2)}\;{sl.MomentUnit},\quad M_2=N_{{Ed}}e_2={F(m2,2)}\;{sl.MomentUnit}",
+                $@"M_{{Ed,used}}={usedSign}\max({F(m02,2)},{F(usedCandidate2,2)},{F(usedCandidate3,2)},{F(minimumMoment,2)})={F(usedMoment,2)}\;{sl.MomentUnit}");
         }
 
         foreach (var w in lc.Warnings)

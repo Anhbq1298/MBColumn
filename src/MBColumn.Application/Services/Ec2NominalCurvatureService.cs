@@ -36,6 +36,11 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
             return Ec2SlendernessBatchResultDto.Empty;
         }
 
+        if (section is IrregularSection)
+        {
+            return Ec2SlendernessBatchResultDto.Empty;
+        }
+
         if (memberGeometry.LengthL is not > 0)
         {
             warnings.Add("Column length L is missing in Section & Rebar.");
@@ -172,31 +177,24 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         if (radiusOfGyrationMm <= Tolerance)
         {
             warnings.Add("Radius of gyration is invalid.");
-            return new(0, 0, false, 0, 0.7, 1, 1.7, 0, 0, 1, 0, 0, 0, 0, 0, 1.0, 1.0, 0, 0, warnings);
+            return new(0, 0, false, 0, 0.7, 1, 1.7, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1.0, 1.0, 0, 0, warnings);
         }
 
         double lambda = l0Mm / radiusOfGyrationMm;
         double eiMm = l0Mm / 400.0;
         double e0Mm = Math.Max(sectionDimensionMm / 30.0, 20.0);
         double imperfectionMomentNmm = nEdN * eiMm;
-        double dominantSign = DominantSign(mTopNmm, mBottomNmm);
-        double mTopWithImperfection = mTopNmm + dominantSign * imperfectionMomentNmm;
-        double mBottomWithImperfection = mBottomNmm + dominantSign * imperfectionMomentNmm;
 
-        double m02Signed = Math.Abs(mTopWithImperfection) >= Math.Abs(mBottomWithImperfection)
-            ? mTopWithImperfection
-            : mBottomWithImperfection;
-        double m01Signed = Math.Abs(mTopWithImperfection) >= Math.Abs(mBottomWithImperfection)
-            ? mBottomWithImperfection
-            : mTopWithImperfection;
-        if (Math.Abs(m02Signed) <= Tolerance)
-        {
-            m02Signed = dominantSign * imperfectionMomentNmm;
-        }
-
-        double sign = DominantSign(m02Signed, dominantSign);
-        double m02 = Math.Abs(m02Signed);
-        double rm = Math.Abs(m02Signed) > Tolerance ? m01Signed / m02Signed : 1.0;
+        // PD 6687: M02 = Max{|Mtop|,|Mbot|} + Mi, M01 = Min{|Mtop|,|Mbot|} + Mi (both unsigned)
+        // rm = M01/M02 in (0,1]. Sign of MEd follows the larger original end moment.
+        double mAbsTop = Math.Abs(mTopNmm);
+        double mAbsBot = Math.Abs(mBottomNmm);
+        double m02 = Math.Max(mAbsTop, mAbsBot) + imperfectionMomentNmm;
+        double m01 = Math.Min(mAbsTop, mAbsBot) + imperfectionMomentNmm;
+        double sign = mAbsTop >= mAbsBot
+            ? (mTopNmm >= 0 ? 1.0 : -1.0)
+            : (mBottomNmm >= 0 ? 1.0 : -1.0);
+        double rm = m02 > Tolerance ? m01 / m02 : 1.0;
         double n = nEdN / (sectionValues.AcMm2 * sectionValues.FcdMpa);
         double a = settings.PhiEff.HasValue
             ? 1.0 / (1.0 + 0.2 * settings.PhiEff.Value)
@@ -212,11 +210,10 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         if (!isSlender)
         {
             double used = sign * Math.Max(m02, minimumMomentNmm);
-            return new(lambda, lambdaLimit, false, n, a, b, c, m01Signed, m02Signed, rm, 0, 0, 0, 0, used, 1.0, 1.0, 0, 0, warnings);
+            return new(lambda, lambdaLimit, false, n, a, b, c, m01, m02, rm, 0, 0, 0, 0, minimumMomentNmm, used, 1.0, 1.0, 0, 0, warnings);
         }
 
-        double m01Equivalent = rm * m02;
-        double m0e = Math.Max(0.6 * m02 + 0.4 * m01Equivalent, 0.4 * m02);
+        double m0e = Math.Max(0.6 * m02 + 0.4 * m01, 0.4 * m02);
         double vu = 1.0 + sectionValues.Omega;
         double krDenominator = vu - Nbal;
         double kr = krDenominator > Tolerance
@@ -233,9 +230,9 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         double nominalCurvature = kr * kPhi * basicCurvature;
         double e2Mm = nominalCurvature * l0Mm * l0Mm / CurvatureShapeFactor;
         double m2 = nEdN * e2Mm;
-        double usedMagnitude = Math.Max(Math.Max(m02, m0e + m2), Math.Max(m01Equivalent + 0.5 * m2, minimumMomentNmm));
+        double usedMagnitude = Math.Max(Math.Max(m02, m0e + m2), Math.Max(m01 + 0.5 * m2, minimumMomentNmm));
 
-        return new(lambda, lambdaLimit, true, n, a, b, c, m01Signed, m02Signed, rm, sign * m0e, nominalCurvature, e2Mm, m2, sign * usedMagnitude, kr, kPhi, beta, phiEff, warnings);
+        return new(lambda, lambdaLimit, true, n, a, b, c, m01, m02, rm, sign * m0e, nominalCurvature, e2Mm, m2, minimumMomentNmm, sign * usedMagnitude, kr, kPhi, beta, phiEff, warnings);
     }
 
     private static Ec2SlendernessSectionValuesDto ExtractSectionValues(
@@ -251,7 +248,6 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
             CircularSection circular => (
                 Math.PI * Math.Pow(circular.DiameterMm, 4) / 64.0,
                 Math.PI * Math.Pow(circular.DiameterMm, 4) / 64.0),
-            IrregularSection irregular => PolygonSecondMoments(irregular.BoundaryPoints),
             _ => (0.0, 0.0)
         };
 
@@ -264,11 +260,26 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
             ? asTotal * fyd / (area * concrete.Fcd)
             : 0.0;
 
-        double spreadY = RebarSpread(section.RebarLayout.Bars.Select(b => b.YMm), 0.8 * section.HeightMm);
-        double dx = (section.HeightMm / 2.0) + (spreadY / 2.0);
+        double dx, dy;
+        if (section is CircularSection circ)
+        {
+            // For circular sections dx = dy: use actual rebar cage radius so that
+            // the result is the same regardless of bar angular positions.
+            double rCage = section.RebarLayout.Bars.Count > 0
+                ? section.RebarLayout.Bars.Max(b => Math.Sqrt(b.XMm * b.XMm + b.YMm * b.YMm))
+                : 0.8 * circ.RadiusMm;
+            double d = circ.RadiusMm + rCage;
+            dx = d;
+            dy = d;
+        }
+        else
+        {
+            double spreadY = RebarSpread(section.RebarLayout.Bars.Select(b => b.YMm), 0.8 * section.HeightMm);
+            dx = (section.HeightMm / 2.0) + (spreadY / 2.0);
 
-        double spreadX = RebarSpread(section.RebarLayout.Bars.Select(b => b.XMm), 0.8 * section.WidthMm);
-        double dy = (section.WidthMm / 2.0) + (spreadX / 2.0);
+            double spreadX = RebarSpread(section.RebarLayout.Bars.Select(b => b.XMm), 0.8 * section.WidthMm);
+            dy = (section.WidthMm / 2.0) + (spreadX / 2.0);
+        }
 
         return new(
             area,
@@ -286,27 +297,6 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
             omega);
     }
 
-    private static (double Ixx, double Iyy) PolygonSecondMoments(IReadOnlyList<Point2D> points)
-    {
-        if (points.Count < 3)
-        {
-            return (0, 0);
-        }
-
-        double ixx = 0;
-        double iyy = 0;
-        for (int i = 0; i < points.Count; i++)
-        {
-            var a = points[i];
-            var b = points[(i + 1) % points.Count];
-            double cross = a.X * b.Y - b.X * a.Y;
-            ixx += (a.Y * a.Y + a.Y * b.Y + b.Y * b.Y) * cross;
-            iyy += (a.X * a.X + a.X * b.X + b.X * b.X) * cross;
-        }
-
-        return (Math.Abs(ixx / 12.0), Math.Abs(iyy / 12.0));
-    }
-
     private static double RebarSpread(IEnumerable<double> values, double fallback)
     {
         var list = values.ToList();
@@ -319,9 +309,4 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         return spread > Tolerance ? spread : Math.Max(fallback, Tolerance);
     }
 
-    private static double DominantSign(double first, double second)
-    {
-        double value = Math.Abs(first) >= Math.Abs(second) ? first : second;
-        return Math.Abs(value) <= Tolerance ? 1.0 : Math.Sign(value);
-    }
 }

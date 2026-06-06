@@ -8,8 +8,7 @@ namespace MBColumn.Presentation.Wpf.Controls;
 /// <summary>
 /// Renders a bending moment diagram (BMD) for a column member end.
 /// Shows a vertical column stick with horizontal moment axes at top (y=0)
-/// and bottom (y=-L). Moment values are plotted as dots on the axes,
-/// scaled proportionally, with hatch-filled polygon area.
+/// and bottom (y=-L). Negative regions are hatched red, positive regions blue.
 /// Left = negative, Right = positive.
 /// </summary>
 public sealed class MomentDiagramControl : FrameworkElement
@@ -54,6 +53,25 @@ public sealed class MomentDiagramControl : FrameworkElement
         set => SetValue(TitleProperty, value);
     }
 
+    private static readonly Color NegColor = Colors.Red;
+    private static readonly Color PosColor = Color.FromRgb(0, 70, 213);
+    private static readonly SolidColorBrush NegBrush;
+    private static readonly SolidColorBrush PosBrush;
+    private static readonly Pen NegPen;
+    private static readonly Pen PosPen;
+    private static readonly DrawingBrush NegHatch;
+    private static readonly DrawingBrush PosHatch;
+
+    static MomentDiagramControl()
+    {
+        NegBrush = new SolidColorBrush(NegColor); NegBrush.Freeze();
+        PosBrush = new SolidColorBrush(PosColor); PosBrush.Freeze();
+        NegPen = new Pen(NegBrush, 1.2); NegPen.Freeze();
+        PosPen = new Pen(PosBrush, 1.2); PosPen.Freeze();
+        NegHatch = CreateHatchBrush(NegColor);
+        PosHatch = CreateHatchBrush(PosColor);
+    }
+
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
@@ -62,31 +80,21 @@ public sealed class MomentDiagramControl : FrameworkElement
         double h = ActualHeight;
         if (w < 20 || h < 40) return;
 
-        // Layout geometry
         double titleH = 22;
         double padSide = w * 0.10;
         double padTop = titleH + 8;
         double padBot = 22;
 
-        double topY = padTop;          // y-coordinate of top axis
-        double botY = h - padBot;      // y-coordinate of bottom axis
+        double topY = padTop;
+        double botY = h - padBot;
         double centerX = w / 2.0;
-        double maxOffset = (w - 2 * padSide) / 2.0 * 0.88; // max pixel offset from center
+        double maxOffset = (w - 2 * padSide) / 2.0 * 0.88;
 
-        // Brushes & pens
-        var diagBrush = new SolidColorBrush(DiagramColor);
-        diagBrush.Freeze();
-        var colColor = Color.FromRgb(0, 70, 213);
-        var colBrush = new SolidColorBrush(colColor);
-        colBrush.Freeze();
-        var colPen = new Pen(colBrush, 1.8);
-        colPen.Freeze();
-        var axisPen = new Pen(Brushes.Gray, 0.7);
-        axisPen.Freeze();
-        var diagPen = new Pen(diagBrush, 1.2);
-        diagPen.Freeze();
+        var diagBrush = new SolidColorBrush(DiagramColor); diagBrush.Freeze();
+        var colBrush = PosBrush;
+        var colPen = new Pen(colBrush, 1.8); colPen.Freeze();
+        var axisPen = new Pen(Brushes.Gray, 0.7); axisPen.Freeze();
 
-        // Background
         dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, w, h));
 
         // ─── Title ───
@@ -102,7 +110,6 @@ public sealed class MomentDiagramControl : FrameworkElement
         DrawHorizontalAxis(dc, axisPen, axL, axR, topY);
         DrawHorizontalAxis(dc, axisPen, axL, axR, botY);
 
-        // (−) / (+) labels — placed inside the diagram to avoid overlapping the value labels
         var minusFt = MakeText("(−)", 10, Brushes.Gray);
         var plusFt = MakeText("(+)", 10, Brushes.Gray);
         dc.DrawText(minusFt, new Point(axL + 2, topY + 4));
@@ -110,78 +117,112 @@ public sealed class MomentDiagramControl : FrameworkElement
         dc.DrawText(MakeText("(−)", 10, Brushes.Gray), new Point(axL + 2, botY - minusFt.Height - 2));
         dc.DrawText(MakeText("(+)", 10, Brushes.Gray), new Point(axR - plusFt.Width - 2, botY - plusFt.Height - 2));
 
-
-
-        // ─── Moment values ───
+        // ─── Moment pixel positions ───
         double mTop = MomentTop ?? 0;
         double mBot = MomentBottom ?? 0;
         double maxAbs = Math.Max(Math.Abs(mTop), Math.Abs(mBot));
-        if (maxAbs < 1e-9) maxAbs = 1.0; // prevent division by zero
+        if (maxAbs < 1e-9) maxAbs = 1.0;
 
         double topX = centerX + (mTop / maxAbs) * maxOffset;
         double botX = centerX + (mBot / maxAbs) * maxOffset;
 
-        // ─── Hatch-filled polygon ───
-        var polygon = new StreamGeometry();
-        using (var ctx = polygon.Open())
-        {
-            ctx.BeginFigure(new Point(centerX, topY), true, true);
-            ctx.LineTo(new Point(topX, topY), true, false);
-            ctx.LineTo(new Point(botX, botY), true, false);
-            ctx.LineTo(new Point(centerX, botY), true, false);
-        }
-        polygon.Freeze();
+        // ─── Hatch (red = negative, blue = positive) ───
+        DrawSplitHatch(dc, centerX, topY, topX, botX, botY);
 
-        var hatchBrush = CreateHatchBrush(DiagramColor);
-        dc.DrawGeometry(hatchBrush, null, polygon);
-
-        // Outline
-        dc.DrawLine(diagPen, new Point(centerX, topY), new Point(topX, topY));
-        dc.DrawLine(diagPen, new Point(topX, topY), new Point(botX, botY));
-        dc.DrawLine(diagPen, new Point(botX, botY), new Point(centerX, botY));
-
-        // ─── 7 control points along the moment distribution line ───
-        const int NumControlPoints = 7;
-        double dotR = 5;
-        double innerDotR = 3.0;
-        for (int i = 0; i < NumControlPoints; i++)
-        {
-            double t = i / (double)(NumControlPoints - 1);
-            double px = topX + t * (botX - topX);
-            double py = topY + t * (botY - topY);
-            bool isEndpoint = i == 0 || i == NumControlPoints - 1;
-            dc.DrawEllipse(diagBrush, null, new Point(px, py), isEndpoint ? dotR : innerDotR, isEndpoint ? dotR : innerDotR);
-        }
+        // ─── Outline ───
+        DrawSplitOutline(dc, centerX, topY, topX, botX, botY);
 
         // ─── Joint circles on column ───
         double jR = 6;
-        var jPen = new Pen(colBrush, 1.5);
-        jPen.Freeze();
+        var jPen = new Pen(colBrush, 1.5); jPen.Freeze();
         dc.DrawEllipse(Brushes.White, jPen, new Point(centerX, topY), jR, jR);
         dc.DrawEllipse(colBrush, null, new Point(centerX, topY), 2.5, 2.5);
         dc.DrawEllipse(Brushes.White, jPen, new Point(centerX, botY), jR, jR);
         dc.DrawEllipse(colBrush, null, new Point(centerX, botY), 2.5, 2.5);
 
-        // ─── Value labels ───
+        // ─── Value labels (colored by sign) ───
         if (MomentTop.HasValue)
         {
-            var ft = MakeText($"Top = {MomentTop.Value:F1}", 10, diagBrush, FontWeights.Bold);
+            var brush = mTop < -1e-9 ? NegBrush : PosBrush;
+            var ft = MakeText($"Top = {MomentTop.Value:F1}", 10, brush, FontWeights.Bold);
             double lx = ClampX(topX - ft.Width / 2, ft.Width, w);
             dc.DrawText(ft, new Point(lx, topY - 17));
         }
         if (MomentBottom.HasValue)
         {
-            var ft = MakeText($"Bot = {MomentBottom.Value:F1}", 10, diagBrush, FontWeights.Bold);
+            var brush = mBot < -1e-9 ? NegBrush : PosBrush;
+            var ft = MakeText($"Bot = {MomentBottom.Value:F1}", 10, brush, FontWeights.Bold);
             double lx = ClampX(botX - ft.Width / 2, ft.Width, w);
             dc.DrawText(ft, new Point(lx, botY + 5));
         }
+    }
+
+    private static void DrawSplitHatch(DrawingContext dc, double cx, double topY, double topX, double botX, double botY)
+    {
+        double tSign = Math.Sign(topX - cx);
+        double bSign = Math.Sign(botX - cx);
+
+        if (tSign == 0 && bSign == 0) return;
+
+        if (tSign == bSign || tSign == 0 || bSign == 0)
+        {
+            double side = tSign != 0 ? tSign : bSign;
+            var brush = side < 0 ? NegHatch : PosHatch;
+            dc.DrawGeometry(brush, null, MakePolygon(
+                new Point(cx, topY), new Point(topX, topY),
+                new Point(botX, botY), new Point(cx, botY)));
+        }
+        else
+        {
+            double t = (cx - topX) / (botX - topX);
+            double yCross = topY + t * (botY - topY);
+
+            dc.DrawGeometry(tSign < 0 ? NegHatch : PosHatch, null,
+                MakePolygon(new Point(cx, topY), new Point(topX, topY), new Point(cx, yCross)));
+
+            dc.DrawGeometry(bSign < 0 ? NegHatch : PosHatch, null,
+                MakePolygon(new Point(cx, yCross), new Point(botX, botY), new Point(cx, botY)));
+        }
+    }
+
+    private static void DrawSplitOutline(DrawingContext dc, double cx, double topY, double topX, double botX, double botY)
+    {
+        Pen topPen = topX < cx ? NegPen : PosPen;
+        Pen botPen = botX < cx ? NegPen : PosPen;
+
+        dc.DrawLine(topPen, new Point(cx, topY), new Point(topX, topY));
+        dc.DrawLine(botPen, new Point(botX, botY), new Point(cx, botY));
+
+        double tSign = Math.Sign(topX - cx);
+        double bSign = Math.Sign(botX - cx);
+        if (tSign != 0 && bSign != 0 && tSign != bSign)
+        {
+            double t = (cx - topX) / (botX - topX);
+            double yCross = topY + t * (botY - topY);
+            dc.DrawLine(tSign < 0 ? NegPen : PosPen, new Point(topX, topY), new Point(cx, yCross));
+            dc.DrawLine(bSign < 0 ? NegPen : PosPen, new Point(cx, yCross), new Point(botX, botY));
+        }
+        else
+        {
+            dc.DrawLine(topPen, new Point(topX, topY), new Point(botX, botY));
+        }
+    }
+
+    private static StreamGeometry MakePolygon(params Point[] pts)
+    {
+        var g = new StreamGeometry();
+        using var ctx = g.Open();
+        ctx.BeginFigure(pts[0], true, true);
+        for (int i = 1; i < pts.Length; i++)
+            ctx.LineTo(pts[i], true, false);
+        g.Freeze();
+        return g;
     }
 
     private static void DrawHorizontalAxis(DrawingContext dc, Pen pen, double left, double right, double y)
     {
         dc.DrawLine(pen, new Point(left, y), new Point(right, y));
 
-        // Left arrow
         var la = new StreamGeometry();
         using (var ctx = la.Open())
         {
@@ -192,7 +233,6 @@ public sealed class MomentDiagramControl : FrameworkElement
         la.Freeze();
         dc.DrawGeometry(Brushes.Gray, null, la);
 
-        // Right arrow
         var ra = new StreamGeometry();
         using (var ctx = ra.Open())
         {
