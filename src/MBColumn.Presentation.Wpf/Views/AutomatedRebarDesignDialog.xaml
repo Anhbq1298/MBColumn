@@ -211,7 +211,7 @@
                             Margin="8,8,8,4" />
                         <TextBlock Grid.Row="1"
                                    Text="{Binding PreviewStatusText}"
-                                   Margin="10,0,10,10" FontSize="11"
+                                   Margin="10,0,10,10" FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextMutedBrush}" />
                     </Grid>
@@ -235,7 +235,7 @@
                             </StackPanel>
                             <TextBlock Text="Candidates with PMM &gt; target are rejected. Default: 1.00."
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                       FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" Margin="0,0,0,8" />
 
                             <!-- Longitudinal bar spacing -->
                             <TextBlock Text="Longitudinal bar spacing" Style="{StaticResource SectionLabelStyle}" />
@@ -292,7 +292,7 @@
                             <TextBlock Text="Shear link auto-design" Style="{StaticResource SectionLabelStyle}" />
                             <TextBlock Text="EC2 §9.5.3 — link diameter and spacing calculated automatically. Set 0 to use EC2 limits."
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                       FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" Margin="0,0,0,6" />
                             <ItemsControl ItemsSource="{Binding AllowedLinkToggles}" Margin="0,0,0,6">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
@@ -403,7 +403,7 @@
                             <TextBlock Text="Best PMM Utilization" Style="{StaticResource SectionLabelStyle}" />
                             <TextBlock Text="Highest PMM ratio while still ≤ target — most efficient use of section capacity."
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4" />
+                                       FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" Margin="0,0,0,4" />
                             <Grid Margin="0,4,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -431,7 +431,7 @@
                             <TextBlock Text="Lowest Rebar Ratio" Style="{StaticResource SectionLabelStyle}" />
                             <TextBlock Text="Least reinforcement while passing all constraints."
                                        Foreground="{DynamicResource TextMutedBrush}"
-                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4" />
+                                       FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" Margin="0,0,0,4" />
                             <Grid Margin="0,4,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
