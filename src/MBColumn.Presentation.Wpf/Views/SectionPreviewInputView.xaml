@@ -4,6 +4,37 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
              xmlns:enums="clr-namespace:MBColumn.Domain.Enums;assembly=MBColumn.Domain">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="InputViewResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="PreviewPropertyLabelTextStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground"
+                        Value="{DynamicResource TextMutedBrush}" />
+                <Setter Property="FontSize"
+                        Value="12" />
+                <Setter Property="FontWeight"
+                        Value="SemiBold" />
+                <Setter Property="Margin"
+                        Value="0,0,0,4" />
+            </Style>
+            <Style x:Key="PreviewPropertyValueTextStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground"
+                        Value="{DynamicResource TextDarkBrush}" />
+                <Setter Property="FontSize"
+                        Value="12" />
+                <Setter Property="FontWeight"
+                        Value="Normal" />
+                <Setter Property="Margin"
+                        Value="0,0,0,4" />
+                <Setter Property="TextWrapping"
+                        Value="Wrap" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
                 <!-- Column 2: Section Preview -->
                 <ScrollViewer Grid.Column="2"
                               VerticalScrollBarVisibility="Auto"
@@ -52,7 +83,7 @@
                                             Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xE70F;"
-                                                       FontFamily="{StaticResource IconFontFamily}"
+                                                       FontFamily="Segoe MDL2 Assets"
                                                        FontSize="{StaticResource FontSizeSection}"
                                                        Margin="0,0,6,0"
                                                        VerticalAlignment="Center" />
@@ -146,12 +177,12 @@
                                     <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewIyyText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <TextBlock Grid.Row="7" Grid.Column="0" Style="{StaticResource PreviewPropertyLabelTextStyle}">
                                         <Run Text="r"/>
-                                        <Run Text="x" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                        <Run Text="x" FontSize="9" BaselineAlignment="Subscript"/>
                                     </TextBlock>
                                     <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding PreviewIxText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <TextBlock Grid.Row="8" Grid.Column="0" Style="{StaticResource PreviewPropertyLabelTextStyle}">
                                         <Run Text="r"/>
-                                        <Run Text="y" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                        <Run Text="y" FontSize="9" BaselineAlignment="Subscript"/>
                                     </TextBlock>
                                     <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding PreviewIyText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <Separator Grid.Row="9" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>

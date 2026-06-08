@@ -4,6 +4,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
              xmlns:enums="clr-namespace:MBColumn.Domain.Enums;assembly=MBColumn.Domain">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="InputViewResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
                 <!-- Left Column: Demand Cases Table + Diagram -->
                 <GroupBox Header="Demand Cases"
                           Grid.Column="0"
@@ -167,7 +174,7 @@
 
                                     <StackPanel Width="200" Margin="0,0,10,6">
                                         <TextBlock Style="{StaticResource FieldLabelTextStyle}">
-                                            <Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Effective creep ratio" />
+                                            <Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" — Effective creep ratio" />
                                         </TextBlock>
                                         <TextBox Text="{Binding PhiEff, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
                                                  ToolTip="&#x03C6;eff = &#x03C6;(&#x221E;,t&#x2080;) &#x00D7; M&#x2080;EQP / M&#x2080;Ed (EC2 &#x00A7;5.8.4).&#x0A;Typical range: 0.5 &#x2013; 2.5.&#x0A;Leave blank to use default A = 0.7." />
@@ -542,19 +549,19 @@
                                                 </DataTemplate>
                                             </DataGridTextColumn.HeaderTemplate>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="ÃƒÅ½Ã‚Â»x"
+                                        <DataGridTextColumn Header="λx"
                                                             Binding="{Binding LambdaX, TargetNullValue='-', StringFormat=F2}"
                                                             Width="60" IsReadOnly="True"
                                                             ElementStyle="{StaticResource RightAlignText}" />
-                                        <DataGridTextColumn Header="ÃƒÅ½Ã‚Â»lim,x"
+                                        <DataGridTextColumn Header="λlim,x"
                                                             Binding="{Binding LambdaLimitX, TargetNullValue='-', StringFormat=F2}"
                                                             Width="72" IsReadOnly="True"
                                                             ElementStyle="{StaticResource RightAlignText}" />
-                                        <DataGridTextColumn Header="ÃƒÅ½Ã‚Â»y"
+                                        <DataGridTextColumn Header="λy"
                                                             Binding="{Binding LambdaY, TargetNullValue='-', StringFormat=F2}"
                                                             Width="60" IsReadOnly="True"
                                                             ElementStyle="{StaticResource RightAlignText}" />
-                                        <DataGridTextColumn Header="ÃƒÅ½Ã‚Â»lim,y"
+                                        <DataGridTextColumn Header="λlim,y"
                                                             Binding="{Binding LambdaLimitY, TargetNullValue='-', StringFormat=F2}"
                                                             Width="72" IsReadOnly="True"
                                                             ElementStyle="{StaticResource RightAlignText}" />

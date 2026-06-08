@@ -4,6 +4,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
              xmlns:enums="clr-namespace:MBColumn.Domain.Enums;assembly=MBColumn.Domain">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="InputViewResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
                 <!-- Column 0: General & Material -->
                 <ScrollViewer Grid.Column="0"
                               VerticalScrollBarVisibility="Auto"

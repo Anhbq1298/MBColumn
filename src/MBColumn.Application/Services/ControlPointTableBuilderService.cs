@@ -73,7 +73,7 @@ public static class ControlPointTableBuilderService
             double dtMm = ComputeDt(section, angleDeg);
             double dtDisplay = DisplayLength(dtMm, unitSystem, units);
 
-            // Analytical c for strain-defined points: c = ÎµcuÂ·dt / (Îµcu + Îµt_target)
+            // Analytical c for strain-defined points: c = εcu·dt / (εcu + εt_target)
             // Using depth-based interpolation avoids error from the non-linear P-c curve
             // where bars transition between elastic and yielded zones.
             double cFsHalf  = ecu * dtMm / (ecu + 0.5 * eyield);
@@ -114,7 +114,7 @@ public static class ControlPointTableBuilderService
                 bool isPureBending = k == labeled.Length - 2;
                 double naDepthMm = isMaxTension ? 0.0 : Math.Max(0, pt.NeutralAxisDepthMm);
 
-                // Signed Îµt = Îµcu*(dt - c)/c  (positive = tension, negative = all bars in compression).
+                // Signed εt = εcu*(dt - c)/c  (positive = tension, negative = all bars in compression).
                 // Max tension row uses the table sentinel for c -> 0.
                 double epsilonT;
                 if (isMaxTension)
@@ -176,8 +176,8 @@ public static class ControlPointTableBuilderService
     /// <summary>
     /// Interpolates within <paramref name="pts"/> (sorted descending P) to find
     /// where Pn = <paramref name="target"/>. Used for the pure-bending row where
-    /// Ï† varies between bracket samples (compression-controlled vs tension-
-    /// controlled Ï† values differ); bracketing on PhiPn would otherwise leave
+    /// φ varies between bracket samples (compression-controlled vs tension-
+    /// controlled φ values differ); bracketing on PhiPn would otherwise leave
     /// Pn is nonzero at the interpolated point. The P=0 row is built at the
     /// neutral-axis depth that satisfies axial equilibrium directly.
     /// </summary>
