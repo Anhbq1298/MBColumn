@@ -201,6 +201,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public bool IsAnyAxisSlender => IsSlender(M2x) || IsSlender(M2y);
     public bool IsNeitherAxisSlender => !IsAnyAxisSlender && (M2x.HasValue || M2y.HasValue);
     public bool HasEc2Results => M02x.HasValue || M02y.HasValue;
+    public bool HasSlendernessData => LambdaX.HasValue || LambdaY.HasValue;
 
     public string BranchFormulaLatex => @"\lambda<\lambda_{lim}\Rightarrow M_2=0,\quad \lambda\geq\lambda_{lim}\Rightarrow\text{nominal curvature}";
     public string NominalCurvatureFormulaLatex => @"M_{0e}=\max(0.6M_{02}+0.4M_{01},0.4M_{02}),\quad M_2=N_{Ed}e_2";
@@ -537,6 +538,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
         Raise(nameof(IsAnyAxisSlender));
         Raise(nameof(IsNeitherAxisSlender));
         Raise(nameof(HasEc2Results));
+        Raise(nameof(HasSlendernessData));
         Raise(nameof(EffectiveMomentUsedFormulaLatex));
     }
 }

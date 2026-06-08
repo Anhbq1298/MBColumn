@@ -611,7 +611,7 @@ public sealed class ReportTabViewModel : ViewModelBase
             var data = BuildReportData();
             string tmp = Path.Combine(Path.GetTempPath(),
                 $"MBColumn_Calculation_Report_Preview_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
-            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
+            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer(new WpfMathLatexRenderer());
             renderer.RenderToFile(data, tmp);
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tmp) { UseShellExecute = true });
         }
@@ -645,7 +645,7 @@ public sealed class ReportTabViewModel : ViewModelBase
             if (visibleNumbers.Count > 0 && visibleNumbers.Count < data.Sections.Count)
                 data = data with { Sections = data.Sections.Where(s => visibleNumbers.Contains(s.Number)).ToArray() };
 
-            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer();
+            var renderer = new MBColumn.Infrastructure.Reports.Pdf.QuestPdfCalculationReportRenderer(new WpfMathLatexRenderer());
             renderer.RenderToFile(data, dialog.FileName);
             if (TryOpenFileWithDefaultApp(dialog.FileName, out var openError))
             {

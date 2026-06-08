@@ -599,6 +599,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `interface` | **ILatexImageRenderer** | Defines the contract for ILatexImageRenderer. | `ILatexImageRenderer.cs` |
 | `class` | **PdfMergeUtility** | /// Merges multiple individual column PDFs into a single compiled document /// with a two-level Group → Column bookmark outline tree, with section /// sub-bookmarks under each column. ///. Key methods: MergePdfDocuments. | `PdfMergeUtility.cs` |
 | `class` | **QuestPdfCalculationReportRenderer** | Represents the QuestPdfCalculationReportRenderer class. Key methods: RenderToFile, AddBookmarks. | `QuestPdfCalculationReportRenderer.cs` |
 
@@ -835,6 +836,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ProjectSession** | Represents the ProjectSession class. Key methods: SelectColumn, StoreCurrentColumnResult, StoreColumnResult, TryGetCurrentColumnResult. Key properties: CurrentColumnId. | `ProjectSession.cs` |
 | `class` | **RecentProjectsService** | Provides service logic and operations for RecentProjects. Key methods: GetRecent, ClearRecent, AddRecent. | `RecentProjectsService.cs` |
 | `class` | **ReportDiagramPngRenderer** | Represents the ReportDiagramPngRenderer class. Key methods: RenderDataUri. | `ReportDiagramPngRenderer.cs` |
+| `class` | **WpfMathLatexRenderer** | Represents the WpfMathLatexRenderer class. Key methods: RenderToPng. | `WpfMathLatexRenderer.cs` |
 
 ### ViewModels
 

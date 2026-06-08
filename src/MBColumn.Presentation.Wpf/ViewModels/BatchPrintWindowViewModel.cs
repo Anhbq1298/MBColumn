@@ -333,7 +333,7 @@ public sealed class BatchPrintWindowViewModel : ViewModelBase
 
                         // Render to temp PDF
                         string tempPath = Path.Combine(tempDir, $"{Sanitize(col.Name)}.pdf");
-                        var renderer = new QuestPdfCalculationReportRenderer();
+                        var renderer = new QuestPdfCalculationReportRenderer(new WpfMathLatexRenderer());
                         renderer.RenderToFile(reportData, tempPath);
                         renderer.AddBookmarks(tempPath, reportData, col.Name);
 

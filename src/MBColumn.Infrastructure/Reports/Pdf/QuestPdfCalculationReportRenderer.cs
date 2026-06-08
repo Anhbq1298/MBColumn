@@ -1,4 +1,5 @@
 using MBColumn.Application.Reports.Models;
+using MBColumn.Infrastructure.Reports.Html;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using QuestPDF.Drawing;
@@ -13,10 +14,17 @@ public sealed class QuestPdfCalculationReportRenderer
     private const string ReportFont = "Inter";
     private const float PdfContentWidthPt = 180f / 25.4f * 72f;
 
+    private readonly ILatexImageRenderer? _latexRenderer;
+
     static QuestPdfCalculationReportRenderer()
     {
         QuestPDF.Settings.License = LicenseType.Community;
         RegisterInterFont();
+    }
+
+    public QuestPdfCalculationReportRenderer(ILatexImageRenderer? latexRenderer = null)
+    {
+        _latexRenderer = latexRenderer;
     }
 
     private static void RegisterInterFont()
@@ -102,7 +110,7 @@ public sealed class QuestPdfCalculationReportRenderer
         });
     }
 
-    private static void RenderContent(IContainer container, ReportData data)
+    private void RenderContent(IContainer container, ReportData data)
     {
         container.Column(col =>
         {
@@ -127,7 +135,7 @@ public sealed class QuestPdfCalculationReportRenderer
         });
     }
 
-    private static void RenderBlock(ColumnDescriptor col, ReportBlock block)
+    private void RenderBlock(ColumnDescriptor col, ReportBlock block)
     {
         switch (block)
         {
@@ -144,6 +152,10 @@ public sealed class QuestPdfCalculationReportRenderer
                 col.Item().PaddingTop(4)
                     .Background("#FFF8DC").Padding(4)
                     .Text(n.Text).FontSize(12).Italic();
+                break;
+
+            case FormulaBlock f:
+                RenderFormulaBlock(col, f);
                 break;
 
             case TableBlock t:
@@ -186,8 +198,103 @@ public sealed class QuestPdfCalculationReportRenderer
             case PageBreakBlock:
                 col.Item().PageBreak();
                 break;
+
+            case Ec2ShearDetailBlock shear:
+                foreach (var child in Ec2ShearLatexBuilder.BuildShearBlocks(shear.Shear, shear.ForceUnit))
+                    RenderBlock(col, child);
+                break;
         }
     }
+
+    private void RenderFormulaBlock(ColumnDescriptor col, FormulaBlock block)
+    {
+        col.Item().PaddingTop(5)
+            .Background("#F8FAFC")
+            .Border(1)
+            .BorderColor("#DDE6EF")
+            .Padding(6)
+            .Column(inner =>
+            {
+                if (!string.IsNullOrWhiteSpace(block.Title))
+                    inner.Item().Text(block.Title).FontSize(10).SemiBold().FontColor("#555555");
+
+                AddFormulaLine(inner, block.LatexFormula, bold: false);
+                AddFormulaLine(inner, block.SubstitutionText, bold: false);
+                AddFormulaLine(inner, block.ResultText, bold: true);
+            });
+    }
+
+    private void AddFormulaLine(ColumnDescriptor col, string? text, bool bold)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        if (_latexRenderer != null)
+        {
+            var png = _latexRenderer.RenderToPng(text, 16.0);
+            if (png != null && png.Length > 24)
+            {
+                int wPx = (png[16] << 24) | (png[17] << 16) | (png[18] << 8) | png[19];
+                float wPt = wPx * 72f / 96f;
+                float maxW = PdfContentWidthPt - 24f;
+
+                col.Item().PaddingTop(3).AlignLeft()
+                    .Width(System.Math.Min(wPt, maxW))
+                    .Image(png);
+                return;
+            }
+        }
+
+        foreach (var line in WrapFormulaText(NormalizeFormulaText(text), 110))
+        {
+            var descriptor = col.Item().PaddingTop(2).Text(line).FontSize(8).FontColor("#1A1A2E");
+            if (bold)
+                descriptor.SemiBold();
+        }
+    }
+
+    private static IEnumerable<string> WrapFormulaText(string text, int maxLength)
+    {
+        if (text.Length <= maxLength)
+        {
+            yield return text;
+            yield break;
+        }
+
+        var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var line = "";
+        foreach (var token in tokens)
+        {
+            if (line.Length == 0)
+            {
+                line = token;
+                continue;
+            }
+
+            if (line.Length + token.Length + 1 > maxLength)
+            {
+                yield return line;
+                line = token;
+            }
+            else
+            {
+                line += " " + token;
+            }
+        }
+
+        if (line.Length > 0)
+            yield return line;
+    }
+
+    private static string NormalizeFormulaText(string text)
+        => (text ?? "")
+            .Replace(@"\\", @"\", StringComparison.Ordinal)
+            .Replace(@"\quad", "    ", StringComparison.Ordinal)
+            .Replace(@"\;", " ", StringComparison.Ordinal)
+            .Replace(@"\,", " ", StringComparison.Ordinal)
+            .Replace(@"\!", "", StringComparison.Ordinal)
+            .Replace("\r", " ", StringComparison.Ordinal)
+            .Replace("\n", " ", StringComparison.Ordinal);
 
     private static void RenderSvgFigure(ColumnDescriptor col, string? svgContent, double widthPct, string caption)
     {

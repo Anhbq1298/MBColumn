@@ -606,7 +606,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                                                res, codeService, unitService, sectionSvg,
                                                pmDiagram: pmDiagramBlock, mmDiagram: mmDiagramBlock);
 
-                var renderer = new QuestPdfCalculationReportRenderer();
+                var renderer = new QuestPdfCalculationReportRenderer(new WpfMathLatexRenderer());
                 renderer.RenderToFile(reportData, pdfPath);
             });
 
