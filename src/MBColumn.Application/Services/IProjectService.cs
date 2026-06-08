@@ -21,6 +21,7 @@ public interface IProjectService
 
     IReadOnlyList<GroupRecord> GetGroups();
     GroupRecord AddGroup(string name);
+    GroupRecord GetOrAddGroup(string name);
     void RenameGroup(int groupId, string newName);
     void DeleteGroup(int groupId);
     void ReorderGroups(IEnumerable<(int Id, int SortOrder)> orders);

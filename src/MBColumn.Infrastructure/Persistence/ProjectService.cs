@@ -125,6 +125,39 @@ public sealed class ProjectService : IProjectService, IDisposable
         return new GroupRecord(id, normalizedName, sortOrder);
     }
 
+    public GroupRecord GetOrAddGroup(string name)
+    {
+        var normalizedName = name.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new InvalidOperationException("Group name cannot be empty.");
+
+        EnsureConnection();
+        using var conn = new SqliteConnection(connectionString);
+        DatabaseSchema.Open(conn);
+        var projectId = conn.ExecuteScalar<int>("SELECT Id FROM Project LIMIT 1");
+
+        var existing = conn.QueryFirstOrDefault<(int Id, string Name, int SortOrder)>(
+            "SELECT Id, Name, SortOrder FROM SectionGroup WHERE ProjectId = @pid AND Name = @name COLLATE NOCASE",
+            new { pid = projectId, name = normalizedName });
+        if (existing != default)
+            return new GroupRecord(existing.Id, existing.Name, existing.SortOrder);
+
+        var now = DateTime.UtcNow.ToString("O");
+        var sortOrder = conn.ExecuteScalar<int>(
+            "SELECT COALESCE(MAX(SortOrder), -1) + 1 FROM SectionGroup WHERE ProjectId = @pid",
+            new { pid = projectId });
+        var id = conn.ExecuteScalar<int>("""
+            INSERT INTO SectionGroup (ProjectId, Name, SortOrder, CreatedAt, ModifiedAt)
+            VALUES (@pid, @name, @sort, @now, @now);
+            SELECT last_insert_rowid();
+            """,
+            new { pid = projectId, name = normalizedName, sort = sortOrder, now });
+
+        MarkModified();
+        ColumnsChanged?.Invoke(this, EventArgs.Empty);
+        return new GroupRecord(id, normalizedName, sortOrder);
+    }
+
     public void RenameGroup(int groupId, string newName)
     {
         var normalizedName = newName.Trim();

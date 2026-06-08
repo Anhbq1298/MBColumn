@@ -928,7 +928,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                     }
                     else
                     {
-                        var group = projectService.AddGroup(targetGroupName);
+                        var group = projectService.GetOrAddGroup(targetGroupName);
                         targetGroupId = group.Id;
                         targetGroupName = group.Name;
                         targetGroupIdsByName[targetGroupName] = targetGroupId.Value;
