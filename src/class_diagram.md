@@ -949,12 +949,16 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **AutomatedRebarDesignDialog** | Represents the AutomatedRebarDesignDialog class. | `AutomatedRebarDesignDialog.xaml.cs` |
 | `class` | **BatchPrintWindow** | Represents the BatchPrintWindow class. | `BatchPrintWindow.xaml.cs` |
 | `class` | **CalculationProgressWindow** | Represents the CalculationProgressWindow class. Key properties: StatusText, ProgressValue, ProgressMax. | `CalculationProgressWindow.xaml.cs` |
+| `class` | **DemandCasesInputView** | Represents the DemandCasesInputView class. | `DemandCasesInputView.xaml.cs` |
 | `class` | **DxfImportWindow** | Represents the DxfImportWindow class. | `DxfImportWindow.xaml.cs` |
+| `class` | **Ec2SlendernessInputView** | Represents the Ec2SlendernessInputView class. | `Ec2SlendernessInputView.xaml.cs` |
 | `class` | **EtabsForceRefreshWindow** | Represents the EtabsForceRefreshWindow class. | `EtabsForceRefreshWindow.xaml.cs` |
 | `class` | **EtabsImportWindow** | Represents the EtabsImportWindow class. | `EtabsImportWindow.xaml.cs` |
 | `class` | **EtabsPreloadWindow** | Represents the EtabsPreloadWindow class. | `EtabsPreloadWindow.xaml.cs` |
+| `class` | **GeneralMaterialInputView** | Represents the GeneralMaterialInputView class. | `GeneralMaterialInputView.xaml.cs` |
 | `class` | **GroupOption** | Represents the GroupOption class. Key properties: Id, Name. | `AddSectionDialog.xaml.cs` |
 | `class` | **InputTabView** | Represents the InputTabView class. | `InputTabView.xaml.cs` |
+| `class` | **LoadsInputView** | Represents the LoadsInputView class. | `LoadsInputView.xaml.cs` |
 | `class` | **MM3DView** | Represents the MM3DView class. | `MM3DView.xaml.cs` |
 | `class` | **MMDiagramView** | Represents the MMDiagramView class. | `MMDiagramView.xaml.cs` |
 | `class` | **PM3DView** | Represents the PM3DView class. | `PM3DView.xaml.cs` |
@@ -968,7 +972,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ResultDetailWindow** | Represents the ResultDetailWindow class. | `ResultDetailWindow.xaml.cs` |
 | `class` | **ResultTabView** | Represents the ResultTabView class. | `ResultTabView.xaml.cs` |
 | `class` | **SectionCadEditorWindow** | Represents the SectionCadEditorWindow class. | `SectionCadEditorWindow.xaml.cs` |
+| `class` | **SectionGeometryRebarInputView** | Represents the SectionGeometryRebarInputView class. | `SectionGeometryRebarInputView.xaml.cs` |
+| `class` | **SectionPreviewInputView** | Represents the SectionPreviewInputView class. | `SectionPreviewInputView.xaml.cs` |
+| `class` | **SectionRebarInputView** | Represents the SectionRebarInputView class. | `SectionRebarInputView.xaml.cs` |
 | `class` | **SectionSelectionItem** | Represents the SectionSelectionItem class. Key methods: GetSelectedIds. Key properties: Id, Name, IsSelected. | `SelectSectionsDialog.xaml.cs` |
 | `class` | **SelectSectionsDialog** | Represents the SelectSectionsDialog class. | `SelectSectionsDialog.xaml.cs` |
 | `class` | **ShearDetailView** | Represents the ShearDetailView class. | `ShearDetailView.xaml.cs` |
+| `class` | **SlendernessCalculationDetailsView** | Represents the SlendernessCalculationDetailsView class. | `SlendernessCalculationDetailsView.xaml.cs` |
 | `class` | **StartUpWindow** | Represents the StartUpWindow class. | `StartUpWindow.xaml.cs` |

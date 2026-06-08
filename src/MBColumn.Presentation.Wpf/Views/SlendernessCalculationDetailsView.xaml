@@ -1,0 +1,1067 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<UserControl x:Class="MBColumn.Presentation.Wpf.Views.SlendernessCalculationDetailsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls">
+        <Border
+                Background="#FAFCFF"
+                Padding="22"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0"
+                           Margin="0,0,0,14"
+                           Background="Transparent">
+                    <TextBlock Text="Determine Design Moment - EC2"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryNavyBrush}" />
+                </DockPanel>
+
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Background="White">
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.05*" />
+                                <ColumnDefinition Width="1.15*" />
+                                <ColumnDefinition Width="2.4*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="12"
+                                    Margin="0,0,6,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SlendernessCalculationLoadCase.Name, StringFormat='Selected Load Case: {0}', TargetNullValue='Selected Load Case'}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               Margin="0,0,0,10"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="NEd"
+                                               Style="{StaticResource FieldLabelTextStyle}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="48" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding SlendernessCalculationLoadCase.NEd, UpdateSourceTrigger=PropertyChanged, StringFormat=F1}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="kN"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Right"
+                                                   FontSize="{StaticResource FontSizeBody}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="12"
+                                    Margin="6,0">
+                                <StackPanel>
+                                    <TextBlock Text="Member End Moments"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               Margin="0,0,0,10" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,8">
+                                            <TextBlock Text="Mx Top" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="60" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0" Text="{Binding SlendernessCalculationLoadCase.MxTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                                <TextBlock Grid.Column="1" Text="kNÂ·m" VerticalAlignment="Center" TextAlignment="Right" FontSize="{StaticResource FontSizeBody}" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8">
+                                            <TextBlock Text="Mx Bottom" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="60" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0" Text="{Binding SlendernessCalculationLoadCase.MxBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                                <TextBlock Grid.Column="1" Text="kNÂ·m" VerticalAlignment="Center" TextAlignment="Right" FontSize="{StaticResource FontSizeBody}" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1" Grid.Column="0">
+                                            <TextBlock Text="My Top" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="60" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0" Text="{Binding SlendernessCalculationLoadCase.MyTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                                <TextBlock Grid.Column="1" Text="kNÂ·m" VerticalAlignment="Center" TextAlignment="Right" FontSize="{StaticResource FontSizeBody}" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1" Grid.Column="2">
+                                            <TextBlock Text="My Bottom" Style="{StaticResource FieldLabelTextStyle}" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="60" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0" Text="{Binding SlendernessCalculationLoadCase.MyBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                                <TextBlock Grid.Column="1" Text="kNÂ·m" VerticalAlignment="Center" TextAlignment="Right" FontSize="{StaticResource FontSizeBody}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,10,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding SlendernessCalculationLoadCase.MxUsed, TargetNullValue='Mx Used auto', StringFormat='Mx Used {0:F1} kNÂ·m'}"
+                                                   Style="{StaticResource HelperTextStyle}" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding SlendernessCalculationLoadCase.MyUsed, TargetNullValue='My Used auto', StringFormat='My Used {0:F1} kNÂ·m'}"
+                                                   Style="{StaticResource HelperTextStyle}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="12"
+                                    Margin="6,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Section Properties"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryNavyBrush}"
+                                               FontSize="{StaticResource FontSizeBody}"
+                                               Margin="0,0,0,8" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Concrete gross area - A" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="c" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewAreaText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Total longitudinal rebar area - A" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="s,total" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewAsTotalText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Second moment of area about x-axis - I" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="xx" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewIxxText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Second moment of area about y-axis - I" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="yy" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewIyyText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Radius of gyration for x slenderness - i" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="x" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewIxText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0"><Run Text="Radius of gyration for y slenderness - i" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="y" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewIyText, Mode=OneWay}" /></TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Steel elastic modulus - E" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="s" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding Es, Mode=OneWay, StringFormat=F0}" /><Run Text=" MPa" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Concrete secant modulus from EC2 - E" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="cm" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewEcmText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Effective depth used for M" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="x" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=" curvature - d" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="x" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewDxText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Effective depth used for M" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="y" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=" curvature - d" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="y" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewDyText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Mechanical reinforcement ratio - " Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="Ï‰" Foreground="{DynamicResource AccentBlueBrush}" /><Run Text=": " /><Run Text="{Binding PreviewOmegaText, Mode=OneWay}" /></TextBlock>
+                                            <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0"><Run Text="Axial load ratio for selected case - n: " Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="{Binding PreviewNRatioText, Mode=OneWay}" /></TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Background="White"
+                                BorderBrush="{DynamicResource BorderSoftBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="10"
+                                Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.72*" />
+                                    <ColumnDefinition Width="1.72*" />
+                                    <ColumnDefinition Width="1.95*" />
+                                    <ColumnDefinition Width="1.95*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.ColumnSpan="4"
+                                           Text="Member End Moments Diagram"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           Margin="0,0,0,4" />
+                                <controls:MomentDiagramControl Grid.Row="1"
+                                                               Grid.Column="2"
+                                                               Title="Mx"
+                                                               DiagramColor="#c0392b"
+                                                               MomentTop="{Binding SlendernessCalculationLoadCase.MxTop}"
+                                                               MomentBottom="{Binding SlendernessCalculationLoadCase.MxBottom}"
+                                                               Height="110"
+                                                               Margin="2,0,8,0" />
+                                <Rectangle Grid.Row="1"
+                                           Grid.Column="2"
+                                           Fill="#D6DEE6"
+                                           Width="1"
+                                           HorizontalAlignment="Right"
+                                           Margin="0,4,0,4" />
+                                <controls:MomentDiagramControl Grid.Row="1"
+                                                               Grid.Column="3"
+                                                               Title="My"
+                                                               DiagramColor="#2471a3"
+                                                               MomentTop="{Binding SlendernessCalculationLoadCase.MyTop}"
+                                                               MomentBottom="{Binding SlendernessCalculationLoadCase.MyBottom}"
+                                                               Height="110"
+                                                               Margin="8,0,2,0" />
+                            </Grid>
+                        </Border>
+
+                            <StackPanel Margin="0,0,0,12" Visibility="Collapsed">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,8">
+                                                <DockPanel>
+                                                    <TextBlock Text="NEd" Style="{StaticResource FieldLabelTextStyle}" />
+                                                    <TextBlock Text="{Binding ForceLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                                </DockPanel>
+                                                <TextBox Text="{Binding SlendernessCalculationLoadCase.NEd, UpdateSourceTrigger=PropertyChanged, StringFormat=F1}" />
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                                                       Text="Member End Moments"
+                                                       Style="{StaticResource InputSubsectionTitleTextStyle}"
+                                                       Margin="0,2,0,6" />
+
+                                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,8">
+                                                <DockPanel>
+                                                    <TextBlock Text="Mx Top" Style="{StaticResource FieldLabelTextStyle}" />
+                                                    <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                                </DockPanel>
+                                                <TextBox Text="{Binding SlendernessCalculationLoadCase.MxTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,8">
+                                                <DockPanel>
+                                                    <TextBlock Text="Mx Bottom" Style="{StaticResource FieldLabelTextStyle}" />
+                                                    <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                                </DockPanel>
+                                                <TextBox Text="{Binding SlendernessCalculationLoadCase.MxBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="3" Grid.Column="0">
+                                                <DockPanel>
+                                                    <TextBlock Text="My Top" Style="{StaticResource FieldLabelTextStyle}" />
+                                                    <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                                </DockPanel>
+                                                <TextBox Text="{Binding SlendernessCalculationLoadCase.MyTop, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="3" Grid.Column="2">
+                                                <DockPanel>
+                                                    <TextBlock Text="My Bottom" Style="{StaticResource FieldLabelTextStyle}" />
+                                                    <TextBlock Text="{Binding MomentLabel}" Style="{StaticResource UnitTextStyle}" DockPanel.Dock="Right" />
+                                                </DockPanel>
+                                                <TextBox Text="{Binding SlendernessCalculationLoadCase.MyBottom, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding SlendernessCalculationLoadCase.MxUsed, TargetNullValue='Mx Used auto', StringFormat='Mx Used {0:F1}'}"
+                                                       Style="{StaticResource HelperTextStyle}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SlendernessCalculationLoadCase.MyUsed, TargetNullValue='My Used auto', StringFormat='My Used {0:F1}'}"
+                                                       Style="{StaticResource HelperTextStyle}" />
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <Border Grid.Row="1"
+                                            Background="White"
+                                            BorderBrush="{DynamicResource BorderSoftBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="6"
+                                            Margin="0,12,0,0"
+                                            Visibility="Collapsed">
+                                        <StackPanel>
+                                            <TextBlock Text="Member End Moments Diagram"
+                                                       Style="{StaticResource FieldLabelTextStyle}"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,0,0,4" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="1" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <controls:MomentDiagramControl Grid.Column="0"
+                                                                               Title="Mx"
+                                                                               DiagramColor="#c0392b"
+                                                                               MomentTop="{Binding SlendernessCalculationLoadCase.MxTop}"
+                                                                               MomentBottom="{Binding SlendernessCalculationLoadCase.MxBottom}"
+                                                                               Height="300"
+                                                                               Margin="2,0" />
+                                                <Rectangle Grid.Column="1" Fill="#D6DEE6" Margin="0,4" />
+                                                <controls:MomentDiagramControl Grid.Column="2"
+                                                                               Title="My"
+                                                                               DiagramColor="#2471a3"
+                                                                               MomentTop="{Binding SlendernessCalculationLoadCase.MyTop}"
+                                                                               MomentBottom="{Binding SlendernessCalculationLoadCase.MyBottom}"
+                                                                               Height="300"
+                                                                               Margin="2,0" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+
+                        <Border Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Margin="0,0,0,12"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="1. Section properties"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,8" />
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Concrete gross area - A" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="c" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewAreaText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Total longitudinal rebar area - A" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="s,total" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewAsTotalText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Second moment of area about x-axis - I" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="xx" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewIxxText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Second moment of area about y-axis - I" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="yy" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewIyyText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Radius of gyration for x slenderness - i" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewIxText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Radius of gyration for y slenderness - i" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewIyText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Concrete design strength - f" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="cd" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewFcdText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Steel design yield strength - f" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="yd" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewFydText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Steel elastic modulus - E" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="s" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding Es, Mode=OneWay, StringFormat=F0}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Concrete secant modulus from EC2 - E" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="cm" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewEcmText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Effective depth used for M" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=" curvature - d" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewDxText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Effective depth used for M" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=" curvature - d" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewDyText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                    <Run Text="Mechanical reinforcement ratio - &#x03C9;: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewOmegaText, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0">
+                                    <Run Text="Axial load ratio for selected case - n: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="{Binding PreviewNRatioText, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="2. Detailed calculation"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryNavyBrush}"
+                                           Margin="0,0,0,8"
+                                           Visibility="Collapsed" />
+                                <Border Background="Transparent"
+                                        BorderThickness="0"
+                                        CornerRadius="0"
+                                        Padding="0"
+                                        Margin="0,0,0,12"
+                                        Visibility="Collapsed">
+                                    <StackPanel>
+                                        <TextBlock Text="Member End Moments Diagram"
+                                                   Style="{StaticResource FieldLabelTextStyle}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,4" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="1" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <controls:MomentDiagramControl Grid.Column="0"
+                                                                           Title="Mx"
+                                                                           DiagramColor="#c0392b"
+                                                                           MomentTop="{Binding SlendernessCalculationLoadCase.MxTop}"
+                                                                           MomentBottom="{Binding SlendernessCalculationLoadCase.MxBottom}"
+                                                                           Height="170"
+                                                                           Margin="2,0" />
+                                            <Rectangle Grid.Column="1" Fill="#D6DEE6" Margin="0,4" />
+                                            <controls:MomentDiagramControl Grid.Column="2"
+                                                                           Title="My"
+                                                                           DiagramColor="#2471a3"
+                                                                           MomentTop="{Binding SlendernessCalculationLoadCase.MyTop}"
+                                                                           MomentBottom="{Binding SlendernessCalculationLoadCase.MyBottom}"
+                                                                           Height="170"
+                                                                           Margin="2,0" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="2. Imperfection &amp; Slenderness Check"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,0,0,6"
+                                           Visibility="Collapsed" />
+                                <Border BorderThickness="0"
+                                        CornerRadius="0"
+                                        Padding="0"
+                                        Margin="0,0,0,12"
+                                        Visibility="Collapsed">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                            <Run Text="Imperfection eccentricity - e" Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text="e" />
+                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" = l" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" / 400. It is converted to N" />
+                                            <Run Text="Ed" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" &#x00D7; e" />
+                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" and included in the first-order end moments before M" />
+                                            <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" and M" />
+                                            <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" are selected." />
+                                        </TextBlock>
+                                        <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0">
+                                            <Run Text="Minimum eccentricity - e" Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text="e" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text="{Binding MinimumEccentricityRuleText, Mode=OneWay}" />
+                                            <Run Text="used" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" is never less than N" />
+                                            <Run Text="Ed" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text=" &#x00D7; e" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                            <Run Text="." />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                        <Grid Margin="0,0,0,12"
+                              Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.9*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.2*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="28" />
+                                <RowDefinition Height="28" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                <TextBlock Text="Axis" FontWeight="SemiBold" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                <TextBlock Text="{Binding MemberLengthLabel, StringFormat='l0 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                <controls:SafeFormulaControl Formula="\lambda" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                <controls:SafeFormulaControl Formula="\lambda_{lim}" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="4" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                <controls:SafeFormulaControl Formula="r_m" Scale="12" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="5" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="4">
+                                <TextBlock Text="{Binding MomentLabel, StringFormat='M2 ({0})'}" FontWeight="SemiBold" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="6" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="4">
+                                <TextBlock Text="{Binding MomentLabel, StringFormat='Moment Used ({0})'}" FontWeight="SemiBold" TextAlignment="Center" />
+                            </Border>
+
+                            <Border Grid.Row="1" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="Mx" FontWeight="SemiBold" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding L0xText}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaX, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaLimitX, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.RmX, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.M2x, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.MxUsed, TargetNullValue=auto, StringFormat=F2}" TextAlignment="Center" FontWeight="SemiBold" />
+                            </Border>
+
+                            <Border Grid.Row="2" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="My" FontWeight="SemiBold" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding L0yText}" TextAlignment="Center" Style="{StaticResource MathEquationTextStyle}" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaY, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.LambdaLimitY, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="4" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.RmY, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="5" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.M2y, TargetNullValue=-, StringFormat=F2}" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="6" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="4">
+                                <TextBlock Text="{Binding SlendernessCalculationLoadCase.MyUsed, TargetNullValue=auto, StringFormat=F2}" TextAlignment="Center" FontWeight="SemiBold" />
+                            </Border>
+                        </Grid>
+
+                                <Border BorderThickness="0"
+                                        CornerRadius="0"
+                                        Padding="0"
+                                        Margin="0,0,0,12"
+                                        Visibility="Collapsed">
+                                    <StackPanel>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Effective length - L: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Clear column length from Section &amp; Rebar. It is the base length before applying kx or ky." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Effective length factors - kx, ky: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="User-defined restraint factors. The app calculates l" />
+                                        <Run Text="0x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = kx &#x00D7; L and l" />
+                                        <Run Text="0y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = ky &#x00D7; L." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Slenderness ratio - &#x03BB;: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Measures effective length against section stiffness radius. &#x03BB;x = l" />
+                                        <Run Text="0x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" / ix and &#x03BB;y = l" />
+                                        <Run Text="0y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" / iy." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Axial load ratio - n: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Compression demand level. n = N" />
+                                        <Run Text="Ed" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" / (Ac &#x00D7; fcd)." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Creep factor - A: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Reduces &#x03BB;lim for creep. A = 1 / (1 + 0.2&#x03C6;eff), or A = 0.7 when the default option is used." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Reinforcement factor - B: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Increases &#x03BB;lim based on longitudinal steel. B = &#x221A;(1 + 2&#x03C9;), with &#x03C9; = A" />
+                                        <Run Text="s,total" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" &#x00D7; fyd / (Ac &#x00D7; fcd)." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Moment shape factor - C: " Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="Accounts for the first-order moment diagram between top and bottom. C = 1.7 - r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=", where r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" = M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" / M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=". The sign is preserved: positive r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" means same-curvature bending, negative r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" means reverse-curvature bending. Smaller C lowers &#x03BB;lim; larger C raises &#x03BB;lim." /></TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Slenderness limit - &#x03BB;lim: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Limit used to decide whether second-order moment is required. &#x03BB;lim = 20ABC / &#x221A;n." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="End moments - M" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text=" and M" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="First-order end moments including imperfection. M" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" is the larger design end moment; M" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" is the smaller signed companion." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Branch - stocky/slender: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="If &#x03BB; &lt; &#x03BB;lim, second-order moment is not required and M" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = 0. If &#x03BB; &#x2265; &#x03BB;lim, the nominal curvature method is applied." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Kr factor - K" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="r" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Corrects curvature for axial load level. K" />
+                                        <Run Text="r" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = (n" />
+                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" - n) / (n" />
+                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" - 0.4), limited to 1, with n" />
+                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = 1 + &#x03C9;." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Creep curvature factor - K" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="&#x03C6;" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Amplifies curvature for creep. K" />
+                                        <Run Text="&#x03C6;" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = max(1, 1 + &#x03B2;&#x03C6;eff), where &#x03B2; = 0.35 + fck / 200 - &#x03BB; / 150." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Second-order moment - M" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Additional moment from nominal curvature when &#x03BB; &#x2265; &#x03BB;lim. If &#x03BB; &lt; &#x03BB;lim, M" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = 0." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
+                                        <Run Text="Equivalent first-order moment - M" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Equivalent moment used with nominal curvature. M" />
+                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" = max(0.6M" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" + 0.4M" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=", 0.4M" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text="); the design sign follows the governing first-order end moment." />
+                                    </TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0">
+                                        <Run Text="Moment used - Mx Used / My Used: " Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="Final amplified design moments passed to the existing PMM solver. It is selected from M" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=", |M" />
+                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text="| + M" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=", M" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
+                                        <Run Text=" + 0.5M" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text=", and M" />
+                                        <Run Text="min" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="." />
+                                    </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                        <TextBlock Text="Step-by-step equations"
+                                   Style="{StaticResource FieldLabelTextStyle}"
+                                   Margin="0,0,0,6"
+                                   Visibility="Collapsed" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.72*" />
+                                <ColumnDefinition Width="1.72*" />
+                                <ColumnDefinition Width="1.95*" />
+                                <ColumnDefinition Width="1.95*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" /><!-- 0  header -->
+                                <RowDefinition Height="Auto" /><!-- 1  effective length -->
+                                <RowDefinition Height="Auto" /><!-- 2  slenderness ratio -->
+                                <RowDefinition Height="Auto" /><!-- 3  slenderness limit -->
+                                <RowDefinition Height="Auto" /><!-- 4  factors n,A,B,C -->
+                                <RowDefinition Height="Auto" /><!-- 5  min moment -->
+                                <RowDefinition Height="Auto" /><!-- 6  imperfection moment -->
+                                <RowDefinition Height="Auto" /><!-- 7  1st order end moment M01/M02 -->
+                                <RowDefinition Height="Auto" /><!-- 8  moment ratio rm -->
+                                <RowDefinition Height="Auto" /><!-- 9  branch -->
+                                <RowDefinition Height="Auto" /><!-- 10 Kr factor -->
+                                <RowDefinition Height="Auto" /><!-- 11 KÏ† factor -->
+                                <RowDefinition Height="Auto" /><!-- 12 2nd order moment -->
+                                <RowDefinition Height="Auto" /><!-- 13 equivalent 1st order moment -->
+                                <RowDefinition Height="Auto" /><!-- 14 moment used MEd -->
+                            </Grid.RowDefinitions>
+
+                            <!-- Row 0: Header -->
+                            <Border Grid.Row="0" Grid.Column="0" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
+                                <TextBlock Text="REMARKS" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="1" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
+                                <TextBlock Text="EQUATION" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="2" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,0,1" Padding="6,8">
+                                <TextBlock Text="X-DIR" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="3" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,1,1,1" Padding="6,8">
+                                <TextBlock Text="Y-DIR" FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}" />
+                            </Border>
+
+                            <!-- Row 1: Effective length -->
+                            <Border Grid.Row="1" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Effective length" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="1" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="l_0=kL" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding L0xLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding L0yLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 2: Slenderness ratio -->
+                            <Border Grid.Row="2" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Slenderness ratio" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="2" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaXResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaYResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 3: Slenderness limit -->
+                            <Border Grid.Row="3" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Slenderness limit" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="3" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="3" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitXResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="3" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.LambdaLimitYResultLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 4: Factors n,A,B,C -->
+                            <Border Grid.Row="4" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Factors n,A,B,C" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="4" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="n=\frac{N_{Ed}}{A_c f_{cd}}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="A=\frac{1}{1+0.2\varphi_{eff}}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="B=\sqrt{1+2\omega}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="C=1.7-r_m" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="4" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorNLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorALatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorBLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorCxLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="4" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorNLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorALatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorBLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.FactorCyLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 5: Min moment (conditional) -->
+                            <Border Grid.Row="5" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Min moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="5" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="e_0=\max\!\left(\tfrac{h}{30},20\,\mathrm{mm}\right)" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="M_{min}=N_{Ed}e_0" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="5" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityXe0Latex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityXMminLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="5" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityYe0Latex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding MinimumEccentricityYMminLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 6: Imperfection moment (conditional) -->
+                            <Border Grid.Row="6" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Imperfection moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="6" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="e_i=\tfrac{l_0}{400}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="M_i=N_{Ed}e_i" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="6" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding ImperfectionMiXeiLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding ImperfectionMiXMiLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="6" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.HasEc2Results, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding ImperfectionMiYeiLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding ImperfectionMiYMiLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 7: 1st order end moment M01/M02 (always visible) -->
+                            <Border Grid.Row="7" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="1st order end moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="7" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="M_{01}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="M_{02}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="7" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.M01XResultLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.M02XResultLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="7" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.M01YResultLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.M02YResultLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 8: Moment ratio rm (always visible) -->
+                            <Border Grid.Row="8" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Moment ratio" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="8" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MomentRatioFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="8" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.RmXOnlyLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="8" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.RmYOnlyLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 9: Branch (always visible) -->
+                            <Border Grid.Row="9" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Branch" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="9" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.BranchFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="9" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchXText}" FontSize="{StaticResource FontSizeBody}" TextAlignment="Center" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="9" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8"><TextBlock Text="{Binding SlendernessCalculationLoadCase.Ec2BranchYText}" FontSize="{StaticResource FontSizeBody}" TextAlignment="Center" TextWrapping="Wrap" /></Border>
+
+                            <!-- Row 10: Kr factor (conditional) -->
+                            <Border Grid.Row="10" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Kr factor" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="10" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="K_r=\frac{n_u-n}{n_u-0.4}\leq 1" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="n_u=1+\omega" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="10" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.KrXLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="10" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.KrYLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 11: KÏ† factor (conditional) -->
+                            <Border Grid.Row="11" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="KÏ† factor" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="11" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="K_\varphi=\max(1,\,1+\beta\varphi_{eff})" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="\beta=0.35+\tfrac{f_{ck}}{200}-\tfrac{\lambda}{150}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="11" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.KPhiXLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="11" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.KPhiYLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 12: 2nd order moment â€” nominal curvature + e2 + M2 (conditional) -->
+                            <Border Grid.Row="12" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="2nd order moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="12" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="\frac{1}{r}=K_r K_\varphi \frac{\varepsilon_{yd}}{0.45d}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="e_2=\frac{1}{r}\cdot\frac{l_0^2}{c}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="M_2=N_{Ed}e_2" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="12" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureX1rLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXE2Latex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureXM2Latex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="12" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureY1rLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYE2Latex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.NominalCurvatureYM2Latex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 13: Equivalent first order moment (conditional) -->
+                            <Border Grid.Row="13" Grid.Column="0" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Equivalent 1st order moment" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="13" Grid.Column="1" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="M_{0e}=\max(0.6M_{02}+0.4M_{01},\,0.4M_{02})" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="13" Grid.Column="2" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.M0eEquivXLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+                            <Border Grid.Row="13" Grid.Column="3" Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.M0eEquivYLatex, Mode=OneWay}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                            </Border>
+
+                            <!-- Row 14: Moment used MEd (always visible) -->
+                            <Border Grid.Row="14" Grid.Column="0" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8"><TextBlock Text="Moment used" FontSize="{StaticResource FontSizeBody}" TextWrapping="Wrap" /></Border>
+                            <Border Grid.Row="14" Grid.Column="1" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.EffectiveMomentUsedFormulaLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="M_{02}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,6,0,0" />
+                                    <controls:SafeFormulaControl Formula="\left|M_{0e}\right|+M_2" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <controls:SafeFormulaControl Formula="M_{01}+0.5M_2" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <controls:SafeFormulaControl Formula="M_{min}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="14" Grid.Column="2" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,0,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MxUsedExpandedLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MxCandM02Latex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,6,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MxCandM0ePlusM2Latex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MxCandM01Plus05M2Latex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MxCandMinimumMomentLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="14" Grid.Column="3" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1,0,1,1" Padding="6,8">
+                                <StackPanel>
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MyUsedExpandedLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MyCandM02Latex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,6,0,0" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MyCandM0ePlusM2Latex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MyCandM01Plus05M2Latex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding SlendernessCalculationLoadCase.IsAnyAxisSlender, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <controls:SafeFormulaControl Formula="{Binding SlendernessCalculationLoadCase.MyCandMinimumMomentLatex}" Scale="14" FormulaForeground="{DynamicResource TextDarkBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+</UserControl>

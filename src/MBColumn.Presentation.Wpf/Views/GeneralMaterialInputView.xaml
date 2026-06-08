@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<UserControl x:Class="MBColumn.Presentation.Wpf.Views.GeneralMaterialInputView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MBColumn.Presentation.Wpf.Controls"
+             xmlns:enums="clr-namespace:MBColumn.Domain.Enums;assembly=MBColumn.Domain">
+                <!-- Column 0: General & Material -->
+                <ScrollViewer Grid.Column="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <GroupBox Header="General"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="Unit System"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <ComboBox ItemsSource="{Binding UnitSystems}"
+                                          SelectedItem="{Binding UnitSystem}" />
+                                <TextBlock Text="Design Code"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,10,0,0" />
+                                <ComboBox ItemsSource="{Binding DesignCodes}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Code"
+                                          SelectedValue="{Binding SelectedDesignCode}" />
+                                <TextBlock Text="Section Integration Method"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           Margin="0,10,0,0" />
+                                <ComboBox ItemsSource="{Binding SectionIntegrationMethodOptions}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Method"
+                                          SelectedValue="{Binding SelectedIntegrationMethod}">
+                                    <ComboBox.ToolTip>
+                                        <TextBlock TextWrapping="Wrap"
+                                                   MaxWidth="360"
+                                                   Text="Fiber Integration: General numerical integration method recommended for circular sections and future arbitrary sections. Polygon Integration: Faster compression-zone clipping method useful for stress-block comparison." />
+                                    </ComboBox.ToolTip>
+                                </ComboBox>
+                            </StackPanel>
+                        </GroupBox>
+                        <GroupBox Header="Member Geometry"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="52" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Text="Column clear height / member length, L"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="1"
+                                           Text="{Binding MemberLengthLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="1"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Text="{Binding MemberLengthDisplay, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" />
+                            </Grid>
+                        </GroupBox>
+                        <GroupBox Header="Material"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="76" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Library"
+                                           Style="{StaticResource FieldLabelTextStyle}" />
+                                <ComboBox Grid.Row="1"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding MaterialLibraries}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedValuePath="Library"
+                                          SelectedValue="{Binding SelectedMaterialLibrary}" />
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Concrete Grade"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                           Margin="0,8,0,0" />
+                                <ComboBox Grid.Row="3"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding AvailableConcreteGrades}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                          SelectedItem="{Binding SelectedConcreteGrade}" />
+                                <TextBlock Grid.Row="4"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Text="Rebar Grade"
+                                           Style="{StaticResource FieldLabelTextStyle}"
+                                           IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                           Margin="0,8,0,0" />
+                                <ComboBox Grid.Row="5"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          ItemsSource="{Binding AvailableSteelGrades}"
+                                          DisplayMemberPath="DisplayName"
+                                          IsEnabled="{Binding AreMaterialGradesEnabled}"
+                                          SelectedItem="{Binding SelectedSteelGrade}" />
+                                <TextBlock Grid.Row="6"
+                                           Grid.Column="0"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f"/>
+                                     <Run Text="ck" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="6"
+                                            Grid.Column="0"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f'"/>
+                                     <Run Text="c" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="6"
+                                            Grid.Column="1"
+                                            Text="{Binding StressLabel}"
+                                            Style="{StaticResource UnitTextStyle}"
+                                            Margin="0,8,0,0" />
+                                <TextBox Grid.Row="7"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Fc, UpdateSourceTrigger=PropertyChanged}" />
+                                 <TextBlock Grid.Row="8"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="gamma c (&#x03B3;"/>
+                                     <Run Text="c" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                     <Run Text=")"/>
+                                 </TextBlock>
+                                <TextBlock Grid.Row="8"
+                                           Grid.Column="1"
+                                           Text=""
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="9"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Text="{Binding GammaC, UpdateSourceTrigger=PropertyChanged}" />
+                                 <TextBlock Grid.Row="10"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="alpha cc (&#x03B1;"/>
+                                     <Run Text="cc" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                     <Run Text=")"/>
+                                 </TextBlock>
+                                <TextBox Grid.Row="11"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Text="{Binding AlphaCc, UpdateSourceTrigger=PropertyChanged}" />
+                                 <TextBlock Grid.Row="12"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="f"/>
+                                     <Run Text="cd" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                     <Run Text=" = &#x03B1;"/>
+                                     <Run Text="cc" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                     <Run Text=" f"/>
+                                     <Run Text="ck" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                     <Run Text=" / &#x03B3;"/>
+                                     <Run Text="c" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                <TextBlock Grid.Row="12"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="13"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Style="{StaticResource ComputedTextBoxStyle}"
+                                         Text="{Binding FcdDisplayText, Mode=OneWay}" />
+
+                                 <TextBlock Grid.Row="15"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="E"/>
+                                     <Run Text="cm" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                <TextBlock Grid.Row="15"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="16"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         Style="{StaticResource ComputedTextBoxStyle}"
+                                         Text="{Binding EcmDisplayText, Mode=OneWay}" />
+                                <DockPanel Grid.Row="17"
+                                           Grid.Column="0"
+                                           Grid.ColumnSpan="2"
+                                           Margin="0,6,0,0"
+                                           Visibility="{Binding ShowEurocodeConcreteStrainProfileOption, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock Text="Strain model"
+                                               Style="{StaticResource FieldLabelTextStyle}"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0" />
+                                    <ComboBox ItemsSource="{Binding EurocodeConcreteStrainProfiles}"
+                                              DisplayMemberPath="DisplayName"
+                                              SelectedValuePath="Profile"
+                                              SelectedValue="{Binding SelectedEurocodeConcreteStrainProfile, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              MinWidth="142"
+                                              HorizontalAlignment="Right" />
+                                </DockPanel>
+                                 <TextBlock Grid.Row="18"
+                                            Grid.Column="0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f"/>
+                                     <Run Text="yk" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="18"
+                                            Grid.Column="0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="f"/>
+                                     <Run Text="y" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                <TextBlock Grid.Row="18"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="19"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Fy, UpdateSourceTrigger=PropertyChanged}" />
+                                 <TextBlock Grid.Row="20"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}">
+                                     <Run Text="E"/>
+                                     <Run Text="s" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                <TextBlock Grid.Row="20"
+                                           Grid.Column="1"
+                                           Text="{Binding StressLabel}"
+                                           Style="{StaticResource UnitTextStyle}" />
+                                <TextBox Grid.Row="21"
+                                         Grid.Column="0"
+                                         Grid.ColumnSpan="2"
+                                         IsEnabled="{Binding AreMaterialInputsEnabled}"
+                                         Text="{Binding Es, UpdateSourceTrigger=PropertyChanged}" />
+                            
+                                 <!-- Concrete Ultimate Strain -->
+                                 <TextBlock Grid.Row="22"
+                                            Grid.Column="0"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="{Binding ConcreteUltimateStrainSubscript, Mode=OneWay}" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="22"
+                                            Grid.Column="0"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="cu" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBox Grid.Row="23"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonCu2, Mode=OneWay, StringFormat=F5}" />
+
+                                 <!-- Concrete Peak Strain -->
+                                 <TextBlock Grid.Row="24"
+                                            Grid.Column="0"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="True">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="{Binding ConcretePeakStrainSubscript, Mode=OneWay}" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBlock Grid.Row="24"
+                                            Grid.Column="0"
+                                            Margin="0,8,0,0">
+                                     <TextBlock.Style>
+                                         <Style TargetType="TextBlock" BasedOn="{StaticResource FieldLabelTextStyle}">
+                                             <Setter Property="Visibility" Value="Collapsed"/>
+                                             <Style.Triggers>
+                                                 <DataTrigger Binding="{Binding IsEc2}" Value="False">
+                                                     <Setter Property="Visibility" Value="Visible"/>
+                                                 </DataTrigger>
+                                             </Style.Triggers>
+                                         </Style>
+                                     </TextBlock.Style>
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="c0" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBox Grid.Row="25"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonC2, Mode=OneWay, StringFormat=F5}" />
+
+                                 <!-- Steel Yield Strain -->
+                                 <TextBlock Grid.Row="26"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="yd" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBox Grid.Row="27"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonYd, Mode=OneWay, StringFormat=F5}" />
+
+                                 <!-- Steel Ultimate Strain -->
+                                 <TextBlock Grid.Row="28"
+                                            Grid.Column="0"
+                                            Style="{StaticResource FieldLabelTextStyle}"
+                                            Margin="0,8,0,0">
+                                     <Run Text="&#x03B5;" />
+                                     <Run Text="ud" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
+                                 </TextBlock>
+                                 <TextBox Grid.Row="29"
+                                          Grid.Column="0"
+                                          Grid.ColumnSpan="2"
+                                          Style="{StaticResource ComputedTextBoxStyle}"
+                                          Text="{Binding EpsilonUd, Mode=OneWay, StringFormat=F5}" />
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+
+
+</UserControl>
