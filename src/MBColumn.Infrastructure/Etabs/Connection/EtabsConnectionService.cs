@@ -139,6 +139,16 @@ public sealed class EtabsConnectionService : IEtabsConnectionService
         return (ETABSv1.eUnits.kip_in_F, 1.0, 1.0, impFactor);
     }
 
+    /// <summary>
+    /// Returns the ETABS present-units preset whose force and moment units exactly match
+    /// MB Column's target system (kN + kN·m for Metric; kip + kip·ft for Imperial).
+    /// Set this before calling GetTableForDisplayArray so factor = ×1 for both force and moment.
+    /// </summary>
+    internal static eUnits GetTargetPresentUnits(MBColumn.Domain.Enums.UnitSystem targetSystem) =>
+        targetSystem == MBColumn.Domain.Enums.UnitSystem.Metric
+            ? eUnits.kN_m_C
+            : eUnits.kip_ft_F;
+
     // ── GetDatabaseUnits_2 helpers ─────────────────────────────────────────────
     // Actual ETABSv1.eForce values (reflected from DLL):
     //   1=lb, 2=kip, 3=N, 4=kN, 5=kgf, 6=tonf

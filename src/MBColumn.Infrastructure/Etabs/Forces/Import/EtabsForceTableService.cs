@@ -59,8 +59,9 @@ public sealed class EtabsForceTableService : IEtabsForceTableService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        model.SetPresentUnits(eUnits.kN_m_C);
-        var (forceFactor, _, momentFactor) = GetUnitFactors(eUnits.kN_m_C, targetSystem);
+        var targetUnits = EtabsConnectionService.GetTargetPresentUnits(targetSystem);
+        model.SetPresentUnits(targetUnits);
+        var (forceFactor, _, momentFactor) = GetUnitFactors(targetUnits, targetSystem);
 
         return GroupAndMapRecords(records, forceFactor, momentFactor);
     }

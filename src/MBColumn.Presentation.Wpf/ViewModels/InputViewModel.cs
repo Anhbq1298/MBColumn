@@ -264,8 +264,8 @@ public sealed class InputViewModel : ViewModelBase
     public ICommand AutoDesignRebarCommand { get; }
     public IReadOnlyList<DesignCodeOption> DesignCodes { get; } =
     [
-        new(DesignCodeType.Aci318Style, "ACI 318"),
-        new(DesignCodeType.Ec2,         "Eurocode 2")
+        new(DesignCodeType.Aci318Style, "ACI 318-19 (not fully supported)"),
+        new(DesignCodeType.Ec2,         "Eurocode 2 (EN 1992-1-1:2004)")
     ];
     public IReadOnlyList<MaterialLibraryOption> MaterialLibraries { get; } =
     [

@@ -28,9 +28,9 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        // Force display units to kN_m_C so GetTableForDisplayArray returns kN and kN·m
-        model.SetPresentUnits(eUnits.kN_m_C);
-        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(eUnits.kN_m_C, targetSystem);
+        var targetUnits = EtabsConnectionService.GetTargetPresentUnits(targetSystem);
+        model.SetPresentUnits(targetUnits);
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(targetUnits, targetSystem);
         var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
         ConfigureOutput(model, loadCombinations);

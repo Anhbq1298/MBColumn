@@ -42,7 +42,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        model.SetPresentUnits(eUnits.kN_m_C);
+        model.SetPresentUnits(EtabsConnectionService.GetTargetPresentUnits(targetSystem));
         var warnings = new List<string>();
         var comboSet = BuildComboSet(combosFilter);
 
@@ -130,7 +130,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         EtabsDesignForceTable pierDesignForces)
     {
         var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
-        model.SetPresentUnits(eUnits.kN_m_C);
+        model.SetPresentUnits(EtabsConnectionService.GetTargetPresentUnits(targetSystem));
         return new ImportedEtabsForceDatabase
         {
             ModelFilePath       = modelFilePath,
@@ -149,8 +149,9 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
     private static (double ForceFactor, double LengthFactor, double MomentFactor) GetParseMultipliers(
         ImportedEtabsForceDatabase database, UnitSystem targetSystem)
     {
-        // Tables were loaded after SetPresentUnits(kN_m_C), so raw data is in kN and kN·m
-        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors(eUnits.kN_m_C, targetSystem);
+        // Tables were loaded after SetPresentUnits(target), so raw data is already in target units
+        var targetUnits = EtabsConnectionService.GetTargetPresentUnits(targetSystem);
+        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors(targetUnits, targetSystem);
         return (fKn, lMm, EtabsConnectionService.GetMomentFactor(fKn, lMm, targetSystem));
     }
 
