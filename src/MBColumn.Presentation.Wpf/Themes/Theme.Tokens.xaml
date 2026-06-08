@@ -4,18 +4,22 @@
     <!-- Font families used across all theme dictionaries -->
     <FontFamily x:Key="AppFontFamily">/MBColumn;component/Resources/Fonts/#Inter, Segoe UI Variable Text, Segoe UI, Arial</FontFamily>
     <FontFamily x:Key="TechnicalMonoFontFamily">Cascadia Mono, Consolas, Courier New</FontFamily>
+    <!-- Glyph font for symbol/chrome icons. Use this for all Segoe MDL2 icon glyphs. -->
+    <FontFamily x:Key="IconFontFamily">Segoe MDL2 Assets</FontFamily>
 
     <!--
         FONT SIZE SCALE — single source of truth, referenced everywhere via {StaticResource}.
         Do NOT hardcode numeric font sizes in views; use these keys instead.
 
+        Subscript    : 9    — chemical/math subscript & superscript Runs inside formulas
         Body/Helper  : 12   — all regular text, labels, table cells, helper notes
         Section      : 14   — section/card headers, subheadings
-        Formula      : 12   — SafeFormulaControl Scale attribute
+        Formula      : 14   — SafeFormulaControl Scale attribute
         Caption      : 10.5 — overlines, tiny secondary labels only
         DialogTitle  : 16   — dialog/window header titles
         WindowTitle  : 22   — main window app title
     -->
+    <sys:Double x:Key="FontSizeSubscript">9</sys:Double>
     <sys:Double x:Key="FontSizeCaption">10.5</sys:Double>
     <sys:Double x:Key="FontSizeHelper">12</sys:Double>
     <sys:Double x:Key="FontSizeBody">12</sys:Double>

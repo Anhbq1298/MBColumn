@@ -357,7 +357,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="f"/>
-                                     <Run Text="ck" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="ck" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="6"
                                             Grid.Column="0"
@@ -373,7 +373,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="f'"/>
-                                     <Run Text="c" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="c" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="6"
                                             Grid.Column="1"
@@ -389,7 +389,7 @@
                                             Grid.Column="0"
                                             Style="{StaticResource FieldLabelTextStyle}">
                                      <Run Text="gamma c (&#x03B3;"/>
-                                     <Run Text="c" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="c" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                      <Run Text=")"/>
                                  </TextBlock>
                                 <TextBlock Grid.Row="8"
@@ -404,7 +404,7 @@
                                             Grid.Column="0"
                                             Style="{StaticResource FieldLabelTextStyle}">
                                      <Run Text="alpha cc (&#x03B1;"/>
-                                     <Run Text="cc" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="cc" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                      <Run Text=")"/>
                                  </TextBlock>
                                 <TextBox Grid.Row="11"
@@ -415,13 +415,13 @@
                                             Grid.Column="0"
                                             Style="{StaticResource FieldLabelTextStyle}">
                                      <Run Text="f"/>
-                                     <Run Text="cd" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="cd" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                      <Run Text=" = &#x03B1;"/>
-                                     <Run Text="cc" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="cc" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                      <Run Text=" f"/>
-                                     <Run Text="ck" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="ck" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                      <Run Text=" / &#x03B3;"/>
-                                     <Run Text="c" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="c" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                 <TextBlock Grid.Row="12"
                                            Grid.Column="1"
@@ -437,7 +437,7 @@
                                             Grid.Column="0"
                                             Style="{StaticResource FieldLabelTextStyle}">
                                      <Run Text="E"/>
-                                     <Run Text="cm" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="cm" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                 <TextBlock Grid.Row="15"
                                            Grid.Column="1"
@@ -477,7 +477,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="f"/>
-                                     <Run Text="yk" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="yk" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="18"
                                             Grid.Column="0">
@@ -492,7 +492,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="f"/>
-                                     <Run Text="y" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="y" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                 <TextBlock Grid.Row="18"
                                            Grid.Column="1"
@@ -507,7 +507,7 @@
                                             Grid.Column="0"
                                             Style="{StaticResource FieldLabelTextStyle}">
                                      <Run Text="E"/>
-                                     <Run Text="s" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="s" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                 <TextBlock Grid.Row="20"
                                            Grid.Column="1"
@@ -534,7 +534,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="{Binding ConcreteUltimateStrainSubscript, Mode=OneWay}" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="{Binding ConcreteUltimateStrainSubscript, Mode=OneWay}" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="22"
                                             Grid.Column="0"
@@ -550,7 +550,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="cu" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="cu" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBox Grid.Row="23"
                                           Grid.Column="0"
@@ -573,7 +573,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="{Binding ConcretePeakStrainSubscript, Mode=OneWay}" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="{Binding ConcretePeakStrainSubscript, Mode=OneWay}" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBlock Grid.Row="24"
                                             Grid.Column="0"
@@ -589,7 +589,7 @@
                                          </Style>
                                      </TextBlock.Style>
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="c0" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="c0" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBox Grid.Row="25"
                                           Grid.Column="0"
@@ -603,7 +603,7 @@
                                             Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="yd" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="yd" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBox Grid.Row="27"
                                           Grid.Column="0"
@@ -617,7 +617,7 @@
                                             Style="{StaticResource FieldLabelTextStyle}"
                                             Margin="0,8,0,0">
                                      <Run Text="&#x03B5;" />
-                                     <Run Text="ud" FontSize="9" BaselineAlignment="Subscript"/>
+                                     <Run Text="ud" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                  </TextBlock>
                                  <TextBox Grid.Row="29"
                                           Grid.Column="0"
@@ -678,7 +678,7 @@
                                             Visibility="{Binding IsIrregularSection, Converter={StaticResource BoolToVisibilityConverter}}">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xE70F;"
-                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontFamily="{StaticResource IconFontFamily}"
                                                        FontSize="{StaticResource FontSizeSection}"
                                                        Margin="0,0,6,0"
                                                        VerticalAlignment="Center" />
@@ -772,12 +772,12 @@
                                     <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding PreviewIyyText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <TextBlock Grid.Row="7" Grid.Column="0" Style="{StaticResource PreviewPropertyLabelTextStyle}">
                                         <Run Text="r"/>
-                                        <Run Text="x" FontSize="9" BaselineAlignment="Subscript"/>
+                                        <Run Text="x" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                     </TextBlock>
                                     <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding PreviewIxText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <TextBlock Grid.Row="8" Grid.Column="0" Style="{StaticResource PreviewPropertyLabelTextStyle}">
                                         <Run Text="r"/>
-                                        <Run Text="y" FontSize="9" BaselineAlignment="Subscript"/>
+                                        <Run Text="y" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                     </TextBlock>
                                     <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding PreviewIyText}" Style="{StaticResource PreviewPropertyValueTextStyle}"/>
                                     <Separator Grid.Row="9" Grid.ColumnSpan="2" Background="{DynamicResource BorderGreyBrush}" Margin="0,2,0,6"/>
@@ -1060,7 +1060,7 @@
                                     ToolTip="Open Automated Rebar Design dialog to generate and evaluate candidate rebar configurations.">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE713;"
-                                               FontFamily="Segoe MDL2 Assets"
+                                               FontFamily="{StaticResource IconFontFamily}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -1652,7 +1652,7 @@
                                             </Style>
                                         </Border.Style>
                                     </Border>
-                                    <TextBlock Text="{Binding Ec2Check1Text}" FontSize="10" TextWrapping="Wrap">
+                                    <TextBlock Text="{Binding Ec2Check1Text}" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#2E7D32" />
@@ -1678,7 +1678,7 @@
                                             </Style>
                                         </Border.Style>
                                     </Border>
-                                    <TextBlock Text="{Binding Ec2Check2Text}" FontSize="10" TextWrapping="Wrap">
+                                    <TextBlock Text="{Binding Ec2Check2Text}" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#2E7D32" />
@@ -1692,7 +1692,7 @@
                                     </TextBlock>
                                 </StackPanel>
                                 <TextBlock Text="{Binding Ec2AswsXText}"
-                                           FontSize="10"
+                                           FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            TextWrapping="Wrap"
                                            Margin="12,2,0,2" />
@@ -1718,7 +1718,7 @@
                                             </Style>
                                         </Border.Style>
                                     </Border>
-                                    <TextBlock Text="{Binding Ec2Check1Text}" FontSize="10" TextWrapping="Wrap">
+                                    <TextBlock Text="{Binding Ec2Check1Text}" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#2E7D32" />
@@ -1745,7 +1745,7 @@
                                             </Style>
                                         </Border.Style>
                                     </Border>
-                                    <TextBlock Text="{Binding Ec2Check2Text}" FontSize="10" TextWrapping="Wrap">
+                                    <TextBlock Text="{Binding Ec2Check2Text}" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#2E7D32" />
@@ -1772,7 +1772,7 @@
                                             </Style>
                                         </Border.Style>
                                     </Border>
-                                    <TextBlock Text="{Binding Ec2Check3Text}" FontSize="10" TextWrapping="Wrap">
+                                    <TextBlock Text="{Binding Ec2Check3Text}" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#2E7D32" />
@@ -1786,12 +1786,12 @@
                                     </TextBlock>
                                 </StackPanel>
                                 <TextBlock Text="{Binding Ec2AswsXText}"
-                                           FontSize="10"
+                                           FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            TextWrapping="Wrap"
                                            Margin="12,2,0,2" />
                                 <TextBlock Text="{Binding Ec2AswsYText}"
-                                           FontSize="10"
+                                           FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            TextWrapping="Wrap"
                                            Margin="12,2,0,0" />
@@ -1976,7 +1976,7 @@
 
                                     <StackPanel Width="200" Margin="0,0,10,6">
                                         <TextBlock Style="{StaticResource FieldLabelTextStyle}">
-                                            <Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" — Effective creep ratio" />
+                                            <Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" — Effective creep ratio" />
                                         </TextBlock>
                                         <TextBox Text="{Binding PhiEff, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
                                                  ToolTip="&#x03C6;eff = &#x03C6;(&#x221E;,t&#x2080;) &#x00D7; M&#x2080;EQP / M&#x2080;Ed (EC2 &#x00A7;5.8.4).&#x0A;Typical range: 0.5 &#x2013; 2.5.&#x0A;Leave blank to use default A = 0.7." />
@@ -2643,7 +2643,7 @@
                                     <Border CornerRadius="4" Padding="10,8" Background="{DynamicResource PanelBackgroundBrush}" BorderBrush="{DynamicResource BorderGreyBrush}" BorderThickness="1">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="&#xE946;"
-                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontFamily="{StaticResource IconFontFamily}"
                                                        FontSize="15"
                                                        Foreground="{DynamicResource TextMutedBrush}"
                                                        Margin="0,0,8,0"
@@ -2835,7 +2835,7 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelTextStyle}"><Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" - EC2 &#x00A7;5.8.4" FontSize="9" Foreground="{DynamicResource TextMutedBrush}" /></TextBlock>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldLabelTextStyle}"><Run Text="&#x03C6;" /><Run Text="eff" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" - EC2 &#x00A7;5.8.4" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource TextMutedBrush}" /></TextBlock>
                                         <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding PhiEff, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
                                                  ToolTip="&#x03C6;eff = &#x03C6;(&#x221E;,t&#x2080;) &#x00D7; M&#x2080;EQP/M&#x2080;Ed. Typically 0&#x2013;3. Leave blank &#x2192; A = 0.7 fallback." />
                                         <TextBlock Grid.Row="2" Grid.Column="0" Style="{StaticResource HelperTextStyle}" Margin="0,2,0,0"><Run Text="{Binding AFactorDisplayText, Mode=OneWay}" Foreground="{DynamicResource AccentBlueBrush}" /></TextBlock>
@@ -3583,77 +3583,77 @@
                                            Margin="0,0,0,8" />
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Concrete gross area - A" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="c" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="c" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewAreaText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Total longitudinal rebar area - A" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="s,total" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="s,total" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewAsTotalText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Second moment of area about x-axis - I" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="xx" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="xx" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewIxxText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Second moment of area about y-axis - I" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="yy" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="yy" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewIyyText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Radius of gyration for x slenderness - i" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewIxText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Radius of gyration for y slenderness - i" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewIyText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Concrete design strength - f" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="cd" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="cd" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewFcdText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Steel design yield strength - f" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="yd" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="yd" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewFydText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Steel elastic modulus - E" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="s" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="s" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding Es, Mode=OneWay, StringFormat=F0}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Concrete secant modulus from EC2 - E" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="cm" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="cm" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewEcmText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Effective depth used for M" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=" curvature - d" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewDxText, Mode=OneWay}" />
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                     <Run Text="Effective depth used for M" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=" curvature - d" Foreground="{DynamicResource AccentBlueBrush}" />
-                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                    <Run Text="y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                     <Run Text="{Binding PreviewDyText, Mode=OneWay}" />
                                 </TextBlock>
@@ -3727,34 +3727,34 @@
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                             <Run Text="Imperfection eccentricity - e" Foreground="{DynamicResource AccentBlueBrush}" />
-                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                             <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                             <Run Text="e" />
-                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" = l" />
-                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" / 400. It is converted to N" />
-                                            <Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="Ed" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" &#x00D7; e" />
-                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="i" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" and included in the first-order end moments before M" />
-                                            <Run Text="01" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" and M" />
-                                            <Run Text="02" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" are selected." />
                                         </TextBlock>
                                         <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0">
                                             <Run Text="Minimum eccentricity - e" Foreground="{DynamicResource AccentBlueBrush}" />
-                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                             <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                             <Run Text="e" />
-                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text="{Binding MinimumEccentricityRuleText, Mode=OneWay}" />
-                                            <Run Text="used" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="used" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" is never less than N" />
-                                            <Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="Ed" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text=" &#x00D7; e" />
-                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="9" />
+                                            <Run Text="0" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                             <Run Text="." />
                                         </TextBlock>
                                     </StackPanel>
@@ -3857,23 +3857,23 @@
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Effective length factors - kx, ky: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="User-defined restraint factors. The app calculates l" />
-                                        <Run Text="0x" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="0x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = kx &#x00D7; L and l" />
-                                        <Run Text="0y" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="0y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = ky &#x00D7; L." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Slenderness ratio - &#x03BB;: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Measures effective length against section stiffness radius. &#x03BB;x = l" />
-                                        <Run Text="0x" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="0x" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" / ix and &#x03BB;y = l" />
-                                        <Run Text="0y" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="0y" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" / iy." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Axial load ratio - n: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Compression demand level. n = N" />
-                                        <Run Text="Ed" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="Ed" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" / (Ac &#x00D7; fcd)." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
@@ -3883,86 +3883,86 @@
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Reinforcement factor - B: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Increases &#x03BB;lim based on longitudinal steel. B = &#x221A;(1 + 2&#x03C9;), with &#x03C9; = A" />
-                                        <Run Text="s,total" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="s,total" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" &#x00D7; fyd / (Ac &#x00D7; fcd)." />
                                     </TextBlock>
-                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Moment shape factor - C: " Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="Accounts for the first-order moment diagram between top and bottom. C = 1.7 - r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="9" /><Run Text=", where r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" = M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" / M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="9" /><Run Text=". The sign is preserved: positive r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" means same-curvature bending, negative r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="9" /><Run Text=" means reverse-curvature bending. Smaller C lowers &#x03BB;lim; larger C raises &#x03BB;lim." /></TextBlock>
+                                    <TextBlock Style="{StaticResource ParameterMeaningTextStyle}"><Run Text="Moment shape factor - C: " Foreground="{DynamicResource AccentBlueBrush}" /><Run Text="Accounts for the first-order moment diagram between top and bottom. C = 1.7 - r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=", where r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" = M" /><Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" / M" /><Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=". The sign is preserved: positive r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" means same-curvature bending, negative r" /><Run Text="m" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" /><Run Text=" means reverse-curvature bending. Smaller C lowers &#x03BB;lim; larger C raises &#x03BB;lim." /></TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Slenderness limit - &#x03BB;lim: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Limit used to decide whether second-order moment is required. &#x03BB;lim = 20ABC / &#x221A;n." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="End moments - M" Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text=" and M" Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="First-order end moments including imperfection. M" />
-                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" is the larger design end moment; M" />
-                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" is the smaller signed companion." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Branch - stocky/slender: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="If &#x03BB; &lt; &#x03BB;lim, second-order moment is not required and M" />
-                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = 0. If &#x03BB; &#x2265; &#x03BB;lim, the nominal curvature method is applied." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Kr factor - K" Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <Run Text="r" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="r" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Corrects curvature for axial load level. K" />
-                                        <Run Text="r" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="r" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = (n" />
-                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" - n) / (n" />
-                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" - 0.4), limited to 1, with n" />
-                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="u" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = 1 + &#x03C9;." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Creep curvature factor - K" Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <Run Text="&#x03C6;" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="&#x03C6;" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Amplifies curvature for creep. K" />
-                                        <Run Text="&#x03C6;" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="&#x03C6;" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = max(1, 1 + &#x03B2;&#x03C6;eff), where &#x03B2; = 0.35 + fck / 200 - &#x03BB; / 150." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Second-order moment - M" Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Additional moment from nominal curvature when &#x03BB; &#x2265; &#x03BB;lim. If &#x03BB; &lt; &#x03BB;lim, M" />
-                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = 0." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}">
                                         <Run Text="Equivalent first-order moment - M" Foreground="{DynamicResource AccentBlueBrush}" />
-                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="9" Foreground="{DynamicResource AccentBlueBrush}" />
+                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text=": " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Equivalent moment used with nominal curvature. M" />
-                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" = max(0.6M" />
-                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" + 0.4M" />
-                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=", 0.4M" />
-                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text="); the design sign follows the governing first-order end moment." />
                                     </TextBlock>
                                     <TextBlock Style="{StaticResource ParameterMeaningTextStyle}" Margin="0">
                                         <Run Text="Moment used - Mx Used / My Used: " Foreground="{DynamicResource AccentBlueBrush}" />
                                         <Run Text="Final amplified design moments passed to the existing PMM solver. It is selected from M" />
-                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="02" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=", |M" />
-                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="0e" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text="| + M" />
-                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="2" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=", M" />
-                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="9" />
+                                        <Run Text="01" BaselineAlignment="Subscript" FontSize="{StaticResource FontSizeSubscript}" />
                                         <Run Text=" + 0.5M" />
                                         <Run Text="2" BaselineAlignment="Subscript" FontSize="9" />
                                         <Run Text=", and M" />

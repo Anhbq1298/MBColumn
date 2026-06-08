@@ -710,7 +710,7 @@
                                                             ToolTip="Delete section"
                                                             Command="{Binding DataContext.DeleteMbColumnSectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}">
-                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
+                                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="{StaticResource FontSizeBody}"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <Button DockPanel.Dock="Right"
@@ -718,7 +718,7 @@
                                                             ToolTip="Clear all items from section"
                                                             Command="{Binding ClearSectionCommand}"
                                                             Margin="0,0,4,0">
-                                                        <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
+                                                        <TextBlock Text="&#xE894;" FontFamily="{StaticResource IconFontFamily}" FontSize="{StaticResource FontSizeBody}"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <StackPanel DockPanel.Dock="Right"
@@ -757,7 +757,7 @@
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </Button.Style>
-                                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                        <TextBlock Text="&#xE70F;" FontFamily="{StaticResource IconFontFamily}" FontSize="10"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <TextBlock>
@@ -791,7 +791,7 @@
 
                                                 <!-- Rename error message -->
                                                 <TextBlock Text="{Binding RenameError}"
-                                                           FontSize="10"
+                                                           FontSize="{StaticResource FontSizeCaption}"
                                                            Foreground="#C62828"
                                                            Margin="0,2,0,0"
                                                            TextWrapping="Wrap">

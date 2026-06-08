@@ -199,7 +199,7 @@
     </UserControl.Resources>
 
     <!-- 3-column grid: col0=2D MM/section-info, col1=2D PM/tables, col2=3D PMM/tables -->
-    <Grid Margin="4" TextElement.FontSize="11">
+    <Grid Margin="4" TextElement.FontSize="{StaticResource FontSizeBody}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
@@ -337,11 +337,11 @@
                             <Separator Margin="2,3" Background="#20000000" Height="1" />
                             <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="PM at θ = 0°"
                                     Command="{Binding SetTheta0Command}">
-                                <TextBlock Text="0°" FontSize="10" FontWeight="SemiBold" />
+                                <TextBlock Text="0°" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" />
                             </Button>
                             <Button Style="{StaticResource ChartIconButtonStyle}" ToolTip="PM at θ = 90°"
                                     Margin="0,2,0,0" Command="{Binding SetTheta90Command}">
-                                <TextBlock Text="90°" FontSize="9" FontWeight="SemiBold" />
+                                <TextBlock Text="90°" FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold" />
                             </Button>
                             <Separator Margin="2,3" Background="#20000000" Height="1" />
                             <ToggleButton Style="{StaticResource ChartIconToggleStyle}" ToolTip="Show grid"
@@ -571,7 +571,7 @@
                             Style="{StaticResource CompactButtonStyle}"
                             Padding="8,2"
                             MinHeight="22"
-                            FontSize="10"
+                            FontSize="{StaticResource FontSizeCaption}"
                             Command="{Binding ExportAllPointsCommand}" />
                     <TextBlock Text="Special Control Points (7 Points)"
                                FontWeight="SemiBold"

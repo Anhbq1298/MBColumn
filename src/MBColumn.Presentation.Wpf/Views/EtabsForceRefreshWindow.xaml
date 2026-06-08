@@ -105,7 +105,7 @@
                         <RadioButton Content="Element Forces"
                                      IsChecked="{Binding UseElementForces}" />
                         <TextBlock Text="Design Forces are ETABS design table forces. Element Forces are analysis output forces."
-                                   FontSize="10"
+                                   FontSize="{StaticResource FontSizeCaption}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,0" />

@@ -29,10 +29,10 @@
         <Border Grid.Row="0" Background="{DynamicResource PrimaryNavyBrush}" Padding="20,14">
             <StackPanel>
                 <TextBlock Text="Batch Print PDF Reports"
-                           FontSize="15" FontWeight="Bold"
+                           FontSize="{StaticResource FontSizeDialogTitle}" FontWeight="Bold"
                            Foreground="White"/>
                 <TextBlock Text="Select sections and choose an output format below."
-                           FontSize="10" Foreground="#B0C4D8" Margin="0,3,0,0"/>
+                           FontSize="{StaticResource FontSizeCaption}" Foreground="#B0C4D8" Margin="0,3,0,0"/>
             </StackPanel>
         </Border>
 
@@ -57,11 +57,11 @@
                             <Button Content="All"
                                     Command="{Binding SelectAllCommand}"
                                     Style="{StaticResource CompactButtonStyle}"
-                                    Padding="8,2" FontSize="10" Margin="0,0,4,0"/>
+                                    Padding="8,2" FontSize="{StaticResource FontSizeCaption}" Margin="0,0,4,0"/>
                             <Button Content="None"
                                     Command="{Binding ClearAllCommand}"
                                     Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="8,2" FontSize="10"/>
+                                    Padding="8,2" FontSize="{StaticResource FontSizeCaption}"/>
                         </StackPanel>
                     </DockPanel>
 
@@ -149,7 +149,7 @@
                                        FontSize="{StaticResource FontSizeBody}"
                                        Foreground="{DynamicResource TextDarkBrush}"/>
                             <TextBlock Text="Group subfolders inside the output folder."
-                                       FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                       FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
@@ -161,7 +161,7 @@
                                        FontSize="{StaticResource FontSizeBody}"
                                        Foreground="{DynamicResource TextDarkBrush}"/>
                             <TextBlock Text="All PDFs placed directly in the output folder."
-                                       FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                       FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
@@ -173,13 +173,13 @@
                                        FontSize="{StaticResource FontSizeBody}"
                                        Foreground="{DynamicResource TextDarkBrush}"/>
                             <TextBlock Text="All reports merged into one PDF with bookmarks."
-                                       FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                       FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
                     <!-- Status text -->
                     <TextBlock Text="{Binding StatusText}"
-                               FontSize="10"
+                               FontSize="{StaticResource FontSizeCaption}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap"
                                Margin="0,18,0,0"
@@ -225,7 +225,7 @@
                         Margin="0,0,8,0"/>
                 <TextBlock Text="{Binding StatusText}"
                            VerticalAlignment="Center"
-                           FontSize="10"
+                           FontSize="{StaticResource FontSizeCaption}"
                            Foreground="{DynamicResource TextMutedBrush}"
                            TextTrimming="CharacterEllipsis"/>
             </DockPanel>

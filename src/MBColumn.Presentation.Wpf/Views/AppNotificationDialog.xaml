@@ -37,7 +37,7 @@
                             BorderBrush="Transparent"
                             ToolTip="Close">
                         <TextBlock Text="&#xE711;"
-                                   FontFamily="Segoe MDL2 Assets"
+                                   FontFamily="{StaticResource IconFontFamily}"
                                    FontSize="10"
                                    Foreground="White"
                                    HorizontalAlignment="Center"
@@ -64,7 +64,7 @@
                         CornerRadius="21"
                         VerticalAlignment="Top">
                     <TextBlock x:Name="IconTextBlock"
-                               FontFamily="Segoe MDL2 Assets"
+                               FontFamily="{StaticResource IconFontFamily}"
                                FontSize="20"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />

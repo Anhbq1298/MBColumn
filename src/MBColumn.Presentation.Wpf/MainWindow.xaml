@@ -156,7 +156,7 @@
                                     BorderBrush="Transparent"
                                     MinHeight="0"
                                     Cursor="Hand">
-                                <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
+                                <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFontFamily}" FontSize="{StaticResource FontSizeBody}"
                                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 <Button.ContextMenu>
                                     <ContextMenu>
@@ -178,7 +178,7 @@
                                     BorderBrush="Transparent"
                                     MinHeight="0"
                                     Cursor="Hand">
-                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="11"
                                            Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Button>
                             <TextBlock Text="{Binding Explorer.ProjectName}"
@@ -384,7 +384,7 @@
                                                         <Style TargetType="Border" BasedOn="{StaticResource ExplorerStatusBadgeStyle}" />
                                                     </Border.Style>
                                                     <TextBlock Text="{Binding StatusText}"
-                                                               FontSize="9"
+                                                               FontSize="{StaticResource FontSizeCaption}"
                                                                FontWeight="SemiBold"
                                                                Foreground="{DynamicResource TextDarkBrush}" />
                                                 </Border>
@@ -448,7 +448,7 @@
                                     Margin="0,0,6,0">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE768;"
-                                               FontFamily="Segoe MDL2 Assets"
+                                               FontFamily="{StaticResource IconFontFamily}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -490,7 +490,7 @@
                                     Margin="0,0,6,0">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE749;"
-                                               FontFamily="Segoe MDL2 Assets"
+                                               FontFamily="{StaticResource IconFontFamily}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -508,7 +508,7 @@
                                     Margin="0,0,6,0">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE943;"
-                                               FontFamily="Segoe MDL2 Assets"
+                                               FontFamily="{StaticResource IconFontFamily}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -525,7 +525,7 @@
                                     Padding="12,5">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE8FD;"
-                                               FontFamily="Segoe MDL2 Assets"
+                                               FontFamily="{StaticResource IconFontFamily}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
@@ -554,7 +554,7 @@
                             <StackPanel>
                                 <TextBlock Text="No section selected."
                                            Style="{StaticResource SectionTitleTextStyle}"
-                                           FontSize="18"
+                                           FontSize="{StaticResource FontSizeDialogTitle}"
                                            TextAlignment="Center" />
                                 <TextBlock Text="Create or select a section from the Project Explorer to begin."
                                            Style="{StaticResource HelperTextStyle}"
@@ -597,7 +597,7 @@
                             <StackPanel>
                                 <TextBlock Text="No section selected."
                                            Style="{StaticResource SectionTitleTextStyle}"
-                                           FontSize="18"
+                                           FontSize="{StaticResource FontSizeDialogTitle}"
                                            TextAlignment="Center" />
                                 <TextBlock Text="Create or select a section from the Project Explorer to review results."
                                            Style="{StaticResource HelperTextStyle}"
@@ -616,7 +616,7 @@
                             <StackPanel>
                                 <TextBlock Text="No calculation result yet."
                                            Style="{StaticResource SectionTitleTextStyle}"
-                                           FontSize="18"
+                                           FontSize="{StaticResource FontSizeDialogTitle}"
                                            TextAlignment="Center" />
                                 <TextBlock Text="Click Calculate to generate the PMM capacity surface and demand/capacity ratio."
                                            Style="{StaticResource HelperTextStyle}"
@@ -635,7 +635,7 @@
                             <StackPanel>
                                 <TextBlock Text="Input has changed after the last calculation."
                                            Style="{StaticResource SectionTitleTextStyle}"
-                                           FontSize="18"
+                                           FontSize="{StaticResource FontSizeDialogTitle}"
                                            TextAlignment="Center"
                                            TextWrapping="Wrap" />
                                 <TextBlock Text="Recalculate to update the result."
@@ -711,7 +711,7 @@
                     <Border Width="28" Height="28" CornerRadius="14"
                             Background="#FFFFFF" Opacity="0.22"
                             VerticalAlignment="Center" />
-                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFontFamily}"
                                FontSize="16" Foreground="White"
                                VerticalAlignment="Center"
                                Margin="-22,0,0,0"
