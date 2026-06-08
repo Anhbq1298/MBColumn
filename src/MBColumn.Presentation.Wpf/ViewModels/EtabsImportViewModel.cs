@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs.Etabs;
+using MBColumn.Application.DTOs.Etabs.AutoGrouping;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Application.Services.Etabs;
@@ -9,6 +10,7 @@ using MBColumn.Domain.Units;
 using MBColumn.Presentation.Wpf.Collections;
 using MBColumn.Presentation.Wpf.Commands;
 using MBColumn.Presentation.Wpf.Services;
+using MBColumn.Presentation.Wpf.ViewModels.AutoGrouping;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -55,6 +57,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         pierBoundaryCache = new(StringComparer.OrdinalIgnoreCase);
     private bool pierGroupsLoaded;
     private readonly Dictionary<string, int> storyOrderMap = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, double> storyElevationMap = new(StringComparer.OrdinalIgnoreCase);
+    private readonly EtabsAutoGroupingApplyService autoGroupingApplyService = new();
     private readonly RelayCommand connectCommand;
     private readonly RelayCommand disconnectCommand;
     private readonly RelayCommand cancelCommand;
@@ -63,6 +67,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private readonly RelayCommand addTargetGroupCommand;
     private readonly RelayCommand applyImportCommand;
     private readonly RelayCommand createMbColumnSectionCommand;
+    private readonly RelayCommand autoGroupColumnsCommand;
     private readonly RelayCommand<MbColumnSectionViewModel> assignToSectionCommand;
     private readonly RelayCommand<MbColumnSectionViewModel> deleteMbColumnSectionCommand;
     private readonly AsyncRelayCommand buildForceCacheCommand;
@@ -226,6 +231,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         addTargetGroupCommand = new RelayCommand(AddTargetGroup);
         applyImportCommand = new RelayCommand(ApplyImport, () => MbColumnSections.Any(g => g.Items.Count > 0));
         createMbColumnSectionCommand = new RelayCommand(CreateNewMbColumnSection);
+        autoGroupColumnsCommand = new RelayCommand(OpenAutoGroupingDialog, CanAutoGroupColumns);
         assignToSectionCommand = new RelayCommand<MbColumnSectionViewModel>(AssignSelectedItemsToSection);
         deleteMbColumnSectionCommand = new RelayCommand<MbColumnSectionViewModel>(DeleteMbColumnSection);
         buildForceCacheCommand = new AsyncRelayCommand(BuildForceCacheAsync,
@@ -246,6 +252,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     /// <summary>Set by the View to prompt the user for a group name. Returns null if cancelled.</summary>
     public Func<string, string?>? RequestGroupName { get; set; }
+
+    /// <summary>Set by the View to show the Auto Grouping dialog. Returns null if cancelled.</summary>
+    public Func<AutoGroupColumnsDialogInput, AutoGroupingResult?>? RequestAutoGrouping { get; set; }
 
     public EtabsImportDialogResult? ImportResult { get; private set; }
     public BulkObservableCollection<EtabsColumnImportRowViewModel> Columns { get; }
@@ -291,6 +300,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public ICommand AddTargetGroupCommand => addTargetGroupCommand;
     public ICommand ApplyImportCommand => applyImportCommand;
     public ICommand CreateMbColumnSectionCommand => createMbColumnSectionCommand;
+    public ICommand AutoGroupColumnsCommand => autoGroupColumnsCommand;
     public ICommand AssignToSectionCommand => assignToSectionCommand;
     public ICommand DeleteMbColumnSectionCommand => deleteMbColumnSectionCommand;
     public ICommand BuildForceCacheCommand => buildForceCacheCommand;
@@ -857,10 +867,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IsConnected = true;
         ConnectionStatus = result.Message;
 
-        storyOrderMap.Clear();
-        var storyElevations = columnImportService.GetStoryElevations();
-        for (int i = 0; i < storyElevations.Count; i++)
-            storyOrderMap[storyElevations[i].Name] = i;
+        LoadStoryOrder(columnImportService.GetStoryElevations());
 
         ResetColumnFilters();
         RebuildUniqueSectionOptions();
@@ -1128,10 +1135,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         IsConnected      = true;
         ConnectionStatus = "Connected to ETABS.";
 
-        storyOrderMap.Clear();
-        var storyElevations = columnImportService.GetStoryElevations();
-        for (int i = 0; i < storyElevations.Count; i++)
-            storyOrderMap[storyElevations[i].Name] = i;
+        LoadStoryOrder(columnImportService.GetStoryElevations());
 
         ResetColumnFilters();
         RebuildUniqueSectionOptions();
@@ -1199,10 +1203,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ConnectionStatus = "Reloading story definitions...";
         try
         {
-            storyOrderMap.Clear();
             var storyElevations = columnImportService.GetStoryElevations();
-            for (int i = 0; i < storyElevations.Count; i++)
-                storyOrderMap[storyElevations[i].Name] = i;
+            LoadStoryOrder(storyElevations);
             RebuildStoryOptions();
             RebuildStoryFilters();
             ConnectionStatus = $"Story definitions reloaded — {storyElevations.Count} stories.";
@@ -1315,6 +1317,81 @@ public sealed class EtabsImportViewModel : ViewModelBase
         applyImportCommand.RaiseCanExecuteChanged();
     }
 
+    private bool CanAutoGroupColumns()
+        => IsConnected && Columns.Any(c => !c.IsIrregular);
+
+    private void OpenAutoGroupingDialog()
+    {
+        if (RequestAutoGrouping is null)
+            return;
+
+        var result = RequestAutoGrouping(BuildAutoGroupingDialogInput());
+        if (result is null || result.HasErrors || result.Groups.Count == 0)
+            return;
+
+        var createdSections = autoGroupingApplyService.Apply(
+            result,
+            Columns,
+            MbColumnSections,
+            TargetGroups,
+            OnMbColumnSectionChanged);
+
+        if (createdSections.Count > 0)
+            SelectedMbColumnSection = createdSections[0];
+
+        FilteredColumns.Refresh();
+        BuildSectionMappings();
+        RaiseImportSummary();
+        applyImportCommand.RaiseCanExecuteChanged();
+        autoGroupColumnsCommand.RaiseCanExecuteChanged();
+    }
+
+    private AutoGroupColumnsDialogInput BuildAutoGroupingDialogInput()
+    {
+        var columnDtos = Columns
+            .Where(c => !c.IsIrregular)
+            .Select(c => new EtabsColumnImportDto(
+                c.ObjectName,
+                c.Pier,
+                c.Story,
+                c.Label,
+                c.UniqueSection,
+                c.EtabsSectionName,
+                c.Material,
+                c.SectionType,
+                c.Width,
+                c.Height,
+                c.Diameter,
+                c.LengthMm,
+                c.LinkedSection,
+                c.Status))
+            .ToList();
+
+        var stories = columnDtos
+            .Select(c => c.StoryName)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(s => storyOrderMap.TryGetValue(s, out var idx) ? idx : int.MaxValue)
+            .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
+            .Select((storyName, fallbackIndex) => new AutoGroupingStory(
+                storyName,
+                storyElevationMap.TryGetValue(storyName, out var elevation) ? elevation : fallbackIndex,
+                storyOrderMap.TryGetValue(storyName, out var sortIndex) ? sortIndex : fallbackIndex))
+            .OrderBy(s => s.SortIndex)
+            .ToList();
+
+        var reservedNames = existingSectionNames
+            .Concat(MbColumnSections.Select(s => s.SectionName))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return new AutoGroupColumnsDialogInput
+        {
+            Columns = columnDtos,
+            Stories = stories,
+            ReservedSectionNames = reservedNames
+        };
+    }
+
     private void ApplyImport()
     {
         if (ForceRows.Count == 0
@@ -1412,6 +1489,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var importFy = selectedImportRebarGrade?.StressValue(selectedImportUnitSystem) ?? 420;
         var importEs = selectedImportRebarGrade?.ModulusValue(selectedImportUnitSystem) ?? 200000;
         var rawLengthGroup = group.Items.FirstOrDefault(i => i.LengthMm > 0)?.LengthMm ?? 0;
+        var groupStoryRange = ResolveGroupStoryRange(group);
         // MemberLengthL in the snapshot is stored in section-size unit (mm for Metric, inches for Imperial)
         var importMemberLength = rawLengthGroup > 0
             ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthGroup : rawLengthGroup / 25.4)
@@ -1497,10 +1575,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 UniqueSectionDisplayName = sourceColumn.UniqueSection,
                 TargetGroupName = group.SelectedTargetGroup?.GroupName ?? "",
                 TargetGroupId = group.SelectedTargetGroup?.GroupId,
-                TierName = group.SectionName,
-                StoryFrom = group.Items.Select(i => i.Story).OrderBy(s => s).FirstOrDefault() ?? "",
-                StoryTo = group.Items.Select(i => i.Story).OrderBy(s => s).LastOrDefault() ?? "",
-                LabelFilter = "",
+                TierName = group.AutoGroupingMetadata?.TierName ?? group.SectionName,
+                StoryFrom = group.AutoGroupingMetadata?.FromStory ?? groupStoryRange.FromStory,
+                StoryTo = group.AutoGroupingMetadata?.ToStory ?? groupStoryRange.ToStory,
+                LabelFilter = group.AutoGroupingMetadata?.LabelFilter ?? "",
                 SourceObjects = group.Items.Select(i => new EtabsSourceObjectRefDto
                 {
                     ObjectName = i.ObjectName,
@@ -1521,6 +1599,24 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         return snapshot;
     }
+
+    private (string FromStory, string ToStory) ResolveGroupStoryRange(MbColumnSectionViewModel group)
+    {
+        var orderedStories = group.Items
+            .Select(item => item.Story)
+            .Where(story => !string.IsNullOrWhiteSpace(story))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(StorySortIndex)
+            .ThenBy(story => story, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return orderedStories.Count == 0
+            ? ("", "")
+            : (orderedStories[0], orderedStories[^1]);
+    }
+
+    private int StorySortIndex(string story)
+        => storyOrderMap.TryGetValue(story, out var index) ? index : int.MaxValue;
 
     private Application.DTOs.Etabs.EtabsSectionBinding BuildEtabsSectionBinding(
         MbColumnSectionViewModel group,
@@ -1893,13 +1989,27 @@ public sealed class EtabsImportViewModel : ViewModelBase
         void OnStorySelectionChanged() { TierObjectCandidatesView.Refresh(); UpdateDefaultTierName(); }
         for (int i = ascending.Count - 1; i >= 0; i--)
         {
-            var vm = new EtabsStoryOptionViewModel(ascending[i], 0, i, OnStorySelectionChanged);
+            var storyName = ascending[i];
+            var elevation = storyElevationMap.TryGetValue(storyName, out var value) ? value : i;
+            var vm = new EtabsStoryOptionViewModel(storyName, elevation, i, OnStorySelectionChanged);
             vm.IsSelected = true;
             StoryOptions.Add(vm);
         }
 
         Raise(nameof(StoryFrom));
         Raise(nameof(StoryTo));
+    }
+
+    private void LoadStoryOrder(IReadOnlyList<(string Name, double Elevation)> storyElevations)
+    {
+        storyOrderMap.Clear();
+        storyElevationMap.Clear();
+
+        for (int i = 0; i < storyElevations.Count; i++)
+        {
+            storyOrderMap[storyElevations[i].Name] = i;
+            storyElevationMap[storyElevations[i].Name] = storyElevations[i].Elevation;
+        }
     }
 
     private void ApplyTierObjectFilter()
@@ -3297,6 +3407,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         disconnectCommand.RaiseCanExecuteChanged();
         reloadStoryDefinitionsCommand.RaiseCanExecuteChanged();
         reloadColumnConnectivityCommand.RaiseCanExecuteChanged();
+        autoGroupColumnsCommand.RaiseCanExecuteChanged();
         applyImportCommand.RaiseCanExecuteChanged();
         selectAllCombosCommand.RaiseCanExecuteChanged();
         clearAllCombosCommand.RaiseCanExecuteChanged();

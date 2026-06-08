@@ -100,6 +100,21 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **MbColumnSectionImport** | Represents the MbColumnSectionImport class. Key properties: SectionName, SelectedItems. | `MbColumnSectionImport.cs` |
 | `class` | **MbColumnSectionImportItem** | Represents the MbColumnSectionImportItem class. Key properties: ObjectType, Story, Label, Key. | `MbColumnSectionImportItem.cs` |
 
+### DTOs/Etabs/AutoGrouping
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **AutoGroupedColumnSection** | Represents the AutoGroupedColumnSection class. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupedColumnSection.cs` |
+| `class` | **AutoGroupingPreviewRow** | Data structure representing a row for AutoGroupingPreview. Key properties: TierName, StoryRange, ColumnLabel, MbColumnSectionName. | `AutoGroupingPreviewRow.cs` |
+| `class` | **AutoGroupingResourceKeys** | Represents the AutoGroupingResourceKeys class. | `AutoGroupingResourceKeys.cs` |
+| `class` | **AutoGroupingResult** | Encapsulates the result of AutoGrouping operations. Key properties: Groups, PreviewRows, ValidationMessages, HasErrors. | `AutoGroupingResult.cs` |
+| `class` | **AutoGroupingSectionMetadata** | Represents the AutoGroupingSectionMetadata class. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupingSectionMetadata.cs` |
+| `record` | **AutoGroupingStory** | Represents the AutoGroupingStory record. | `AutoGroupingStory.cs` |
+| `class` | **AutoGroupingTier** | Represents the AutoGroupingTier class. Key methods: Clone. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupingTier.cs` |
+| `class` | **AutoGroupingValidationMessage** | Represents the AutoGroupingValidationMessage class. Key properties: Severity, MessageKey, MessageArguments. | `AutoGroupingValidationMessage.cs` |
+| `enum` | **AutoGroupingValidationSeverity** | Enumeration defining states/types for AutoGroupingValidationSeverity. | `AutoGroupingValidationMessage.cs` |
+| `record` | **ColumnAutoGroupingRequest** | Represents the ColumnAutoGroupingRequest record. | `ColumnAutoGroupingRequest.cs` |
+
 ### DTOs/Etabs/Forces
 
 | Type | Name | Description | File |
@@ -316,6 +331,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **ColumnAutoGroupingService** | Provides service logic and operations for ColumnAutoGrouping. Key methods: Build. | `ColumnAutoGroupingService.cs` |
+| `class` | **ColumnGroupingValidator** | Validation logic for ColumnGrouping. Key methods: ValidateSetup. | `ColumnGroupingValidator.cs` |
 | `class` | **EtabsForceCacheIdentity** | Represents the EtabsForceCacheIdentity class. Key properties: ForceSource, ObjectType, SelectedCombos, Model. | `IEtabsForceCacheStore.cs` |
 | `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Success, Message, Preview. | `IEtabsForceRefreshService.cs` |
 | `class` | **EtabsForceScope** | Represents the EtabsForceScope class. Key properties: Bindings, LoadCombinations, ForceSource, ImportTop. | `IEtabsForceSelectionService.cs` |
@@ -340,6 +357,10 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `interface` | **IEtabsSectionImportMapper** | Maps data structures for IEtabsSectionImport. | `IEtabsSectionImportMapper.cs` |
 | `interface` | **IImportedEtabsForceCache** | Defines the contract for IImportedEtabsForceCache. | `IImportedEtabsForceCache.cs` |
 | `interface` | **IIrregularPierGeometryBuilder** | Defines the contract for IIrregularPierGeometryBuilder. | `IIrregularPierGeometryBuilder.cs` |
+| `class` | **LabelFilterMatcher** | Represents the LabelFilterMatcher class. Key methods: Matches. | `ColumnAutoGroupingService.cs` |
+| `record` | **PreliminaryGroupKey** | Represents the PreliminaryGroupKey record. | `ColumnAutoGroupingService.cs` |
+| `class` | **StoryTierResolver** | Represents the StoryTierResolver class. Key methods: TryGetStoryIndex, ResolveFirstTier, IsCovered. Key properties: Ranges. | `StoryTierResolver.cs` |
+| `record` | **TierRange** | Represents the TierRange record. Key methods: Contains. | `StoryTierResolver.cs` |
 
 ### Services/Geometry
 
@@ -817,6 +838,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **AutoDesignRebarDialogService** | Provides service logic and operations for AutoDesignRebarDialog. Key methods: ShowDialog. | `AutoDesignRebarDialogService.cs` |
 | `class` | **ControlPointExportDialogService** | Provides service logic and operations for ControlPointExportDialog. Key methods: ShowDialog. | `ControlPointExportDialogService.cs` |
 | `class` | **DxfImportDialogService** | Provides service logic and operations for DxfImportDialog. Key methods: ShowDialog. | `DxfImportDialogService.cs` |
+| `class` | **EtabsAutoGroupingApplyService** | Provides service logic and operations for EtabsAutoGroupingApply. Key methods: Apply. | `EtabsAutoGroupingApplyService.cs` |
 | `class` | **EtabsForceRefreshDialogService** | Provides service logic and operations for EtabsForceRefreshDialog. Key methods: ShowDialog. | `EtabsForceRefreshDialogService.cs` |
 | `record` | **EtabsImportDialogResult** | Encapsulates the result of EtabsImportDialog operations. | `EtabsImportDialogResult.cs` |
 | `class` | **EtabsImportDialogService** | Provides service logic and operations for EtabsImportDialog. Key methods: ShowDialog. | `EtabsImportDialogService.cs` |
@@ -836,6 +858,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **RecentProjectsService** | Provides service logic and operations for RecentProjects. Key methods: GetRecent, ClearRecent, AddRecent. | `RecentProjectsService.cs` |
 | `class` | **ReportDiagramPngRenderer** | Represents the ReportDiagramPngRenderer class. Key methods: RenderDataUri. | `ReportDiagramPngRenderer.cs` |
 | `class` | **WpfMathLatexRenderer** | Represents the WpfMathLatexRenderer class. Key methods: RenderToPng. | `WpfMathLatexRenderer.cs` |
+| `class` | **WpfResourceText** | Represents the WpfResourceText class. Key methods: Get, Format. | `WpfResourceText.cs` |
 
 ### ViewModels
 
@@ -893,7 +916,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **MaterialLibraryType** | Enumeration defining states/types for MaterialLibraryType. | `InputViewModel.cs` |
 | `class` | **MbColumnMappedForceRowViewModel** | Represents the MbColumnMappedForceRowViewModel class. Key properties: MbColumnSectionName, CaseName, ObjectType, Story. | `MbColumnMappedForceRowViewModel.cs` |
 | `class` | **MbColumnSectionSummaryViewModel** | Represents the MbColumnSectionSummaryViewModel class. Key properties: SectionName, ObjectType, SelectedItems, MatchedForceRows. | `MbColumnSectionSummaryViewModel.cs` |
-| `class` | **MbColumnSectionViewModel** | Represents the MbColumnSectionViewModel class. Key methods: AddItem, RemoveItem. Key properties: Items, SectionName, EditName, IsRenaming. | `MbColumnSectionViewModel.cs` |
+| `class` | **MbColumnSectionViewModel** | Represents the MbColumnSectionViewModel class. Key methods: AddItem, AddItems, RemoveItem, RemoveItems. Key properties: Items, SectionName, EditName, IsRenaming. | `MbColumnSectionViewModel.cs` |
 | `class` | **PM3DViewModel** | Represents the PM3DViewModel class. Key methods: Load. Key properties: SurfacePoints, SpecialCapacityPoints, SurfaceMesh, WireframeLines. | `PM3DViewModel.cs` |
 | `class` | **PMDiagramViewModel** | Represents the PMDiagramViewModel class. Key methods: LoadPmAngle. Key properties: DiagramTitle, XAxisLabel, YAxisLabel, CapacityPoints. | `PMDiagramViewModel.cs` |
 | `class` | **PolylineDraft** | Represents the PolylineDraft class. Key methods: Clear. Key properties: IsActive. | `PolylineDraft.cs` |
@@ -930,6 +953,14 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ViewportOptionViewModel** | Represents the ViewportOptionViewModel class. Key properties: Type, DisplayName, IsSelected. | `ViewportOptionViewModel.cs` |
 | `record` | **in** | Represents the in record. Key methods: RefreshMoveToGroupOptions, GetSelectedColumnIds. | `ProjectExplorerViewModel.cs` |
 
+### ViewModels/AutoGrouping
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **AutoGroupColumnsByTierViewModel** | Represents the AutoGroupColumnsByTierViewModel class. Key properties: Tiers, StoryNames, PreviewRows, ValidationMessages. | `AutoGroupColumnsByTierViewModel.cs` |
+| `class` | **AutoGroupColumnsDialogInput** | Represents the AutoGroupColumnsDialogInput class. Key properties: Columns, Stories, ReservedSectionNames. | `AutoGroupColumnsDialogInput.cs` |
+| `class` | **AutoGroupingValidationMessageViewModel** | Represents the AutoGroupingValidationMessageViewModel class. Key properties: Severity, SeverityDisplayText, Message. | `AutoGroupingValidationMessageViewModel.cs` |
+
 ### ViewModels/AutomatedRebarDesign
 
 | Type | Name | Description | File |
@@ -947,6 +978,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `class` | **AddSectionDialog** | Represents the AddSectionDialog class. Key properties: SectionName, SelectedGroupId. | `AddSectionDialog.xaml.cs` |
 | `class` | **AppNotificationDialog** | Represents the AppNotificationDialog class. Key methods: Show. | `AppNotificationDialog.xaml.cs` |
+| `class` | **AutoGroupColumnsByTierView** | Represents the AutoGroupColumnsByTierView class. | `AutoGroupColumnsByTierView.xaml.cs` |
 | `class` | **AutomatedRebarDesignDialog** | Represents the AutomatedRebarDesignDialog class. | `AutomatedRebarDesignDialog.xaml.cs` |
 | `class` | **BatchPrintWindow** | Represents the BatchPrintWindow class. | `BatchPrintWindow.xaml.cs` |
 | `class` | **CalculationProgressWindow** | Represents the CalculationProgressWindow class. Key properties: StatusText, ProgressValue, ProgressMax. | `CalculationProgressWindow.xaml.cs` |

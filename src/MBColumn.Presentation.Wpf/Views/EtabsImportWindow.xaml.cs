@@ -1,5 +1,6 @@
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Presentation.Wpf.ViewModels;
+using MBColumn.Presentation.Wpf.ViewModels.AutoGrouping;
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,6 +43,17 @@ public partial class EtabsImportWindow : Window
                     Owner = this
                 };
                 return dlg.ShowDialog() == true ? dlg.ProjectName : null;
+            };
+
+            vm.RequestAutoGrouping = input =>
+            {
+                var autoGroupVm = new AutoGroupColumnsByTierViewModel(input);
+                var dlg = new AutoGroupColumnsByTierView(autoGroupVm)
+                {
+                    Owner = this
+                };
+
+                return dlg.ShowDialog() == true ? autoGroupVm.AppliedResult : null;
             };
         }
     }

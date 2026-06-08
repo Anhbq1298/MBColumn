@@ -536,7 +536,7 @@ public class DiagramCanvas2D : FrameworkElement
             var label = ReferenceDisplayLabel(p.Label);
             if (ShowLabels && !string.IsNullOrWhiteSpace(label))
             {
-                DrawText(dc, label, 10.5, pen.Brush, new Point(b.X - 72, b.Y - 16), FontWeights.SemiBold);
+                DrawText(dc, label, 12, pen.Brush, new Point(b.X - 72, b.Y - 16), FontWeights.SemiBold);
             }
         }
     }
@@ -637,7 +637,7 @@ public class DiagramCanvas2D : FrameworkElement
             ringPen.Freeze();
             dc.DrawEllipse(redBrush, ringPen, pt, 7, 7);
             if (ShowDemandLabel)
-                DrawText(dc, p.Label, 11, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
+                DrawText(dc, p.Label, 13, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
         }
         foreach (var p in points.Where(p => p.GroupKey == "LabeledPoint"))
         {
@@ -675,7 +675,7 @@ public class DiagramCanvas2D : FrameworkElement
                 if (ShowCpLabels && p.CpNumber > 0)
                 {
                     string cpLabel = $"CP-{p.CpNumber:D2}";
-                    var ft = CreateText(cpLabel, 10, brush, FontWeights.SemiBold);
+                    var ft = CreateText(cpLabel, 12, brush, FontWeights.SemiBold);
                     double lx = pt.X >= screenCenterX
                         ? pt.X + 8
                         : pt.X - ft.Width - 8;
@@ -1167,6 +1167,7 @@ public class DiagramCanvas2D : FrameworkElement
 
     private void DrawInteractionHint(DrawingContext dc)
     {
+        if (!ShowInteractionHint) return;
         if (ActualWidth < 420) return;
 
         string zoomText = viewZoom > 1.01 ? $"  {viewZoom * 100:0}%" : "";

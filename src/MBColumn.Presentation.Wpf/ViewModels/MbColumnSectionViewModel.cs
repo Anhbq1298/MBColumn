@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using MBColumn.Application.DTOs.Etabs.AutoGrouping;
 using MBColumn.Presentation.Wpf.Commands;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -77,6 +78,8 @@ public sealed class MbColumnSectionViewModel : ViewModelBase
         set => Set(ref selectedTargetGroup, value);
     }
 
+    public AutoGroupingSectionMetadata? AutoGroupingMetadata { get; set; }
+
     public int ItemCount => Items.Count;
 
     public string Summary => $"{SectionName} ({Items.Count})";
@@ -98,6 +101,30 @@ public sealed class MbColumnSectionViewModel : ViewModelBase
         onChanged();
     }
 
+    public void AddItems(IEnumerable<EtabsColumnImportRowViewModel> items)
+    {
+        var existingNames = Items
+            .Select(item => item.ObjectName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var changed = false;
+
+        foreach (var item in items)
+        {
+            if (!existingNames.Add(item.ObjectName))
+                continue;
+
+            Items.Add(item);
+            item.ImportGroupName = SectionName;
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        RaiseSummary();
+        onChanged();
+    }
+
     public void RemoveItem(EtabsColumnImportRowViewModel item)
     {
         if (Items.Remove(item))
@@ -105,6 +132,34 @@ public sealed class MbColumnSectionViewModel : ViewModelBase
             if (string.Equals(item.ImportGroupName, SectionName, StringComparison.OrdinalIgnoreCase))
                 item.ImportGroupName = "";
         }
+        RaiseSummary();
+        onChanged();
+    }
+
+    public void RemoveItems(IEnumerable<EtabsColumnImportRowViewModel> items)
+    {
+        var objectNames = items
+            .Select(item => item.ObjectName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (objectNames.Count == 0)
+            return;
+
+        var changed = false;
+        for (var i = Items.Count - 1; i >= 0; i--)
+        {
+            var item = Items[i];
+            if (!objectNames.Contains(item.ObjectName))
+                continue;
+
+            Items.RemoveAt(i);
+            if (string.Equals(item.ImportGroupName, SectionName, StringComparison.OrdinalIgnoreCase))
+                item.ImportGroupName = "";
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
         RaiseSummary();
         onChanged();
     }

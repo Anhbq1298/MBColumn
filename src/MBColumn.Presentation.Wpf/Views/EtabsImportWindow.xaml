@@ -676,20 +676,28 @@
                         Margin="0,0,0,0">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                            <Button DockPanel.Dock="Right"
-                                    Content="+ New Section"
-                                    Command="{Binding CreateMbColumnSectionCommand}"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Padding="8,3"
-                                    MinHeight="26" />
-                            <TextBlock Text="MB Column Sections"
+                            <StackPanel DockPanel.Dock="Right"
+                                        Orientation="Horizontal">
+                                <Button Content="{StaticResource AutoGrouping_Button_AutoGroup}"
+                                        Command="{Binding AutoGroupColumnsCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="8,3"
+                                        MinHeight="26" />
+                                <Button Content="{StaticResource AutoGrouping_Button_NewSection}"
+                                        Command="{Binding CreateMbColumnSectionCommand}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Padding="8,3"
+                                        MinHeight="26"
+                                        Margin="6,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Text="{StaticResource AutoGrouping_MbColumnSectionsHeader}"
                                        Style="{StaticResource SectionHeaderStyle}"
                                        Margin="0"
                                        VerticalAlignment="Center" />
                         </DockPanel>
 
                         <TextBlock DockPanel.Dock="Top"
-                                   Text="No sections yet. Select items on the left, then click + New Section."
+                                   Text="{StaticResource AutoGrouping_EmptySectionsText}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    FontSize="{StaticResource FontSizeBody}"
                                    TextWrapping="Wrap"

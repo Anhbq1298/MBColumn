@@ -11,8 +11,18 @@ namespace MBColumn.Presentation.Wpf.Services;
 
 public static class ReportDiagramPngRenderer
 {
-    public static string RenderDataUri(DiagramBlock block, int width = 1400, int height = 900, double dpi = 192)
+    public static string RenderDataUri(DiagramBlock block, int width = 0, int height = 0, double dpi = 192)
     {
+        if (width <= 0)
+        {
+            // Size the canvas so WPF DIPs map 1:1 to PDF points, keeping fonts readable.
+            // PDF content width = 180mm = 510.24pt; diagram occupies WidthPct% of that.
+            const double pdfContentWidthPt = 180.0 / 25.4 * 72.0;
+            double targetPdfPt = pdfContentWidthPt * block.WidthPct / 100.0;
+            width  = (int)Math.Round(targetPdfPt * 96.0 / 72.0); // pt → DIP (1pt = 96/72 DIP)
+            height = (int)Math.Round(width * 9.0 / 14.0);         // 14:9 aspect ratio
+        }
+
         var highlightedDemand = block.Points
             .Where(p => p.IsDemand)
             .OrderByDescending(p => p.Utilization)
@@ -30,7 +40,7 @@ public static class ReportDiagramPngRenderer
             UseEqualAspect = block.UseEqualAspect,
             ShowInteractionHint = false,
             ShowCapacityControlPoints = true,
-            ShowCpLabels = false,
+            ShowCpLabels = true,
             ShowDemandLabel = true,
             ShowGrid = true,
             ShowLabels = true,

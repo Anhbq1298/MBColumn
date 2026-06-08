@@ -9,6 +9,7 @@
         <ResourceDictionary Source="Theme.DataGrid.xaml" />
         <ResourceDictionary Source="Theme.Cards.xaml" />
         <ResourceDictionary Source="Collections/Theme.Windows.xaml" />
+        <ResourceDictionary Source="../Resources/Strings.EtabsAutoGrouping.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -18,4 +19,3 @@
     <conv:PctOf720Converter x:Key="PctOf720Converter" />
     <conv:BoolToGridLengthConverter x:Key="BoolToGridLengthConverter" />
 </ResourceDictionary>
-

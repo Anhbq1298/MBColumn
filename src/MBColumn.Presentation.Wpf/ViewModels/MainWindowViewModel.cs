@@ -910,6 +910,8 @@ public sealed class MainWindowViewModel : ViewModelBase
 
             var columnsByName = projectService.GetColumns()
                 .ToDictionary(column => column.Name, StringComparer.OrdinalIgnoreCase);
+            var targetGroupIdsByName = groups
+                .ToDictionary(group => group.Name, group => group.Id, StringComparer.OrdinalIgnoreCase);
             int created = 0;
             int updated = 0;
             int? lastImportedId = null;
@@ -917,12 +919,20 @@ public sealed class MainWindowViewModel : ViewModelBase
             foreach (var imported in result.Sections)
             {
                 var targetGroupId = imported.TargetGroupId;
-                var targetGroupName = imported.TargetGroupName;
+                var targetGroupName = imported.TargetGroupName.Trim();
                 if (imported.CreateTargetGroup)
                 {
-                    var group = projectService.AddGroup(imported.TargetGroupName);
-                    targetGroupId = group.Id;
-                    targetGroupName = group.Name;
+                    if (targetGroupIdsByName.TryGetValue(targetGroupName, out var existingGroupId))
+                    {
+                        targetGroupId = existingGroupId;
+                    }
+                    else
+                    {
+                        var group = projectService.AddGroup(targetGroupName);
+                        targetGroupId = group.Id;
+                        targetGroupName = group.Name;
+                        targetGroupIdsByName[targetGroupName] = targetGroupId.Value;
+                    }
                 }
 
                 if (imported.UpdateExisting && columnsByName.TryGetValue(imported.SectionName, out var existing))

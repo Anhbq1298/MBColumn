@@ -57,7 +57,7 @@ public static class AxisRenderer2D
             dc.DrawLine(tickPen, new Point(pTick.X, axis.Y - 5), new Point(pTick.X, axis.Y + 5));
             if (pTick.X - lastXLabel >= minXLabelSpacing || Math.Abs(x) < 1e-9)
             {
-                DrawText(dc, AxisTickService.Format(x), 10, new Point(pTick.X - 14, axis.Y + 8));
+                DrawText(dc, AxisTickService.Format(x), 12, new Point(pTick.X - 14, axis.Y + 8));
                 lastXLabel = pTick.X;
             }
         }
@@ -81,7 +81,7 @@ public static class AxisRenderer2D
             dc.DrawLine(tickPen, new Point(axis.X - 5, pTick.Y), new Point(axis.X + 5, pTick.Y));
             if (lastYLabel - pTick.Y >= minYLabelSpacing || Math.Abs(y) < 1e-9)
             {
-                DrawText(dc, AxisTickService.Format(y), 10, new Point(axis.X + 8, pTick.Y - 8));
+                DrawText(dc, AxisTickService.Format(y), 12, new Point(axis.X + 8, pTick.Y - 8));
                 lastYLabel = pTick.Y;
             }
         }
@@ -104,10 +104,10 @@ public static class AxisRenderer2D
         // Titles — anchored to the axis ends so they track the actual axis lines
         if (showLabels)
         {
-            var yft = CreateFormattedText(yLabel, 12, FontWeights.SemiBold, PAxisLabelBrush);
+            var yft = CreateFormattedText(yLabel, 14, FontWeights.SemiBold, PAxisLabelBrush);
             dc.DrawText(yft, new Point(yAxis1.X - yft.Width / 2, yAxis1.Y - yft.Height - 6));
 
-            var xft = CreateFormattedText(xLabel, 12, FontWeights.SemiBold, MAxisLabelBrush);
+            var xft = CreateFormattedText(xLabel, 14, FontWeights.SemiBold, MAxisLabelBrush);
             dc.DrawText(xft, new Point(xAxis1.X + 6, xAxis1.Y - xft.Height / 2));
         }
     }
