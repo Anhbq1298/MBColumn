@@ -16,12 +16,23 @@ internal static class Ec2ShearLatexBuilder
         var blocks = new List<ReportBlock>();
 
         // ── Status badge ──────────────────────────────────────────────────────
-        bool pass = s.GoverningStatus == Domain.Enums.CapacityStatus.Pass;
+        bool hasDemand = s.HasDemand;
+        bool pass = !hasDemand || s.GoverningStatus == Domain.Enums.CapacityStatus.Pass;
         blocks.Add(new SummaryBoxBlock(
-            pass ? $"PASS  —  UR = {s.GoverningUtilisation:0.###}"
-                 : $"FAIL  —  UR = {s.GoverningUtilisation:0.###}",
-            $"X: UR={s.UtilisationX:F3}  Y: UR={s.UtilisationY:F3}",
+            hasDemand
+                ? (pass ? $"PASS  -  UR = {s.GoverningUtilisation:0.###}"
+                        : $"FAIL  -  UR = {s.GoverningUtilisation:0.###}")
+                : "Shear capacity shown for reference",
+            hasDemand
+                ? $"X: UR={s.UtilisationX:F3}  Y: UR={s.UtilisationY:F3}"
+                : "No shear demand was entered (VEd,x = VEd,y = 0).",
             pass));
+
+        if (!hasDemand)
+        {
+            blocks.Add(new NoteBlock(
+                "No shear demand was entered for the active load cases, so this section reports capacity and detailing checks for reference."));
+        }
 
         // ── Step 1: Concrete contribution VRd,c ──────────────────────────────
         blocks.Add(new HeadingBlock("Step 1  —  Concrete shear capacity  VRd,c  (EC2 §6.2.2)", 3));

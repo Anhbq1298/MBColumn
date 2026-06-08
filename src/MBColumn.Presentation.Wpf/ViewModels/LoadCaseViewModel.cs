@@ -62,6 +62,8 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private string source = "Manual";
     private double? memberLengthOverrideMm;
     private readonly double lengthDisplayScale;
+    private bool _suppressSlendernessNotifications;
+    private bool _pendingSlendernessRaise;
 
     public LoadCaseViewModel(string id, string name, double pu, double mux, double muy, bool isActive = true,
         MBColumn.Domain.Enums.UnitSystem unitSystem = MBColumn.Domain.Enums.UnitSystem.Metric)
@@ -320,6 +322,19 @@ public sealed class LoadCaseViewModel : ViewModelBase
 
     public void ClearEc2SlendernessResults()
     {
+        BeginBatchUpdate();
+        try
+        {
+            ClearEc2SlendernessResultsCore();
+        }
+        finally
+        {
+            EndBatchUpdate();
+        }
+    }
+
+    private void ClearEc2SlendernessResultsCore()
+    {
         // Revert to direct end-moment envelope (sign-preserving max-abs governing value)
         MxUsed = ComputeDefaultMxUsed();
         MyUsed = ComputeDefaultMyUsed();
@@ -450,8 +465,29 @@ public sealed class LoadCaseViewModel : ViewModelBase
 
     private static bool IsSlender(double? m2) => m2.HasValue && Math.Abs(m2.Value) > 1e-9;
 
+    internal void BeginBatchUpdate()
+    {
+        _suppressSlendernessNotifications = true;
+        _pendingSlendernessRaise = false;
+    }
+
+    internal void EndBatchUpdate()
+    {
+        _suppressSlendernessNotifications = false;
+        if (_pendingSlendernessRaise)
+        {
+            _pendingSlendernessRaise = false;
+            RaiseSlendernessLatex();
+        }
+    }
+
     private void RaiseSlendernessLatex()
     {
+        if (_suppressSlendernessNotifications)
+        {
+            _pendingSlendernessRaise = true;
+            return;
+        }
         Raise(nameof(LambdaXResultLatex));
         Raise(nameof(LambdaYResultLatex));
         Raise(nameof(LambdaLimitXResultLatex));

@@ -61,6 +61,7 @@ public sealed class SafeFormulaControl : ContentControl
     }
 
     private MathRendering.MathEquationView? _view;
+    private TextBlock? _textBlock;
 
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         => ((SafeFormulaControl)d).Refresh();
@@ -80,6 +81,27 @@ public sealed class SafeFormulaControl : ContentControl
         var normalized = raw.Replace(@"\\", @"\")
                             .Replace(@"\quad", @"\;\;\;")
                             .Replace(@"\ ", @"\;");
+
+        if (!UseEnhancedMath)
+        {
+            _view = null;
+            _textBlock ??= new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            _textBlock.Text = ToReadableText(normalized);
+            _textBlock.FontSize = System.Math.Max(12.0, Scale);
+            _textBlock.Foreground = FormulaForeground;
+            Content = _textBlock;
+            MinHeight = 0;
+            MaxHeight = double.PositiveInfinity;
+            return;
+        }
+
+        _textBlock = null;
 
         if (_view is null)
         {

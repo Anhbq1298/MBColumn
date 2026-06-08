@@ -23,7 +23,7 @@ internal sealed class Ec2ReportBuilder
         bool isMetric = r.UnitSystem == UnitSystem.Metric;
         string fUnit  = isMetric ? "kN"   : "kip";
         string mUnit  = isMetric ? "kN·m" : "kip-ft";
-        bool hasShear = r.GoverningShearResult is { HasDemand: true };
+        bool hasShearResult = r.GoverningShearResult is not null;
         bool hasSlend = r.IncludeEc2Slenderness && r.Ec2Slenderness.LoadCases.Count > 0;
 
         var sections = new List<ReportSection>
@@ -32,12 +32,10 @@ internal sealed class Ec2ReportBuilder
             S2_Materials(r, code),
             S3_SectionProperties(r, sectionSvg),
             S4_DemandsAndSlenderness(r, fUnit, mUnit, isMetric, hasSlend),
-            S5_ResultsSummary(r, fUnit, mUnit, hasShear),
+            S5_ResultsSummary(r, fUnit, mUnit, hasShearResult),
             S51_PmmDetails(r, fUnit, mUnit, pmDiagram, mmDiagram),
+            S52_ShearDetails(r, fUnit),
         };
-
-        if (hasShear)
-            sections.Add(S52_ShearDetails(r.GoverningShearResult!, fUnit));
 
         if (r.RebarCompliance is not null)
             sections.Add(S6_Compliance(r.RebarCompliance));
@@ -255,18 +253,22 @@ internal sealed class Ec2ReportBuilder
     private static ReportSection S5_ResultsSummary(
         CalculationResultDto r, string fUnit, string mUnit, bool hasShear)
     {
-        bool pmmPass  = r.Ratio <= 1.0;
-        var  shear    = r.GoverningShearResult;
-        bool shearPass = shear is null || shear.GoverningStatus == CapacityStatus.Pass;
-        bool allPass  = pmmPass && shearPass;
+        bool pmmPass = r.Ratio <= 1.0;
+        var shear = r.GoverningShearResult;
+        bool shearHasDemand = hasShear && shear?.HasDemand == true;
+        bool shearPass = !shearHasDemand || shear!.GoverningStatus == CapacityStatus.Pass;
+        bool allPass = pmmPass && shearPass;
 
         var rows = new List<string[]>
         {
             new[] { "PMM Interaction", $"{r.Ratio:0.###}", pmmPass ? "✓ Pass" : "✗ Fail" },
         };
         if (hasShear && shear is not null)
-            rows.Add(new[] { "Shear (governing)", $"{shear.GoverningUtilisation:0.###}",
-                             shearPass ? "✓ Pass" : "✗ Fail" });
+        {
+            rows.Add(shearHasDemand
+                ? ["Shear (governing)", $"{shear.GoverningUtilisation:0.###}", shearPass ? "Pass" : "Fail"]
+                : ["Shear Check", "No VEd", "Capacity shown for reference"]);
+        }
 
         return new("5", "Section Analysis Results",
         [
@@ -333,11 +335,54 @@ internal sealed class Ec2ReportBuilder
     // 5.2 · Shear Details  (EC2 §6.2)
     // ─────────────────────────────────────────────────────────────────────────
 
-    private static ReportSection S52_ShearDetails(ShearResultDto s, string fUnit)
-        => new("5.2", "Shear — Details  (EC2 §6.2)",
-        [
-            new Ec2ShearDetailBlock(s, fUnit),
-        ]);
+    private static ReportSection S52_ShearDetails(CalculationResultDto r, string fUnit)
+    {
+        var blocks = new List<ReportBlock>();
+        var s = r.GoverningShearResult;
+        if (s is null)
+        {
+            blocks.Add(new NoteBlock("Shear check could not be computed for this configuration."));
+            return new("5.2", "Shear Check - Details (EC2 6.2)", blocks);
+        }
+
+        if (!s.HasDemand)
+        {
+            blocks.Add(new NoteBlock(
+                "No shear demand was entered for the active load cases (VEd,x = VEd,y = 0). " +
+                "Shear capacities are shown for reference only."));
+        }
+
+        var shearRows = r.LoadCaseResults
+            .Where(lc => lc.ShearResult is not null)
+            .Select(lc =>
+            {
+                var sh = lc.ShearResult!;
+                return new[]
+                {
+                    lc.LoadCaseName,
+                    $"{sh.VEdXDisplay:0.##}",
+                    $"{sh.VRdXDisplay:0.##}",
+                    $"{sh.UtilisationX:0.###}",
+                    sh.StatusX.ToString(),
+                    $"{sh.VEdYDisplay:0.##}",
+                    $"{sh.VRdYDisplay:0.##}",
+                    $"{sh.UtilisationY:0.###}",
+                    sh.StatusY.ToString(),
+                };
+            })
+            .ToArray();
+
+        if (shearRows.Length > 0)
+        {
+            blocks.Add(new TableBlock(
+                ["Load Case", $"VEd,x ({fUnit})", $"VRd,x ({fUnit})", "URx", "X Status", $"VEd,y ({fUnit})", $"VRd,y ({fUnit})", "URy", "Y Status"],
+                shearRows));
+        }
+
+        blocks.Add(new Ec2ShearDetailBlock(s, fUnit));
+
+        return new("5.2", "Shear Check - Details (EC2 6.2)", blocks);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // 6 · Code Compliance Check  (EC2 §9.5)

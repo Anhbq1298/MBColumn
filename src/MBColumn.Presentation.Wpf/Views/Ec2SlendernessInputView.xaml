@@ -9,6 +9,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="InputViewResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type controls:SafeFormulaControl}">
+                <Setter Property="UseEnhancedMath"
+                        Value="False" />
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
                 <!-- Right Column: Selected Load Case Editor & Slenderness Amplification -->

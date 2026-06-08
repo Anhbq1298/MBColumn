@@ -119,6 +119,7 @@ public sealed class InputViewModel : ViewModelBase
     private LoadCaseViewModel? slendernessCalculationLoadCase;
     private bool isSlendernessCalculationDetailsOpen;
     private bool isRefreshingSlendernessState;
+    private CancellationTokenSource? _slendernessRefreshCts;
 
     // Debounce timer for section preview — fires 150 ms after the last input change
     private readonly System.Windows.Threading.DispatcherTimer _previewDebounceTimer;
@@ -2988,8 +2989,15 @@ public sealed class InputViewModel : ViewModelBase
         RefreshSlendernessUiState();
     }
 
-    private void RefreshSlendernessUiState()
+    private async void RefreshSlendernessUiState()
     {
+        // Cancel any in-flight background calculation and issue a fresh token for this call.
+        _slendernessRefreshCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _slendernessRefreshCts = cts;
+
+        // Phase 1: fast synchronous status validation + clear — guard against re-entry from
+        // the PropertyChanged cascades that ClearEc2SlendernessResults() fires.
         if (isRefreshingSlendernessState) return;
         isRefreshingSlendernessState = true;
         try
@@ -3037,141 +3045,171 @@ public sealed class InputViewModel : ViewModelBase
                     loadCase.HasValidationError = false;
                 }
             }
+        }
+        finally
+        {
+            isRefreshingSlendernessState = false;
+        }
 
-            if (Kx is > 0 && Ky is > 0)
+        Raise(nameof(SlendernessWarningText));
+        Raise(nameof(HasSlendernessWarnings));
+
+        if (!(Kx is > 0 && Ky is > 0)) return;
+
+        double fckMpa = StressInputToMpa(Fc);
+        double fykMpa = StressInputToMpa(Fy);
+        double esMpa = StressInputToMpa(Es);
+        if (!(fckMpa > 0 && fykMpa > 0 && esMpa > 0)) return;
+
+        // Phase 2: build input snapshot synchronously on UI thread (fast — pure arithmetic).
+        double lengthFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
+        var bars = PreviewRebars.Select(r => new Rebar(
+            r.Label,
+            r.Diameter,
+            Math.PI * Math.Pow(r.Diameter / 2.0, 2),
+            r.X * lengthFactor,
+            r.Y * lengthFactor)).ToList();
+        var rebarLayout = new RebarLayout(LayoutPreset ?? "Custom", BarSize ?? "", Cover * lengthFactor, bars);
+
+        ColumnSection? section = null;
+        if (SelectedSectionShape == SectionShapeType.Rectangular && Width > 0 && Height > 0)
+        {
+            section = new RectangularSection(Width * lengthFactor, Height * lengthFactor, rebarLayout);
+        }
+        else if (SelectedSectionShape == SectionShapeType.Circular && Diameter > 0)
+        {
+            section = new CircularSection(Diameter * lengthFactor, rebarLayout);
+        }
+        else if (SelectedSectionShape == SectionShapeType.Irregular && IrregularInput != null && IrregularInput.BoundaryPoints.Count >= 3)
+        {
+            try
             {
-                double fckMpa = StressInputToMpa(Fc);
-                double fykMpa = StressInputToMpa(Fy);
-                double esMpa = StressInputToMpa(Es);
-
-                if (fckMpa > 0 && fykMpa > 0 && esMpa > 0)
+                var mapper = new MBColumn.Application.Mappers.IrregularSectionMapper(new MBColumn.Application.Services.IrregularSectionValidationService());
+                var irregularDto = IrregularInput.ToDto(Cover);
+                var mapResult = mapper.ValidateAndMap(irregularDto, out var irregular, out var _);
+                if (mapResult.IsValid && irregular != null)
                 {
-                    double lengthFactor = UnitSystem == UnitSystem.Metric ? 1.0 : 25.4;
-                    var bars = PreviewRebars.Select(r => new Rebar(
-                        r.Label,
-                        r.Diameter,
-                        Math.PI * Math.Pow(r.Diameter / 2.0, 2),
-                        r.X * lengthFactor,
-                        r.Y * lengthFactor)).ToList();
-                    var rebarLayout = new RebarLayout(LayoutPreset ?? "Custom", BarSize ?? "", Cover * lengthFactor, bars);
+                    section = irregular;
+                }
+            }
+            catch
+            {
+                // Ignore mapping errors
+            }
+        }
 
-                    ColumnSection? section = null;
-                    if (SelectedSectionShape == SectionShapeType.Rectangular && Width > 0 && Height > 0)
+        if (section == null) return;
+
+        var concrete = new Ec2ConcreteMaterialDto(fckMpa, GammaC, AlphaCc);
+        var steel = new SteelMaterial($"fy {fykMpa:F1}", fykMpa, esMpa);
+        double? memberLengthMm = MemberLengthL.HasValue ? MemberLengthL.Value * lengthFactor : (double?)null;
+        var settings = new Ec2SlendernessSettingsDto(
+            IncludeEc2Slenderness,
+            Kx,
+            Ky,
+            PhiEff,
+            UseDefaultAWhenPhiEffUnknown);
+        var forceUnit = CurrentForceUnit;
+        var momentUnit = CurrentMomentUnit;
+        var lcDtos = LoadCases.Where(lc => lc.IsActive && lc.NEd > 0).Select(lc => lc.ToDto(forceUnit, momentUnit)).ToList();
+        var memberGeometry = new MemberGeometryInputDto(memberLengthMm);
+        var units = new UnitConversionService();
+
+        // Phase 3: heavy calculation on background thread — UI thread is free during this await.
+        Ec2SlendernessBatchResultDto batchResult;
+        try
+        {
+            batchResult = await Task.Run(() =>
+            {
+                var svc = new Ec2NominalCurvatureService(units);
+                return svc.Calculate(section, concrete, steel, memberGeometry, settings, lcDtos);
+            }, cts.Token);
+        }
+        catch (OperationCanceledException) { return; }
+
+        // Another call superseded this one while we were awaiting.
+        if (cts.IsCancellationRequested) return;
+
+        // Phase 4: populate results on UI thread with batch notification suppression.
+        // Re-entry guard blocks the PropertyChanged cascades that property setters fire.
+        if (isRefreshingSlendernessState) return;
+        isRefreshingSlendernessState = true;
+        try
+        {
+            var byId = batchResult.LoadCases.ToDictionary(r => r.LoadCaseId);
+            foreach (var loadCase in LoadCases)
+            {
+                if (!loadCase.IsActive) continue;
+
+                if (!byId.TryGetValue(loadCase.Id, out var slenderness)) continue;
+
+                loadCase.BeginBatchUpdate();
+                try
+                {
+                    // Always populate: imperfection/minimum moment terms needed regardless of EC2 toggle
+                    loadCase.RmX = slenderness.X?.Rm;
+                    loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
+                        ? units.MomentFromNmm(m01xVal, momentUnit) : null;
+                    loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
+                        ? units.MomentFromNmm(m02xVal, momentUnit) : null;
+                    loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
+                        ? units.MomentFromNmm(m0exVal, momentUnit) : null;
+                    loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
+                        ? units.MomentFromNmm(m2xVal, momentUnit) : null;
+                    loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
+                        ? units.MomentFromNmm(minMomentXVal, momentUnit) : null;
+
+                    loadCase.RmY = slenderness.Y?.Rm;
+                    loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
+                        ? units.MomentFromNmm(m01yVal, momentUnit) : null;
+                    loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
+                        ? units.MomentFromNmm(m02yVal, momentUnit) : null;
+                    loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
+                        ? units.MomentFromNmm(m0eyVal, momentUnit) : null;
+                    loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
+                        ? units.MomentFromNmm(m2yVal, momentUnit) : null;
+                    loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
+                        ? units.MomentFromNmm(minMomentYVal, momentUnit) : null;
+
+                    loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
+
+                    loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
+                        ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, momentUnit) : null;
+                    loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
+                        ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, momentUnit) : null;
+
+                    // Slenderness-only fields: only meaningful when EC2 amplification is active
+                    if (IncludeEc2Slenderness)
                     {
-                        section = new RectangularSection(Width * lengthFactor, Height * lengthFactor, rebarLayout);
+                        loadCase.LambdaX = slenderness.X?.Lambda;
+                        loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
+                        loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
+                        loadCase.E2X = slenderness.X?.E2Mm;
+                        loadCase.KrX = slenderness.X?.Kr;
+                        loadCase.KPhiX = slenderness.X?.KPhi;
+                        loadCase.BetaX = slenderness.X?.Beta;
+                        loadCase.PhiEffX = slenderness.X?.PhiEff;
+
+                        loadCase.LambdaY = slenderness.Y?.Lambda;
+                        loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
+                        loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
+                        loadCase.E2Y = slenderness.Y?.E2Mm;
+                        loadCase.KrY = slenderness.Y?.Kr;
+                        loadCase.KPhiY = slenderness.Y?.KPhi;
+                        loadCase.BetaY = slenderness.Y?.Beta;
+                        loadCase.PhiEffY = slenderness.Y?.PhiEff;
+
+                        loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
+                        loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
+                        loadCase.FactorCx = slenderness.X?.FactorC;
+                        loadCase.FactorCy = slenderness.Y?.FactorC;
+
+                        loadCase.Status = slenderness.Status;
                     }
-                    else if (SelectedSectionShape == SectionShapeType.Circular && Diameter > 0)
-                    {
-                        section = new CircularSection(Diameter * lengthFactor, rebarLayout);
-                    }
-                    else if (SelectedSectionShape == SectionShapeType.Irregular && IrregularInput != null && IrregularInput.BoundaryPoints.Count >= 3)
-                    {
-                        try
-                        {
-                            var mapper = new MBColumn.Application.Mappers.IrregularSectionMapper(new MBColumn.Application.Services.IrregularSectionValidationService());
-                            var irregularDto = IrregularInput.ToDto(Cover);
-                            var mapResult = mapper.ValidateAndMap(irregularDto, out var irregular, out var _);
-                            if (mapResult.IsValid && irregular != null)
-                            {
-                                section = irregular;
-                            }
-                        }
-                        catch
-                        {
-                            // Ignore mapping errors
-                        }
-                    }
-
-                    if (section != null)
-                    {
-                        var concrete = new Ec2ConcreteMaterialDto(fckMpa, GammaC, AlphaCc);
-                        var steel = new SteelMaterial($"fy {fykMpa:F1}", fykMpa, esMpa);
-                        double? memberLengthMm = MemberLengthL.HasValue ? MemberLengthL.Value * lengthFactor : (double?)null;
-                        var settings = new Ec2SlendernessSettingsDto(
-                            IncludeEc2Slenderness,
-                            Kx,
-                            Ky,
-                            PhiEff,
-                            UseDefaultAWhenPhiEffUnknown);
-
-                        var forceUnit = CurrentForceUnit;
-                        var momentUnit = CurrentMomentUnit;
-                        var lcDtos = LoadCases.Where(lc => lc.IsActive && lc.NEd > 0).Select(lc => lc.ToDto(forceUnit, momentUnit)).ToList();
-
-                        var units = new UnitConversionService();
-                        var service = new Ec2NominalCurvatureService(units);
-                        var batchResult = service.Calculate(section, concrete, steel, new MemberGeometryInputDto(memberLengthMm), settings, lcDtos);
-
-                        var byId = batchResult.LoadCases.ToDictionary(r => r.LoadCaseId);
-                        foreach (var loadCase in LoadCases)
-                        {
-                            if (!loadCase.IsActive) continue;
-
-                            if (byId.TryGetValue(loadCase.Id, out var slenderness))
-                            {
-                                // Always populate: imperfection/minimum moment terms needed regardless of EC2 toggle
-                                loadCase.RmX = slenderness.X?.Rm;
-                                loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
-                                    ? units.MomentFromNmm(m01xVal, momentUnit) : null;
-                                loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
-                                    ? units.MomentFromNmm(m02xVal, momentUnit) : null;
-                                loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
-                                    ? units.MomentFromNmm(m0exVal, momentUnit) : null;
-                                loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
-                                    ? units.MomentFromNmm(m2xVal, momentUnit) : null;
-                                loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
-                                    ? units.MomentFromNmm(minMomentXVal, momentUnit) : null;
-
-                                loadCase.RmY = slenderness.Y?.Rm;
-                                loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
-                                    ? units.MomentFromNmm(m01yVal, momentUnit) : null;
-                                loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
-                                    ? units.MomentFromNmm(m02yVal, momentUnit) : null;
-                                loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
-                                    ? units.MomentFromNmm(m0eyVal, momentUnit) : null;
-                                loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
-                                    ? units.MomentFromNmm(m2yVal, momentUnit) : null;
-                                loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
-                                    ? units.MomentFromNmm(minMomentYVal, momentUnit) : null;
-
-                                loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
-
-                                loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
-                                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, momentUnit) : null;
-                                loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
-                                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, momentUnit) : null;
-
-                                // Slenderness-only fields: only meaningful when EC2 amplification is active
-                                if (IncludeEc2Slenderness)
-                                {
-                                    loadCase.LambdaX = slenderness.X?.Lambda;
-                                    loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
-                                    loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
-                                    loadCase.E2X = slenderness.X?.E2Mm;
-                                    loadCase.KrX = slenderness.X?.Kr;
-                                    loadCase.KPhiX = slenderness.X?.KPhi;
-                                    loadCase.BetaX = slenderness.X?.Beta;
-                                    loadCase.PhiEffX = slenderness.X?.PhiEff;
-
-                                    loadCase.LambdaY = slenderness.Y?.Lambda;
-                                    loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
-                                    loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
-                                    loadCase.E2Y = slenderness.Y?.E2Mm;
-                                    loadCase.KrY = slenderness.Y?.Kr;
-                                    loadCase.KPhiY = slenderness.Y?.KPhi;
-                                    loadCase.BetaY = slenderness.Y?.Beta;
-                                    loadCase.PhiEffY = slenderness.Y?.PhiEff;
-
-                                    loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
-                                    loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
-                                    loadCase.FactorCx = slenderness.X?.FactorC;
-                                    loadCase.FactorCy = slenderness.Y?.FactorC;
-
-                                    loadCase.Status = slenderness.Status;
-                                }
-                            }
-                        }
-                    }
+                }
+                finally
+                {
+                    loadCase.EndBatchUpdate();
                 }
             }
 
@@ -3625,69 +3663,77 @@ public sealed class InputViewModel : ViewModelBase
                     continue;
                 }
 
-                loadCase.LambdaX = slenderness.X?.Lambda;
-                loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
-                loadCase.RmX = slenderness.X?.Rm;
-                loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
-                    ? units.MomentFromNmm(m01xVal, CurrentMomentUnit)
-                    : null;
-                loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
-                    ? units.MomentFromNmm(m02xVal, CurrentMomentUnit)
-                    : null;
-                loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
-                    ? units.MomentFromNmm(m0exVal, CurrentMomentUnit)
-                    : null;
-                loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
-                    ? units.MomentFromNmm(m2xVal, CurrentMomentUnit)
-                    : null;
-                loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
-                loadCase.E2X = slenderness.X?.E2Mm;
-                loadCase.KrX = slenderness.X?.Kr;
-                loadCase.KPhiX = slenderness.X?.KPhi;
-                loadCase.BetaX = slenderness.X?.Beta;
-                loadCase.PhiEffX = slenderness.X?.PhiEff;
-                loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
-                    ? units.MomentFromNmm(minMomentXVal, CurrentMomentUnit)
-                    : null;
+                loadCase.BeginBatchUpdate();
+                try
+                {
+                    loadCase.LambdaX = slenderness.X?.Lambda;
+                    loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
+                    loadCase.RmX = slenderness.X?.Rm;
+                    loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
+                        ? units.MomentFromNmm(m01xVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
+                        ? units.MomentFromNmm(m02xVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
+                        ? units.MomentFromNmm(m0exVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
+                        ? units.MomentFromNmm(m2xVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
+                    loadCase.E2X = slenderness.X?.E2Mm;
+                    loadCase.KrX = slenderness.X?.Kr;
+                    loadCase.KPhiX = slenderness.X?.KPhi;
+                    loadCase.BetaX = slenderness.X?.Beta;
+                    loadCase.PhiEffX = slenderness.X?.PhiEff;
+                    loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
+                        ? units.MomentFromNmm(minMomentXVal, CurrentMomentUnit)
+                        : null;
 
-                loadCase.LambdaY = slenderness.Y?.Lambda;
-                loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
-                loadCase.RmY = slenderness.Y?.Rm;
-                loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
-                    ? units.MomentFromNmm(m01yVal, CurrentMomentUnit)
-                    : null;
-                loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
-                    ? units.MomentFromNmm(m02yVal, CurrentMomentUnit)
-                    : null;
-                loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
-                    ? units.MomentFromNmm(m0eyVal, CurrentMomentUnit)
-                    : null;
-                loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
-                    ? units.MomentFromNmm(m2yVal, CurrentMomentUnit)
-                    : null;
-                loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
-                loadCase.E2Y = slenderness.Y?.E2Mm;
-                loadCase.KrY = slenderness.Y?.Kr;
-                loadCase.KPhiY = slenderness.Y?.KPhi;
-                loadCase.BetaY = slenderness.Y?.Beta;
-                loadCase.PhiEffY = slenderness.Y?.PhiEff;
-                loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
-                    ? units.MomentFromNmm(minMomentYVal, CurrentMomentUnit)
-                    : null;
+                    loadCase.LambdaY = slenderness.Y?.Lambda;
+                    loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
+                    loadCase.RmY = slenderness.Y?.Rm;
+                    loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
+                        ? units.MomentFromNmm(m01yVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
+                        ? units.MomentFromNmm(m02yVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
+                        ? units.MomentFromNmm(m0eyVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
+                        ? units.MomentFromNmm(m2yVal, CurrentMomentUnit)
+                        : null;
+                    loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
+                    loadCase.E2Y = slenderness.Y?.E2Mm;
+                    loadCase.KrY = slenderness.Y?.Kr;
+                    loadCase.KPhiY = slenderness.Y?.KPhi;
+                    loadCase.BetaY = slenderness.Y?.Beta;
+                    loadCase.PhiEffY = slenderness.Y?.PhiEff;
+                    loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
+                        ? units.MomentFromNmm(minMomentYVal, CurrentMomentUnit)
+                        : null;
 
-                loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
-                loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
-                loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
-                loadCase.FactorCx = slenderness.X?.FactorC;
-                loadCase.FactorCy = slenderness.Y?.FactorC;
+                    loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
+                    loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
+                    loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
+                    loadCase.FactorCx = slenderness.X?.FactorC;
+                    loadCase.FactorCy = slenderness.Y?.FactorC;
 
-                loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
-                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, CurrentMomentUnit)
-                    : null;
-                loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
-                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, CurrentMomentUnit)
-                    : null;
-                loadCase.Status = slenderness.Status;
+                    loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
+                        ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, CurrentMomentUnit)
+                        : null;
+                    loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
+                        ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, CurrentMomentUnit)
+                        : null;
+                    loadCase.Status = slenderness.Status;
+                }
+                finally
+                {
+                    loadCase.EndBatchUpdate();
+                }
             }
         }
         finally
