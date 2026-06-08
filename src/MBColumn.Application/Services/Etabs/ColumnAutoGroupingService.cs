@@ -71,6 +71,7 @@ public sealed class ColumnAutoGroupingService
         AssignSectionNames(finalGroups, request.ReservedSectionNames);
         result.Groups = finalGroups;
         result.PreviewRows = BuildPreviewRows(finalGroups);
+        result.TierSummaryRows = BuildTierSummaryRows(finalGroups);
         return result;
     }
 
@@ -188,6 +189,25 @@ public sealed class ColumnAutoGroupingService
                     HasMixedSections = sectionNames.Count > 1,
                     HasMixedMaterials = materialNames.Count > 1
                 };
+            })
+            .ToList();
+
+    private static List<AutoGroupingTierSummaryRow> BuildTierSummaryRows(IEnumerable<AutoGroupedColumnSection> groups)
+        => groups
+            .GroupBy(group => new
+            {
+                group.TierName,
+                group.FromStory,
+                group.ToStory
+            })
+            .Select(group => new AutoGroupingTierSummaryRow
+            {
+                TierName = group.Key.TierName,
+                StoryRange = string.Equals(group.Key.FromStory, group.Key.ToStory, StringComparison.OrdinalIgnoreCase)
+                    ? group.Key.FromStory
+                    : $"{group.Key.FromStory}-{group.Key.ToStory}",
+                ColumnSectionCount = group.Count(),
+                ObjectCount = group.Sum(section => section.SourceEtabsItems.Count)
             })
             .ToList();
 

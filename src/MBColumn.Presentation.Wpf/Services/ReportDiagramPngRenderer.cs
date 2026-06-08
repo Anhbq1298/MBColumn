@@ -11,17 +11,16 @@ namespace MBColumn.Presentation.Wpf.Services;
 
 public static class ReportDiagramPngRenderer
 {
-    public static string RenderDataUri(DiagramBlock block, int width = 0, int height = 0, double dpi = 192)
+    public static string RenderDataUri(DiagramBlock block, int width = 1400, int height = 900, double dpi = 192)
     {
-        if (width <= 0)
-        {
-            // Size the canvas so WPF DIPs map 1:1 to PDF points, keeping fonts readable.
-            // PDF content width = 180mm = 510.24pt; diagram occupies WidthPct% of that.
-            const double pdfContentWidthPt = 180.0 / 25.4 * 72.0;
-            double targetPdfPt = pdfContentWidthPt * block.WidthPct / 100.0;
-            width  = (int)Math.Round(targetPdfPt * 96.0 / 72.0); // pt → DIP (1pt = 96/72 DIP)
-            height = (int)Math.Round(width * 9.0 / 14.0);         // 14:9 aspect ratio
-        }
+        // Compute font scale so labels appear at their nominal pt size in the PDF.
+        // PDF content width = 180 mm = 510.24 pt; diagram occupies WidthPct% of that.
+        // "Ideal" canvas DIP = targetPdfPt × (96/72) → 1 DIP maps to 1 pt.
+        // fontScale = actual canvas / ideal canvas; fonts are multiplied by this inside DiagramCanvas2D.
+        const double pdfContentWidthPt = 180.0 / 25.4 * 72.0;
+        double targetPdfPt = pdfContentWidthPt * block.WidthPct / 100.0;
+        double idealCanvasDip = targetPdfPt * 96.0 / 72.0;
+        double fontScale = width / idealCanvasDip;
 
         var highlightedDemand = block.Points
             .Where(p => p.IsDemand)
@@ -32,6 +31,7 @@ public static class ReportDiagramPngRenderer
         {
             Width = width,
             Height = height,
+            RendererFontScale = fontScale,
             Points = block.Points,
             ReferenceLines = block.ReferenceLines,
             XAxisLabel = block.XAxisLabel,

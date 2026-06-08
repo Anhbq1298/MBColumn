@@ -8,8 +8,10 @@
 
     <sys:String x:Key="AutoGrouping_DialogTitle">Auto Group Columns by Tier</sys:String>
     <sys:String x:Key="AutoGrouping_TierDefinitionsHeader">Tier Definitions</sys:String>
+    <sys:String x:Key="AutoGrouping_TierSummaryHeader">Tier Summary</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewHeader">Grouping Preview</sys:String>
     <sys:String x:Key="AutoGrouping_ValidationHeader">Messages</sys:String>
+    <sys:String x:Key="AutoGrouping_NoTierSummaryRows">Tier counts will appear after grouping is generated.</sys:String>
     <sys:String x:Key="AutoGrouping_NoPreviewRows">Preview rows will appear here after grouping is generated.</sys:String>
     <sys:String x:Key="AutoGrouping_NoValidationMessages">No warnings or errors.</sys:String>
 
@@ -17,6 +19,10 @@
     <sys:String x:Key="AutoGrouping_FromStoryColumn">From Story</sys:String>
     <sys:String x:Key="AutoGrouping_ToStoryColumn">To Story</sys:String>
     <sys:String x:Key="AutoGrouping_LabelFilterColumn">Label Filter</sys:String>
+    <sys:String x:Key="AutoGrouping_SummaryTierColumn">Tier</sys:String>
+    <sys:String x:Key="AutoGrouping_SummaryStoryRangeColumn">Story Range</sys:String>
+    <sys:String x:Key="AutoGrouping_SummarySectionCountColumn">Sections</sys:String>
+    <sys:String x:Key="AutoGrouping_SummaryObjectCountColumn">Objects</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewTierColumn">Tier</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewStoryRangeColumn">Story Range</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewColumnLabelColumn">Column Label</sys:String>

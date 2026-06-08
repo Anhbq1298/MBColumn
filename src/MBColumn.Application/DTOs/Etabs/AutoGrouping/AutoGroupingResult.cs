@@ -4,6 +4,7 @@ public sealed class AutoGroupingResult
 {
     public List<AutoGroupedColumnSection> Groups { get; set; } = [];
     public List<AutoGroupingPreviewRow> PreviewRows { get; set; } = [];
+    public List<AutoGroupingTierSummaryRow> TierSummaryRows { get; set; } = [];
     public List<AutoGroupingValidationMessage> ValidationMessages { get; set; } = [];
 
     public bool HasErrors => ValidationMessages.Any(m => m.Severity == AutoGroupingValidationSeverity.Error);

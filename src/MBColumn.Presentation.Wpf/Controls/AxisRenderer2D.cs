@@ -14,7 +14,7 @@ public static class AxisRenderer2D
     private static readonly Brush PAxisLabelBrush = new SolidColorBrush(Color.FromRgb(37, 99, 235));   // blue for P (vertical) axis
     private static readonly Brush MAxisLabelBrush = new SolidColorBrush(Color.FromRgb(220, 38, 38));   // red for M (horizontal) axis
 
-    public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0, bool showLabels = true)
+    public static void Draw(DrawingContext dc, ChartTransformHelper transform, string xLabel, string yLabel, bool showGrid, double xMajorStep = 0, double yMajorStep = 0, bool showLabels = true, double fontScale = 1.0)
     {
         var gridPen = new Pen(GridBrush, 0.6);
         var minorGridPen = new Pen(MinorGridBrush, 0.3);
@@ -57,7 +57,7 @@ public static class AxisRenderer2D
             dc.DrawLine(tickPen, new Point(pTick.X, axis.Y - 5), new Point(pTick.X, axis.Y + 5));
             if (pTick.X - lastXLabel >= minXLabelSpacing || Math.Abs(x) < 1e-9)
             {
-                DrawText(dc, AxisTickService.Format(x), 12, new Point(pTick.X - 14, axis.Y + 8));
+                DrawText(dc, AxisTickService.Format(x), 12 * fontScale, new Point(pTick.X - 14, axis.Y + 8));
                 lastXLabel = pTick.X;
             }
         }
@@ -81,7 +81,7 @@ public static class AxisRenderer2D
             dc.DrawLine(tickPen, new Point(axis.X - 5, pTick.Y), new Point(axis.X + 5, pTick.Y));
             if (lastYLabel - pTick.Y >= minYLabelSpacing || Math.Abs(y) < 1e-9)
             {
-                DrawText(dc, AxisTickService.Format(y), 12, new Point(axis.X + 8, pTick.Y - 8));
+                DrawText(dc, AxisTickService.Format(y), 12 * fontScale, new Point(axis.X + 8, pTick.Y - 8));
                 lastYLabel = pTick.Y;
             }
         }
@@ -104,10 +104,10 @@ public static class AxisRenderer2D
         // Titles — anchored to the axis ends so they track the actual axis lines
         if (showLabels)
         {
-            var yft = CreateFormattedText(yLabel, 14, FontWeights.SemiBold, PAxisLabelBrush);
+            var yft = CreateFormattedText(yLabel, 14 * fontScale, FontWeights.SemiBold, PAxisLabelBrush);
             dc.DrawText(yft, new Point(yAxis1.X - yft.Width / 2, yAxis1.Y - yft.Height - 6));
 
-            var xft = CreateFormattedText(xLabel, 14, FontWeights.SemiBold, MAxisLabelBrush);
+            var xft = CreateFormattedText(xLabel, 14 * fontScale, FontWeights.SemiBold, MAxisLabelBrush);
             dc.DrawText(xft, new Point(xAxis1.X + 6, xAxis1.Y - xft.Height / 2));
         }
     }

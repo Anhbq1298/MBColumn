@@ -107,10 +107,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **AutoGroupedColumnSection** | Represents the AutoGroupedColumnSection class. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupedColumnSection.cs` |
 | `class` | **AutoGroupingPreviewRow** | Data structure representing a row for AutoGroupingPreview. Key properties: TierName, StoryRange, ColumnLabel, MbColumnSectionName. | `AutoGroupingPreviewRow.cs` |
 | `class` | **AutoGroupingResourceKeys** | Represents the AutoGroupingResourceKeys class. | `AutoGroupingResourceKeys.cs` |
-| `class` | **AutoGroupingResult** | Encapsulates the result of AutoGrouping operations. Key properties: Groups, PreviewRows, ValidationMessages, HasErrors. | `AutoGroupingResult.cs` |
+| `class` | **AutoGroupingResult** | Encapsulates the result of AutoGrouping operations. Key properties: Groups, PreviewRows, TierSummaryRows, ValidationMessages. | `AutoGroupingResult.cs` |
 | `class` | **AutoGroupingSectionMetadata** | Represents the AutoGroupingSectionMetadata class. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupingSectionMetadata.cs` |
 | `record` | **AutoGroupingStory** | Represents the AutoGroupingStory record. | `AutoGroupingStory.cs` |
 | `class` | **AutoGroupingTier** | Represents the AutoGroupingTier class. Key methods: Clone. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupingTier.cs` |
+| `class` | **AutoGroupingTierSummaryRow** | Data structure representing a row for AutoGroupingTierSummary. Key properties: TierName, StoryRange, ColumnSectionCount, ObjectCount. | `AutoGroupingTierSummaryRow.cs` |
 | `class` | **AutoGroupingValidationMessage** | Represents the AutoGroupingValidationMessage class. Key properties: Severity, MessageKey, MessageArguments. | `AutoGroupingValidationMessage.cs` |
 | `enum` | **AutoGroupingValidationSeverity** | Enumeration defining states/types for AutoGroupingValidationSeverity. | `AutoGroupingValidationMessage.cs` |
 | `record` | **ColumnAutoGroupingRequest** | Represents the ColumnAutoGroupingRequest record. | `ColumnAutoGroupingRequest.cs` |
@@ -783,7 +784,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **CachedScene** | Represents the CachedScene record. | `InteractionViewport3D.cs` |
 | `class` | **ChartInteractionState** | Represents the ChartInteractionState class. Key methods: Reset. | `ChartInteractionState.cs` |
 | `class` | **ChartTransformHelper** | Represents the ChartTransformHelper class. Key methods: AutoFit2D, ToScreen, ToData, TicksX. Key properties: MinX, MaxX, MinY, MaxY. | `ChartTransformHelper.cs` |
-| `class` | **DiagramCanvas2D** | Represents the DiagramCanvas2D class. Key methods: ResetView, ClipClosedPolylineBelowYForTesting, ClipOpenPolylineAboveYForTesting. Key properties: Points, ReferenceLines, XAxisLabel, YAxisLabel. | `DiagramCanvas2D.cs` |
+| `class` | **DiagramCanvas2D** | Represents the DiagramCanvas2D class. Key methods: ResetView, ClipClosedPolylineBelowYForTesting, ClipOpenPolylineAboveYForTesting. Key properties: RendererFontScale, Points, ReferenceLines, XAxisLabel. | `DiagramCanvas2D.cs` |
 | `class` | **InteractionViewport3D** | Represents the InteractionViewport3D class. Key methods: ResetCamera, BuildEngineeringAxesForTesting. Key properties: Points, DemandPoint, DemandPoints, GoverningPoint. | `InteractionViewport3D.cs` |
 | `class` | **MomentDiagramControl** | /// Renders a bending moment diagram (BMD) for a column member end. /// Shows a vertical column stick with horizontal moment axes at top (y=0) /// and bottom (y=-L). Negative regions are hatched red, positive regions blue. /// Left = negative, Right = positive. ///. Key properties: MomentTop, MomentBottom, DiagramColor, Title. | `MomentDiagramControl.cs` |
 | `class` | **ReportBlockTemplateSelector** | Represents the ReportBlockTemplateSelector class. Key methods: SelectTemplate. Key properties: HeadingTemplate, ParagraphTemplate, NoteTemplate, FormulaTemplate. | `ReportBlockTemplateSelector.cs` |
@@ -957,7 +958,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AutoGroupColumnsByTierViewModel** | Represents the AutoGroupColumnsByTierViewModel class. Key properties: Tiers, StoryNames, PreviewRows, ValidationMessages. | `AutoGroupColumnsByTierViewModel.cs` |
+| `class` | **AutoGroupColumnsByTierViewModel** | Represents the AutoGroupColumnsByTierViewModel class. Key properties: Tiers, StoryNames, TierSummaryRows, PreviewRows. | `AutoGroupColumnsByTierViewModel.cs` |
 | `class` | **AutoGroupColumnsDialogInput** | Represents the AutoGroupColumnsDialogInput class. Key properties: Columns, Stories, ReservedSectionNames. | `AutoGroupColumnsDialogInput.cs` |
 | `class` | **AutoGroupingValidationMessageViewModel** | Represents the AutoGroupingValidationMessageViewModel class. Key properties: Severity, SeverityDisplayText, Message. | `AutoGroupingValidationMessageViewModel.cs` |
 

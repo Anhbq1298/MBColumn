@@ -22,6 +22,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         this.groupingService = groupingService ?? new ColumnAutoGroupingService();
 
         Tiers = [];
+        TierSummaryRows = [];
         PreviewRows = [];
         ValidationMessages = [];
         StoryNames = input.Stories
@@ -49,6 +50,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
 
     public ObservableCollection<AutoGroupingTier> Tiers { get; }
     public IReadOnlyList<string> StoryNames { get; }
+    public ObservableCollection<AutoGroupingTierSummaryRow> TierSummaryRows { get; }
     public ObservableCollection<AutoGroupingPreviewRow> PreviewRows { get; }
     public ObservableCollection<AutoGroupingValidationMessageViewModel> ValidationMessages { get; }
 
@@ -77,6 +79,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     public ICommand CancelCommand => cancelCommand;
 
     public int PreviewRowCount => PreviewRows.Count;
+    public bool HasTierSummaryRows => TierSummaryRows.Count > 0;
     public bool HasPreviewRows => PreviewRows.Count > 0;
     public bool HasValidationMessages => ValidationMessages.Count > 0;
 
@@ -143,6 +146,10 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
 
     private void LoadResult(AutoGroupingResult result)
     {
+        TierSummaryRows.Clear();
+        foreach (var row in result.TierSummaryRows)
+            TierSummaryRows.Add(row);
+
         PreviewRows.Clear();
         foreach (var row in result.PreviewRows)
             PreviewRows.Add(row);
@@ -152,6 +159,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
             ValidationMessages.Add(new AutoGroupingValidationMessageViewModel(message));
 
         Raise(nameof(PreviewRowCount));
+        Raise(nameof(HasTierSummaryRows));
         Raise(nameof(HasPreviewRows));
         Raise(nameof(HasValidationMessages));
     }

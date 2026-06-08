@@ -34,6 +34,11 @@ public class DiagramCanvas2D : FrameworkElement
     public static readonly DependencyProperty ShowDemandLabelProperty = DependencyProperty.Register(nameof(ShowDemandLabel), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty ShowCpLabelsProperty = DependencyProperty.Register(nameof(ShowCpLabels), typeof(bool), typeof(DiagramCanvas2D), new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    // Scale applied to all diagram label fonts during off-screen (PDF) rendering.
+    // Set to (canvasDip / idealCanvasDip) so fonts appear at their nominal pt size in the target PDF.
+    // Default 1.0 for interactive use.
+    public double RendererFontScale { get; set; } = 1.0;
+
     private const double HitToleranceDip = 10.0;
     private double ScaledHitTolerance =>
         HitToleranceDip / (PresentationSource.FromVisual(this) is { } src
@@ -131,14 +136,14 @@ public class DiagramCanvas2D : FrameworkElement
         dc.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
         if (points.Count == 0)
         {
-            DrawText(dc, "No chart data", 13, Brushes.Gray, new Point(20, 20), FontWeights.Normal);
+            DrawText(dc, "No chart data", 13 * RendererFontScale, Brushes.Gray, new Point(20, 20), FontWeights.Normal);
             dc.Pop();
             return;
         }
 
         var transform = BuildTransform(points, plot);
         DrawPlotSurface(dc, plot);
-        AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid, XGridStep, YGridStep, ShowLabels);
+        AxisRenderer2D.Draw(dc, transform, XAxisLabel, YAxisLabel, ShowGrid, XGridStep, YGridStep, ShowLabels, RendererFontScale);
         DrawCapacity(dc, transform, allFinitePoints);
         DrawCapacityControlPoints(dc, transform, points);
         DrawReferences(dc, transform, points);
@@ -158,7 +163,7 @@ public class DiagramCanvas2D : FrameworkElement
         const double bottomMargin = 56;
         var xAxisLabelWidth = string.IsNullOrWhiteSpace(XAxisLabel)
             ? 0
-            : CreateText(XAxisLabel, 12, Brushes.Black, FontWeights.SemiBold).Width;
+            : CreateText(XAxisLabel, 12 * RendererFontScale, Brushes.Black, FontWeights.SemiBold).Width;
         var rightMargin = Math.Max(74, xAxisLabelWidth + 18);
 
         return new Rect(
@@ -536,7 +541,7 @@ public class DiagramCanvas2D : FrameworkElement
             var label = ReferenceDisplayLabel(p.Label);
             if (ShowLabels && !string.IsNullOrWhiteSpace(label))
             {
-                DrawText(dc, label, 12, pen.Brush, new Point(b.X - 72, b.Y - 16), FontWeights.SemiBold);
+                DrawText(dc, label, 12 * RendererFontScale, pen.Brush, new Point(b.X - 72, b.Y - 16), FontWeights.SemiBold);
             }
         }
     }
@@ -637,7 +642,7 @@ public class DiagramCanvas2D : FrameworkElement
             ringPen.Freeze();
             dc.DrawEllipse(redBrush, ringPen, pt, 7, 7);
             if (ShowDemandLabel)
-                DrawText(dc, p.Label, 13, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
+                DrawText(dc, p.Label, 13 * RendererFontScale, redBrush, new Point(pt.X + 10, pt.Y - 16), FontWeights.SemiBold);
         }
         foreach (var p in points.Where(p => p.GroupKey == "LabeledPoint"))
         {
@@ -646,7 +651,7 @@ public class DiagramCanvas2D : FrameworkElement
             dc.DrawEllipse(Brushes.White, new Pen(brush, 1.5), pt, 4.5, 4.5);
             if (ShowLabels)
             {
-                DrawText(dc, $"@ {p.Label}", 10.5, brush, new Point(pt.X + 8, pt.Y - 12), FontWeights.Normal);
+                DrawText(dc, $"@ {p.Label}", 10.5 * RendererFontScale, brush, new Point(pt.X + 8, pt.Y - 12), FontWeights.Normal);
             }
         }
         if (ShowSpecialPoints)
@@ -675,7 +680,7 @@ public class DiagramCanvas2D : FrameworkElement
                 if (ShowCpLabels && p.CpNumber > 0)
                 {
                     string cpLabel = $"CP-{p.CpNumber:D2}";
-                    var ft = CreateText(cpLabel, 12, brush, FontWeights.SemiBold);
+                    var ft = CreateText(cpLabel, 12 * RendererFontScale, brush, FontWeights.SemiBold);
                     double lx = pt.X >= screenCenterX
                         ? pt.X + 8
                         : pt.X - ft.Width - 8;

@@ -141,12 +141,80 @@
                 </Border>
 
                 <Border Grid.Row="2" Style="{StaticResource DialogPanelBorderStyle}">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Top"
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Text="{StaticResource AutoGrouping_TierSummaryHeader}"
+                                   Style="{StaticResource AutoGroupingSectionTitleStyle}"
+                                   Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="1"
+                                   Text="{StaticResource AutoGrouping_NoTierSummaryRows}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasTierSummaryRows}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding TierSummaryRows}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserReorderColumns="False"
+                                  IsReadOnly="True"
+                                  MaxHeight="112"
+                                  Margin="0,0,0,10"
+                                  EnableRowVirtualization="True"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  VirtualizingPanel.VirtualizationMode="Recycling">
+                            <DataGrid.Style>
+                                <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasTierSummaryRows}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.Style>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryTierColumn}"
+                                                    Binding="{Binding TierName}"
+                                                    Width="1*" />
+                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryStoryRangeColumn}"
+                                                    Binding="{Binding StoryRange}"
+                                                    Width="1*" />
+                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummarySectionCountColumn}"
+                                                    Binding="{Binding ColumnSectionCount}"
+                                                    Width="90"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryObjectCountColumn}"
+                                                    Binding="{Binding ObjectCount}"
+                                                    Width="90"
+                                                    ElementStyle="{StaticResource RightAlignText}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="3"
                                    Text="{StaticResource AutoGrouping_PreviewHeader}"
                                    Style="{StaticResource AutoGroupingSectionTitleStyle}"
                                    Margin="0,0,0,8" />
-                        <TextBlock DockPanel.Dock="Top"
+                        <TextBlock Grid.Row="4"
                                    Text="{StaticResource AutoGrouping_NoPreviewRows}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    TextWrapping="Wrap">
@@ -161,7 +229,8 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <DataGrid ItemsSource="{Binding PreviewRows}"
+                        <DataGrid Grid.Row="5"
+                                  ItemsSource="{Binding PreviewRows}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
@@ -204,7 +273,7 @@
                                                     Width="1*" />
                             </DataGrid.Columns>
                         </DataGrid>
-                    </DockPanel>
+                    </Grid>
                 </Border>
 
                 <Border Grid.Row="4" Style="{StaticResource DialogPanelBorderStyle}">
