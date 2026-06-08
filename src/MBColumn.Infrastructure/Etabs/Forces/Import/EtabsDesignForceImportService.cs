@@ -42,7 +42,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var dbUnits = (int)model.GetDatabaseUnits();
+        model.SetPresentUnits(eUnits.kN_m_C);
         var warnings = new List<string>();
         var comboSet = BuildComboSet(combosFilter);
 
@@ -75,7 +75,8 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             ModelFilePath       = modelFilePath,
             ModelName           = modelName,
             ImportedAt          = DateTime.UtcNow,
-            DatabaseUnits       = dbUnits,
+            DatabaseForceUnits  = (int)eForce.kN,
+            DatabaseLengthUnits = (int)eLength.m,
             ColumnForces        = columnTable,
             PierForces          = pierTable,
             ColumnElementForces = colElementTable,
@@ -129,12 +130,14 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         EtabsDesignForceTable pierDesignForces)
     {
         var model = connection.Model ?? throw new InvalidOperationException("Not connected to ETABS.");
+        model.SetPresentUnits(eUnits.kN_m_C);
         return new ImportedEtabsForceDatabase
         {
             ModelFilePath       = modelFilePath,
             ModelName           = modelName,
             ImportedAt          = DateTime.UtcNow,
-            DatabaseUnits       = (int)model.GetDatabaseUnits(),
+            DatabaseForceUnits  = (int)eForce.kN,
+            DatabaseLengthUnits = (int)eLength.m,
             ColumnForces        = colDesignForces,
             PierForces          = pierDesignForces,
             ColumnElementForces = colElementForces,
@@ -143,15 +146,11 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
         };
     }
 
-    private static (double ForceFactor, double LengthFactor, double MomentFactor) GetParseMultipliers(ImportedEtabsForceDatabase database, UnitSystem targetSystem)
+    private static (double ForceFactor, double LengthFactor, double MomentFactor) GetParseMultipliers(
+        ImportedEtabsForceDatabase database, UnitSystem targetSystem)
     {
-        var (targetUnits, fFactor, lFactor, mFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
-        if (database.DatabaseUnits == (int)targetUnits)
-        {
-            return (fFactor, lFactor, mFactor);
-        }
-        
-        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors((eUnits)database.DatabaseUnits, targetSystem);
+        // Tables were loaded after SetPresentUnits(kN_m_C), so raw data is in kN and kN·m
+        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors(eUnits.kN_m_C, targetSystem);
         return (fKn, lMm, EtabsConnectionService.GetMomentFactor(fKn, lMm, targetSystem));
     }
 

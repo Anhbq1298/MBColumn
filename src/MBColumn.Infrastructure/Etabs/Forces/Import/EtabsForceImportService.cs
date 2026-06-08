@@ -20,7 +20,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         this.connection = connection;
     }
 
-    public IReadOnlyList<EtabsForceResultDto> GetForces(
+    public IReadOnlyList<EtabsForceResultDto> GetDesignForces(
         IReadOnlyList<EtabsColumnImportDto> columns,
         IReadOnlyList<string> loadCombinations,
         UnitSystem targetSystem)
@@ -28,9 +28,9 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        // GetTableForDisplayArray returns data in database units regardless of SetPresentUnits
-        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
-        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        // Force display units to kN_m_C so GetTableForDisplayArray returns kN and kN·m
+        model.SetPresentUnits(eUnits.kN_m_C);
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(eUnits.kN_m_C, targetSystem);
         var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
         ConfigureOutput(model, loadCombinations);
@@ -49,8 +49,9 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
-        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        // GetTableForDisplayArray returns data in present/display units
+        var presentUnits = (eUnits)(int)model.GetPresentUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(presentUnits, targetSystem);
         var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
         ConfigureOutput(model, loadCombinations);
@@ -72,8 +73,9 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (columns.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
-        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        // GetTableForDisplayArray returns data in present/display units
+        var presentUnits = (eUnits)(int)model.GetPresentUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(presentUnits, targetSystem);
         var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
         ConfigureOutput(model, loadCombinations);
@@ -92,8 +94,9 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
         if (piers.Count == 0 || loadCombinations.Count == 0)
             return [];
 
-        var dbUnits = (eUnits)(int)model.GetDatabaseUnits();
-        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(dbUnits, targetSystem);
+        // GetTableForDisplayArray returns data in present/display units
+        var presentUnits = (eUnits)(int)model.GetPresentUnits();
+        var (forceFactor, lengthFactor) = EtabsConnectionService.GetConversionFactors(presentUnits, targetSystem);
         var momentFactor = EtabsConnectionService.GetMomentFactor(forceFactor, lengthFactor, targetSystem);
 
         ConfigureOutput(model, loadCombinations);

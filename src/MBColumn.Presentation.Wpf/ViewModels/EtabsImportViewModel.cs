@@ -85,6 +85,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private string modelName = "-";
     private string modelPath = "-";
     private string presentUnits = "-";
+    private string databaseUnitsStr = "-";
+    private double lengthScaleFactor = 1.0;
+    private double forceScaleFactor = 1.0;
     private int storyCount;
     private int pierCount;
     private int frameObjectCount;
@@ -94,7 +97,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private string selectedStoryFilter = AllStories;
     private string selectedLabelFilter = AllLabels;
     private string loadCombinationFilterText = "";
-    private string selectedForceType = "Design Forces";
+    private string selectedForceType = "Element Forces";
     private bool isLoadingForces;
     private ProjectGroupOptionViewModel? selectedTargetGroup;
     private EtabsUniqueSectionOptionViewModel? selectedUniqueSection;
@@ -533,6 +536,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
     public string ModelName { get => modelName; private set => Set(ref modelName, value); }
     public string ModelPath { get => modelPath; private set => Set(ref modelPath, value); }
     public string PresentUnits { get => presentUnits; private set => Set(ref presentUnits, value); }
+    public string DatabaseUnitsStr { get => databaseUnitsStr; private set => Set(ref databaseUnitsStr, value); }
+    public string LengthScaleFactorLabel => lengthScaleFactor == 1.0 ? "× 1 (no conversion)" : $"× {lengthScaleFactor:0.######}";
+    public string ForceScaleFactorLabel  => forceScaleFactor  == 1.0 ? "× 1 (no conversion)" : $"× {forceScaleFactor:0.######}";
     public int StoryCount { get => storyCount; private set => Set(ref storyCount, value); }
     public int PierCount { get => pierCount; private set => Set(ref pierCount, value); }
     public int FrameObjectCount { get => frameObjectCount; private set => Set(ref frameObjectCount, value); }
@@ -787,7 +793,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
     private void Connect()
     {
         ConnectionStatus = "Connecting...";
-        var result = connectionService.ConnectToRunningEtabs();
+        var result = connectionService.ConnectToRunningEtabs(targetUnitSystem);
 
         if (!result.IsConnected)
         {
@@ -800,10 +806,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ModelName = info.ModelName;
         ModelPath = info.ModelPath;
         PresentUnits = info.PresentUnits;
+        DatabaseUnitsStr = info.DatabaseUnitsStr;
+        lengthScaleFactor = info.LengthScaleFactor;
+        forceScaleFactor = info.ForceScaleFactor;
+        Raise(nameof(LengthScaleFactorLabel));
+        Raise(nameof(ForceScaleFactorLabel));
         StoryCount = info.StoryCount;
         PierCount = info.PierCount;
         FrameObjectCount = info.FrameObjectCount;
-        UnitConversionMessage = $"ETABS data will be converted from {info.PresentUnits} to {TargetGeometryUnitSummary}.";
+        UnitConversionMessage = $"ETABS data will be converted from {info.DatabaseUnitsStr} to {TargetGeometryUnitSummary}.";
 
         Columns.Clear();
         pierBoundaryCache.Clear();
@@ -1069,10 +1080,15 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ModelName        = data.ModelName;
         ModelPath        = data.ModelPath;
         PresentUnits     = data.PresentUnits;
+        DatabaseUnitsStr = data.DatabaseUnitsStr;
+        lengthScaleFactor = data.LengthScaleFactor;
+        forceScaleFactor  = data.ForceScaleFactor;
+        Raise(nameof(LengthScaleFactorLabel));
+        Raise(nameof(ForceScaleFactorLabel));
         StoryCount       = data.StoryCount;
         PierCount        = data.PierCount;
         FrameObjectCount = data.FrameObjectCount;
-        UnitConversionMessage = $"ETABS data will be converted from {data.PresentUnits} to {TargetGeometryUnitSummary}.";
+        UnitConversionMessage = $"ETABS data will be converted from {data.DatabaseUnitsStr} to {TargetGeometryUnitSummary}.";
 
         using (FilteredColumns.DeferRefresh())
         using (TierObjectCandidatesView.DeferRefresh())
@@ -1138,11 +1154,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
         ModelName = "-";
         ModelPath = "-";
         PresentUnits = "-";
+        DatabaseUnitsStr = "-";
+        lengthScaleFactor = 1.0;
+        forceScaleFactor  = 1.0;
+        Raise(nameof(LengthScaleFactorLabel));
+        Raise(nameof(ForceScaleFactorLabel));
         StoryCount = 0;
         PierCount = 0;
         FrameObjectCount = 0;
         UnitConversionMessage = "Connect to ETABS to read model units.";
         Columns.Clear();
+        LoadCombinations.Clear();
         SectionMappings.Clear();
         UniqueSectionOptions.Clear();
         StoryOptions.Clear();
@@ -1598,7 +1620,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 {
                     // Fall back to live COM calls (existing behaviour)
                     if (columnDtos.Count > 0)
-                        forces.AddRange(forceImportService.GetForces(columnDtos, allCombos, targetUnitSystem));
+                        forces.AddRange(forceImportService.GetDesignForces(columnDtos, allCombos, targetUnitSystem));
                     if (piers.Count > 0)
                         forces.AddRange(forceImportService.GetPierForces(piers, allCombos, targetUnitSystem));
                 }
@@ -2069,7 +2091,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 else
                 {
                     if (frameColumnDtos.Count > 0)
-                        result.AddRange(forceImportService.GetForces(frameColumnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
+                        result.AddRange(forceImportService.GetDesignForces(frameColumnDtos, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                     if (pierPairs.Count > 0)
                         result.AddRange(forceImportService.GetPierForces(pierPairs, selectedCombos, targetUnitSystem).Select(CreateForceRow));
                 }

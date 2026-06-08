@@ -7,6 +7,9 @@ public sealed class EtabsPreloadData
     public string ModelName { get; init; } = "";
     public string ModelPath { get; init; } = "";
     public string PresentUnits { get; init; } = "";
+    public string DatabaseUnitsStr { get; init; } = "-";
+    public double LengthScaleFactor { get; init; } = 1.0;
+    public double ForceScaleFactor { get; init; } = 1.0;
     public int StoryCount { get; init; }
     public int PierCount { get; init; }
     public int FrameObjectCount { get; init; }

@@ -6,7 +6,11 @@ public sealed class ImportedEtabsForceDatabase
     public required string ModelName { get; init; }
     public required DateTime ImportedAt { get; init; }
 
-    // Raw eUnits enum value stored as int to avoid Infrastructure COM dependency in Application layer
+    // Raw eForce / eLength int values from GetDatabaseUnits_2; avoids Infrastructure COM dependency
+    public int DatabaseForceUnits { get; init; }
+    public int DatabaseLengthUnits { get; init; }
+
+    // Legacy combined units field — kept for reference but not used for scale factor computation
     public int DatabaseUnits { get; init; }
 
     public required EtabsDesignForceTable ColumnForces { get; init; }

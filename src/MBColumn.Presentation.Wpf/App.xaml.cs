@@ -1,4 +1,5 @@
 using MBColumn.Presentation.Wpf.Composition;
+using MBColumn.Presentation.Wpf.Controls.MathRendering;
 using MBColumn.Presentation.Wpf.Views;
 using System;
 using System.Windows;
@@ -23,6 +24,9 @@ public partial class App : System.Windows.Application
 
         DispatcherUnhandledException += OnUnhandledException;
         ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
+
+        // Pre-initialize the shared WebView2 environment so KaTeX renders instantly on first open.
+        MathEquationView.PreWarm();
 
         RunShell(e.Args);
     }

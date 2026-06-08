@@ -64,7 +64,7 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
 
         var modelInfo = connectionResult.ModelInfo!;
         var currentCombos = columnImportService.GetLoadCombinations();
-        var currentColumns = forceImportService.GetForces([], [], unitSystem);
+        var currentColumns = forceImportService.GetDesignForces([], [], unitSystem);
 
         // Validate bindings against current model state
         var validation = reconciliationService.ValidateBindings(
@@ -189,7 +189,7 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
             if (request.ForceSource == MbColumnForceSourceMode.ElementForces)
                 forces = forceImportService.GetElementForces(columnDtos, combos, unitSystem);
             else
-                forces = forceImportService.GetForces(columnDtos, combos, unitSystem);
+                forces = forceImportService.GetDesignForces(columnDtos, combos, unitSystem);
 
             forces = FilterByLocation(forces, request);
             rows.AddRange(forceMapper.MapColumnForces(binding.MbColumnSectionName, forces, request.ForceSource, unitSystem));

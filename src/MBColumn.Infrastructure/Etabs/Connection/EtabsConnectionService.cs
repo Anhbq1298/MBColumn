@@ -12,7 +12,7 @@ public sealed class EtabsConnectionService : IEtabsConnectionService
     public bool IsConnected => model != null;
     internal cSapModel? Model => model;
 
-    public EtabsConnectionResultDto ConnectToRunningEtabs()
+    public EtabsConnectionResultDto ConnectToRunningEtabs(MBColumn.Domain.Enums.UnitSystem targetSystem = MBColumn.Domain.Enums.UnitSystem.Metric)
     {
         try
         {
@@ -27,7 +27,13 @@ public sealed class EtabsConnectionService : IEtabsConnectionService
 
             var filePath = model.GetModelFilepath();
             var modelName = model.GetModelFilename(false);
-            var units = model.GetPresentUnits();
+            var presentUnits = model.GetPresentUnits();
+
+            eForce dbForce = default;
+            eLength dbLength = default;
+            eTemperature dbTemp = default;
+            model.GetDatabaseUnits_2(ref dbForce, ref dbLength, ref dbTemp);
+            var (forceFactor, lengthFactor) = GetConversionFactors_2(dbForce, dbLength, targetSystem);
 
             int storyCount = 0;
             string[] storyNames = [];
@@ -44,10 +50,13 @@ public sealed class EtabsConnectionService : IEtabsConnectionService
             var modelInfo = new EtabsModelInfoDto(
                 modelName,
                 filePath,
-                UnitsToString(units),
+                UnitsToString(presentUnits),
                 storyCount,
                 pierCount,
-                frameCount);
+                frameCount,
+                $"{ForceToString2(dbForce)}, {LengthToString2(dbLength)}, {(dbTemp == default ? "?" : dbTemp.ToString())}",
+                lengthFactor,
+                forceFactor);
 
             return new EtabsConnectionResultDto(true, "Connected to ETABS.", modelInfo);
         }
@@ -128,6 +137,60 @@ public sealed class EtabsConnectionService : IEtabsConnectionService
 
         var impFactor = GetMomentFactor(1.0, 1.0, targetSystem);
         return (ETABSv1.eUnits.kip_in_F, 1.0, 1.0, impFactor);
+    }
+
+    // ── GetDatabaseUnits_2 helpers ─────────────────────────────────────────────
+    // Actual ETABSv1.eForce values (reflected from DLL):
+    //   1=lb, 2=kip, 3=N, 4=kN, 5=kgf, 6=tonf
+    // Actual ETABSv1.eLength values (reflected from DLL):
+    //   1=inch, 2=ft, 3=micron, 4=mm, 5=cm, 6=m
+    internal static double GetForceToKnFactor2(eForce force) => (int)force switch
+    {
+        1 => 0.00444822,   // lb
+        2 => 4.44822,      // kip
+        3 => 0.001,        // N
+        4 => 1.0,          // kN
+        5 => 0.00980665,   // kgf
+        6 => 9.80665,      // tonf
+        _ => 1.0
+    };
+
+    internal static double GetLengthToMmFactor2(eLength length) => (int)length switch
+    {
+        1 => 25.4,      // inch
+        2 => 304.8,     // ft
+        3 => 0.001,     // micron
+        4 => 1.0,       // mm
+        5 => 10.0,      // cm
+        6 => 1000.0,    // m
+        _ => 1.0
+    };
+
+    internal static string ForceToString2(eForce force) => (int)force switch
+    {
+        1 => "lb", 2 => "kip", 3 => "N", 4 => "kN", 5 => "kgf", 6 => "tonf",
+        _ => $"F{(int)force}"
+    };
+
+    internal static string LengthToString2(eLength length) => (int)length switch
+    {
+        1 => "in", 2 => "ft", 3 => "μm", 4 => "mm", 5 => "cm", 6 => "m",
+        _ => $"L{(int)length}"
+    };
+
+    /// <summary>
+    /// Compute force→kN and length→mm scale factors from ETABS GetDatabaseUnits_2 output.
+    /// For metric MB Column target: force→kN, length→mm.
+    /// </summary>
+    internal static (double ForceFactor, double LengthFactor) GetConversionFactors_2(
+        eForce dbForce, eLength dbLength, MBColumn.Domain.Enums.UnitSystem targetSystem)
+    {
+        double forceToKn  = GetForceToKnFactor2(dbForce);
+        double lengthToMm = GetLengthToMmFactor2(dbLength);
+        if (targetSystem == MBColumn.Domain.Enums.UnitSystem.Metric)
+            return (forceToKn, lengthToMm);
+        // Imperial target (kip, in)
+        return (forceToKn / 4.44822, lengthToMm / 25.4);
     }
 
     private static (double ForceToKn, double LengthToMm) GetMetricConversionFactors(eUnits units) => units switch

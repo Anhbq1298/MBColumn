@@ -13,6 +13,11 @@ public partial class MathEquationView : UserControl
 {
     private static CoreWebView2Environment? _sharedEnvironment;
     private static readonly SemaphoreSlim _envLock = new(1, 1);
+    // Limits concurrent EnsureCoreWebView2Async calls — too many simultaneous initializations thrash the process.
+    private static readonly SemaphoreSlim _initSemaphore = new(4, 4);
+
+    /// <summary>Fire-and-forget at app startup to pre-initialize the shared WebView2 environment.</summary>
+    public static void PreWarm() => _ = GetSharedEnvironmentAsync();
 
     private static async Task<CoreWebView2Environment> GetSharedEnvironmentAsync()
     {
@@ -95,6 +100,10 @@ public partial class MathEquationView : UserControl
                 if (sv != null)
                     sv.ScrollChanged += OnAncestorScrollChanged;
             }
+            // Immediately cancel render for controls outside the initial viewport so only
+            // visible rows render on open; off-screen rows render lazily on scroll.
+            if (_ancestorScrollViewer != null)
+                UpdateWebViewClipping();
         }
         catch { }
     }
@@ -125,11 +134,20 @@ public partial class MathEquationView : UserControl
             if (!inViewport && MathWebView.Visibility != Visibility.Collapsed)
             {
                 _clippedByScrollViewer = true;
+                renderDebounce.Stop();
                 MathWebView.Visibility = Visibility.Collapsed;
+                // Mark complete so Task.WhenAll in the loading overlay doesn't wait forever.
+                if (!IsRenderComplete)
+                {
+                    FallbackTextBlock.Visibility = Visibility.Visible;
+                    LoadingIndicator.Visibility = Visibility.Collapsed;
+                    CompleteRender();
+                }
             }
             else if (inViewport && _clippedByScrollViewer)
             {
                 _clippedByScrollViewer = false;
+                completedRenderSignature = null; // force fresh KaTeX render now in viewport
                 QueueRender();
             }
         }
@@ -203,6 +221,10 @@ public partial class MathEquationView : UserControl
             return;
         }
 
+        // Don't restart render state for off-screen controls; they already completed via clipping.
+        if (_clippedByScrollViewer)
+            return;
+
         queuedRenderSignature = signature;
         ResetRenderCompletion();
 
@@ -221,6 +243,10 @@ public partial class MathEquationView : UserControl
 
     private async Task RenderAsync()
     {
+        // Skip if this control was clipped off-screen before the debounce fired.
+        if (_clippedByScrollViewer)
+            return;
+
         if (!IsEnabled)
         {
             ShowFallback();
@@ -246,7 +272,16 @@ public partial class MathEquationView : UserControl
             {
                 MathWebView.WebMessageReceived += OnWebMessageReceived;
                 var env = await GetSharedEnvironmentAsync();
-                await MathWebView.EnsureCoreWebView2Async(env);
+                // Throttle concurrent EnsureCoreWebView2Async calls to avoid thrashing.
+                await _initSemaphore.WaitAsync();
+                try
+                {
+                    await MathWebView.EnsureCoreWebView2Async(env);
+                }
+                finally
+                {
+                    _initSemaphore.Release();
+                }
                 MathWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 MathWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
                 webViewReady = true;

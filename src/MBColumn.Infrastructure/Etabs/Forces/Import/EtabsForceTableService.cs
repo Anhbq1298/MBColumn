@@ -59,8 +59,8 @@ public sealed class EtabsForceTableService : IEtabsForceTableService
         var model = connection.Model
             ?? throw new InvalidOperationException("Not connected to ETABS.");
 
-        var dbUnits  = (int)model.GetDatabaseUnits();
-        var (forceFactor, _, momentFactor) = GetUnitFactors(dbUnits, targetSystem);
+        model.SetPresentUnits(eUnits.kN_m_C);
+        var (forceFactor, _, momentFactor) = GetUnitFactors(eUnits.kN_m_C, targetSystem);
 
         return GroupAndMapRecords(records, forceFactor, momentFactor);
     }
@@ -310,13 +310,9 @@ public sealed class EtabsForceTableService : IEtabsForceTableService
         => double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0.0;
 
     private static (double ForceFactor, double LengthFactor, double MomentFactor) GetUnitFactors(
-        int dbUnitsInt, UnitSystem targetSystem)
+        eUnits presentUnits, UnitSystem targetSystem)
     {
-        var (targetUnits, fFactor, lFactor, mFactor) = EtabsConnectionService.GetSyncUnitFactors(targetSystem);
-        if (dbUnitsInt == (int)targetUnits)
-            return (fFactor, lFactor, mFactor);
-
-        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors((eUnits)dbUnitsInt, targetSystem);
+        var (fKn, lMm) = EtabsConnectionService.GetConversionFactors(presentUnits, targetSystem);
         return (fKn, lMm, EtabsConnectionService.GetMomentFactor(fKn, lMm, targetSystem));
     }
 }

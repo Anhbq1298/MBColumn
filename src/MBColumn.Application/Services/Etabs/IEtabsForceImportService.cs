@@ -5,7 +5,7 @@ namespace MBColumn.Application.Services.Etabs;
 
 public interface IEtabsForceImportService
 {
-    IReadOnlyList<EtabsForceResultDto> GetForces(
+    IReadOnlyList<EtabsForceResultDto> GetDesignForces(
         IReadOnlyList<EtabsColumnImportDto> columns,
         IReadOnlyList<string> loadCombinations,
         UnitSystem targetSystem);

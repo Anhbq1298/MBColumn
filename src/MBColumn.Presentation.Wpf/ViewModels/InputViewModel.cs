@@ -1051,6 +1051,7 @@ public sealed class InputViewModel : ViewModelBase
             if (ReferenceEquals(selectedLoadCase, value)) return;
             Set(ref selectedLoadCase, value);
             UpdateSectionPropertiesPanel();
+            RefreshSlendernessUiState();
         }
     }
     public LoadCaseViewModel? SlendernessCalculationLoadCase
@@ -1319,6 +1320,7 @@ public sealed class InputViewModel : ViewModelBase
         {
             _isUpdatingPreview = false;
         }
+        RefreshSlendernessUiState();
     }
 
     private void UpdateSectionPreviewInternal()
@@ -2530,6 +2532,10 @@ public sealed class InputViewModel : ViewModelBase
     {
         if (_isSyncingRebars || IsCustomRebarCoordinates) return;
         _isSyncingRebars = true;
+        // _generatingRebarsDepth > 0 suppresses _onIrregularRebarsChanged / _onBoundaryPointsChanged
+        // from calling UpdateSectionPreview() for each individual Add — without this, SyncRebarsToTable
+        // would restart the debounce timer N times (once per rebar), causing an infinite preview loop.
+        _generatingRebarsDepth++;
         try
         {
             IrregularInput.Rebars.Clear();
@@ -2548,6 +2554,7 @@ public sealed class InputViewModel : ViewModelBase
         }
         finally
         {
+            _generatingRebarsDepth--;
             _isSyncingRebars = false;
         }
     }
@@ -2943,8 +2950,6 @@ public sealed class InputViewModel : ViewModelBase
             PreviewConcreteQuantityText = "—";
             PreviewSteelQuantityText = "—";
         }
-
-        RefreshSlendernessUiState();
     }
 
     private void LoadCases_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -2979,8 +2984,28 @@ public sealed class InputViewModel : ViewModelBase
         RefreshSlendernessUiState();
     }
 
+    // Only user-editable load case inputs should trigger a slenderness recalc or panel update.
+    // Computed outputs (LambdaX, Status, M02x, KrX, …) written by Phase 4 must never restart
+    // the refresh cycle — doing so creates an infinite Phase1→Phase4→Phase1 loop.
+    private static readonly HashSet<string> _loadCaseInputProperties = new(StringComparer.Ordinal)
+    {
+        nameof(LoadCaseViewModel.Pu),   nameof(LoadCaseViewModel.NEd),
+        nameof(LoadCaseViewModel.Mux),  nameof(LoadCaseViewModel.Mx),
+        nameof(LoadCaseViewModel.Muy),  nameof(LoadCaseViewModel.My),
+        nameof(LoadCaseViewModel.Vux),  nameof(LoadCaseViewModel.Vx),
+        nameof(LoadCaseViewModel.Vuy),  nameof(LoadCaseViewModel.Vy),
+        nameof(LoadCaseViewModel.MxTop),    nameof(LoadCaseViewModel.MxBottom),
+        nameof(LoadCaseViewModel.MyTop),    nameof(LoadCaseViewModel.MyBottom),
+        nameof(LoadCaseViewModel.IsActive),
+        nameof(LoadCaseViewModel.Name),
+        nameof(LoadCaseViewModel.MemberLengthOverrideDisplay),
+        nameof(LoadCaseViewModel.MemberLengthOverrideMm),
+    };
+
     private void LoadCase_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (!_loadCaseInputProperties.Contains(e.PropertyName ?? string.Empty)) return;
+
         if (ReferenceEquals(sender, SelectedLoadCase))
         {
             UpdateSectionPropertiesPanel();
@@ -2991,14 +3016,18 @@ public sealed class InputViewModel : ViewModelBase
 
     private async void RefreshSlendernessUiState()
     {
+        // Guard FIRST: calls that arrive while Phase 1 or Phase 4 is running (e.g. the
+        // PropertyChanged cascade from ClearEc2SlendernessResults setting LambdaX=null)
+        // must not cancel the current CTS — if they did, Phase 3's token would already be
+        // cancelled before Task.Run is reached, and Phase 4 would never execute.
+        if (isRefreshingSlendernessState) return;
+
         // Cancel any in-flight background calculation and issue a fresh token for this call.
         _slendernessRefreshCts?.Cancel();
         var cts = new CancellationTokenSource();
         _slendernessRefreshCts = cts;
 
-        // Phase 1: fast synchronous status validation + clear — guard against re-entry from
-        // the PropertyChanged cascades that ClearEc2SlendernessResults() fires.
-        if (isRefreshingSlendernessState) return;
+        // Phase 1: fast synchronous status validation + clear.
         isRefreshingSlendernessState = true;
         try
         {
@@ -3626,7 +3655,6 @@ public sealed class InputViewModel : ViewModelBase
 
         RaiseDefaults();
         FlushPreviewNow();
-        RefreshSlendernessUiState();
     }
 
     public void ApplySlendernessResults(CalculationResultDto result)

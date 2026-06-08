@@ -94,12 +94,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsSectionRefreshSummary** | Represents the EtabsSectionRefreshSummary class. Key properties: SectionName, Status, OldRowCount, NewRowCount. | `EtabsSectionRefreshSummary.cs` |
 | `class` | **EtabsSourceObjectRefDto** | Data transfer object carrying EtabsSourceObjectRef data. Key properties: ObjectName, Label, Story, SectionName. | `EtabsTierImportMetadataDto.cs` |
 | `class` | **EtabsTierImportMetadataDto** | Data transfer object carrying EtabsTierImportMetadata data. Key properties: SourceModelPath, SourceModelName, ImportedUnits, MBColumnUnitsAtImport. | `EtabsTierImportMetadataDto.cs` |
-| `class` | **ImportedEtabsForceDatabase** | Represents the ImportedEtabsForceDatabase class. Key properties: ModelFilePath, ModelName, ImportedAt. | `ImportedEtabsForceDatabase.cs` |
+| `class` | **ImportedEtabsForceDatabase** | Represents the ImportedEtabsForceDatabase class. Key properties: ModelFilePath, ModelName, ImportedAt, DatabaseForceUnits. | `ImportedEtabsForceDatabase.cs` |
 | `enum` | **MbColumnForceSourceMode** | Enumeration defining states/types for MbColumnForceSourceMode. | `MbColumnForceSourceMode.cs` |
 | `class` | **MbColumnMappedForceRow** | /// One merged row per (section, combo) in the Force Preview grid. /// Bottom and Top stations are collapsed into a single row: /// NEd = min(NEd_bottom, NEd_top) — positive = compression /// Vx = max(|Vx_bottom|, |Vx_top|) /// Vy = max(|Vy_bottom|, |Vy_top|) /// Mx/MyTop/Bottom kept separate for slenderness / end-moment checks. ///. Key properties: MbColumnSectionName, CaseName, ObjectType, Story. | `MbColumnMappedForceRow.cs` |
 | `class` | **MbColumnSectionImport** | Represents the MbColumnSectionImport class. Key properties: SectionName, SelectedItems. | `MbColumnSectionImport.cs` |
 | `class` | **MbColumnSectionImportItem** | Represents the MbColumnSectionImportItem class. Key properties: ObjectType, Story, Label, Key. | `MbColumnSectionImportItem.cs` |
-| `enum` | **value** | Enumeration defining states/types for value. Key properties: DatabaseUnits, ColumnForces, PierForces, ColumnElementForces. | `ImportedEtabsForceDatabase.cs` |
 
 ### DTOs/Etabs/Forces
 
@@ -501,7 +500,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **EtabsDesignForceImportService** | /// Preloads raw Design Forces - Columns and Design Forces - Piers tables from ETABS /// into ImportedEtabsForceDatabase without filtering or unit conversion, /// so the data can later be parsed on demand by the Force Filter without additional COM calls. ///. Key methods: ImportDesignForces, HasDesignResults, LoadColumnElementForcesTable, LoadPierElementForcesTable. | `EtabsDesignForceImportService.cs` |
-| `class` | **EtabsForceImportService** | Provides service logic and operations for EtabsForceImport. Key methods: GetForces, GetPierForces, GetElementForces, GetPierElementForces. | `EtabsForceImportService.cs` |
+| `class` | **EtabsForceImportService** | Provides service logic and operations for EtabsForceImport. Key methods: GetDesignForces, GetPierForces, GetElementForces, GetPierElementForces. | `EtabsForceImportService.cs` |
 | `class` | **EtabsForceTableService** | /// Unified ETABS force import pipeline using cDatabaseTables. /// /// Pipeline: /// 1. Resolve table key from ForceSourceType + ObjectType. /// 2. Read raw ETABS table via GetTableForDisplayArray. /// 3. Normalize field names to EtabsForceRecord. /// 4. Apply EtabsForceFilterCriteria. /// 5. Group by (Story+Label+UniqueName+OutputCase), keep min/max stations (Bottom/Top). /// 6. Convert units and apply MB Column force convention. /// 7. Generate MB Column load case names. ///. Key methods: GetNormalizedRecords, MapToMbColumnRecords, GetMbColumnForceRecords. | `EtabsForceTableService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParsePierForces. | `EtabsDesignForceImportService.cs` |
 | `record` | **in** | Represents the in record. Key methods: ParseAllColumnForces. | `EtabsDesignForceImportService.cs` |
@@ -785,7 +784,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **MathEquationView** | Represents the MathEquationView class. Key properties: IsRenderComplete, RenderCompletion, Latex, FallbackText. | `MathEquationView.xaml.cs` |
+| `class` | **MathEquationView** | Represents the MathEquationView class. Key methods: PreWarm. Key properties: IsRenderComplete, RenderCompletion, Latex, FallbackText. | `MathEquationView.xaml.cs` |
 | `class` | **MathEquationViewModel** | Represents the MathEquationViewModel class. Key properties: Latex, FallbackText, RenderMode, FontSize. | `MathEquationViewModel.cs` |
 | `enum` | **MathRenderMode** | Enumeration defining states/types for MathRenderMode. | `MathRenderMode.cs` |
 | `class` | **MathRenderService** | Provides service logic and operations for MathRender. Key methods: BuildHtml, HasLocalAssets, NormalizeLatex. | `MathRenderService.cs` |
@@ -866,7 +865,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsImportSummaryRowViewModel** | Represents the EtabsImportSummaryRowViewModel class. Key properties: SourceColumn, Mapping, NewSectionName, Pier. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsImportViewModel** | Represents the EtabsImportViewModel class. Key methods: ApplyPreloadData, AssignSelectedItemsToSection, RemoveItemFromSection, DeleteMbColumnSection. Key properties: ImportResult, Columns, FilteredColumns, TierObjectCandidatesView. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsLoadCombinationViewModel** | Represents the EtabsLoadCombinationViewModel class. Key methods: SetSelectedSilently. Key properties: Name, IsSelected. | `EtabsImportViewModel.cs` |
-| `class` | **EtabsPreloadData** | Represents the EtabsPreloadData class. Key properties: ModelName, ModelPath, PresentUnits, StoryCount. | `EtabsPreloadData.cs` |
+| `class` | **EtabsPreloadData** | Represents the EtabsPreloadData class. Key properties: ModelName, ModelPath, PresentUnits, DatabaseUnitsStr. | `EtabsPreloadData.cs` |
 | `class` | **EtabsPreloadStep** | Represents the EtabsPreloadStep class. Key methods: SetRunning, SetDone, SetError, UpdateDetail. Key properties: Label, IsSubStep, Status, Detail. | `EtabsPreloadStep.cs` |
 | `class` | **EtabsPreloadViewModel** | Represents the EtabsPreloadViewModel class. Key methods: StartAsync, Cancel. Key properties: Steps, CompletedCount, CompletedStepsText, Result. | `EtabsPreloadViewModel.cs` |
 | `class` | **EtabsSectionMappingViewModel** | Represents the EtabsSectionMappingViewModel class. Key properties: SectionTypes, EtabsSectionName, UniqueSection, SectionType. | `EtabsSectionMappingViewModel.cs` |

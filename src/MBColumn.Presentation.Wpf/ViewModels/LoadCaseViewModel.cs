@@ -198,8 +198,13 @@ public sealed class LoadCaseViewModel : ViewModelBase
         ? $@"e_{{2,y}}={e2Y.Value:F2}\;\mathrm{{mm}}"
         : @"e_{2,y}=-";
 
-    public bool IsAnyAxisSlender => IsSlender(M2x) || IsSlender(M2y);
-    public bool IsNeitherAxisSlender => !IsAnyAxisSlender && (M2x.HasValue || M2y.HasValue);
+    // "Slender" means the nominal curvature branch was selected (lambda > lambda_lim).
+    // Do NOT gate on M2 > 0: when n >> nu the Kr factor clamps to 0, giving M2 = 0,
+    // but the user still needs to see the Kr/Kphi/1r/e2 rows to understand why M2 = 0.
+    public bool IsAnyAxisSlender =>
+        (LambdaX.HasValue && LambdaLimitX.HasValue && LambdaX.Value > LambdaLimitX.Value) ||
+        (LambdaY.HasValue && LambdaLimitY.HasValue && LambdaY.Value > LambdaLimitY.Value);
+    public bool IsNeitherAxisSlender => !IsAnyAxisSlender && HasSlendernessData;
     public bool HasEc2Results => M02x.HasValue || M02y.HasValue;
     public bool HasSlendernessData => LambdaX.HasValue || LambdaY.HasValue;
 
@@ -222,7 +227,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string KPhiXLatex => BuildKPhiLatex("x", KPhiX, BetaX, PhiEffX);
     public string KPhiYLatex => BuildKPhiLatex("y", KPhiY, BetaY, PhiEffY);
     public string MomentUsedFormulaLatex => @"M_{Ed}=\max(M_{02},\;M_{0e}+M_2,\;M_{01}+0.5M_2,\;M_{min})";
-    public string EffectiveMomentUsedFormulaLatex => IsAnyAxisSlender
+    public string EffectiveMomentUsedFormulaLatex => HasSlendernessData
         ? MomentUsedFormulaLatex
         : @"M_{Ed}=\max(M_{02},\;M_{min})";
     public string MxUsedResultLatex => MxUsed.HasValue ? $@"M_{{Ed,x}}={FmtMoment(MxUsed)}" : @"M_{Ed,x}=\mathrm{auto}";
@@ -230,34 +235,34 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string MxUsedExpandedLatex => BuildMomentUsedExpandedLatex("x", MxUsed, M02x, M0ex, M2x, M01x, MinimumMomentX);
     public string MyUsedExpandedLatex => BuildMomentUsedExpandedLatex("y", MyUsed, M02y, M0ey, M2y, M01y, MinimumMomentY);
 
-    // Row 11 sub-rows: both M0e max() candidates
-    public string M0eCand1XLatex => M01x.HasValue && M02x.HasValue && IsSlender(M2x)
+    // Row 11 sub-rows: both M0e max() candidates — show whenever slenderness data is available (M2 may be 0 for stocky/Kr=0)
+    public string M0eCand1XLatex => M01x.HasValue && M02x.HasValue && M2x.HasValue
         ? $@"0.6\times{Fmt(M02x)}+0.4\times{Fmt(M01x)}={FmtMoment(0.6*M02x.Value+0.4*M01x.Value)}"
         : "";
-    public string M0eCand2XLatex => M02x.HasValue && IsSlender(M2x)
+    public string M0eCand2XLatex => M02x.HasValue && M2x.HasValue
         ? $@"0.4\times{Fmt(M02x)}={FmtMoment(0.4*M02x.Value)}"
         : "";
-    public string M0eCand1YLatex => M01y.HasValue && M02y.HasValue && IsSlender(M2y)
+    public string M0eCand1YLatex => M01y.HasValue && M02y.HasValue && M2y.HasValue
         ? $@"0.6\times{Fmt(M02y)}+0.4\times{Fmt(M01y)}={FmtMoment(0.6*M02y.Value+0.4*M01y.Value)}"
         : "";
-    public string M0eCand2YLatex => M02y.HasValue && IsSlender(M2y)
+    public string M0eCand2YLatex => M02y.HasValue && M2y.HasValue
         ? $@"0.4\times{Fmt(M02y)}={FmtMoment(0.4*M02y.Value)}"
         : "";
 
-    // Row 12 sub-rows: all Mused max() candidates
+    // Row 12 sub-rows: all Mused max() candidates — show whenever slenderness data is available
     public string MxCandM02Latex => M02x.HasValue ? $@"M_{{02,x}}={FmtMoment(M02x)}" : "";
-    public string MxCandM0ePlusM2Latex => M0ex.HasValue && M2x.HasValue && IsSlender(M2x)
+    public string MxCandM0ePlusM2Latex => M0ex.HasValue && M2x.HasValue
         ? $@"\left|M_{{0e,x}}\right|+M_{{2,x}}={Fmt(Math.Abs(M0ex.Value))}+{Fmt(M2x.Value)}={FmtMoment(Math.Abs(M0ex.Value)+M2x.Value)}"
         : "";
-    public string MxCandM01Plus05M2Latex => M01x.HasValue && M2x.HasValue && IsSlender(M2x)
+    public string MxCandM01Plus05M2Latex => M01x.HasValue && M2x.HasValue
         ? $@"M_{{01,x}}+0.5M_{{2,x}}={Fmt(M01x.Value)}+0.5\times{Fmt(M2x.Value)}={FmtMoment(M01x.Value+0.5*M2x.Value)}"
         : "";
     public string MxCandMinimumMomentLatex => MinimumMomentX.HasValue ? $@"M_{{min,x}}={FmtMoment(MinimumMomentX)}" : "";
     public string MyCandM02Latex => M02y.HasValue ? $@"M_{{02,y}}={FmtMoment(M02y)}" : "";
-    public string MyCandM0ePlusM2Latex => M0ey.HasValue && M2y.HasValue && IsSlender(M2y)
+    public string MyCandM0ePlusM2Latex => M0ey.HasValue && M2y.HasValue
         ? $@"\left|M_{{0e,y}}\right|+M_{{2,y}}={Fmt(Math.Abs(M0ey.Value))}+{Fmt(M2y.Value)}={FmtMoment(Math.Abs(M0ey.Value)+M2y.Value)}"
         : "";
-    public string MyCandM01Plus05M2Latex => M01y.HasValue && M2y.HasValue && IsSlender(M2y)
+    public string MyCandM01Plus05M2Latex => M01y.HasValue && M2y.HasValue
         ? $@"M_{{01,y}}+0.5M_{{2,y}}={Fmt(M01y.Value)}+0.5\times{Fmt(M2y.Value)}={FmtMoment(M01y.Value+0.5*M2y.Value)}"
         : "";
     public string MyCandMinimumMomentLatex => MinimumMomentY.HasValue ? $@"M_{{min,y}}={FmtMoment(MinimumMomentY)}" : "";
@@ -441,9 +446,9 @@ public sealed class LoadCaseViewModel : ViewModelBase
         var candidates = new List<double>();
         if (m02.HasValue)
             candidates.Add(Math.Abs(m02.Value));
-        if (m0e.HasValue && m2.HasValue && IsSlender(m2))
+        if (m0e.HasValue && m2.HasValue)
             candidates.Add(Math.Abs(m0e.Value) + Math.Abs(m2.Value));
-        if (m01.HasValue && m2.HasValue && IsSlender(m2))
+        if (m01.HasValue && m2.HasValue)
             candidates.Add(Math.Abs(m01.Value) + 0.5 * Math.Abs(m2.Value));
         if (minimumMoment.HasValue)
             candidates.Add(Math.Abs(minimumMoment.Value));

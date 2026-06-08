@@ -6,4 +6,7 @@ public sealed record EtabsModelInfoDto(
     string PresentUnits,
     int StoryCount,
     int PierCount,
-    int FrameObjectCount);
+    int FrameObjectCount,
+    string DatabaseUnitsStr = "-",
+    double LengthScaleFactor = 1.0,
+    double ForceScaleFactor = 1.0);

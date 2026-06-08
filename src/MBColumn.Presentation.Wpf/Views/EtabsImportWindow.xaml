@@ -35,10 +35,16 @@
         </Style>
         <Style x:Key="ModelSidebarValueTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontWeight" Value="Normal" />
             <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
             <Setter Property="Margin" Value="0,1,0,10" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="SidebarLabelTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="Margin" Value="0,0,0,2" />
         </Style>
         <Style x:Key="GroupCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
@@ -343,6 +349,17 @@
                                 </TextBlock>
                             </Border>
 
+                            <!-- Re-connect / End connect buttons -->
+                            <StackPanel Orientation="Vertical" Margin="0,0,0,12" >
+                                <Button Content="Re-connect"
+                                        Command="{Binding ReconnectCommand}"
+                                        Margin="0,0,0,6"
+                                        HorizontalAlignment="Stretch" />
+                                <Button Content="End connect"
+                                        Command="{Binding DisconnectCommand}"
+                                        HorizontalAlignment="Stretch" />
+                            </StackPanel>
+
                             <!-- Model fields — visible only when connected -->
                             <StackPanel>
                                 <StackPanel.Style>
@@ -356,24 +373,32 @@
                                     </Style>
                                 </StackPanel.Style>
 
-                                <TextBlock Text="Name" Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Text="Name" Style="{StaticResource SidebarLabelTextStyle}" />
                                 <TextBlock Text="{Binding ModelName}"
                                            Style="{StaticResource ModelSidebarValueTextStyle}"
                                            ToolTip="{Binding ModelName}" />
 
-                                <TextBlock Text="ETABS Units" Style="{StaticResource FieldLabelTextStyle}" />
-                                <TextBlock Text="{Binding PresentUnits}"
+                                <TextBlock Text="ETABS DB Units" Style="{StaticResource SidebarLabelTextStyle}" />
+                                <TextBlock Text="{Binding DatabaseUnitsStr}"
                                            Style="{StaticResource ModelSidebarValueTextStyle}" />
 
-                                <TextBlock Text="Stories" Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Text="Length scale (→ MB)" Style="{StaticResource SidebarLabelTextStyle}" />
+                                <TextBlock Text="{Binding LengthScaleFactorLabel}"
+                                           Style="{StaticResource ModelSidebarValueTextStyle}" />
+
+                                <TextBlock Text="Force scale (→ MB)" Style="{StaticResource SidebarLabelTextStyle}" />
+                                <TextBlock Text="{Binding ForceScaleFactorLabel}"
+                                           Style="{StaticResource ModelSidebarValueTextStyle}" />
+
+                                <TextBlock Text="Stories" Style="{StaticResource SidebarLabelTextStyle}" />
                                 <TextBlock Text="{Binding StoryCount, Mode=OneWay}"
                                            Style="{StaticResource ModelSidebarValueTextStyle}" />
 
-                                <TextBlock Text="Columns" Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Text="Columns" Style="{StaticResource SidebarLabelTextStyle}" />
                                 <TextBlock Text="{Binding FrameObjectCount}"
                                            Style="{StaticResource ModelSidebarValueTextStyle}" />
 
-                                <TextBlock Text="Piers" Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Text="Piers" Style="{StaticResource SidebarLabelTextStyle}" />
                                 <TextBlock Text="{Binding PierCount, Mode=OneWay}"
                                            Style="{StaticResource ModelSidebarValueTextStyle}"
                                            Margin="0,1,0,0" />
