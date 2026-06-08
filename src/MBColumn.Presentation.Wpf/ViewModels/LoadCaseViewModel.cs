@@ -153,8 +153,8 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string LambdaLimitXResultLatex => LambdaLimitX.HasValue ? $@"\lambda_{{lim,x}}={LambdaLimitX.Value:F2}" : @"\lambda_{lim,x}=-";
     public string LambdaLimitYResultLatex => LambdaLimitY.HasValue ? $@"\lambda_{{lim,y}}={LambdaLimitY.Value:F2}" : @"\lambda_{lim,y}=-";
     public string MomentRatioFormulaLatex => @"r_m=\frac{M_{01}}{M_{02}}";
-    public string MomentRatioXResultLatex => $@"M_{{01}}={Fmt(M01x)},\quad M_{{02}}={Fmt(M02x)},\quad r_m={Fmt(RmX)}";
-    public string MomentRatioYResultLatex => $@"M_{{01}}={Fmt(M01y)},\quad M_{{02}}={Fmt(M02y)},\quad r_m={Fmt(RmY)}";
+    public string MomentRatioXResultLatex => $@"M_{{01}}={FmtMoment(M01x)},\quad M_{{02}}={FmtMoment(M02x)},\quad r_m={Fmt(RmX)}";
+    public string MomentRatioYResultLatex => $@"M_{{01}}={FmtMoment(M01y)},\quad M_{{02}}={FmtMoment(M02y)},\quad r_m={Fmt(RmY)}";
     public string RmXOnlyLatex => RmX.HasValue ? $@"r_{{m,x}}={RmX.Value:F4}" : @"r_{m,x}=-";
     public string RmYOnlyLatex => RmY.HasValue ? $@"r_{{m,y}}={RmY.Value:F4}" : @"r_{m,y}=-";
     public double? FactorN { get => factorN; set { Set(ref factorN, value); Raise(nameof(FactorNLatex)); Raise(nameof(FactorALatex)); Raise(nameof(FactorBLatex)); Raise(nameof(FactorCxLatex)); Raise(nameof(FactorCyLatex)); RaiseSlendernessLatex(); } }
@@ -184,76 +184,80 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string FactorCyLatex => factorCy.HasValue ? $@"C_y={factorCy.Value:F3}" : "C_y=-";
 
     public string NominalCurvatureX1rLatex => nominalCurvatureX.HasValue
-        ? $@"\frac{{1}}{{r_x}}={nominalCurvatureX.Value * 1000:F5}\;\text{{m}}^{{-1}}"
+        ? $@"\frac{{1}}{{r_x}}={nominalCurvatureX.Value * 1000:F5}\;\mathrm{{m}}^{{-1}}"
         : @"\frac{1}{r_x}=-";
     public string NominalCurvatureY1rLatex => nominalCurvatureY.HasValue
-        ? $@"\frac{{1}}{{r_y}}={nominalCurvatureY.Value * 1000:F5}\;\text{{m}}^{{-1}}"
+        ? $@"\frac{{1}}{{r_y}}={nominalCurvatureY.Value * 1000:F5}\;\mathrm{{m}}^{{-1}}"
         : @"\frac{1}{r_y}=-";
     public string NominalCurvatureXE2Latex => e2X.HasValue
-        ? $@"e_{{2,x}}={e2X.Value:F2}\;\text{{mm}}"
+        ? $@"e_{{2,x}}={e2X.Value:F2}\;\mathrm{{mm}}"
         : @"e_{2,x}=-";
     public string NominalCurvatureYE2Latex => e2Y.HasValue
-        ? $@"e_{{2,y}}={e2Y.Value:F2}\;\text{{mm}}"
+        ? $@"e_{{2,y}}={e2Y.Value:F2}\;\mathrm{{mm}}"
         : @"e_{2,y}=-";
 
     public bool IsAnyAxisSlender => IsSlender(M2x) || IsSlender(M2y);
     public bool IsNeitherAxisSlender => !IsAnyAxisSlender && (M2x.HasValue || M2y.HasValue);
+    public bool HasEc2Results => M02x.HasValue || M02y.HasValue;
 
     public string BranchFormulaLatex => @"\lambda<\lambda_{lim}\Rightarrow M_2=0,\quad \lambda\geq\lambda_{lim}\Rightarrow\text{nominal curvature}";
     public string NominalCurvatureFormulaLatex => @"M_{0e}=\max(0.6M_{02}+0.4M_{01},0.4M_{02}),\quad M_2=N_{Ed}e_2";
-    public string NominalCurvatureXResultLatex => $@"M_{{0e}}={Fmt(M0ex)},\quad M_2={Fmt(M2x)}";
-    public string NominalCurvatureYResultLatex => $@"M_{{0e}}={Fmt(M0ey)},\quad M_2={Fmt(M2y)}";
-    public string NominalCurvatureXM0eLatex => $@"M_{{0e,x}}={Fmt(M0ex)}";
-    public string NominalCurvatureYM0eLatex => $@"M_{{0e,y}}={Fmt(M0ey)}";
-    public string NominalCurvatureXM2Latex => $@"M_{{2,x}}=N_{{Ed}}e_{{2,x}}={Fmt(M2x)}";
-    public string NominalCurvatureYM2Latex => $@"M_{{2,y}}=N_{{Ed}}e_{{2,y}}={Fmt(M2y)}";
-    public string M01XResultLatex => M01x.HasValue ? $@"M_{{01,x}}={Fmt(M01x)}" : @"M_{01,x}=-";
-    public string M02XResultLatex => M02x.HasValue ? $@"M_{{02,x}}={Fmt(M02x)}" : @"M_{02,x}=-";
-    public string M01YResultLatex => M01y.HasValue ? $@"M_{{01,y}}={Fmt(M01y)}" : @"M_{01,y}=-";
-    public string M02YResultLatex => M02y.HasValue ? $@"M_{{02,y}}={Fmt(M02y)}" : @"M_{02,y}=-";
+    public string NominalCurvatureXResultLatex => $@"M_{{0e}}={FmtMoment(M0ex)},\quad M_2={FmtMoment(M2x)}";
+    public string NominalCurvatureYResultLatex => $@"M_{{0e}}={FmtMoment(M0ey)},\quad M_2={FmtMoment(M2y)}";
+    public string NominalCurvatureXM0eLatex => $@"M_{{0e,x}}={FmtMoment(M0ex)}";
+    public string NominalCurvatureYM0eLatex => $@"M_{{0e,y}}={FmtMoment(M0ey)}";
+    public string NominalCurvatureXM2Latex => $@"M_{{2,x}}={FmtMoment(M2x)}";
+    public string NominalCurvatureYM2Latex => $@"M_{{2,y}}={FmtMoment(M2y)}";
+    public string M01XResultLatex => M01x.HasValue ? $@"M_{{01,x}}={FmtMoment(M01x)}" : @"M_{01,x}=-";
+    public string M02XResultLatex => M02x.HasValue ? $@"M_{{02,x}}={FmtMoment(M02x)}" : @"M_{02,x}=-";
+    public string M01YResultLatex => M01y.HasValue ? $@"M_{{01,y}}={FmtMoment(M01y)}" : @"M_{01,y}=-";
+    public string M02YResultLatex => M02y.HasValue ? $@"M_{{02,y}}={FmtMoment(M02y)}" : @"M_{02,y}=-";
     public string M0eEquivXLatex => BuildM0eEquivalentLatex("x", M01x, M02x, M0ex);
     public string M0eEquivYLatex => BuildM0eEquivalentLatex("y", M01y, M02y, M0ey);
     public string KrXLatex => BuildKrLatex("x", KrX);
     public string KrYLatex => BuildKrLatex("y", KrY);
     public string KPhiXLatex => BuildKPhiLatex("x", KPhiX, BetaX, PhiEffX);
     public string KPhiYLatex => BuildKPhiLatex("y", KPhiY, BetaY, PhiEffY);
-    public string MomentUsedFormulaLatex => @"M_{Ed}=\max(M_{02},\;M_{0e}+M_2,\;M_{01}+0.5M_2,\;N_{Ed}e_0)";
-    public string MxUsedResultLatex => MxUsed.HasValue ? $@"M_{{Ed,x}}={MxUsed.Value:F2}" : @"M_{Ed,x}=\mathrm{auto}";
-    public string MyUsedResultLatex => MyUsed.HasValue ? $@"M_{{Ed,y}}={MyUsed.Value:F2}" : @"M_{Ed,y}=\mathrm{auto}";
+    public string MomentUsedFormulaLatex => @"M_{Ed}=\max(M_{02},\;M_{0e}+M_2,\;M_{01}+0.5M_2,\;M_{min})";
+    public string EffectiveMomentUsedFormulaLatex => IsAnyAxisSlender
+        ? MomentUsedFormulaLatex
+        : @"M_{Ed}=\max(M_{02},\;M_{min})";
+    public string MxUsedResultLatex => MxUsed.HasValue ? $@"M_{{Ed,x}}={FmtMoment(MxUsed)}" : @"M_{Ed,x}=\mathrm{auto}";
+    public string MyUsedResultLatex => MyUsed.HasValue ? $@"M_{{Ed,y}}={FmtMoment(MyUsed)}" : @"M_{Ed,y}=\mathrm{auto}";
     public string MxUsedExpandedLatex => BuildMomentUsedExpandedLatex("x", MxUsed, M02x, M0ex, M2x, M01x, MinimumMomentX);
     public string MyUsedExpandedLatex => BuildMomentUsedExpandedLatex("y", MyUsed, M02y, M0ey, M2y, M01y, MinimumMomentY);
 
     // Row 11 sub-rows: both M0e max() candidates
     public string M0eCand1XLatex => M01x.HasValue && M02x.HasValue && IsSlender(M2x)
-        ? $@"0.6\times{Fmt(M02x)}+0.4\times{Fmt(M01x)}={Fmt(0.6*M02x.Value+0.4*M01x.Value)}"
+        ? $@"0.6\times{Fmt(M02x)}+0.4\times{Fmt(M01x)}={FmtMoment(0.6*M02x.Value+0.4*M01x.Value)}"
         : "";
     public string M0eCand2XLatex => M02x.HasValue && IsSlender(M2x)
-        ? $@"0.4\times{Fmt(M02x)}={Fmt(0.4*M02x.Value)}"
+        ? $@"0.4\times{Fmt(M02x)}={FmtMoment(0.4*M02x.Value)}"
         : "";
     public string M0eCand1YLatex => M01y.HasValue && M02y.HasValue && IsSlender(M2y)
-        ? $@"0.6\times{Fmt(M02y)}+0.4\times{Fmt(M01y)}={Fmt(0.6*M02y.Value+0.4*M01y.Value)}"
+        ? $@"0.6\times{Fmt(M02y)}+0.4\times{Fmt(M01y)}={FmtMoment(0.6*M02y.Value+0.4*M01y.Value)}"
         : "";
     public string M0eCand2YLatex => M02y.HasValue && IsSlender(M2y)
-        ? $@"0.4\times{Fmt(M02y)}={Fmt(0.4*M02y.Value)}"
+        ? $@"0.4\times{Fmt(M02y)}={FmtMoment(0.4*M02y.Value)}"
         : "";
 
     // Row 12 sub-rows: all Mused max() candidates
-    public string MxCandM02Latex => M02x.HasValue ? $@"M_{{02,x}}={Fmt(M02x)}" : "";
+    public string MxCandM02Latex => M02x.HasValue ? $@"M_{{02,x}}={FmtMoment(M02x)}" : "";
     public string MxCandM0ePlusM2Latex => M0ex.HasValue && M2x.HasValue && IsSlender(M2x)
-        ? $@"\left|M_{{0e,x}}\right|+M_{{2,x}}={Fmt(Math.Abs(M0ex.Value))}+{Fmt(M2x.Value)}={Fmt(Math.Abs(M0ex.Value)+M2x.Value)}"
+        ? $@"\left|M_{{0e,x}}\right|+M_{{2,x}}={Fmt(Math.Abs(M0ex.Value))}+{Fmt(M2x.Value)}={FmtMoment(Math.Abs(M0ex.Value)+M2x.Value)}"
         : "";
     public string MxCandM01Plus05M2Latex => M01x.HasValue && M2x.HasValue && IsSlender(M2x)
-        ? $@"M_{{01,x}}+0.5M_{{2,x}}={Fmt(M01x.Value)}+0.5\times{Fmt(M2x.Value)}={Fmt(M01x.Value+0.5*M2x.Value)}"
+        ? $@"M_{{01,x}}+0.5M_{{2,x}}={Fmt(M01x.Value)}+0.5\times{Fmt(M2x.Value)}={FmtMoment(M01x.Value+0.5*M2x.Value)}"
         : "";
-    public string MxCandMinimumMomentLatex => MinimumMomentX.HasValue ? $@"N_{{Ed}}e_{{0,x}}={Fmt(MinimumMomentX)}" : "";
-    public string MyCandM02Latex => M02y.HasValue ? $@"M_{{02,y}}={Fmt(M02y)}" : "";
+    public string MxCandMinimumMomentLatex => MinimumMomentX.HasValue ? $@"M_{{min,x}}={FmtMoment(MinimumMomentX)}" : "";
+    public string MyCandM02Latex => M02y.HasValue ? $@"M_{{02,y}}={FmtMoment(M02y)}" : "";
     public string MyCandM0ePlusM2Latex => M0ey.HasValue && M2y.HasValue && IsSlender(M2y)
-        ? $@"\left|M_{{0e,y}}\right|+M_{{2,y}}={Fmt(Math.Abs(M0ey.Value))}+{Fmt(M2y.Value)}={Fmt(Math.Abs(M0ey.Value)+M2y.Value)}"
+        ? $@"\left|M_{{0e,y}}\right|+M_{{2,y}}={Fmt(Math.Abs(M0ey.Value))}+{Fmt(M2y.Value)}={FmtMoment(Math.Abs(M0ey.Value)+M2y.Value)}"
         : "";
     public string MyCandM01Plus05M2Latex => M01y.HasValue && M2y.HasValue && IsSlender(M2y)
-        ? $@"M_{{01,y}}+0.5M_{{2,y}}={Fmt(M01y.Value)}+0.5\times{Fmt(M2y.Value)}={Fmt(M01y.Value+0.5*M2y.Value)}"
+        ? $@"M_{{01,y}}+0.5M_{{2,y}}={Fmt(M01y.Value)}+0.5\times{Fmt(M2y.Value)}={FmtMoment(M01y.Value+0.5*M2y.Value)}"
         : "";
-    public string MyCandMinimumMomentLatex => MinimumMomentY.HasValue ? $@"N_{{Ed}}e_{{0,y}}={Fmt(MinimumMomentY)}" : "";
+    public string MyCandMinimumMomentLatex => MinimumMomentY.HasValue ? $@"M_{{min,y}}={FmtMoment(MinimumMomentY)}" : "";
     public bool IsActive { get => isActive; set => Set(ref isActive, value); }
     public bool HasValidationError { get => hasValidationError; set => Set(ref hasValidationError, value); }
     public string Status
@@ -375,7 +379,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
         if (FactorN.HasValue && omega.HasValue)
         {
             double nu = 1.0 + omega.Value;
-            return $@"K_{{r,{axis}}}=\min\!\left(1,\frac{{n_u-n}}{{n_u-0.4}}\right)=\min\!\left(1,\frac{{{Fmt4(nu)}-{Fmt4(FactorN.Value)}}}{{{Fmt4(nu)}-0.4000}}\right)={Fmt4(kr.Value)}";
+            return $@"K_{{r,{axis}}}=\min\!\left(1,\frac{{{Fmt4(nu)}-{Fmt4(FactorN.Value)}}}{{{Fmt4(nu)}-0.4000}}\right)={Fmt4(kr.Value)}";
         }
 
         return $@"K_{{r,{axis}}}={Fmt4(kr.Value)}";
@@ -388,7 +392,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
 
         if (beta.HasValue && phiEff.HasValue)
         {
-            return $@"K_{{\varphi,{axis}}}=\max(1,1+\beta_{axis}\varphi_{{eff}})=\max(1,1+{Fmt4(beta.Value)}\times{Fmt3(phiEff.Value)})={Fmt4(kPhi.Value)}";
+            return $@"K_{{\varphi,{axis}}}=\max(1,1+{Fmt4(beta.Value)}\times{Fmt3(phiEff.Value)})={Fmt4(kPhi.Value)}";
         }
 
         return $@"K_{{\varphi,{axis}}}={Fmt4(kPhi.Value)}";
@@ -403,7 +407,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
         double candidate2 = 0.4 * m02.Value;
         string sign = m0e.Value < -1e-9 ? "-" : "";
 
-        return $@"M_{{0e,{axis}}}={sign}\max(0.6M_{{02,{axis}}}+0.4M_{{01,{axis}}},0.4M_{{02,{axis}}})={sign}\max({Fmt(candidate1)},{Fmt(candidate2)})={Fmt(m0e.Value)}";
+        return $@"M_{{0e,{axis}}}={sign}\max({Fmt(candidate1)},{Fmt(candidate2)})={FmtMoment(m0e.Value)}";
     }
 
     private static string BuildMomentUsedExpandedLatex(
@@ -429,14 +433,16 @@ public sealed class LoadCaseViewModel : ViewModelBase
             candidates.Add(Math.Abs(minimumMoment.Value));
 
         if (candidates.Count == 0)
-            return $@"M_{{Ed,{axis}}}={Fmt(used.Value)}";
+            return $@"M_{{Ed,{axis}}}={FmtMoment(used.Value)}";
 
-        string sign = used.Value < -1e-9 ? "-" : "";
         string candidateText = string.Join(",", candidates.Select(v => Fmt(v)));
-        return $@"M_{{Ed,{axis}}}={sign}\max({candidateText})={Fmt(used.Value)}";
+        return $@"M_{{Ed,{axis}}}=\max({candidateText})={FmtMoment(Math.Abs(used.Value))}";
     }
 
     private static string Fmt(double? value) => value.HasValue ? value.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) : "-";
+
+    private static string FmtMoment(double? value)
+        => value.HasValue ? $@"{Fmt(value)}\;\mathrm{{kN\cdot m}}" : "-";
 
     private static string Fmt3(double value) => value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -494,5 +500,7 @@ public sealed class LoadCaseViewModel : ViewModelBase
         Raise(nameof(M0eEquivYLatex));
         Raise(nameof(IsAnyAxisSlender));
         Raise(nameof(IsNeitherAxisSlender));
+        Raise(nameof(HasEc2Results));
+        Raise(nameof(EffectiveMomentUsedFormulaLatex));
     }
 }

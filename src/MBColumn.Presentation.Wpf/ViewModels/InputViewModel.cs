@@ -248,7 +248,7 @@ public sealed class InputViewModel : ViewModelBase
         ExportDxfCommand = new RelayCommand(ExportDxf, () => IsIrregularSection && IrregularInput.BoundaryPoints.Count >= 3);
         ShowSlendernessCalculationDetailsCommand = new RelayCommand<object?>(
             ShowSlendernessCalculationDetails,
-            loadCase => IncludeEc2Slenderness && loadCase is LoadCaseViewModel);
+            loadCase => loadCase is LoadCaseViewModel);
         CloseSlendernessCalculationDetailsCommand = new RelayCommand(CloseSlendernessCalculationDetails);
         AutoDesignRebarCommand = new RelayCommand(
             OpenAutoDesignRebar,
@@ -442,10 +442,6 @@ public sealed class InputViewModel : ViewModelBase
             Set(ref includeEc2Slenderness, value);
             Raise(nameof(DemandInputModeText));
             Raise(nameof(SlendernessSettingsVisibility));
-            if (!includeEc2Slenderness)
-            {
-                CloseSlendernessCalculationDetails();
-            }
             RefreshSlendernessUiState();
         }
     }
@@ -1828,10 +1824,7 @@ public sealed class InputViewModel : ViewModelBase
     private void ShowSlendernessCalculationDetails(object? parameter)
     {
         var loadCase = parameter as LoadCaseViewModel;
-        if (!IncludeEc2Slenderness || loadCase is null)
-        {
-            return;
-        }
+        if (loadCase is null) return;
 
         SelectedLoadCase = loadCase;
         SlendernessCalculationLoadCase = loadCase;
@@ -1875,6 +1868,9 @@ public sealed class InputViewModel : ViewModelBase
 
     private string LatexMomentUnit => CurrentUnitProfile.LatexLabel(EngineeringUnitCategory.Moment);
 
+    private const string Ec2BreakdownLengthUnitLatex = @"\mathrm{mm}";
+    private const string Ec2BreakdownMomentUnitLatex = @"\mathrm{kN\cdot m}";
+
     private string BuildEffectiveLengthLatex(string axis, double? k)
     {
         if (MemberLengthL is not > 0 || k is not > 0)
@@ -1893,7 +1889,7 @@ public sealed class InputViewModel : ViewModelBase
         double l0 = k.Value * MemberLengthL.Value;
         double ei = l0 / 400.0;
         double mi = ForceLengthToMoment(nEd, ei);
-        return $@"e_{{i{axis}}}=\frac{{l_{{0{axis}}}}}{{400}}={ei:F3}\,{LatexLengthUnit},\quad M_{{i{axis}}}={mi:F2}\,{LatexMomentUnit}";
+        return $@"e_{{i{axis}}}=\frac{{l_{{0{axis}}}}}{{400}}={ei:F3}\;{Ec2BreakdownLengthUnitLatex},\quad M_{{i{axis}}}={mi:F2}\;{Ec2BreakdownMomentUnitLatex}";
     }
 
     private string BuildM01M02AdjustedLatex(double? k, double? mTop, double? mBot, double? m01, double? m02)
@@ -1921,7 +1917,7 @@ public sealed class InputViewModel : ViewModelBase
         double l0 = k.Value * MemberLengthL.Value;
         double ei = l0 / 400.0;
         double imperfectionMoment = ForceLengthToMoment(nEd, ei);
-        return $@"e_{{i{axis}}}=\frac{{{l0:F2}}}{{400}}={ei:F2}\,{LatexLengthUnit},\quad N_{{Ed}}e_{{i{axis}}}={imperfectionMoment:F2}\,{LatexMomentUnit}";
+        return $@"e_{{i{axis}}}=\frac{{{l0:F2}}}{{400}}={ei:F2}\;{Ec2BreakdownLengthUnitLatex},\quad N_{{Ed}}e_{{i{axis}}}={imperfectionMoment:F2}\;{Ec2BreakdownMomentUnitLatex}";
     }
 
     private string BuildMinimumEccentricityAxisLatex(string axis, double dimensionMm)
@@ -1931,10 +1927,10 @@ public sealed class InputViewModel : ViewModelBase
         double e0 = Math.Max(dimension / 30.0, minE);
         var lc = SlendernessCalculationLoadCase;
         if (lc?.NEd is not double nEd)
-            return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit}";
+            return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\;{Ec2BreakdownLengthUnitLatex}";
 
         double minMoment = ForceLengthToMoment(nEd, e0);
-        return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit},\quad N_{{Ed}}e_{{0{axis}}}={minMoment:F2}\,{LatexMomentUnit}";
+        return $@"e_{{0{axis}}}=\max\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\;{Ec2BreakdownLengthUnitLatex},\quad N_{{Ed}}e_{{0{axis}}}={minMoment:F2}\;{Ec2BreakdownMomentUnitLatex}";
     }
 
     private string BuildMinimumEccentricityE0Latex(string axis, double dimensionMm)
@@ -1942,7 +1938,7 @@ public sealed class InputViewModel : ViewModelBase
         double dimension = SectionLengthFromMm(dimensionMm);
         double minE = MinimumEccentricityDisplayValue;
         double e0 = Math.Max(dimension / 30.0, minE);
-        return $@"e_{{0{axis}}}=\max\!\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\,{LatexLengthUnit}";
+        return $@"e_{{0{axis}}}=\max\!\left(\frac{{{dimension:F2}}}{{30}},{minE:F2}\right)={e0:F2}\;{Ec2BreakdownLengthUnitLatex}";
     }
 
     private string BuildMinimumEccentricityMminLatex(string axis, double dimensionMm)
@@ -1954,7 +1950,7 @@ public sealed class InputViewModel : ViewModelBase
         if (lc?.NEd is not double nEd)
             return "";
         double minMoment = ForceLengthToMoment(nEd, e0);
-        return $@"M_{{min{axis.ToUpper()}}}=N_{{Ed}}\cdot e_{{0{axis}}}={minMoment:F2}\,{LatexMomentUnit}";
+        return $@"M_{{min,{axis}}}={minMoment:F2}\;{Ec2BreakdownMomentUnitLatex}";
     }
 
     private string BuildImperfectionEiLatex(string axis, double? k)
@@ -1963,7 +1959,7 @@ public sealed class InputViewModel : ViewModelBase
             return "";
         double l0 = k.Value * MemberLengthL.Value;
         double ei = l0 / 400.0;
-        return $@"e_{{i{axis}}}=\frac{{l_{{0{axis}}}}}{{400}}={ei:F3}\,{LatexLengthUnit}";
+        return $@"e_{{i{axis}}}=\frac{{l_{{0{axis}}}}}{{400}}={ei:F3}\;{Ec2BreakdownLengthUnitLatex}";
     }
 
     private string BuildImperfectionMiOnlyLatex(string axis, double? k)
@@ -1974,7 +1970,7 @@ public sealed class InputViewModel : ViewModelBase
         double l0 = k.Value * MemberLengthL.Value;
         double ei = l0 / 400.0;
         double mi = ForceLengthToMoment(nEd, ei);
-        return $@"M_{{i{axis}}}=N_{{Ed}}\cdot e_{{i{axis}}}={mi:F2}\,{LatexMomentUnit}";
+        return $@"M_{{i{axis}}}=N_{{Ed}}\cdot e_{{i{axis}}}={mi:F2}\;{Ec2BreakdownMomentUnitLatex}";
     }
 
     private string BuildImperfectionCalculationText()
@@ -3008,21 +3004,16 @@ public sealed class InputViewModel : ViewModelBase
                     continue;
                 }
 
-                if (!IncludeEc2Slenderness)
-                {
-                    loadCase.ClearEc2SlendernessResults();
-                    loadCase.Status = "Ready";
-                    loadCase.HasValidationError = false;
-                    continue;
-                }
-
                 loadCase.ClearEc2SlendernessResults();
 
-                bool globalMissing = MemberLengthL is not > 0 || Kx is not > 0 || Ky is not > 0;
-                bool missingMoments = loadCase.MxTop is null ||
-                    loadCase.MxBottom is null ||
-                    loadCase.MyTop is null ||
-                    loadCase.MyBottom is null;
+                bool globalMissing = IncludeEc2Slenderness
+                    ? (MemberLengthL is not > 0 || Kx is not > 0 || Ky is not > 0)
+                    : (Kx is not > 0 || Ky is not > 0);
+                bool missingMoments = IncludeEc2Slenderness &&
+                    (loadCase.MxTop is null ||
+                     loadCase.MxBottom is null ||
+                     loadCase.MyTop is null ||
+                     loadCase.MyBottom is null);
 
                 if (loadCase.NEd < 0)
                 {
@@ -3047,7 +3038,7 @@ public sealed class InputViewModel : ViewModelBase
                 }
             }
 
-            if (IncludeEc2Slenderness && MemberLengthL is > 0 && Kx is > 0 && Ky is > 0)
+            if (Kx is > 0 && Ky is > 0)
             {
                 double fckMpa = StressInputToMpa(Fc);
                 double fykMpa = StressInputToMpa(Fy);
@@ -3095,9 +3086,9 @@ public sealed class InputViewModel : ViewModelBase
                     {
                         var concrete = new Ec2ConcreteMaterialDto(fckMpa, GammaC, AlphaCc);
                         var steel = new SteelMaterial($"fy {fykMpa:F1}", fykMpa, esMpa);
-                        double? memberLengthMm = MemberLengthL.Value * lengthFactor;
+                        double? memberLengthMm = MemberLengthL.HasValue ? MemberLengthL.Value * lengthFactor : (double?)null;
                         var settings = new Ec2SlendernessSettingsDto(
-                            true,
+                            IncludeEc2Slenderness,
                             Kx,
                             Ky,
                             PhiEff,
@@ -3118,69 +3109,66 @@ public sealed class InputViewModel : ViewModelBase
 
                             if (byId.TryGetValue(loadCase.Id, out var slenderness))
                             {
-                                loadCase.LambdaX = slenderness.X?.Lambda;
-                                loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
+                                // Always populate: imperfection/minimum moment terms needed regardless of EC2 toggle
                                 loadCase.RmX = slenderness.X?.Rm;
                                 loadCase.M01x = slenderness.X?.M01Nmm is double m01xVal
-                                    ? units.MomentFromNmm(m01xVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(m01xVal, momentUnit) : null;
                                 loadCase.M02x = slenderness.X?.M02Nmm is double m02xVal
-                                    ? units.MomentFromNmm(m02xVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(m02xVal, momentUnit) : null;
                                 loadCase.M0ex = slenderness.X?.M0eNmm is double m0exVal
-                                    ? units.MomentFromNmm(m0exVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(m0exVal, momentUnit) : null;
                                 loadCase.M2x = slenderness.X?.M2Nmm is double m2xVal
-                                    ? units.MomentFromNmm(m2xVal, momentUnit)
-                                    : null;
-                                loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
-                                loadCase.E2X = slenderness.X?.E2Mm;
-                                loadCase.KrX = slenderness.X?.Kr;
-                                loadCase.KPhiX = slenderness.X?.KPhi;
-                                loadCase.BetaX = slenderness.X?.Beta;
-                                loadCase.PhiEffX = slenderness.X?.PhiEff;
+                                    ? units.MomentFromNmm(m2xVal, momentUnit) : null;
                                 loadCase.MinimumMomentX = slenderness.X?.MinimumMomentNmm is double minMomentXVal
-                                    ? units.MomentFromNmm(minMomentXVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(minMomentXVal, momentUnit) : null;
 
-                                loadCase.LambdaY = slenderness.Y?.Lambda;
-                                loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
                                 loadCase.RmY = slenderness.Y?.Rm;
                                 loadCase.M01y = slenderness.Y?.M01Nmm is double m01yVal
-                                    ? units.MomentFromNmm(m01yVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(m01yVal, momentUnit) : null;
                                 loadCase.M02y = slenderness.Y?.M02Nmm is double m02yVal
-                                    ? units.MomentFromNmm(m02yVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(m02yVal, momentUnit) : null;
                                 loadCase.M0ey = slenderness.Y?.M0eNmm is double m0eyVal
-                                    ? units.MomentFromNmm(m0eyVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(m0eyVal, momentUnit) : null;
                                 loadCase.M2y = slenderness.Y?.M2Nmm is double m2yVal
-                                    ? units.MomentFromNmm(m2yVal, momentUnit)
-                                    : null;
-                                loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
-                                loadCase.E2Y = slenderness.Y?.E2Mm;
-                                loadCase.KrY = slenderness.Y?.Kr;
-                                loadCase.KPhiY = slenderness.Y?.KPhi;
-                                loadCase.BetaY = slenderness.Y?.Beta;
-                                loadCase.PhiEffY = slenderness.Y?.PhiEff;
+                                    ? units.MomentFromNmm(m2yVal, momentUnit) : null;
                                 loadCase.MinimumMomentY = slenderness.Y?.MinimumMomentNmm is double minMomentYVal
-                                    ? units.MomentFromNmm(minMomentYVal, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(minMomentYVal, momentUnit) : null;
 
                                 loadCase.FactorN = slenderness.X?.FactorN ?? slenderness.Y?.FactorN;
-                                loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
-                                loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
-                                loadCase.FactorCx = slenderness.X?.FactorC;
-                                loadCase.FactorCy = slenderness.Y?.FactorC;
 
                                 loadCase.MxUsed = slenderness.MxUsedNmm.HasValue
-                                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, momentUnit)
-                                    : null;
+                                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, momentUnit) : null;
                                 loadCase.MyUsed = slenderness.MyUsedNmm.HasValue
-                                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, momentUnit)
-                                    : null;
-                                loadCase.Status = slenderness.Status;
+                                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, momentUnit) : null;
+
+                                // Slenderness-only fields: only meaningful when EC2 amplification is active
+                                if (IncludeEc2Slenderness)
+                                {
+                                    loadCase.LambdaX = slenderness.X?.Lambda;
+                                    loadCase.LambdaLimitX = slenderness.X?.LambdaLimit;
+                                    loadCase.NominalCurvatureX = slenderness.X?.NominalCurvature1PerMm;
+                                    loadCase.E2X = slenderness.X?.E2Mm;
+                                    loadCase.KrX = slenderness.X?.Kr;
+                                    loadCase.KPhiX = slenderness.X?.KPhi;
+                                    loadCase.BetaX = slenderness.X?.Beta;
+                                    loadCase.PhiEffX = slenderness.X?.PhiEff;
+
+                                    loadCase.LambdaY = slenderness.Y?.Lambda;
+                                    loadCase.LambdaLimitY = slenderness.Y?.LambdaLimit;
+                                    loadCase.NominalCurvatureY = slenderness.Y?.NominalCurvature1PerMm;
+                                    loadCase.E2Y = slenderness.Y?.E2Mm;
+                                    loadCase.KrY = slenderness.Y?.Kr;
+                                    loadCase.KPhiY = slenderness.Y?.KPhi;
+                                    loadCase.BetaY = slenderness.Y?.Beta;
+                                    loadCase.PhiEffY = slenderness.Y?.PhiEff;
+
+                                    loadCase.FactorA = slenderness.X?.FactorA ?? slenderness.Y?.FactorA;
+                                    loadCase.FactorB = slenderness.X?.FactorB ?? slenderness.Y?.FactorB;
+                                    loadCase.FactorCx = slenderness.X?.FactorC;
+                                    loadCase.FactorCy = slenderness.Y?.FactorC;
+
+                                    loadCase.Status = slenderness.Status;
+                                }
                             }
                         }
                     }

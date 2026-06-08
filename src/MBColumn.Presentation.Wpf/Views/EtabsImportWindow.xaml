@@ -33,6 +33,13 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
         </Style>
+        <Style x:Key="ModelSidebarValueTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDarkBrush}" />
+            <Setter Property="Margin" Value="0,1,0,10" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
         <Style x:Key="GroupCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
@@ -301,11 +308,10 @@
                     BorderThickness="0,0,1,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Width="180" Margin="12,12,12,12" VerticalAlignment="Top">
+                        <StackPanel Width="200" Margin="12,12,12,12" VerticalAlignment="Top">
 
                             <TextBlock Text="ETABS Model"
-                                       FontWeight="SemiBold" FontSize="12"
-                                       Foreground="{DynamicResource PrimaryNavyBrush}"
+                                       Style="{StaticResource SectionHeaderStyle}"
                                        Margin="0,0,0,10" />
 
                             <!-- Connection status badge -->
@@ -321,7 +327,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock FontSize="10" FontWeight="SemiBold">
+                                <TextBlock FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="● Not connected" />
@@ -350,36 +356,26 @@
                                     </Style>
                                 </StackPanel.Style>
 
-                                <TextBlock Text="Name" FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="Name" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Text="{Binding ModelName}"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           TextTrimming="CharacterEllipsis"
-                                           ToolTip="{Binding ModelName}"
-                                           Margin="0,1,0,8" />
+                                           Style="{StaticResource ModelSidebarValueTextStyle}"
+                                           ToolTip="{Binding ModelName}" />
 
-                                <TextBlock Text="ETABS Units" FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="ETABS Units" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Text="{Binding PresentUnits}"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           Margin="0,1,0,8" />
+                                           Style="{StaticResource ModelSidebarValueTextStyle}" />
 
-                                <TextBlock Text="Stories" FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="Stories" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Text="{Binding StoryCount, Mode=OneWay}"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           Margin="0,1,0,8" />
+                                           Style="{StaticResource ModelSidebarValueTextStyle}" />
 
-                                <TextBlock Text="Columns" FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="Columns" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Text="{Binding FrameObjectCount}"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           Margin="0,1,0,8" />
+                                           Style="{StaticResource ModelSidebarValueTextStyle}" />
 
-                                <TextBlock Text="Piers" FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="Piers" Style="{StaticResource FieldLabelTextStyle}" />
                                 <TextBlock Text="{Binding PierCount, Mode=OneWay}"
-                                           FontSize="11" FontWeight="SemiBold"
+                                           Style="{StaticResource ModelSidebarValueTextStyle}"
                                            Margin="0,1,0,0" />
                             </StackPanel>
 
@@ -1313,7 +1309,7 @@
             <StackPanel Grid.Column="2">
 
                 <!-- Import Summary -->
-                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,10">
+                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,10" Visibility="Collapsed">
                     <StackPanel>
                         <TextBlock Text="Import Summary" Style="{StaticResource SectionHeaderStyle}" />
                         <UniformGrid Columns="3">
@@ -1338,7 +1334,8 @@
                           BorderBrush="{DynamicResource BorderGreyBrush}"
                           Foreground="{DynamicResource DarkNavyBrush}"
                           Padding="12"
-                          Margin="0,0,0,10">
+                          Margin="0,0,0,10"
+                          Visibility="Collapsed">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="65" />

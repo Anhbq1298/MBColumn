@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded',function(){
             string usedSign = usedMoment < -1e-9 ? "-" : "";
             yield return new FormulaBlock(
                 "Design moments",
-                @"M_{0e}=\max(0.6M_{02}+0.4M_{01},0.4M_{02}),\quad M_{Ed,used}=\max(M_{02},|M_{0e}|+M_2,M_{01}+0.5M_2,N_{Ed}e_0)",
+                @"M_{0e}=\max(0.6M_{02}+0.4M_{01},0.4M_{02}),\quad M_{Ed,used}=\max(M_{02},|M_{0e}|+M_2,M_{01}+0.5M_2,M_{min})",
                 $@"M_{{0e}}={(m0e < -1e-9 ? "-" : "")}\max({F(m0eCandidate1,2)},{F(m0eCandidate2,2)})={F(m0e,2)}\;{sl.MomentUnit},\quad M_2=N_{{Ed}}e_2={F(m2,2)}\;{sl.MomentUnit}",
                 $@"M_{{Ed,used}}={usedSign}\max({F(m02,2)},{F(usedCandidate2,2)},{F(usedCandidate3,2)},{F(minimumMoment,2)})={F(usedMoment,2)}\;{sl.MomentUnit}");
         }

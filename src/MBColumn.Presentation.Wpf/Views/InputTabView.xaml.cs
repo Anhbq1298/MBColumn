@@ -13,10 +13,6 @@ namespace MBColumn.Presentation.Wpf.Views;
 
 public partial class InputTabView : UserControl
 {
-    private bool isDraggingSlendernessDetails;
-    private Point slendernessDetailsDragStart;
-    private double slendernessDetailsStartX;
-    private double slendernessDetailsStartY;
     private Window? slendernessDetailsWindow;
 
     private DispatcherTimer? _calcRefreshTimer;
@@ -129,9 +125,6 @@ public partial class InputTabView : UserControl
 
     private void OpenSlendernessDetailsWindow(InputViewModel vm)
     {
-        if (!vm.IncludeEc2Slenderness)
-            return;
-
         if (vm.SlendernessCalculationLoadCase is not LoadCaseViewModel loadCase)
             return;
 
@@ -142,8 +135,6 @@ public partial class InputTabView : UserControl
             return;
         }
 
-        SlendernessDetailsPanelTransform.X = 0;
-        SlendernessDetailsPanelTransform.Y = 0;
         SlendernessDetailsPanel.DataContext = vm;
         SlendernessDetailsOverlay.Child = null;
 
@@ -169,81 +160,16 @@ public partial class InputTabView : UserControl
 
             SlendernessDetailsPanel.DataContext = null;
             slendernessDetailsWindow = null;
-            vm.IsSlendernessCalculationDetailsOpen = false;
-            vm.SlendernessCalculationLoadCase = null;
+            if (vm.CloseSlendernessCalculationDetailsCommand.CanExecute(null))
+                vm.CloseSlendernessCalculationDetailsCommand.Execute(null);
         };
 
         slendernessDetailsWindow = window;
         window.Show();
     }
 
-    private void CloseSlendernessDetailsWindow_Click(object sender, RoutedEventArgs e)
-        => slendernessDetailsWindow?.Close();
-
     private static string BuildSlendernessDetailsTitle(LoadCaseViewModel loadCase)
-        => string.IsNullOrWhiteSpace(loadCase.Name)
-            ? "EC2 calculation breakdown"
-            : $"EC2 calculation breakdown - {loadCase.Name}";
-
-    private void SlendernessDetailsPanel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-    {
-        if ((bool)e.NewValue)
-        {
-            SlendernessDetailsPanelTransform.X = 0;
-            SlendernessDetailsPanelTransform.Y = 0;
-        }
-    }
-
-    private void SlendernessDetailsHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        isDraggingSlendernessDetails = true;
-        slendernessDetailsDragStart = e.GetPosition(InputRoot);
-        slendernessDetailsStartX = SlendernessDetailsPanelTransform.X;
-        slendernessDetailsStartY = SlendernessDetailsPanelTransform.Y;
-        Mouse.Capture((IInputElement)sender);
-        e.Handled = true;
-    }
-
-    private void SlendernessDetailsHeader_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (!isDraggingSlendernessDetails || e.LeftButton != MouseButtonState.Pressed) return;
-
-        Point current = e.GetPosition(InputRoot);
-        double nextX = slendernessDetailsStartX + current.X - slendernessDetailsDragStart.X;
-        double nextY = slendernessDetailsStartY + current.Y - slendernessDetailsDragStart.Y;
-
-        var bounds = GetSlendernessDetailsDragBounds();
-        SlendernessDetailsPanelTransform.X = Math.Clamp(nextX, bounds.minX, bounds.maxX);
-        SlendernessDetailsPanelTransform.Y = Math.Clamp(nextY, bounds.minY, bounds.maxY);
-        e.Handled = true;
-    }
-
-    private void SlendernessDetailsHeader_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (!isDraggingSlendernessDetails) return;
-
-        isDraggingSlendernessDetails = false;
-        Mouse.Capture(null);
-        e.Handled = true;
-    }
-
-    private (double minX, double maxX, double minY, double maxY) GetSlendernessDetailsDragBounds()
-    {
-        double rootWidth = Math.Max(InputRoot.ActualWidth, 1.0);
-        double rootHeight = Math.Max(InputRoot.ActualHeight, 1.0);
-        double panelWidth = Math.Max(SlendernessDetailsPanel.ActualWidth, 1.0);
-        double panelHeight = Math.Max(SlendernessDetailsPanel.ActualHeight, 1.0);
-
-        double centeredLeft = (rootWidth - panelWidth) / 2.0;
-        double centeredTop = (rootHeight - panelHeight) / 2.0;
-        const double visibleMargin = 72.0;
-
-        double minX = -centeredLeft - panelWidth + visibleMargin;
-        double maxX = Math.Max(minX, rootWidth - centeredLeft - visibleMargin);
-        double minY = -centeredTop;
-        double maxY = Math.Max(minY, centeredTop - visibleMargin);
-        return (minX, maxX, minY, maxY);
-    }
+        => "EC2 Moment Determination";
 
     private void DataGrid_PreviewKeyDown(object sender, KeyEventArgs e)
     {

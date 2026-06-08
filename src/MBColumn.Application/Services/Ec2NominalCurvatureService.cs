@@ -31,10 +31,7 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         IReadOnlyList<LoadCaseDto> loadCases)
     {
         var warnings = new List<string>();
-        if (!settings.IncludeEc2Slenderness)
-        {
-            return Ec2SlendernessBatchResultDto.Empty;
-        }
+        bool forceStocky = !settings.IncludeEc2Slenderness;
 
         if (section is IrregularSection)
         {
@@ -79,7 +76,7 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
                 caseL0x = settings.Kx is > 0 ? settings.Kx.Value * loadCase.MemberLengthOverrideMm.Value : null;
                 caseL0y = settings.Ky is > 0 ? settings.Ky.Value * loadCase.MemberLengthOverrideMm.Value : null;
             }
-            results.Add(CalculateLoadCase(section, sectionValues, concrete, steel, loadCase, caseL0x, caseL0y, settings));
+            results.Add(CalculateLoadCase(section, sectionValues, concrete, steel, loadCase, caseL0x, caseL0y, settings, forceStocky));
         }
 
         warnings.AddRange(results.SelectMany(r => r.Warnings));
@@ -94,7 +91,8 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         LoadCaseDto loadCase,
         double? l0x,
         double? l0y,
-        Ec2SlendernessSettingsDto settings)
+        Ec2SlendernessSettingsDto settings,
+        bool forceStocky = false)
     {
         var warnings = new List<string>();
 
@@ -110,7 +108,8 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
 
         if (l0x is null || loadCase.MxTop is null || loadCase.MxBottom is null)
         {
-            warnings.Add($"{loadCase.Name}: Mx Top and Mx Bottom are required because slenderness is enabled.");
+            if (!forceStocky)
+                warnings.Add($"{loadCase.Name}: Mx Top and Mx Bottom are required because slenderness is enabled.");
         }
         else
         {
@@ -125,12 +124,14 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
                 sectionValues.IxMm,
                 sectionValues.DxMm,
                 section.HeightMm,
-                settings);
+                settings,
+                forceStocky);
         }
 
         if (l0y is null || loadCase.MyTop is null || loadCase.MyBottom is null)
         {
-            warnings.Add($"{loadCase.Name}: My Top and My Bottom are required because slenderness is enabled.");
+            if (!forceStocky)
+                warnings.Add($"{loadCase.Name}: My Top and My Bottom are required because slenderness is enabled.");
         }
         else
         {
@@ -145,7 +146,8 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
                 sectionValues.IyMm,
                 sectionValues.DyMm,
                 section.WidthMm,
-                settings);
+                settings,
+                forceStocky);
         }
 
         string status = (x, y) switch
@@ -171,7 +173,8 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
         double radiusOfGyrationMm,
         double effectiveDepthMm,
         double sectionDimensionMm,
-        Ec2SlendernessSettingsDto settings)
+        Ec2SlendernessSettingsDto settings,
+        bool forceStocky = false)
     {
         var warnings = new List<string>();
         if (radiusOfGyrationMm <= Tolerance)
@@ -206,7 +209,7 @@ public sealed class Ec2NominalCurvatureService(IUnitConversionService units) : I
             : 0.0;
 
         double minimumMomentNmm = nEdN * e0Mm;
-        bool isSlender = lambda >= lambdaLimit;
+        bool isSlender = !forceStocky && lambda >= lambdaLimit;
         if (!isSlender)
         {
             double used = sign * Math.Max(m02, minimumMomentNmm);

@@ -60,6 +60,8 @@ public sealed class SafeFormulaControl : ContentControl
         set => SetValue(UseEnhancedMathProperty, value);
     }
 
+    private MathRendering.MathEquationView? _view;
+
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         => ((SafeFormulaControl)d).Refresh();
 
@@ -69,6 +71,7 @@ public sealed class SafeFormulaControl : ContentControl
         if (string.IsNullOrWhiteSpace(raw))
         {
             Content = null;
+            _view = null;
             return;
         }
 
@@ -78,19 +81,24 @@ public sealed class SafeFormulaControl : ContentControl
                             .Replace(@"\quad", @"\;\;\;")
                             .Replace(@"\ ", @"\;");
 
-        Content = new MathRendering.MathEquationView
+        if (_view is null)
         {
-            Latex = normalized,
-            FallbackText = ToReadableText(normalized),
-            EquationFontSize = Scale,
-            DisplayMode = DisplayMode,
-            UseEnhancedMath = UseEnhancedMath,
-            Foreground = FormulaForeground,
-            MinHeight = System.Math.Max(28.0, Scale * 2.0),
-            MaxHeight = DisplayMode ? 120.0 : 80.0,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+            _view = new MathRendering.MathEquationView
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Content = _view;
+        }
+
+        _view.Latex = normalized;
+        _view.FallbackText = ToReadableText(normalized);
+        _view.EquationFontSize = Scale;
+        _view.DisplayMode = DisplayMode;
+        _view.UseEnhancedMath = UseEnhancedMath;
+        _view.Foreground = FormulaForeground;
+        _view.MinHeight = System.Math.Max(28.0, Scale * 2.0);
+        _view.MaxHeight = DisplayMode ? 120.0 : 80.0;
     }
 
     /// <summary>Converts a LaTeX string to a readable plain-text approximation.</summary>

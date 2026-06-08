@@ -686,6 +686,51 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 ## MBColumn.Presentation.Wpf
 
+### .verify_obj/Debug
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **App** | /// App ///. Key methods: InitializeComponent, Main. | `App.g.cs` |
+| `class` | **ControlPointsWindow** | /// ControlPointsWindow ///. Key methods: InitializeComponent. | `ControlPointsWindow.g.cs` |
+| `class` | **ExportControlPointsWindow** | /// ExportControlPointsWindow ///. Key methods: InitializeComponent. | `ExportControlPointsWindow.g.cs` |
+| `class` | **GeneratedInternalTypeHelper** | /// GeneratedInternalTypeHelper /// | `GeneratedInternalTypeHelper.g.cs` |
+| `class` | **MainWindow** | /// MainWindow ///. Key methods: InitializeComponent. | `MainWindow.g.cs` |
+
+### .verify_obj/Debug/Controls/Math
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **MathEquationView** | /// MathEquationView ///. Key methods: InitializeComponent. | `MathEquationView.g.cs` |
+
+### .verify_obj/Debug/Views
+
+| Type | Name | Description | File |
+|---|---|---|---|
+| `class` | **AddSectionDialog** | /// AddSectionDialog ///. Key methods: InitializeComponent. | `AddSectionDialog.g.cs` |
+| `class` | **AppNotificationDialog** | /// AppNotificationDialog ///. Key methods: InitializeComponent. | `AppNotificationDialog.g.cs` |
+| `class` | **AutomatedRebarDesignDialog** | /// AutomatedRebarDesignDialog ///. Key methods: InitializeComponent. | `AutomatedRebarDesignDialog.g.cs` |
+| `class` | **BatchPrintWindow** | /// BatchPrintWindow ///. Key methods: InitializeComponent. | `BatchPrintWindow.g.cs` |
+| `class` | **CalculationProgressWindow** | /// CalculationProgressWindow ///. Key methods: InitializeComponent. | `CalculationProgressWindow.g.cs` |
+| `class` | **DxfImportWindow** | /// DxfImportWindow ///. Key methods: InitializeComponent. | `DxfImportWindow.g.cs` |
+| `class` | **EtabsForceRefreshWindow** | /// EtabsForceRefreshWindow ///. Key methods: InitializeComponent. | `EtabsForceRefreshWindow.g.cs` |
+| `class` | **EtabsImportWindow** | /// EtabsImportWindow ///. Key methods: InitializeComponent. | `EtabsImportWindow.g.cs` |
+| `class` | **EtabsPreloadWindow** | /// EtabsPreloadWindow ///. Key methods: InitializeComponent. | `EtabsPreloadWindow.g.cs` |
+| `class` | **InputTabView** | /// InputTabView ///. Key methods: InitializeComponent. | `InputTabView.g.cs` |
+| `class` | **MM3DView** | /// MM3DView ///. Key methods: InitializeComponent. | `MM3DView.g.cs` |
+| `class` | **MMDiagramView** | /// MMDiagramView ///. Key methods: InitializeComponent. | `MMDiagramView.g.cs` |
+| `class` | **PM3DView** | /// PM3DView ///. Key methods: InitializeComponent. | `PM3DView.g.cs` |
+| `class` | **PMDiagramView** | /// PMDiagramView ///. Key methods: InitializeComponent. | `PMDiagramView.g.cs` |
+| `class` | **PmmInteractionWindow** | /// PmmInteractionWindow ///. Key methods: InitializeComponent. | `PmmInteractionWindow.g.cs` |
+| `class` | **ProjectNameDialog** | /// ProjectNameDialog ///. Key methods: InitializeComponent. | `ProjectNameDialog.g.cs` |
+| `class` | **RebarComplianceDetailView** | /// RebarComplianceDetailView ///. Key methods: InitializeComponent. | `RebarComplianceDetailView.g.cs` |
+| `class` | **ReportTabView** | /// ReportTabView ///. Key methods: InitializeComponent. | `ReportTabView.g.cs` |
+| `class` | **ResultDetailWindow** | /// ResultDetailWindow ///. Key methods: InitializeComponent. | `ResultDetailWindow.g.cs` |
+| `class` | **ResultTabView** | /// ResultTabView ///. Key methods: InitializeComponent. | `ResultTabView.g.cs` |
+| `class` | **SectionCadEditorWindow** | /// SectionCadEditorWindow ///. Key methods: InitializeComponent. | `SectionCadEditorWindow.g.cs` |
+| `class` | **SelectSectionsDialog** | /// SelectSectionsDialog ///. Key methods: InitializeComponent. | `SelectSectionsDialog.g.cs` |
+| `class` | **ShearDetailView** | /// ShearDetailView ///. Key methods: InitializeComponent. | `ShearDetailView.g.cs` |
+| `class` | **StartUpWindow** | /// StartUpWindow ///. Key methods: InitializeComponent. | `StartUpWindow.g.cs` |
+
 ### Collections
 
 | Type | Name | Description | File |

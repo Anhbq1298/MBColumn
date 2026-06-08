@@ -5,11 +5,30 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Web.WebView2.Core;
 
 namespace MBColumn.Presentation.Wpf.Controls.MathRendering;
 
 public partial class MathEquationView : UserControl
 {
+    private static CoreWebView2Environment? _sharedEnvironment;
+    private static readonly SemaphoreSlim _envLock = new(1, 1);
+
+    private static async Task<CoreWebView2Environment> GetSharedEnvironmentAsync()
+    {
+        if (_sharedEnvironment != null) return _sharedEnvironment;
+        await _envLock.WaitAsync();
+        try
+        {
+            _sharedEnvironment ??= await CoreWebView2Environment.CreateAsync();
+            return _sharedEnvironment;
+        }
+        finally
+        {
+            _envLock.Release();
+        }
+    }
+
     public static readonly DependencyProperty LatexProperty = DependencyProperty.Register(
         nameof(Latex), typeof(string), typeof(MathEquationView),
         new PropertyMetadata("", OnRenderPropertyChanged));
@@ -226,7 +245,8 @@ public partial class MathEquationView : UserControl
             if (!webViewReady)
             {
                 MathWebView.WebMessageReceived += OnWebMessageReceived;
-                await MathWebView.EnsureCoreWebView2Async();
+                var env = await GetSharedEnvironmentAsync();
+                await MathWebView.EnsureCoreWebView2Async(env);
                 MathWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 MathWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
                 webViewReady = true;

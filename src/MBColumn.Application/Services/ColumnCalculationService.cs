@@ -159,8 +159,9 @@ public sealed class ColumnCalculationService(
             activeCases = [new LoadCaseDto("default", "LC1", input.Pu, input.Mux, input.Muy, true, input.ForceUnit, input.MomentUnit)];
         }
 
+        // Always run EC2 service: computes imperfection + minimum moment for every case.
+        // When IncludeEc2Slenderness=false the service runs in forced-stocky mode (M2=0).
         var slendernessResult = Ec2SlendernessBatchResultDto.Empty;
-        if (input.IncludeEc2Slenderness)
         {
             var concreteEc2 = new Ec2ConcreteMaterialDto(fcMpa, input.GammaC, input.AlphaCc);
             double? memberLengthMm = input.MemberLengthL.HasValue
@@ -172,7 +173,7 @@ public sealed class ColumnCalculationService(
                 steel,
                 new MemberGeometryInputDto(memberLengthMm),
                 new Ec2SlendernessSettingsDto(
-                    true,
+                    input.IncludeEc2Slenderness,
                     input.Kx,
                     input.Ky,
                     input.PhiEff,
@@ -182,40 +183,21 @@ public sealed class ColumnCalculationService(
             var slendernessById = slendernessResult.LoadCases.ToDictionary(r => r.LoadCaseId);
             activeCases = activeCases.Select(lc =>
             {
-                if (!slendernessById.TryGetValue(lc.Id, out var slenderness))
-                {
-                    return lc;
-                }
-
-                double mxUsed = slenderness.MxUsedNmm.HasValue
-                    ? units.MomentFromNmm(slenderness.MxUsedNmm.Value, lc.MomentUnit)
+                bool hasSl = slendernessById.TryGetValue(lc.Id, out var sl);
+                // Fallback: sign-preserving max-abs end moment (guards against missing top/bottom data)
+                double mxFallback = lc.MxTop.HasValue && lc.MxBottom.HasValue
+                    ? (Math.Abs(lc.MxTop.Value) >= Math.Abs(lc.MxBottom.Value) ? lc.MxTop.Value : lc.MxBottom.Value)
                     : lc.Mux;
-                double myUsed = slenderness.MyUsedNmm.HasValue
-                    ? units.MomentFromNmm(slenderness.MyUsedNmm.Value, lc.MomentUnit)
+                double myFallback = lc.MyTop.HasValue && lc.MyBottom.HasValue
+                    ? (Math.Abs(lc.MyTop.Value) >= Math.Abs(lc.MyBottom.Value) ? lc.MyTop.Value : lc.MyBottom.Value)
                     : lc.Muy;
-                return lc with
-                {
-                    Mux = mxUsed,
-                    Muy = myUsed,
-                    MxUsed = mxUsed,
-                    MyUsed = myUsed
-                };
-            }).ToList();
-        }
-        else
-        {
-            // Slenderness OFF: MxUsed/MyUsed = sign-preserving max-abs governing end moment.
-            // This recomputes from MxTop/MxBottom each time so results are correct regardless of
-            // how the snapshot was saved (guards against old data with unsigned values).
-            activeCases = activeCases.Select(lc =>
-            {
-                double? mxUsed = (lc.MxTop.HasValue && lc.MxBottom.HasValue)
-                    ? (Math.Abs(lc.MxTop.Value) >= Math.Abs(lc.MxBottom.Value) ? lc.MxTop : lc.MxBottom)
-                    : lc.MxUsed;
-                double? myUsed = (lc.MyTop.HasValue && lc.MyBottom.HasValue)
-                    ? (Math.Abs(lc.MyTop.Value) >= Math.Abs(lc.MyBottom.Value) ? lc.MyTop : lc.MyBottom)
-                    : lc.MyUsed;
-                return lc with { MxUsed = mxUsed, MyUsed = myUsed };
+                double mxUsed = hasSl && sl!.MxUsedNmm.HasValue
+                    ? units.MomentFromNmm(sl.MxUsedNmm.Value, lc.MomentUnit)
+                    : mxFallback;
+                double myUsed = hasSl && sl!.MyUsedNmm.HasValue
+                    ? units.MomentFromNmm(sl.MyUsedNmm.Value, lc.MomentUnit)
+                    : myFallback;
+                return lc with { Mux = mxUsed, Muy = myUsed, MxUsed = mxUsed, MyUsed = myUsed };
             }).ToList();
         }
 
@@ -261,7 +243,7 @@ public sealed class ColumnCalculationService(
         var rebarCompliance = complianceCheckService?.Check(input, coordinateList, maxCompNedN);
 
         // Build per-case result DTOs
-        string mxUsedSource = input.IncludeEc2Slenderness ? "Slenderness" : "DirectEnvelope";
+        string mxUsedSource = input.IncludeEc2Slenderness ? "Slenderness" : "MinimumMoment";
         var lcResultDtos = caseResults.Select((r, i) =>
         {
             var govPt = r.Ratio.GoverningPoint ?? surface.Points.OrderByDescending(p => p.PhiPn).First();
