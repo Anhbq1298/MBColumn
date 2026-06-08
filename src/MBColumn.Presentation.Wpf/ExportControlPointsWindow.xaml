@@ -369,7 +369,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                             <Run Text="&#x03B5;" />
-                                            <Run Text="cu2" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="cu2" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                         </TextBlock>
                                         <TextBlock  FontWeight="SemiBold" VerticalAlignment="Center">
                                             <TextBlock.Style>
@@ -383,7 +383,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                             <Run Text="&#x03B5;" />
-                                            <Run Text="cu" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="cu" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                         </TextBlock>
                                         <TextBlock Text="): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
                                         <TextBlock Text="{Binding EpsilonCu2, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF3B82F6" />
@@ -404,7 +404,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                             <Run Text="&#x03B5;" />
-                                            <Run Text="c2" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="c2" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                         </TextBlock>
                                         <TextBlock  FontWeight="SemiBold" VerticalAlignment="Center">
                                             <TextBlock.Style>
@@ -418,7 +418,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                             <Run Text="&#x03B5;" />
-                                            <Run Text="c0" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="c0" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                         </TextBlock>
                                         <TextBlock Text="): " Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" />
                                         <TextBlock Text="{Binding EpsilonC2, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF8B5CF6" />
@@ -429,7 +429,7 @@
                                         <TextBlock Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" VerticalAlignment="Center">
                                             <Run Text="Steel Yield (" />
                                             <Run Text="&#x03B5;" />
-                                            <Run Text="yd" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="yd" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                             <Run Text="): " />
                                         </TextBlock>
                                         <TextBlock Text="{Binding EpsilonYd, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FF10B981" />
@@ -440,7 +440,7 @@
                                         <TextBlock Style="{StaticResource HelperTextStyle}" FontWeight="SemiBold" VerticalAlignment="Center">
                                             <Run Text="Steel Max Tension (" />
                                             <Run Text="&#x03B5;" />
-                                            <Run Text="ud" FontSize="9" BaselineAlignment="Subscript"/>
+                                            <Run Text="ud" FontSize="{StaticResource FontSizeSubscript}" BaselineAlignment="Subscript"/>
                                             <Run Text="): " />
                                         </TextBlock>
                                         <TextBlock Text="{Binding EpsilonUd, StringFormat=F5}" FontWeight="SemiBold" Foreground="#FFF59E0B" />

@@ -304,7 +304,7 @@
                         <StackPanel Width="180" Margin="12,12,12,12" VerticalAlignment="Top">
 
                             <TextBlock Text="ETABS Model"
-                                       FontWeight="SemiBold" FontSize="12"
+                                       FontWeight="SemiBold" FontSize="{StaticResource FontSizeBody}"
                                        Foreground="{DynamicResource PrimaryNavyBrush}"
                                        Margin="0,0,0,10" />
 
@@ -321,7 +321,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock FontSize="10" FontWeight="SemiBold">
+                                <TextBlock FontSize="{StaticResource FontSizeCaption}" FontWeight="SemiBold">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="● Not connected" />
@@ -350,36 +350,36 @@
                                     </Style>
                                 </StackPanel.Style>
 
-                                <TextBlock Text="Name" FontSize="10"
+                                <TextBlock Text="Name" FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}" />
                                 <TextBlock Text="{Binding ModelName}"
-                                           FontSize="11" FontWeight="SemiBold"
+                                           FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
                                            TextTrimming="CharacterEllipsis"
                                            ToolTip="{Binding ModelName}"
                                            Margin="0,1,0,8" />
 
-                                <TextBlock Text="ETABS Units" FontSize="10"
+                                <TextBlock Text="ETABS Units" FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}" />
                                 <TextBlock Text="{Binding PresentUnits}"
-                                           FontSize="11" FontWeight="SemiBold"
+                                           FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
                                            Margin="0,1,0,8" />
 
-                                <TextBlock Text="Stories" FontSize="10"
+                                <TextBlock Text="Stories" FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}" />
                                 <TextBlock Text="{Binding StoryCount, Mode=OneWay}"
-                                           FontSize="11" FontWeight="SemiBold"
+                                           FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
                                            Margin="0,1,0,8" />
 
-                                <TextBlock Text="Columns" FontSize="10"
+                                <TextBlock Text="Columns" FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}" />
                                 <TextBlock Text="{Binding FrameObjectCount}"
-                                           FontSize="11" FontWeight="SemiBold"
+                                           FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
                                            Margin="0,1,0,8" />
 
-                                <TextBlock Text="Piers" FontSize="10"
+                                <TextBlock Text="Piers" FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{DynamicResource TextMutedBrush}" />
                                 <TextBlock Text="{Binding PierCount, Mode=OneWay}"
-                                           FontSize="11" FontWeight="SemiBold"
+                                           FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
                                            Margin="0,1,0,0" />
                             </StackPanel>
 
@@ -714,7 +714,7 @@
                                                             ToolTip="Delete section"
                                                             Command="{Binding DataContext.DeleteMbColumnSectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}">
-                                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
+                                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFontFamily}" FontSize="{StaticResource FontSizeBody}"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <Button DockPanel.Dock="Right"
@@ -722,7 +722,7 @@
                                                             ToolTip="Clear all items from section"
                                                             Command="{Binding ClearSectionCommand}"
                                                             Margin="0,0,4,0">
-                                                        <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="{StaticResource FontSizeBody}"
+                                                        <TextBlock Text="&#xE894;" FontFamily="{StaticResource IconFontFamily}" FontSize="{StaticResource FontSizeBody}"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <StackPanel DockPanel.Dock="Right"
@@ -761,7 +761,7 @@
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </Button.Style>
-                                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                        <TextBlock Text="&#xE70F;" FontFamily="{StaticResource IconFontFamily}" FontSize="10"
                                                                    Foreground="{DynamicResource TextMutedBrush}" />
                                                     </Button>
                                                     <TextBlock>
@@ -795,7 +795,7 @@
 
                                                 <!-- Rename error message -->
                                                 <TextBlock Text="{Binding RenameError}"
-                                                           FontSize="10"
+                                                           FontSize="{StaticResource FontSizeCaption}"
                                                            Foreground="#C62828"
                                                            Margin="0,2,0,0"
                                                            TextWrapping="Wrap">

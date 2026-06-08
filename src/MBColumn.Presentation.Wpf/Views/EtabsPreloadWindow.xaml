@@ -111,7 +111,7 @@
                                 </TextBlock.Style>
                             </TextBlock>
                             <TextBlock Text="{Binding Detail}"
-                                       FontSize="10"
+                                       FontSize="{StaticResource FontSizeCaption}"
                                        Foreground="{DynamicResource TextMutedBrush}"
                                        Margin="0,1,0,0">
                                 <TextBlock.Style>

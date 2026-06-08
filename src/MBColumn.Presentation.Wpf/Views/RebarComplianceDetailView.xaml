@@ -48,7 +48,7 @@
                                Style="{StaticResource MetricValueStyle}"
                                VerticalAlignment="Center" />
                     <TextBlock Text="{Binding FailCountText, StringFormat='  - {0}'}"
-                               FontSize="10"
+                               FontSize="{StaticResource FontSizeCaption}"
                                Foreground="{DynamicResource WarningAmberBrush}"
                                VerticalAlignment="Center"
                                Visibility="{Binding HasFails, Converter={StaticResource BoolToVisibilityConverter}}" />
@@ -85,7 +85,7 @@
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextDarkBrush}"
                                                TextWrapping="Wrap" />
-                                    <TextBlock FontSize="10"
+                                    <TextBlock FontSize="{StaticResource FontSizeCaption}"
                                                TextWrapping="Wrap"
                                                Margin="0,1,0,0">
                                         <Run Text="{Binding Provided, Mode=OneWay}" Foreground="{DynamicResource TextMutedBrush}" />
@@ -93,7 +93,7 @@
                                         <Run Text="{Binding Limit, Mode=OneWay}" Foreground="{DynamicResource TextMutedBrush}" />
                                     </TextBlock>
                                     <TextBlock Text="{Binding Reference}"
-                                               FontSize="9.5"
+                                               FontSize="{StaticResource FontSizeCaption}"
                                                Foreground="{DynamicResource TextMutedBrush}" />
                                 </StackPanel>
                             </Grid>
