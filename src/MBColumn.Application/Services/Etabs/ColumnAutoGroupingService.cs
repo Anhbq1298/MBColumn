@@ -216,22 +216,9 @@ public sealed class ColumnAutoGroupingService
         IReadOnlyCollection<string> reservedSectionNames)
     {
         var reserved = new HashSet<string>(reservedSectionNames, StringComparer.OrdinalIgnoreCase);
-        var labelTierCounts = groups
-            .GroupBy(g => g.ColumnLabel, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(x => x.TierName).Distinct(StringComparer.OrdinalIgnoreCase).Count(),
-                StringComparer.OrdinalIgnoreCase);
-
         foreach (var group in groups)
         {
-            var needsTierPrefix = group.WasSplitByEtabsSection
-                || labelTierCounts.TryGetValue(group.ColumnLabel, out var tierCount) && tierCount > 1
-                || reserved.Contains(SanitizeName(group.ColumnLabel));
-
-            var rawName = needsTierPrefix
-                ? $"{group.TierName}_{group.ColumnLabel}"
-                : group.ColumnLabel;
+            var rawName = $"{group.TierName}_{group.ColumnLabel}";
 
             if (group.WasSplitByEtabsSection)
                 rawName = $"{rawName}_{group.SplitEtabsSectionName}";

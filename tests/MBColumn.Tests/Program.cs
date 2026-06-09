@@ -52,6 +52,14 @@ if (args.Contains("--run-project-save-regressions"))
     return;
 }
 
+if (args.Contains("--run-etabs-import-regressions"))
+{
+    TestEtabsAutoGroupingPrefixesTierNames();
+    TestEtabsImportUsesDefaultTargetGroup();
+    Console.WriteLine("PASS ETABS import regression checks");
+    return;
+}
+
 if (args.Contains("--generate-baselines"))
 {
     Console.WriteLine("Regenerating all solver baselines...");
@@ -254,6 +262,8 @@ var tests = new List<(string Name, Action Test)>
     ("DXF rejects non-circular rebar geometry",                      TestDxfRejectsNonCircularRebar),
     ("DXF import applies irregular custom coordinates",              TestDxfImportAppliesIrregularCustomCoordinates),
     ("DXF import does not block on cover",                           TestDxfImportDoesNotBlockOnCover),
+    ("ETABS auto grouping prefixes tier names",                      TestEtabsAutoGroupingPrefixesTierNames),
+    ("ETABS import uses default target group",                       TestEtabsImportUsesDefaultTargetGroup),
     ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
     ("ETABS import preserves software force demands",                TestEtabsImportPreservesSoftwareForceDemands),
     ("ETABS pier geometry snap-tolerance fix",                      TestIrregularPierGeometrySnapTolerance),
@@ -3666,6 +3676,70 @@ static void TestEtabsImportCreatesIrregularCustomCoordinates()
     IsTrue(snapshot.Rebars.All(r => string.Equals(r.BarSize, "T25", StringComparison.OrdinalIgnoreCase)));
 }
 
+static void TestEtabsAutoGroupingPrefixesTierNames()
+{
+    var service = new MBColumn.Application.Services.Etabs.ColumnAutoGroupingService();
+    var result = service.Build(new MBColumn.Application.DTOs.Etabs.AutoGrouping.ColumnAutoGroupingRequest(
+        [
+            new MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto(
+                "Obj1",
+                "",
+                "S1",
+                "C5",
+                "R600",
+                "R600",
+                "C30",
+                MBColumn.Domain.Enums.SectionShapeType.Rectangular,
+                600,
+                600,
+                0,
+                3000,
+                "",
+                "")
+        ],
+        [new MBColumn.Application.DTOs.Etabs.AutoGrouping.AutoGroupingStory("S1", 0, 0)],
+        [
+            new MBColumn.Application.DTOs.Etabs.AutoGrouping.AutoGroupingTier
+            {
+                TierName = "Tier_2",
+                FromStory = "S1",
+                ToStory = "S1"
+            }
+        ],
+        []));
+
+    IsFalse(result.HasErrors);
+    IsTrue(result.Groups.Single().MbColumnSectionName == "Tier_2_C5");
+}
+
+static void TestEtabsImportUsesDefaultTargetGroup()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel(
+        [],
+        [new MBColumn.Application.Services.GroupRecord(7, "Tier 2", 0)],
+        7,
+        new StubEtabsConnectionService(),
+        new StubEtabsColumnImportService(),
+        new StubEtabsForceImportService(),
+        null,
+        new StubPierShellImportService(),
+        new Stub32PointGeometryBuilder());
+
+    vm.ConnectCommand.Execute(null);
+    var column = vm.Columns.First(c => c.EtabsSectionName == "CIRC800");
+    column.IsSelected = true;
+
+    vm.CreateMbColumnSectionCommand.Execute(null);
+    vm.AssignToSectionCommand.Execute(vm.MbColumnSections[0]);
+    vm.ApplyImportCommand.Execute(null);
+
+    var imported = vm.ImportResult!.Sections.Single();
+    IsTrue(imported.TargetGroupId == 7);
+    IsTrue(imported.TargetGroupName == "Tier 2");
+    IsTrue(imported.Snapshot.EtabsTierMetadata?.TargetGroupId == 7);
+    IsTrue(imported.Snapshot.EtabsTierMetadata?.TargetGroupName == "Tier 2");
+}
+
 static void TestEtabsImportPreservesSoftwareForceDemands()
 {
     var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel(
@@ -4168,7 +4242,8 @@ static void TestStrainControlledSevenPointEc2()
 sealed class StubEtabsConnectionService : MBColumn.Application.Services.Etabs.IEtabsConnectionService
 {
     public bool IsConnected => false;
-    public MBColumn.Application.DTOs.Etabs.EtabsConnectionResultDto ConnectToRunningEtabs()
+    public MBColumn.Application.DTOs.Etabs.EtabsConnectionResultDto ConnectToRunningEtabs(
+        MBColumn.Domain.Enums.UnitSystem targetSystem = MBColumn.Domain.Enums.UnitSystem.Metric)
         => new(true, "Stub connected", new("TestModel", "C:\\test.edb", "kN-m", 1, 1, 0));
     public void Disconnect() { }
 }
@@ -4184,7 +4259,7 @@ sealed class StubEtabsColumnImportService : MBColumn.Application.Services.Etabs.
 
 sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.IEtabsForceImportService
 {
-    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetForces(
+    public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetDesignForces(
         IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> _,
         IReadOnlyList<string> _2,
         MBColumn.Domain.Enums.UnitSystem _3) => [];

@@ -960,6 +960,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `class` | **AutoGroupColumnsByTierViewModel** | Represents the AutoGroupColumnsByTierViewModel class. Key properties: Tiers, StoryNames, TierSummaryRows, PreviewRows. | `AutoGroupColumnsByTierViewModel.cs` |
 | `class` | **AutoGroupColumnsDialogInput** | Represents the AutoGroupColumnsDialogInput class. Key properties: Columns, Stories, ReservedSectionNames. | `AutoGroupColumnsDialogInput.cs` |
+| `class` | **AutoGroupingColumnPreviewGroupViewModel** | Represents the AutoGroupingColumnPreviewGroupViewModel class. Key properties: ColumnLabel, Items, SectionCount, TotalObjects. | `AutoGroupColumnsByTierViewModel.cs` |
 | `class` | **AutoGroupingValidationMessageViewModel** | Represents the AutoGroupingValidationMessageViewModel class. Key properties: Severity, SeverityDisplayText, Message. | `AutoGroupingValidationMessageViewModel.cs` |
 
 ### ViewModels/AutomatedRebarDesign

@@ -12,6 +12,8 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     private readonly AutoGroupColumnsDialogInput input;
     private readonly ColumnAutoGroupingService groupingService;
     private AutoGroupingTier? selectedTier;
+    private AutoGroupingResult? previewResult;
+    private int currentStep = 1;
     private string statusText;
 
     public AutoGroupColumnsByTierViewModel(
@@ -24,6 +26,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         Tiers = [];
         TierSummaryRows = [];
         PreviewRows = [];
+        ColumnPreviewGroups = [];
         ValidationMessages = [];
         StoryNames = input.Stories
             .OrderBy(s => s.SortIndex)
@@ -33,7 +36,8 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         addTierCommand = new RelayCommand(AddTier);
         removeTierCommand = new RelayCommand(RemoveSelectedTier, () => SelectedTier is not null);
         previewCommand = new RelayCommand(PreviewGrouping, CanBuildGrouping);
-        applyCommand = new RelayCommand(ApplyAutoGrouping, CanBuildGrouping);
+        backCommand = new RelayCommand(GoBack, () => CurrentStep == 2);
+        applyCommand = new RelayCommand(ApplyAutoGrouping, () => CurrentStep == 2 && previewResult is { HasErrors: false });
         cancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
 
         statusText = WpfResourceText.Get("AutoGrouping_Status_Ready");
@@ -43,6 +47,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     private readonly RelayCommand addTierCommand;
     private readonly RelayCommand removeTierCommand;
     private readonly RelayCommand previewCommand;
+    private readonly RelayCommand backCommand;
     private readonly RelayCommand applyCommand;
     private readonly RelayCommand cancelCommand;
 
@@ -52,6 +57,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     public IReadOnlyList<string> StoryNames { get; }
     public ObservableCollection<AutoGroupingTierSummaryRow> TierSummaryRows { get; }
     public ObservableCollection<AutoGroupingPreviewRow> PreviewRows { get; }
+    public ObservableCollection<AutoGroupingColumnPreviewGroupViewModel> ColumnPreviewGroups { get; }
     public ObservableCollection<AutoGroupingValidationMessageViewModel> ValidationMessages { get; }
 
     public AutoGroupingResult? AppliedResult { get; private set; }
@@ -72,15 +78,34 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         private set => Set(ref statusText, value);
     }
 
+    public int CurrentStep
+    {
+        get => currentStep;
+        private set
+        {
+            if (!Set(ref currentStep, value)) return;
+            Raise(nameof(IsTierDefinitionsStep));
+            Raise(nameof(IsGroupingPreviewStep));
+            Raise(nameof(CanGoBack));
+            RaiseCommandStates();
+        }
+    }
+
+    public bool IsTierDefinitionsStep => CurrentStep == 1;
+    public bool IsGroupingPreviewStep => CurrentStep == 2;
+    public bool CanGoBack => CurrentStep == 2;
+
     public ICommand AddTierCommand => addTierCommand;
     public ICommand RemoveTierCommand => removeTierCommand;
     public ICommand PreviewCommand => previewCommand;
+    public ICommand BackCommand => backCommand;
     public ICommand ApplyCommand => applyCommand;
     public ICommand CancelCommand => cancelCommand;
 
     public int PreviewRowCount => PreviewRows.Count;
     public bool HasTierSummaryRows => TierSummaryRows.Count > 0;
     public bool HasPreviewRows => PreviewRows.Count > 0;
+    public bool HasColumnPreviewGroups => ColumnPreviewGroups.Count > 0;
     public bool HasValidationMessages => ValidationMessages.Count > 0;
 
     private void AddTier()
@@ -96,6 +121,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
 
         Tiers.Add(tier);
         SelectedTier = tier;
+        InvalidatePreview();
         RaiseCommandStates();
     }
 
@@ -109,6 +135,7 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         SelectedTier = Tiers.Count == 0
             ? null
             : Tiers[Math.Clamp(index, 0, Tiers.Count - 1)];
+        InvalidatePreview();
         RaiseCommandStates();
     }
 
@@ -116,16 +143,19 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     {
         var result = BuildCurrentResult();
         LoadResult(result);
+        previewResult = result;
+        CurrentStep = 2;
 
         StatusText = result.HasErrors
             ? WpfResourceText.Get("AutoGrouping_Status_PreviewHasErrors")
-            : WpfResourceText.Format("AutoGrouping_Status_PreviewCompleteFormat", result.PreviewRows.Count);
+            : WpfResourceText.Format("AutoGrouping_Status_PreviewCompleteFormat", ColumnPreviewGroups.Count);
     }
 
     private void ApplyAutoGrouping()
     {
-        var result = BuildCurrentResult();
-        LoadResult(result);
+        var result = previewResult ?? BuildCurrentResult();
+        if (!ReferenceEquals(result, previewResult))
+            LoadResult(result);
 
         if (result.HasErrors)
         {
@@ -135,6 +165,12 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
 
         AppliedResult = result;
         RequestClose?.Invoke(this, true);
+    }
+
+    private void GoBack()
+    {
+        CurrentStep = 1;
+        StatusText = WpfResourceText.Get("AutoGrouping_Status_Ready");
     }
 
     private AutoGroupingResult BuildCurrentResult()
@@ -154,6 +190,14 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         foreach (var row in result.PreviewRows)
             PreviewRows.Add(row);
 
+        ColumnPreviewGroups.Clear();
+        foreach (var group in result.PreviewRows
+                     .GroupBy(row => row.ColumnLabel, StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            ColumnPreviewGroups.Add(new AutoGroupingColumnPreviewGroupViewModel(group.Key, group));
+        }
+
         ValidationMessages.Clear();
         foreach (var message in result.ValidationMessages)
             ValidationMessages.Add(new AutoGroupingValidationMessageViewModel(message));
@@ -161,7 +205,17 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         Raise(nameof(PreviewRowCount));
         Raise(nameof(HasTierSummaryRows));
         Raise(nameof(HasPreviewRows));
+        Raise(nameof(HasColumnPreviewGroups));
         Raise(nameof(HasValidationMessages));
+        RaiseCommandStates();
+    }
+
+    private void InvalidatePreview()
+    {
+        previewResult = null;
+        if (CurrentStep == 2)
+            CurrentStep = 1;
+        applyCommand.RaiseCanExecuteChanged();
     }
 
     private bool CanBuildGrouping()
@@ -171,6 +225,30 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     {
         removeTierCommand.RaiseCanExecuteChanged();
         previewCommand.RaiseCanExecuteChanged();
+        backCommand.RaiseCanExecuteChanged();
         applyCommand.RaiseCanExecuteChanged();
     }
+}
+
+public sealed class AutoGroupingColumnPreviewGroupViewModel
+{
+    public AutoGroupingColumnPreviewGroupViewModel(
+        string columnLabel,
+        IEnumerable<AutoGroupingPreviewRow> rows)
+    {
+        ColumnLabel = string.IsNullOrWhiteSpace(columnLabel) ? "(No label)" : columnLabel;
+        Items = new ObservableCollection<AutoGroupingPreviewRow>(
+            rows.OrderBy(row => row.TierName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(row => row.MbColumnSectionName, StringComparer.OrdinalIgnoreCase));
+    }
+
+    public string ColumnLabel { get; }
+    public ObservableCollection<AutoGroupingPreviewRow> Items { get; }
+    public int SectionCount => Items.Count;
+    public int TotalObjects => Items.Sum(item => item.Count);
+    public string TiersDisplayText => string.Join(", ",
+        Items.Select(item => item.TierName)
+            .Where(tier => !string.IsNullOrWhiteSpace(tier))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(tier => tier, StringComparer.OrdinalIgnoreCase));
 }

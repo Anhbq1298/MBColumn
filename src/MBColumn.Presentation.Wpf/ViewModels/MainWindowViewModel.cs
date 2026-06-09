@@ -854,8 +854,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         var columns = projectService.GetColumns();
         if (columns.Count == 0) return;
-        await Task.Run(() =>
+        var statuses = await Task.Run(() =>
         {
+            var loadedStatuses = new List<(int ColumnId, SectionStatus Status)>();
             foreach (var col in columns)
             {
                 var persisted = projectService.LoadColumnResult(col.Id);
@@ -863,14 +864,13 @@ public sealed class MainWindowViewModel : ViewModelBase
                     ? SectionStatus.Calculated
                     : projectService.HasColumnResult(col.Id) ? SectionStatus.Outdated : (SectionStatus?)null;
                 if (status is not null)
-                {
-                    System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
-                    {
-                        Explorer.SetSectionStatus(col.Id, status.Value);
-                    });
-                }
+                    loadedStatuses.Add((col.Id, status.Value));
             }
+            return loadedStatuses;
         });
+
+        foreach (var (columnId, status) in statuses)
+            Explorer.SetSectionStatus(columnId, status);
     }
 
     private async Task ImportFromEtabsAsync()
@@ -920,19 +920,31 @@ public sealed class MainWindowViewModel : ViewModelBase
             {
                 var targetGroupId = imported.TargetGroupId;
                 var targetGroupName = imported.TargetGroupName.Trim();
-                if (imported.CreateTargetGroup)
+
+                if (targetGroupId is null
+                    && targetGroupName.Length > 0
+                    && targetGroupIdsByName.TryGetValue(targetGroupName, out var knownGroupId))
                 {
-                    if (targetGroupIdsByName.TryGetValue(targetGroupName, out var existingGroupId))
+                    targetGroupId = knownGroupId;
+                }
+
+                if (targetGroupId is null && targetGroupName.Length == 0)
+                {
+                    var fallbackGroup = groups.FirstOrDefault(group => group.Id == defaultTargetGroupId)
+                        ?? groups.FirstOrDefault();
+                    if (fallbackGroup is not null)
                     {
-                        targetGroupId = existingGroupId;
+                        targetGroupId = fallbackGroup.Id;
+                        targetGroupName = fallbackGroup.Name;
                     }
-                    else
-                    {
-                        var group = projectService.GetOrAddGroup(targetGroupName);
-                        targetGroupId = group.Id;
-                        targetGroupName = group.Name;
-                        targetGroupIdsByName[targetGroupName] = targetGroupId.Value;
-                    }
+                }
+
+                if (targetGroupId is null && targetGroupName.Length > 0)
+                {
+                    var group = projectService.GetOrAddGroup(targetGroupName);
+                    targetGroupId = group.Id;
+                    targetGroupName = group.Name;
+                    targetGroupIdsByName[targetGroupName] = targetGroupId.Value;
                 }
 
                 if (imported.UpdateExisting && columnsByName.TryGetValue(imported.SectionName, out var existing))

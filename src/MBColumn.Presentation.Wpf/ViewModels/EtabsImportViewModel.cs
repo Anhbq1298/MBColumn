@@ -1406,6 +1406,9 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
         foreach (var mbSection in MbColumnSections.Where(g => g.Items.Count > 0))
         {
+            var targetGroup = ResolveTargetGroup(mbSection);
+            mbSection.SelectedTargetGroup = targetGroup;
+
             var snapshot = CreateGroupSnapshot(mbSection);
             if (snapshot is null) continue;
 
@@ -1413,7 +1416,6 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var finalName = NextAvailableName(baseName, reservedNames);
             reservedNames.Add(finalName);
 
-            var targetGroup = mbSection.SelectedTargetGroup ?? SelectedTargetGroup;
             sections.Add(new EtabsImportedSectionInput(
                 finalName,
                 snapshot,
@@ -1429,6 +1431,21 @@ public sealed class EtabsImportViewModel : ViewModelBase
             sections,
             new Application.DTOs.Etabs.EtabsModelInfoDto(ModelName, ModelPath, PresentUnits, StoryCount, PierCount, FrameObjectCount));
         RequestClose?.Invoke(this, true);
+    }
+
+    private ProjectGroupOptionViewModel ResolveTargetGroup(MbColumnSectionViewModel? section = null)
+    {
+        var targetGroup = section?.SelectedTargetGroup
+            ?? SelectedTargetGroup
+            ?? TargetGroups.FirstOrDefault();
+
+        if (targetGroup is not null)
+            return targetGroup;
+
+        targetGroup = new ProjectGroupOptionViewModel(null, "ETABS Import", createGroup: true);
+        TargetGroups.Add(targetGroup);
+        SelectedTargetGroup = targetGroup;
+        return targetGroup;
     }
 
     private ColumnInputSnapshot? CreateGroupSnapshot(MbColumnSectionViewModel group)
@@ -2497,6 +2514,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private ColumnInputSnapshot CreateTierSnapshot(EtabsImportSummaryRowViewModel row)
     {
+        var targetGroup = ResolveTargetGroup();
         var snapshot = CreateSnapshot(row);
         var selectedColumns = Columns.Where(c => c.IsSelected).ToList();
         var selectedForces = GetSelectedForcesForItems(selectedColumns);
@@ -2523,8 +2541,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
             ShapeType = row.SectionType.ToString(),
             SourceSectionName = row.SourceColumn.EtabsSectionName,
             UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
-            TargetGroupName = SelectedTargetGroup?.GroupName ?? "",
-            TargetGroupId = SelectedTargetGroup?.GroupId,
+            TargetGroupName = targetGroup.GroupName,
+            TargetGroupId = targetGroup.GroupId,
             TierName = row.NewSectionName,
             StoryFrom = StoryFrom,
             StoryTo = StoryTo,

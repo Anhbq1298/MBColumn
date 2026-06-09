@@ -17,6 +17,21 @@
             <Setter Property="Foreground" Value="{DynamicResource DarkNavyBrush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <Style x:Key="AutoGroupingStepNumberStyle" TargetType="Border">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="Background" Value="{DynamicResource LightBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderGreyBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+        <Style x:Key="AutoGroupingStepTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
         <Style x:Key="AutoGroupingMessageSeverityStyle" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource AccentBlueBrush}" />
@@ -56,18 +71,117 @@
         <Border Grid.Row="1" Style="{StaticResource DialogBodyBorderStyle}">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="240" />
-                    <RowDefinition Height="10" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="10" />
-                    <RowDefinition Height="128" />
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Style="{StaticResource DialogPanelBorderStyle}">
+                <Border Grid.Row="0"
+                        Style="{StaticResource DialogPanelBorderStyle}"
+                        Padding="12"
+                        Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0">
+                            <Border DockPanel.Dock="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource AutoGroupingStepNumberStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTierDefinitionsStep}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource AccentBlueBrush}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBlueBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="1"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTierDefinitionsStep}" Value="True">
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{StaticResource AutoGrouping_TierDefinitionsHeader}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource AutoGroupingStepTitleStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTierDefinitionsStep}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource DarkNavyBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DockPanel>
+
+                        <Border Grid.Column="1"
+                                Height="1"
+                                Background="{DynamicResource BorderGreyBrush}"
+                                VerticalAlignment="Center"
+                                Margin="8,0" />
+
+                        <DockPanel Grid.Column="2">
+                            <Border DockPanel.Dock="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border" BasedOn="{StaticResource AutoGroupingStepNumberStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGroupingPreviewStep}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource AccentBlueBrush}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBlueBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="2"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGroupingPreviewStep}" Value="True">
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{StaticResource AutoGrouping_PreviewHeader}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource AutoGroupingStepTitleStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGroupingPreviewStep}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource DarkNavyBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DockPanel>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1"
+                        Style="{StaticResource DialogPanelBorderStyle}"
+                        Visibility="{Binding IsTierDefinitionsStep, Converter={StaticResource BoolToVisibilityConverter}}">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                            <StackPanel DockPanel.Dock="Right"
-                                        Orientation="Horizontal">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                 <Button Content="{StaticResource AutoGrouping_AddTierButton}"
                                         Command="{Binding AddTierCommand}"
                                         Style="{StaticResource SecondaryButtonStyle}"
@@ -78,12 +192,6 @@
                                         Style="{StaticResource SecondaryButtonStyle}"
                                         MinHeight="28"
                                         Padding="10,4"
-                                        Margin="6,0,0,0" />
-                                <Button Content="{StaticResource AutoGrouping_PreviewButton}"
-                                        Command="{Binding PreviewCommand}"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        MinHeight="28"
-                                        Padding="12,4"
                                         Margin="6,0,0,0" />
                             </StackPanel>
                             <TextBlock Text="{StaticResource AutoGrouping_TierDefinitionsHeader}"
@@ -104,7 +212,7 @@
                                                     Binding="{Binding TierName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="1.2*" />
                                 <DataGridTemplateColumn Header="{StaticResource AutoGrouping_FromStoryColumn}"
-                                                        Width="120">
+                                                        Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding DataContext.StoryNames, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -113,7 +221,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="{StaticResource AutoGrouping_ToStoryColumn}"
-                                                        Width="120">
+                                                        Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding DataContext.StoryNames, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -140,189 +248,231 @@
                     </DockPanel>
                 </Border>
 
-                <Border Grid.Row="2" Style="{StaticResource DialogPanelBorderStyle}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
+                <Grid Grid.Row="1"
+                      Visibility="{Binding IsGroupingPreviewStep, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="128" />
+                    </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0"
-                                   Text="{StaticResource AutoGrouping_TierSummaryHeader}"
-                                   Style="{StaticResource AutoGroupingSectionTitleStyle}"
-                                   Margin="0,0,0,8" />
-                        <TextBlock Grid.Row="1"
-                                   Text="{StaticResource AutoGrouping_NoTierSummaryRows}"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,0,0,10">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasTierSummaryRows}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <DataGrid Grid.Row="2"
-                                  ItemsSource="{Binding TierSummaryRows}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  CanUserReorderColumns="False"
-                                  IsReadOnly="True"
-                                  MaxHeight="112"
-                                  Margin="0,0,0,10"
-                                  EnableRowVirtualization="True"
-                                  VirtualizingPanel.IsVirtualizing="True"
-                                  VirtualizingPanel.VirtualizationMode="Recycling">
-                            <DataGrid.Style>
-                                <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasTierSummaryRows}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.Style>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryTierColumn}"
-                                                    Binding="{Binding TierName}"
-                                                    Width="1*" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryStoryRangeColumn}"
-                                                    Binding="{Binding StoryRange}"
-                                                    Width="1*" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummarySectionCountColumn}"
-                                                    Binding="{Binding ColumnSectionCount}"
-                                                    Width="90"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryObjectCountColumn}"
-                                                    Binding="{Binding ObjectCount}"
-                                                    Width="90"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-
-                        <TextBlock Grid.Row="3"
-                                   Text="{StaticResource AutoGrouping_PreviewHeader}"
-                                   Style="{StaticResource AutoGroupingSectionTitleStyle}"
-                                   Margin="0,0,0,8" />
-                        <TextBlock Grid.Row="4"
-                                   Text="{StaticResource AutoGrouping_NoPreviewRows}"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasPreviewRows}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <DataGrid Grid.Row="5"
-                                  ItemsSource="{Binding PreviewRows}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  CanUserReorderColumns="False"
-                                  IsReadOnly="True"
-                                  EnableRowVirtualization="True"
-                                  VirtualizingPanel.IsVirtualizing="True"
-                                  VirtualizingPanel.VirtualizationMode="Recycling">
-                            <DataGrid.Style>
-                                <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasPreviewRows}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.Style>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewTierColumn}"
-                                                    Binding="{Binding TierName}"
-                                                    Width="1*" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewStoryRangeColumn}"
-                                                    Binding="{Binding StoryRange}"
-                                                    Width="95" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewColumnLabelColumn}"
-                                                    Binding="{Binding ColumnLabel}"
-                                                    Width="95" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewMbSectionColumn}"
-                                                    Binding="{Binding MbColumnSectionName}"
-                                                    Width="1.1*" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewCountColumn}"
-                                                    Binding="{Binding Count}"
-                                                    Width="70"
-                                                    ElementStyle="{StaticResource RightAlignText}" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewEtabsSectionsColumn}"
-                                                    Binding="{Binding EtabsSectionsDisplayText}"
-                                                    Width="1.3*" />
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewMaterialsColumn}"
-                                                    Binding="{Binding MaterialsDisplayText}"
-                                                    Width="1*" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
-
-                <Border Grid.Row="4" Style="{StaticResource DialogPanelBorderStyle}">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Top"
-                                   Text="{StaticResource AutoGrouping_ValidationHeader}"
-                                   Style="{StaticResource AutoGroupingSectionTitleStyle}"
-                                   Margin="0,0,0,8" />
-                        <TextBlock Text="{StaticResource AutoGrouping_NoValidationMessages}"
-                                   Foreground="{DynamicResource TextMutedBrush}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasValidationMessages}" Value="False">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding ValidationMessages}">
-                                <ItemsControl.Style>
-                                    <Style TargetType="ItemsControl">
+                    <Border Grid.Row="0" Style="{StaticResource DialogPanelBorderStyle}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="{StaticResource AutoGrouping_TierSummaryHeader}"
+                                       Style="{StaticResource AutoGroupingSectionTitleStyle}"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Text="{StaticResource AutoGrouping_NoTierSummaryRows}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasValidationMessages}" Value="False">
+                                            <DataTrigger Binding="{Binding HasTierSummaryRows}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <DataGrid ItemsSource="{Binding TierSummaryRows}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      CanUserReorderColumns="False"
+                                      IsReadOnly="True"
+                                      MaxHeight="108"
+                                      EnableRowVirtualization="True"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling">
+                                <DataGrid.Style>
+                                    <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasTierSummaryRows}" Value="False">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
-                                </ItemsControl.Style>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <DockPanel Margin="0,0,0,4">
-                                            <TextBlock DockPanel.Dock="Left"
-                                                       Text="{Binding SeverityDisplayText}"
-                                                       Style="{StaticResource AutoGroupingMessageSeverityStyle}"
-                                                       MinWidth="64" />
-                                            <TextBlock Text="{Binding Message}"
-                                                       Foreground="{DynamicResource TextDarkBrush}"
-                                                       TextWrapping="Wrap" />
-                                        </DockPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </DockPanel>
-                </Border>
+                                </DataGrid.Style>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryTierColumn}"
+                                                        Binding="{Binding TierName}"
+                                                        Width="1*" />
+                                    <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryStoryRangeColumn}"
+                                                        Binding="{Binding StoryRange}"
+                                                        Width="1*" />
+                                    <DataGridTextColumn Header="{StaticResource AutoGrouping_SummarySectionCountColumn}"
+                                                        Binding="{Binding ColumnSectionCount}"
+                                                        Width="90"
+                                                        ElementStyle="{StaticResource RightAlignText}" />
+                                    <DataGridTextColumn Header="{StaticResource AutoGrouping_SummaryObjectCountColumn}"
+                                                        Binding="{Binding ObjectCount}"
+                                                        Width="90"
+                                                        ElementStyle="{StaticResource RightAlignText}" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Grid.Row="2" Style="{StaticResource DialogPanelBorderStyle}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="{StaticResource AutoGrouping_PreviewHeader}"
+                                       Style="{StaticResource AutoGroupingSectionTitleStyle}"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Text="{StaticResource AutoGrouping_NoPreviewRows}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasColumnPreviewGroups}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding ColumnPreviewGroups}">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="ItemsControl">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasColumnPreviewGroups}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{DynamicResource BorderGreyBrush}"
+                                                    BorderThickness="0,0,0,1"
+                                                    Padding="0,0,0,10"
+                                                    Margin="0,0,0,10">
+                                                <DockPanel>
+                                                    <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1.2*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding ColumnLabel}"
+                                                                   FontSize="{StaticResource FontSizeSection}"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource DarkNavyBrush}" />
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding TiersDisplayText}"
+                                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Column="2"
+                                                                   Text="{Binding SectionCount, StringFormat={}{0} sections}"
+                                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                                   Margin="16,0,0,0"
+                                                                   VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="3"
+                                                                   Text="{Binding TotalObjects, StringFormat={}{0} objects}"
+                                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                                   Margin="16,0,0,0"
+                                                                   VerticalAlignment="Center" />
+                                                    </Grid>
+                                                    <DataGrid ItemsSource="{Binding Items}"
+                                                              AutoGenerateColumns="False"
+                                                              CanUserAddRows="False"
+                                                              CanUserDeleteRows="False"
+                                                              CanUserReorderColumns="False"
+                                                              IsReadOnly="True"
+                                                              HeadersVisibility="Column"
+                                                              EnableRowVirtualization="True"
+                                                              VirtualizingPanel.IsVirtualizing="True"
+                                                              VirtualizingPanel.VirtualizationMode="Recycling">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewTierColumn}"
+                                                                                Binding="{Binding TierName}"
+                                                                                Width="1*" />
+                                                            <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewStoryRangeColumn}"
+                                                                                Binding="{Binding StoryRange}"
+                                                                                Width="105" />
+                                                            <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewMbSectionColumn}"
+                                                                                Binding="{Binding MbColumnSectionName}"
+                                                                                Width="1.2*" />
+                                                            <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewCountColumn}"
+                                                                                Binding="{Binding Count}"
+                                                                                Width="78"
+                                                                                ElementStyle="{StaticResource RightAlignText}" />
+                                                            <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewEtabsSectionsColumn}"
+                                                                                Binding="{Binding EtabsSectionsDisplayText}"
+                                                                                Width="1.3*" />
+                                                            <DataGridTextColumn Header="{StaticResource AutoGrouping_PreviewMaterialsColumn}"
+                                                                                Binding="{Binding MaterialsDisplayText}"
+                                                                                Width="1*" />
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Grid.Row="4" Style="{StaticResource DialogPanelBorderStyle}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="{StaticResource AutoGrouping_ValidationHeader}"
+                                       Style="{StaticResource AutoGroupingSectionTitleStyle}"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Text="{StaticResource AutoGrouping_NoValidationMessages}"
+                                       Foreground="{DynamicResource TextMutedBrush}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasValidationMessages}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding ValidationMessages}">
+                                    <ItemsControl.Style>
+                                        <Style TargetType="ItemsControl">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasValidationMessages}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ItemsControl.Style>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,0,0,4">
+                                                <TextBlock DockPanel.Dock="Left"
+                                                           Text="{Binding SeverityDisplayText}"
+                                                           Style="{StaticResource AutoGroupingMessageSeverityStyle}"
+                                                           MinWidth="64" />
+                                                <TextBlock Text="{Binding Message}"
+                                                           Foreground="{DynamicResource TextDarkBrush}"
+                                                           TextWrapping="Wrap" />
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
 
@@ -335,13 +485,29 @@
                             Style="{StaticResource SecondaryButtonStyle}"
                             MinHeight="32"
                             Padding="14,6" />
+                    <Button Content="{StaticResource AutoGrouping_BackButton}"
+                            Command="{Binding BackCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            MinHeight="32"
+                            Padding="14,6"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsGroupingPreviewStep, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <Button Content="{StaticResource AutoGrouping_PreviewButton}"
+                            Command="{Binding PreviewCommand}"
+                            IsDefault="True"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            MinHeight="32"
+                            Padding="16,6"
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsTierDefinitionsStep, Converter={StaticResource BoolToVisibilityConverter}}" />
                     <Button Content="{StaticResource AutoGrouping_ApplyButton}"
                             Command="{Binding ApplyCommand}"
                             IsDefault="True"
                             Style="{StaticResource PrimaryButtonStyle}"
                             MinHeight="32"
                             Padding="16,6"
-                            Margin="8,0,0,0" />
+                            Margin="8,0,0,0"
+                            Visibility="{Binding IsGroupingPreviewStep, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </StackPanel>
                 <TextBlock Text="{Binding StatusText}"
                            Foreground="{DynamicResource TextMutedBrush}"

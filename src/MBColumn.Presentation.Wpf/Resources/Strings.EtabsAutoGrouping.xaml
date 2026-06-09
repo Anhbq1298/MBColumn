@@ -33,6 +33,7 @@
 
     <sys:String x:Key="AutoGrouping_AddTierButton">Add Tier</sys:String>
     <sys:String x:Key="AutoGrouping_RemoveTierButton">Remove Tier</sys:String>
+    <sys:String x:Key="AutoGrouping_BackButton">Back</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewButton">Preview Grouping</sys:String>
     <sys:String x:Key="AutoGrouping_ApplyButton">Apply Auto Grouping</sys:String>
     <sys:String x:Key="AutoGrouping_CancelButton">Cancel</sys:String>
@@ -41,7 +42,7 @@
 
     <sys:String x:Key="AutoGrouping_DefaultTierNameFormat">Tier {0}</sys:String>
     <sys:String x:Key="AutoGrouping_Status_Ready">Ready.</sys:String>
-    <sys:String x:Key="AutoGrouping_Status_PreviewCompleteFormat">Preview generated with {0} group rows.</sys:String>
+    <sys:String x:Key="AutoGrouping_Status_PreviewCompleteFormat">Preview generated with {0} column group(s).</sys:String>
     <sys:String x:Key="AutoGrouping_Status_PreviewHasErrors">Preview found errors that must be fixed before applying.</sys:String>
     <sys:String x:Key="AutoGrouping_Status_ApplyBlocked">Auto grouping was not applied because validation errors remain.</sys:String>
 
