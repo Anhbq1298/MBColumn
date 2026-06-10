@@ -238,7 +238,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 col.ObjectName, col.PierName, col.StoryName, col.Label, col.EtabsSectionName,
                 combo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -345,7 +345,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 $"pier:{pier}:{story}", pier, story, pier, pier,
                 effectiveCombo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
@@ -401,7 +401,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 $"{story}/{label}", "", story, label, "",
                 combo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -468,7 +468,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 $"pier:{pier}:{story}", pier, story, pier, pier,
                 effectiveCombo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
@@ -573,7 +573,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 $"{col.StoryName}:{col.Label}", col.Label, col.StoryName, col.Label, col.Label,
                 effectiveCombo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
@@ -680,7 +680,7 @@ public sealed class EtabsDesignForceImportService : IEtabsDesignForceImportServi
             results.Add(new EtabsForceResultDto(
                 $"pier:{pier}:{story}", pier, story, pier, pier,
                 effectiveCombo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),

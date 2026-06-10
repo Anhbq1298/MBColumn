@@ -81,7 +81,9 @@ public sealed class PmChartInsetStateResolverService
     }
 
     private static double NeutralAxisAngleFromSlice(double thetaDegrees)
-        => NormalizeAngle(thetaDegrees + 90.0);
+        // PM chart theta is the moment-vector angle. The solver/inset normal points
+        // toward compression, which is 90 degrees clockwise from that moment vector.
+        => NormalizeAngle(thetaDegrees - 90.0);
 
     private ControlPointDto? ResolveBoundaryState(CalculationResultDto result, double axialDisplay, double loadAngleDegrees)
     {

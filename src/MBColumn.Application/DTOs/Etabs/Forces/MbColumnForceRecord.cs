@@ -8,6 +8,8 @@ namespace MBColumn.Application.DTOs.Etabs.Forces;
 ///   Vy   = V3   (V3 + M2 are one shear/moment pair)
 ///   Mx   = M2
 ///   My   = M3
+/// MBColumn X = ETABS local 2 and MBColumn Y = ETABS local 3. The flexural
+/// mapping is axis-based; do not map M3 to Mx or M2 to My.
 /// </summary>
 public sealed class MbColumnForceRecord
 {

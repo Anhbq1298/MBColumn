@@ -3246,19 +3246,22 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var bottomRow = FindEndMomentRow(rows, top: false) ?? rows[0];
             var anyRow    = rows[0];
 
-            double mxTop    = topRow.M2;
-            double mxBottom = bottomRow.M2;
-            double myTop    = topRow.M3;
-            double myBottom = bottomRow.M3;
+            double mxTop    = EtabsToMbColumnForceMapper.RawEtabsM2ToMx(topRow.M2);
+            double mxBottom = EtabsToMbColumnForceMapper.RawEtabsM2ToMx(bottomRow.M2);
+            double myTop    = EtabsToMbColumnForceMapper.RawEtabsM3ToMy(topRow.M3);
+            double myBottom = EtabsToMbColumnForceMapper.RawEtabsM3ToMy(bottomRow.M3);
 
             // Sign-preserving max-abs: keep the value whose magnitude is larger
             double mxUsed = Math.Abs(mxTop) >= Math.Abs(mxBottom) ? mxTop : mxBottom;
             double myUsed = Math.Abs(myTop) >= Math.Abs(myBottom) ? myTop : myBottom;
 
             // Most critical axial and shear: largest absolute value, sign preserved
-            double pu  = rows.OrderByDescending(r => Math.Abs(r.P )).First().P;
-            double vux = rows.OrderByDescending(r => Math.Abs(r.V2)).First().V2;
-            double vuy = rows.OrderByDescending(r => Math.Abs(r.V3)).First().V3;
+            double pu = EtabsToMbColumnForceMapper.ImportedResultPToNEd(
+                rows.OrderByDescending(r => Math.Abs(r.P)).First().P);
+            double vux = EtabsToMbColumnForceMapper.RawEtabsV2ToVx(
+                rows.OrderByDescending(r => Math.Abs(r.V2)).First().V2);
+            double vuy = EtabsToMbColumnForceMapper.RawEtabsV3ToVy(
+                rows.OrderByDescending(r => Math.Abs(r.V3)).First().V3);
 
             // Per-case length from the source ETABS column object
             double? lengthOverrideMm = null;
@@ -3312,7 +3315,11 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
             var top = FindEndMomentRow(rows, top: true) ?? rows[0];
             var bottom = FindEndMomentRow(rows, top: false) ?? top;
-            lookup[group.Key] = (top.M2, bottom.M2, top.M3, bottom.M3);
+            lookup[group.Key] = (
+                EtabsToMbColumnForceMapper.RawEtabsM2ToMx(top.M2),
+                EtabsToMbColumnForceMapper.RawEtabsM2ToMx(bottom.M2),
+                EtabsToMbColumnForceMapper.RawEtabsM3ToMy(top.M3),
+                EtabsToMbColumnForceMapper.RawEtabsM3ToMy(bottom.M3));
         }
 
         return lookup;

@@ -75,7 +75,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **EtabsForceCacheQuery** | Represents the EtabsForceCacheQuery record. | `EtabsForceCacheQuery.cs` |
 | `class` | **EtabsForceRefreshPreview** | Represents the EtabsForceRefreshPreview class. Key properties: SectionsAffected, LoadCombinationsSelected, ExistingLoadRows, NewLoadRows. | `EtabsForceRefreshPreview.cs` |
 | `class` | **EtabsForceRefreshRequest** | Represents the EtabsForceRefreshRequest class. Key properties: Bindings, SelectedLoadCombinations, ForceSource, ImportTop. | `EtabsForceRefreshRequest.cs` |
-| `record` | **EtabsForceResultDto** | Data transfer object carrying EtabsForceResult data. | `EtabsForceResultDto.cs` |
+| `record` | **EtabsForceResultDto** | /// ETABS force row after unit conversion. P is already converted to MBColumn /// compression-positive convention by the extraction service; M2/M3 and V2/V3 /// keep their ETABS local-axis names until the central convention mapper assigns /// them to MBColumn Mx/My and Vx/Vy. /// | `EtabsForceResultDto.cs` |
 | `class` | **EtabsForceRowChange** | Represents the EtabsForceRowChange class. Key properties: LoadCaseName, Location, OldP, NewP. | `EtabsForceRowChange.cs` |
 | `enum` | **EtabsForceRowChangeStatus** | Enumeration defining states/types for EtabsForceRowChangeStatus. | `EtabsForceRowChange.cs` |
 | `class` | **EtabsImportMetadataDto** | Data transfer object carrying EtabsImportMetadata data. Key properties: SourceModelPath, SourceModelName, EtabsObjectName, PierName. | `EtabsImportMetadataDto.cs` |
@@ -133,7 +133,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **EtabsForceUnitContextDto** | Carries the unit system that the ETABS force values were read in. | `EtabsForceUnitContextDto.cs` |
 | `record` | **EtabsMappedLoadCaseDto** | /// MBColumn-ready demand row produced by the ETABS force mapper. /// This is the common output regardless of whether the source was element forces /// or design forces — source metadata is preserved so the UI and DB can display it. /// | `EtabsMappedLoadCaseDto.cs` |
 | `class` | **EtabsTableKeyResolver** | Represents the EtabsTableKeyResolver class. Key methods: GetEtabsTableKey, GetFallbackTableKeys. | `EtabsTableKeyResolver.cs` |
-| `class` | **MbColumnForceRecord** | /// MB Column-ready force row with convention-mapped values and a geometry-based identity GUID. /// Force convention: /// NEd = -P (positive = compression, negative = tension) /// Vx = V2 (V2 + M3 are one shear/moment pair) /// Vy = V3 (V3 + M2 are one shear/moment pair) /// Mx = M2 /// My = M3 ///. Key properties: MBCLCNName. | `MbColumnForceRecord.cs` |
+| `class` | **MbColumnForceRecord** | /// MB Column-ready force row with convention-mapped values and a geometry-based identity GUID. /// Force convention: /// NEd = -P (positive = compression, negative = tension) /// Vx = V2 (V2 + M3 are one shear/moment pair) /// Vy = V3 (V3 + M2 are one shear/moment pair) /// Mx = M2 /// My = M3 /// MBColumn X = ETABS local 2 and MBColumn Y = ETABS local 3. The flexural /// mapping is axis-based; do not map M3 to Mx or M2 to My. ///. Key properties: MBCLCNName. | `MbColumnForceRecord.cs` |
 | `record` | **has** | Generated MB Column load case name: {OutputCase}-{Label}-{Story}-Bottom/Top. Key properties: MBColumnGuid, Story, ColumnLabel, UniqueName. | `MbColumnForceRecord.cs` |
 
 ### DTOs/Etabs/Identity
@@ -338,6 +338,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Success, Message, Preview. | `IEtabsForceRefreshService.cs` |
 | `class` | **EtabsForceScope** | Represents the EtabsForceScope class. Key properties: Bindings, LoadCombinations, ForceSource, ImportTop. | `IEtabsForceSelectionService.cs` |
 | `class` | **EtabsSectionForceFilterService** | Provides service logic and operations for EtabsSectionForceFilter. Key methods: FilterForcesForSection, FindMissingItems. | `EtabsSectionForceFilterService.cs` |
+| `class` | **EtabsToMbColumnForceMapper** | /// Single ETABS-to-MBColumn force convention mapper. /// MBColumn X is ETABS local 2, and MBColumn Y is ETABS local 3. /// Therefore Mx = ETABS M2 and My = ETABS M3. This is axis-based; /// shear-flexure design pairs remain Vx/V2 with My/M3 and Vy/V3 with Mx/M2. ///. Key methods: RawEtabsPToNEd, RawEtabsV2ToVx, RawEtabsV3ToVy, RawEtabsM2ToMx. | `EtabsToMbColumnForceMapper.cs` |
 | `interface` | **IEtabsBindingReconciliationService** | Provides service logic and operations for IEtabsBindingReconciliation. | `IEtabsBindingReconciliationService.cs` |
 | `interface` | **IEtabsColumnIdentityService** | /// Builds and matches geometry-based identities for ETABS column objects. /// The permanent identity is a GUID derived from normalized endpoint coordinates, /// not from ETABS object names or UniqueNames. /// | `IEtabsColumnIdentityService.cs` |
 | `interface` | **IEtabsColumnImportService** | Provides service logic and operations for IEtabsColumnImport. | `IEtabsColumnImportService.cs` |

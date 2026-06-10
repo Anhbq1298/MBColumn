@@ -224,7 +224,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             results.Add(new EtabsForceResultDto(
                 column.ObjectName, column.PierName, column.StoryName, column.Label, column.EtabsSectionName,
                 combo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -308,7 +308,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
                 $"pier:{pier}:{story}",
                 pier, story, pier, pier,
                 combo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),
@@ -436,7 +436,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             results.Add(new EtabsForceResultDto(
                 col.ObjectName, col.PierName, col.StoryName, col.Label, col.EtabsSectionName,
                 effectiveCombo,
-                SMath.Round(-p * forceToKn, 3),
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn,   3),
@@ -534,7 +534,7 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
             results.Add(new EtabsForceResultDto(
                 $"pier:{pier}:{story}", pier, story, pier, pier,
                 effectiveCombo,
-                SMath.Round(-p * forceToKn, 3), // convention for pier
+                SMath.Round(EtabsToMbColumnForceMapper.RawEtabsPToNEd(p) * forceToKn, 3),
                 SMath.Round(m2 * momentFactor, 3),
                 SMath.Round(m3 * momentFactor, 3),
                 SMath.Round(v2 * forceToKn, 3),

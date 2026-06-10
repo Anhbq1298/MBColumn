@@ -91,6 +91,22 @@ The current solver sums moments about the section centroid using:
 
 This applies consistently to concrete and steel force resultants in the current integration code.
 
+## ETABS Force Convention
+
+When importing ETABS frame or pier forces, MBColumn uses the section axes as the
+source of truth:
+
+- MBColumn X = ETABS frame local 2.
+- MBColumn Y = ETABS frame local 3.
+- Mx = ETABS M2.
+- My = ETABS M3.
+- Vx = ETABS V2.
+- Vy = ETABS V3.
+- ETABS P is converted to MBColumn compression-positive NEd/P.
+
+Flexural moment mapping is axis-based, not shear-pair based. The correct
+shear-flexure pairings are Vx-My (ETABS V2-M3) and Vy-Mx (ETABS V3-M2).
+
 ## Solver Architecture
 
 The active PMM solver is organized as:

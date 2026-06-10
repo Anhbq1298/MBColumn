@@ -1,4 +1,5 @@
 using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Domain.Entities;
@@ -113,6 +114,8 @@ var tests = new List<(string Name, Action Test)>
     ("Rebar set library can change independently", TestRebarSetLibraryCanChangeIndependently),
     ("PM angle 0 deg axis mapping", TestPmAngleZeroAxisMapping),
     ("PM angle 90 deg axis mapping", TestPmAngleNinetyAxisMapping),
+    ("PM inset theta 0 deg shows bottom compression", TestPmInsetThetaZeroShowsBottomCompression),
+    ("PM inset theta 180 deg shows top compression", TestPmInsetThetaOneEightyShowsTopCompression),
     ("Mx-My diagram axis mapping", TestMxMyDiagramAxisMapping),
     ("3D PMM mapping and mesh", TestPmm3DMappingAndMesh),
     ("Axis tick service", TestAxisTickService),
@@ -266,6 +269,11 @@ var tests = new List<(string Name, Action Test)>
     ("ETABS import uses default target group",                       TestEtabsImportUsesDefaultTargetGroup),
     ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
     ("ETABS import preserves software force demands",                TestEtabsImportPreservesSoftwareForceDemands),
+    ("ETABS M2 maps to MBColumn Mx",                                 TestEtabsM2MapsToMbColumnMx),
+    ("ETABS M3 maps to MBColumn My",                                 TestEtabsM3MapsToMbColumnMy),
+    ("ETABS V2 maps to Vx and pairs with My",                        TestEtabsV2MapsToVxAndPairsWithMy),
+    ("ETABS V3 maps to Vy and pairs with Mx",                        TestEtabsV3MapsToVyAndPairsWithMx),
+    ("ETABS imported axial remains compression-positive",            TestEtabsImportedAxialRemainsCompressionPositive),
     ("ETABS pier geometry snap-tolerance fix",                      TestIrregularPierGeometrySnapTolerance),
     ("ETABS pier geometry forward-cap fix",                         TestIrregularPierGeometryForwardCap),
     ("ETABS pier geometry applies clockwise axis angle",             TestIrregularPierGeometryAppliesClockwiseAxisAngle),
@@ -1009,6 +1017,60 @@ static void TestPmAngleNinetyAxisMapping()
     AreClose(result.MuyDisplay, demand.X, 1e-9);
     AreClose(result.PuDisplay, demand.Y, 1e-9);
 }
+
+static void TestPmInsetThetaZeroShowsBottomCompression()
+{
+    var figure = BuildInsetFigureForMoment(100.0, 0.0);
+
+    AreClose(0.0, figure.ThetaDegrees, 1e-9);
+    AreClose(270.0, figure.NeutralAxisAngleDegrees ?? -1.0, 1e-9);
+    IsTrue(figure.CompressionZonePolygon.Count >= 3);
+    IsTrue(AverageY(figure.CompressionZonePolygon) < 0.0);
+}
+
+static void TestPmInsetThetaOneEightyShowsTopCompression()
+{
+    var figure = BuildInsetFigureForMoment(-100.0, 0.0);
+
+    AreClose(180.0, figure.ThetaDegrees, 1e-9);
+    AreClose(90.0, figure.NeutralAxisAngleDegrees ?? -1.0, 1e-9);
+    IsTrue(figure.CompressionZonePolygon.Count >= 3);
+    IsTrue(AverageY(figure.CompressionZonePolygon) > 0.0);
+}
+
+static PmChartInsetFigureDto BuildInsetFigureForMoment(double mx, double my)
+{
+    var point = new ControlPointDto(
+        DiagramType.MM,
+        X: 0.0,
+        Y: 0.0,
+        Z: 0.0,
+        P: 1000.0,
+        Mx: mx,
+        My: my,
+        Phi: 1.0,
+        ThetaDegrees: 0.0,
+        NeutralAxisDepth: 50.0,
+        Label: "Inset test",
+        GroupKey: "DesignCapacity",
+        IsDemand: false,
+        IsGoverning: false,
+        IsReference: false,
+        IsNominal: false);
+
+    var selectedState = new PmChartInsetStateResolverService().FromCapacityPoint(point);
+    return new PmChartInsetBuilderService()
+        .Build(
+            sectionWidthMm: 200.0,
+            sectionHeightMm: 200.0,
+            coverMm: 20.0,
+            rebarCoordinates: Array.Empty<RebarCoordinateDto>(),
+            selectedState: selectedState,
+            fallbackThetaDegrees: 0.0)!;
+}
+
+static double AverageY(IReadOnlyList<InsetPointDto> polygon)
+    => polygon.Average(p => p.Y);
 
 static void TestMxMyDiagramAxisMapping()
 {
@@ -3785,6 +3847,90 @@ static void TestEtabsImportPreservesSoftwareForceDemands()
     AreClose(160.0, bottom.MyBottom!.Value, 1e-9);
 }
 
+static void TestEtabsM2MapsToMbColumnMx()
+{
+    var row = MapSampleEtabsColumnForces();
+
+    AreClose(120.0, row.MxTop, 1e-9);
+    AreClose(-310.0, row.MxBottom, 1e-9);
+    AreClose(-310.0, row.MxUsed, 1e-9);
+}
+
+static void TestEtabsM3MapsToMbColumnMy()
+{
+    var row = MapSampleEtabsColumnForces();
+
+    AreClose(430.0, row.MyTop, 1e-9);
+    AreClose(210.0, row.MyBottom, 1e-9);
+    AreClose(430.0, row.MyUsed, 1e-9);
+}
+
+static void TestEtabsV2MapsToVxAndPairsWithMy()
+{
+    var row = MapSampleEtabsColumnForces();
+
+    AreClose(75.0, row.Vx, 1e-9);
+    AreClose(430.0, row.MyUsed, 1e-9);
+}
+
+static void TestEtabsV3MapsToVyAndPairsWithMx()
+{
+    var row = MapSampleEtabsColumnForces();
+
+    AreClose(85.0, row.Vy, 1e-9);
+    AreClose(-310.0, row.MxUsed, 1e-9);
+}
+
+static void TestEtabsImportedAxialRemainsCompressionPositive()
+{
+    var mapper = new MBColumn.Infrastructure.Etabs.EtabsForceMapper();
+    var rows = mapper.MapColumnForces(
+        "C1",
+        [
+            SampleEtabsForce("Top", p: 2200.0, m2: 10.0, m3: 20.0, v2: 30.0, v3: 40.0),
+            SampleEtabsForce("Bottom", p: 2100.0, m2: 11.0, m3: 21.0, v2: 31.0, v3: 41.0)
+        ],
+        MbColumnForceSourceMode.ElementForces,
+        UnitSystem.Metric);
+
+    AreClose(2100.0, rows.Single().NEd, 1e-9);
+}
+
+static MbColumnMappedForceRow MapSampleEtabsColumnForces()
+{
+    var mapper = new MBColumn.Infrastructure.Etabs.EtabsForceMapper();
+    return mapper.MapColumnForces(
+        "C1",
+        [
+            SampleEtabsForce("Top", p: 2000.0, m2: 120.0, m3: 430.0, v2: 70.0, v3: 80.0),
+            SampleEtabsForce("Bottom", p: 2100.0, m2: -310.0, m3: 210.0, v2: 75.0, v3: 85.0)
+        ],
+        MbColumnForceSourceMode.DesignForces,
+        UnitSystem.Metric).Single();
+}
+
+static EtabsForceResultDto SampleEtabsForce(
+    string station,
+    double p,
+    double m2,
+    double m3,
+    double v2,
+    double v3)
+    => new(
+        "Obj1",
+        "",
+        "Story1",
+        "C1",
+        "SEC1",
+        "Combo1",
+        p,
+        m2,
+        m3,
+        v2,
+        v3,
+        station,
+        "OK");
+
 static void TestIrregularEqualSpacingGeneratedRebarsSatisfyCover()
 {
     var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
@@ -4268,8 +4414,8 @@ sealed class StubEtabsForceImportService : MBColumn.Application.Services.Etabs.I
         IReadOnlyList<string> _2,
         MBColumn.Domain.Enums.UnitSystem _3)
         => [
-            new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2500, 250, 180, 70, 80, "Top", "OK"),
-            new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", -2600, -210, 160, 75, 85, "Bottom", "OK")
+            new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", 2500, 250, 180, 70, 80, "Top", "OK"),
+            new("pier:P1:Story1", "P1", "Story1", "P1", "CIRC800", "1.2D+1.6L", 2600, -210, 160, 75, 85, "Bottom", "OK")
         ];
     public IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsForceResultDto> GetElementForces(
         IReadOnlyList<MBColumn.Application.DTOs.Etabs.EtabsColumnImportDto> _,

@@ -241,32 +241,12 @@ public sealed class EtabsForceTableService : IEtabsForceTableService
         double forceFactor,
         double momentFactor)
     {
-        // MB Column force convention:
-        //   NEd = -P    (positive = compression, ETABS P negative = compression)
-        //   Vx  = V2    (V2 + M3 pair)
-        //   Vy  = V3    (V3 + M2 pair)
-        //   Mx  = M2
-        //   My  = M3
-
-        return new MbColumnForceRecord
-        {
-            MBCLCNName       = BuildLoadCaseName(r.OutputCase, r.Label, r.Story, location),
-            Story            = r.Story,
-            ColumnLabel      = r.Label,
-            UniqueName       = r.UniqueName,
-            OriginalOutputCase = r.OutputCase,
-            EndLocation      = location,
-            Station          = r.Station,
-            NEd              = SMath.Round(-r.P  * forceFactor,  3),
-            Vx               = SMath.Round( r.V2 * forceFactor,  3),
-            Vy               = SMath.Round( r.V3 * forceFactor,  3),
-            Mx               = SMath.Round( r.M2 * momentFactor, 3),
-            My               = SMath.Round( r.M3 * momentFactor, 3),
-            T                = SMath.Round( r.T  * momentFactor, 3),
-            SourceType       = r.SourceType,
-            ObjectType       = r.ObjectType,
-            MatchStatus      = string.Empty
-        };
+        return EtabsToMbColumnForceMapper.MapRawEtabsRecord(
+            r,
+            BuildLoadCaseName(r.OutputCase, r.Label, r.Story, location),
+            location,
+            forceFactor,
+            momentFactor);
     }
 
     // -------------------------------------------------------------------------

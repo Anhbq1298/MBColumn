@@ -6,7 +6,8 @@ public interface IEtabsSectionForceFilterService
 {
     /// <summary>
     /// For each MB Column Section, filters force rows from the resolver by selected Story+Label,
-    /// maps ETABS M2/M3 to MBColumn Mx/My, and generates LoadCaseName.
+    /// maps ETABS M2 to MBColumn Mx, ETABS M3 to MBColumn My, ETABS V2 to Vx,
+    /// and ETABS V3 to Vy. Shear-flexure pairs are Vx/My and Vy/Mx.
     /// </summary>
     IReadOnlyList<MbColumnMappedForceRow> FilterForcesForSection(
         MbColumnSectionImport section,

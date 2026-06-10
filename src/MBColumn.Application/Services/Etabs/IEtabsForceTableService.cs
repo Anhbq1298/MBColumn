@@ -27,6 +27,8 @@ public interface IEtabsForceTableService
     /// to <paramref name="targetSystem"/> units, maps to MB Column convention
     /// (NEd = -P, Vx = V2, Vy = V3, Mx = M2, My = M3), and generates MB Column
     /// load case names.
+    /// MBColumn X equals ETABS local 2 and MBColumn Y equals ETABS local 3;
+    /// shear-flexure pairs remain Vx/My and Vy/Mx.
     /// </summary>
     IReadOnlyList<MbColumnForceRecord> MapToMbColumnRecords(
         IReadOnlyList<EtabsForceRecord> records,

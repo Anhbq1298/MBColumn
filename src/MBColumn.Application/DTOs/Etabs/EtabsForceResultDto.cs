@@ -1,5 +1,11 @@
 namespace MBColumn.Application.DTOs.Etabs;
 
+/// <summary>
+/// ETABS force row after unit conversion. P is already converted to MBColumn
+/// compression-positive convention by the extraction service; M2/M3 and V2/V3
+/// keep their ETABS local-axis names until the central convention mapper assigns
+/// them to MBColumn Mx/My and Vx/Vy.
+/// </summary>
 public sealed record EtabsForceResultDto(
     string ObjectName,
     string PierName,
