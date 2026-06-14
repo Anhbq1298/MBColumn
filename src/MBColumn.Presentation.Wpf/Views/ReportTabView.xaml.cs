@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using MBColumn.Application.Reports.Models;
 using MBColumn.Presentation.Wpf.ViewModels;
 
 namespace MBColumn.Presentation.Wpf.Views;
@@ -23,14 +22,12 @@ public partial class ReportTabView : UserControl
             old.PropertyChanged -= OnViewModelPropertyChanged;
             old.WebViewPrintToPdfAsync = null;
             old.WebViewScrollToAnchor = null;
-            old.ChartSnapshotProvider = null;
         }
         if (e.NewValue is ReportTabViewModel vm)
         {
             vm.PropertyChanged += OnViewModelPropertyChanged;
             vm.WebViewPrintToPdfAsync = PrintToPdfAsync;
             vm.WebViewScrollToAnchor = ScrollToAnchor;
-            vm.ChartSnapshotProvider = CapturePmmChartSnapshot;
         }
     }
 
@@ -73,38 +70,5 @@ public partial class ReportTabView : UserControl
         if (!webViewInitialized) return;
         _ = ReportWebView.ExecuteScriptAsync(
             $"document.getElementById('{anchorId}')?.scrollIntoView({{behavior:'smooth',block:'start'}})");
-    }
-
-    private string? CapturePmmChartSnapshot(string chartKind, DiagramBlock block)
-    {
-        if (Window.GetWindow(this)?.DataContext is not MainWindowViewModel mainVm ||
-            mainVm.Result.Result is null)
-        {
-            return null;
-        }
-
-        var snapshotVm = new ResultViewModel
-        {
-            Result = mainVm.Result.Result,
-            ShowGrid = mainVm.Result.ShowGrid,
-            ShowLabels = mainVm.Result.ShowLabels,
-            ShowNominalCurve = mainVm.Result.ShowNominalCurve,
-            ShowCpLabels = mainVm.Result.ShowCpLabels,
-            ShowPmaxPmin = true,
-            MStep = mainVm.Result.MStep,
-            PStep = mainVm.Result.PStep,
-            MStepX = mainVm.Result.MStepX,
-            MStepY = mainVm.Result.MStepY,
-            UseEqualAspectForMM = mainVm.Result.UseEqualAspectForMM
-        };
-
-        var view = new PmmInteractionWindow
-        {
-            DataContext = snapshotVm
-        };
-
-        return string.Equals(chartKind, "MM", StringComparison.OrdinalIgnoreCase)
-            ? view.CaptureMmChartDataUri(block)
-            : view.CapturePmChartDataUri(block);
     }
 }

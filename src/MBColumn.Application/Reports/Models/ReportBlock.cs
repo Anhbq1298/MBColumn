@@ -52,6 +52,7 @@ public sealed record DiagramBlock(
     bool UseEqualAspect = false,
     double WidthPct = 90,
     string Caption = "",
+    string SvgContent = "",
     string PngDataUri = "") : ReportBlock;
 
 public sealed record DividerBlock() : ReportBlock;

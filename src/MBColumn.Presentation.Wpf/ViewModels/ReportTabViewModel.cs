@@ -88,9 +88,6 @@ public sealed class ReportTabViewModel : ViewModelBase
     /// <summary>Set by the View so the ViewModel can scroll the WebView2 to an anchor.</summary>
     public Action<string>? WebViewScrollToAnchor { get; set; }
 
-    /// <summary>Set by the View to capture the actual PM/MM visualization controls for report figures.</summary>
-    public Func<string, DiagramBlock, string?>? ChartSnapshotProvider { get; set; }
-
     public ReportTabViewModel()
     {
         GeneratePreviewCommand = new RelayCommand(RevealReportPreview, CanRevealReportPreview);
@@ -798,15 +795,16 @@ public sealed class ReportTabViewModel : ViewModelBase
                 UseEqualAspect: true, WidthPct: 80,
                 Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
 
+            pm = pm with { SvgContent = InteractionDiagramSvgRenderer.RenderDiagram(pm, svgWidth: 960, svgHeight: 720) };
+            mm = mm with { SvgContent = InteractionDiagramSvgRenderer.RenderDiagram(mm, svgWidth: 900, svgHeight: 760) };
+
             if (!withPng)
             {
                 return (pm, mm);
             }
 
-            var pmSnapshot = ChartSnapshotProvider?.Invoke("PM", pm);
-            var mmSnapshot = ChartSnapshotProvider?.Invoke("MM", mm);
-            pm = pm with { PngDataUri = string.IsNullOrWhiteSpace(pmSnapshot) ? ReportDiagramPngRenderer.RenderDataUri(pm) : pmSnapshot };
-            mm = mm with { PngDataUri = string.IsNullOrWhiteSpace(mmSnapshot) ? ReportDiagramPngRenderer.RenderDataUri(mm) : mmSnapshot };
+            pm = pm with { PngDataUri = ReportDiagramPngRenderer.RenderDataUri(pm) };
+            mm = mm with { PngDataUri = ReportDiagramPngRenderer.RenderDataUri(mm) };
             return (pm, mm);
         }
         catch

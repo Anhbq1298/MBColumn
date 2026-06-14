@@ -318,6 +318,12 @@ public sealed class QuestPdfCalculationReportRenderer
 
     private static void RenderDiagramFigure(ColumnDescriptor col, DiagramBlock diagram)
     {
+        if (!string.IsNullOrWhiteSpace(diagram.SvgContent))
+        {
+            RenderSvgFigure(col, diagram.SvgContent, diagram.WidthPct, diagram.Caption);
+            return;
+        }
+
         if (TryDecodeDataUri(diagram.PngDataUri, out var imageBytes))
         {
             col.Item().PaddingTop(4).AlignCenter().Width(FigureWidth(diagram.WidthPct))

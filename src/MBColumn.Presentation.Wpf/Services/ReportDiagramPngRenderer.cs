@@ -11,7 +11,7 @@ namespace MBColumn.Presentation.Wpf.Services;
 
 public static class ReportDiagramPngRenderer
 {
-    public static string RenderDataUri(DiagramBlock block, int width = 1400, int height = 900, double dpi = 192)
+    public static string RenderDataUri(DiagramBlock block, int width = 3200, int height = 2200, double dpi = 600)
     {
         // Compute font scale so labels appear at their nominal pt size in the PDF.
         // PDF content width = 180 mm = 510.24 pt; diagram occupies WidthPct% of that.

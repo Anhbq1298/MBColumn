@@ -146,32 +146,43 @@ document.addEventListener('DOMContentLoaded',function(){
                 break;
 
             case ImageBlock img:
+                sb.Append($"<figure class='report-figure' style='width:{img.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'>");
                 sb.Append("<div class='svg-wrap'>");
                 sb.Append(img.SvgContent);
-                if (!string.IsNullOrWhiteSpace(img.Caption))
-                    sb.Append($"<p class='fig-caption'>{H(img.Caption)}</p>");
                 sb.Append("</div>");
+                if (!string.IsNullOrWhiteSpace(img.Caption))
+                    sb.Append($"<figcaption>{H(img.Caption)}</figcaption>");
+                sb.Append("</figure>");
                 break;
 
             case DiagramBlock diag:
                 try
                 {
-                    if (!string.IsNullOrWhiteSpace(diag.PngDataUri))
+                    sb.Append($"<figure class='report-figure' style='width:{diag.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'>");
+                    if (!string.IsNullOrWhiteSpace(diag.SvgContent))
                     {
                         sb.Append("<div class='diagram-wrap'>");
-                        sb.Append($"<img class='diagram-img' src='{XA(diag.PngDataUri)}' alt='{XA(diag.Caption)}' style='width:{diag.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'/>");
-                        if (!string.IsNullOrWhiteSpace(diag.Caption))
-                            sb.Append($"<p class='fig-caption'>{H(diag.Caption)}</p>");
+                        sb.Append(diag.SvgContent);
+                        sb.Append("</div>");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(diag.PngDataUri))
+                    {
+                        sb.Append("<div class='diagram-wrap'>");
+                        sb.Append($"<img class='diagram-img' src='{XA(diag.PngDataUri)}' alt='{XA(diag.Caption)}'/>");
                         sb.Append("</div>");
                     }
                     else
                     {
                         sb.Append($"<div class='diagram-placeholder'>{H(diag.Caption)}</div>");
                     }
+
+                    if (!string.IsNullOrWhiteSpace(diag.Caption))
+                        sb.Append($"<figcaption>{H(diag.Caption)}</figcaption>");
+                    sb.Append("</figure>");
                 }
                 catch
                 {
-                    sb.Append($"<div class='diagram-placeholder'>{H(diag.Caption)}</div>");
+                    sb.Append($"<figure class='report-figure' style='width:{diag.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'><div class='diagram-placeholder'>{H(diag.Caption)}</div></figure>");
                 }
                 break;
 
@@ -190,9 +201,13 @@ document.addEventListener('DOMContentLoaded',function(){
             case SectionPreviewBlock sp:
                 if (!string.IsNullOrWhiteSpace(sp.SvgFallback))
                 {
+                    sb.Append($"<figure class='report-figure' style='width:{sp.WidthPct.ToString(CultureInfo.InvariantCulture)}%;'>");
                     sb.Append("<div class='svg-wrap'>");
                     sb.Append(sp.SvgFallback);
                     sb.Append("</div>");
+                    if (!string.IsNullOrWhiteSpace(sp.Caption))
+                        sb.Append($"<figcaption>{H(sp.Caption)}</figcaption>");
+                    sb.Append("</figure>");
                 }
                 break;
 
@@ -523,16 +538,37 @@ document.addEventListener('DOMContentLoaded',function(){
         .s-val{font-weight:600;}
 
         /* SVG / figures */
-        .svg-wrap{text-align:center;margin:10px 0;}
-        .svg-wrap svg{max-width:100%;height:auto;}
-        .diagram-wrap{text-align:center;margin:10px 0;}
-        .diagram-wrap svg{max-width:100%;height:auto;}
+        figure.report-figure{
+          margin:12px auto;
+          text-align:center;
+          break-inside:avoid;
+          page-break-inside:avoid;
+        }
+        .svg-wrap,.diagram-wrap{text-align:center;}
+        .svg-wrap svg,.diagram-wrap svg,figure.report-figure img,figure.report-figure svg{
+          max-width:100%;
+          height:auto;
+          display:block;
+          margin:0 auto;
+        }
         .diagram-img{max-width:100%;height:auto;display:block;margin:0 auto;}
-        .fig-caption{font-size:12pt;color:var(--muted);font-style:italic;margin:4px 0 0;text-align:center;}
+        figcaption{
+          margin-top:6px;
+          font-size:10pt;
+          color:var(--muted);
+          font-style:italic;
+          text-align:center;
+        }
         .diagram-placeholder{border:1px dashed #AAA;padding:20px;text-align:center;
           color:#888;margin:8px 0;font-size:12pt;font-style:italic;}
 
         hr.divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
-        @media print{body{background:#fff;padding:0;}section{box-shadow:none;}}
+        @page{size:A4;margin:15mm;}
+        @media print{
+          html,body{background:#fff;}
+          body{padding:0;}
+          section{box-shadow:none;break-inside:avoid-page;page-break-inside:avoid;}
+          .cover{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+        }
         """;
 }
