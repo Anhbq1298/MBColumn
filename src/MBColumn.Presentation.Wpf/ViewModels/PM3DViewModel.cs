@@ -99,7 +99,7 @@ public sealed class PM3DViewModel : ViewModelBase
         }
 
         GoverningPoint = null;
-        SelectedPmAngle = result?.GoverningThetaDegrees ?? 0;
+        SelectedPmAngle = result?.GoverningMomentThetaDegrees ?? 0;
         SelectedAxialLoad = result?.PuDisplay ?? 0;
         Raise(nameof(SurfacePoints)); Raise(nameof(SurfaceMesh)); Raise(nameof(WireframeLines));
         Raise(nameof(SpecialCapacityPoints));

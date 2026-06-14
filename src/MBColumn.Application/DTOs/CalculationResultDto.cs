@@ -1,3 +1,4 @@
+using MBColumn.Application.Services;
 using MBColumn.Domain.Entities;
 using MBColumn.Domain.Enums;
 
@@ -12,6 +13,11 @@ public sealed record CalculationResultDto(
     double MuxDisplay,
     double MuyDisplay,
     double Phi,
+    /// <summary>
+    /// Governing compression-normal angle θc in degrees — the direction perpendicular
+    /// to the neutral axis, pointing toward the compression zone. This is the internal
+    /// solver convention. For user-facing display use <see cref="GoverningMomentThetaDegrees"/>.
+    /// </summary>
     double GoverningThetaDegrees,
     double GoverningNeutralAxisDepth,
     double NominalPnDisplay,
@@ -27,6 +33,13 @@ public sealed record CalculationResultDto(
     InteractionSurface Surface,
     DiagramControlPointSet ControlPoints)
 {
+    /// <summary>
+    /// User-facing moment angle θM in degrees — the direction of the resultant moment
+    /// in the Mx-My plane. Computed as <c>θc + 90°</c>, normalised to [0, 360).
+    /// </summary>
+    public double GoverningMomentThetaDegrees
+        => PmmAngleConvention.MomentFromCompressionNormal(GoverningThetaDegrees);
+
     public IReadOnlyList<LoadCaseResultDto> LoadCaseResults { get; init; } = [];
     public string GoverningLoadCaseId { get; init; } = "";
     public ControlPointTableDto? ControlPointTable { get; init; }

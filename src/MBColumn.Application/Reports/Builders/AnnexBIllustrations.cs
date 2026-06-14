@@ -185,7 +185,7 @@ internal static class AnnexBIllustrations
         sb.Append("</style>");
 
         sb.Append("<text x='80' y='64' class='t bold' font-size='24'>Governing fibre strain state</text>");
-        sb.Append($"<text x='80' y='94' class='t small'>θ = {result.GoverningThetaDegrees:0.#}°    c = {result.GoverningNeutralAxisDepth:0.#} mm    (d_i &gt; 0 toward compression)</text>");
+        sb.Append($"<text x='80' y='94' class='t small'>θ = {result.GoverningMomentThetaDegrees:0.#}°    c = {result.GoverningNeutralAxisDepth:0.#} mm    (d_i &gt; 0 toward compression)</text>");
 
         // Layer 1: concrete fibre strain field from the real section boundary.
         int gridX = FibreGridX(result);

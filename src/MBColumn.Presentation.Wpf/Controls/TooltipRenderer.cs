@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 
 namespace MBColumn.Presentation.Wpf.Controls;
 
@@ -18,7 +18,7 @@ public static class TooltipRenderer
         string pLabel = p.IsNominal ? "Pn" : "phi Pn";
         string mxLabel = p.IsNominal ? "Mnx" : "phi Mnx";
         string myLabel = p.IsNominal ? "Mny" : "phi Mny";
-        return $"{curveType}\n{pLabel}: {p.P:0.###}\n{mxLabel}: {p.Mx:0.###}\n{myLabel}: {p.My:0.###}\nPhi: {p.Phi:0.###}\nTheta: {p.ThetaDegrees:0.#} deg\nc: {p.NeutralAxisDepth:0.###}";
+        return $"{curveType}\n{pLabel}: {p.P:0.###}\n{mxLabel}: {p.Mx:0.###}\n{myLabel}: {p.My:0.###}\nPhi: {p.Phi:0.###}\nTheta: {MBColumn.Application.Services.PmmAngleConvention.MomentFromCompressionNormal(p.ThetaDegrees):0.#} deg\nc: {p.NeutralAxisDepth:0.###}";
     }
 }
 

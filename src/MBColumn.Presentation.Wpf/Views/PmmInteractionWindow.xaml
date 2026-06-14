@@ -733,6 +733,10 @@
                                 </DataTemplate>
                             </DataGridTextColumn.HeaderTemplate>
                         </DataGridTextColumn>
+                        <DataGridTextColumn Header="Theta" Binding="{Binding AngleDisplay}"
+                                            Width="Auto" MinWidth="48"
+                                            ElementStyle="{StaticResource CenterCellTextStyle}"
+                                            HeaderStyle="{StaticResource CenterColumnHeaderStyle}" />
                         <DataGridTextColumn Binding="{Binding UtilizationDisplay}"
                                             Width="Auto" MinWidth="40"
                                             ElementStyle="{StaticResource CenterCellTextStyle}">

@@ -8,7 +8,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `record` | **CalculationResultDto** | Data transfer object carrying CalculationResult data. Key properties: LoadCaseResults, GoverningLoadCaseId, ControlPointTable, SectionShape. | `CalculationResultDto.cs` |
+| `record` | **CalculationResultDto** | Data transfer object carrying CalculationResult data. Key properties: GoverningMomentThetaDegrees, LoadCaseResults, GoverningLoadCaseId, ControlPointTable. | `CalculationResultDto.cs` |
 | `record` | **CapacityDebugPointDto** | Data transfer object carrying CapacityDebugPoint data. | `CapacityDebugPointDto.cs` |
 | `record` | **ChartReferenceLineDto** | Data transfer object carrying ChartReferenceLine data. | `ChartReferenceLineDto.cs` |
 | `record` | **ColumnInputDto** | Data transfer object carrying ColumnInput data. Key properties: LoadCases, RebarLayoutType, SectionShape, Diameter. | `ColumnInputDto.cs` |
@@ -37,7 +37,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **IrregularSectionInputDto** | Data transfer object carrying IrregularSectionInput data. | `IrregularSectionInputDto.cs` |
 | `record` | **IrregularSectionValidationResult** | Encapsulates the result of IrregularSectionValidation operations. Key methods: Errors. | `IrregularSectionValidationResult.cs` |
 | `record` | **LoadCaseDto** | Data transfer object carrying LoadCase data. Key properties: Vux, Vuy, MxTop, MxBottom. | `LoadCaseDto.cs` |
-| `record` | **LoadCaseResultDto** | Data transfer object carrying LoadCaseResult data. Key properties: CapacityPDisplay, CapacityMxDisplay, CapacityMyDisplay, SlendernessStatus. | `LoadCaseResultDto.cs` |
+| `record` | **LoadCaseResultDto** | Data transfer object carrying LoadCaseResult data. Key properties: GoverningMomentThetaDegrees, CapacityPDisplay, CapacityMxDisplay, CapacityMyDisplay. | `LoadCaseResultDto.cs` |
 | `record` | **MemberGeometryInputDto** | Data transfer object carrying MemberGeometryInput data. | `Ec2SlendernessDtos.cs` |
 | `record` | **MmDiagramDto** | Data transfer object carrying MmDiagram data. | `MmDiagramDto.cs` |
 | `record` | **MxMyDiagramDto** | Data transfer object carrying MxMyDiagram data. | `MxMyDiagramDto.cs` |
@@ -313,6 +313,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **PmCurveBuilderService** | Provides service logic and operations for PmCurveBuilder. Key methods: BuildPmAngleCurve, BuildPmAngleReferenceLines, BuildPmInteractionDebugCsv, ExportPmInteractionDebugCsv. Key properties: EnableDebugDiagnostics, LastDiagnostics. | `PmCurveBuilderService.cs` |
 | `enum` | **PmDebugMomentAxis** | Enumeration defining states/types for PmDebugMomentAxis. | `PmCurveBuilderService.cs` |
 | `class` | **PmSevenPointReportMapper** | Maps data structures for PmSevenPointReport. Key methods: Map, FormatOrNa, FormatPctOrNa. | `PmSevenPointReportMapper.cs` |
+| `class` | **PmmAngleConvention** | to the neutral axis, pointing toward the compression zone. This is the angle stored on <c>InteractionPoint.ThetaDegrees</c> and on <c>CalculationResultDto.GoverningThetaDegrees</c>.</para> /// <para><b>Moment angle (θM)</b> — the direction of the resultant moment vector in the Mx-My plane. This is the angle displayed to the user everywhere in the UI and in reports.</para> /// <para>Relationship: <c>θM = θc + 90°</c> / <c>θc = θM − 90°</c></para>. Key methods: NormalizeAngle, MomentFromCompressionNormal, CompressionNormalFromMoment, FormatMomentTheta. | `PmmAngleConvention.cs` |
 | `class` | **RatioCheckService** | Provides service logic and operations for RatioCheck. Key methods: Check, CheckBatch. | `RatioCheckService.cs` |
 | `class` | **RebarComplianceCheckService** | /// Transverse links (§9.5.3): dsw ≥ max(6, 0.25 dsmax) — §9.5.3(1) minimum link diameter s ≤ min(20 dsmin, bmin, 400) — §9.5.3(3) maximum link spacing gap ≤ 150 mm between restrained bars — §9.5.3(6) /// ACI 318-19 checks (stubs — TODO): 0.01 Ag ≤ Ast ≤ 0.08 Ag — §10.6.1.1 nBars ≥ 4 (ties) / ≥ 6 (spirals) — §10.7.3.1 Tie diameter and spacing — §25.7.2. Key methods: Check. | `RebarComplianceCheckService.cs` |
 | `class` | **RebarCoordinateBuilderService** | Provides service logic and operations for RebarCoordinateBuilder. Key methods: Build, BuildCircular. | `RebarCoordinateBuilderService.cs` |

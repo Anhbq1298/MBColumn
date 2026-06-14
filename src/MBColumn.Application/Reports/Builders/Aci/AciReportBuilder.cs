@@ -263,6 +263,7 @@ internal sealed class AciReportBuilder
             {
                 lc.LoadCaseName,
                 $"{lc.PuDisplay:0.##}", $"{lc.MuxDisplay:0.##}", $"{lc.MuyDisplay:0.##}",
+                PmmAngleConvention.FormatMomentTheta(lc.GoverningMomentThetaDegrees),
                 $"{lc.CapacityPDisplay:0.##}", $"{lc.CapacityMxDisplay:0.##}", $"{lc.CapacityMyDisplay:0.##}",
                 $"{lc.PmmRatio:0.###}", lc.Status.ToString(),
             }).ToArray();
@@ -284,12 +285,13 @@ internal sealed class AciReportBuilder
                     [$"Mux ({mUnit})",    $"{r.MuxDisplay:0.##}"],
                     [$"Muy ({mUnit})",    $"{r.MuyDisplay:0.##}"],
                     ["φ (Phi)",           $"{r.Phi:0.###}"],
-                    ["Governing θ",      $"{r.GoverningThetaDegrees:0.#}°"],
+                    // Report output uses the shared user-facing moment theta from the calculation result.
+                    ["Governing θ",      PmmAngleConvention.FormatMomentTheta(r.GoverningMomentThetaDegrees)],
                     ["UR",               $"{r.Ratio:0.###}"],
                 ]),
 
             new TableBlock(
-                ["Load Case", "Pu", "Mux", "Muy", "φPn", "φMnx", "φMny", "UR", "Status"],
+                ["Load Case", "Pu", "Mux", "Muy", "Theta", "φPn", "φMnx", "φMny", "UR", "Status"],
                 lcRows),
         };
 

@@ -296,6 +296,7 @@ internal sealed class Ec2ReportBuilder
             {
                 lc.LoadCaseName,
                 $"{lc.PuDisplay:0.##}", $"{lc.MuxDisplay:0.##}", $"{lc.MuyDisplay:0.##}",
+                PmmAngleConvention.FormatMomentTheta(lc.GoverningMomentThetaDegrees),
                 $"{lc.CapacityPDisplay:0.##}", $"{lc.CapacityMxDisplay:0.##}", $"{lc.CapacityMyDisplay:0.##}",
                 $"{lc.PmmRatio:0.###}", lc.Status.ToString(),
             }).ToArray();
@@ -316,12 +317,13 @@ internal sealed class Ec2ReportBuilder
                     [$"NEd ({fUnit})",     $"{r.PuDisplay:0.##}"],
                     [$"MEd,x ({mUnit})",   $"{r.MuxDisplay:0.##}"],
                     [$"MEd,y ({mUnit})",   $"{r.MuyDisplay:0.##}"],
-                    ["Governing θ",        $"{r.GoverningThetaDegrees:0.#}°"],
+                    // Report output uses the shared user-facing moment theta from the calculation result.
+                    ["Governing θ",        PmmAngleConvention.FormatMomentTheta(r.GoverningMomentThetaDegrees)],
                     ["Utilization UR",     $"{r.Ratio:0.###}"],
                 ]),
 
             new TableBlock(
-                ["Load Case", "NEd", "MEd,x", "MEd,y", "NRd", "MRd,x", "MRd,y", "UR", "Status"],
+                ["Load Case", "NEd", "MEd,x", "MEd,y", "Theta", "NRd", "MRd,x", "MRd,y", "UR", "Status"],
                 lcRows),
         };
 

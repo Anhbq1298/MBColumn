@@ -438,7 +438,7 @@ public sealed class BatchPrintWindowViewModel : ViewModelBase
         try
         {
             var diag   = new DiagramDataService();
-            double theta = result.GoverningThetaDegrees;
+            double theta = result.GoverningMomentThetaDegrees;
             var pmData   = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
             var pmAll    = pmData.Points
                 .Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta))

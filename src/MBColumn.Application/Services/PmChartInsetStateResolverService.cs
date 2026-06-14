@@ -1,4 +1,4 @@
-﻿using MBColumn.Application.DTOs;
+using MBColumn.Application.DTOs;
 using MBColumn.Domain.Enums;
 
 namespace MBColumn.Application.Services;
@@ -13,7 +13,9 @@ public sealed class PmChartInsetStateResolverService
         CalculationResultDto result,
         LoadCaseResultDto loadCase)
     {
-        double loadAngle = DemandVectorAngle(loadCase.MuxDisplay, loadCase.MuyDisplay);
+        // Load-case inset state uses the same user-facing PMM theta that reports
+        // print for this load-case result.
+        double loadAngle = loadCase.GoverningMomentThetaDegrees;
         double radians = loadAngle * Math.PI / 180.0;
         double mtheta = loadCase.MuxDisplay * Math.Cos(radians) + loadCase.MuyDisplay * Math.Sin(radians);
         if (IsPureAxialTension(loadCase.PuDisplay, loadCase.MuxDisplay, loadCase.MuyDisplay))
@@ -83,7 +85,7 @@ public sealed class PmChartInsetStateResolverService
     private static double NeutralAxisAngleFromSlice(double thetaDegrees)
         // PM chart theta is the moment-vector angle. The solver/inset normal points
         // toward compression, which is 90 degrees clockwise from that moment vector.
-        => NormalizeAngle(thetaDegrees - 90.0);
+        => PmmAngleConvention.CompressionNormalFromMoment(thetaDegrees);
 
     private ControlPointDto? ResolveBoundaryState(CalculationResultDto result, double axialDisplay, double loadAngleDegrees)
     {
@@ -210,11 +212,7 @@ public sealed class PmChartInsetStateResolverService
     }
 
     private static double NormalizeAngle(double angle)
-    {
-        if (double.IsNaN(angle) || double.IsInfinity(angle)) return 0.0;
-        var normalized = angle % 360.0;
-        return normalized < 0 ? normalized + 360.0 : normalized;
-    }
+        => PmmAngleConvention.NormalizeAngle(angle);
 
     private static double NormalizeSignedAngle(double angle)
     {

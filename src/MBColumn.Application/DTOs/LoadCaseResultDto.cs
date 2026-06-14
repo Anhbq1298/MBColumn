@@ -1,3 +1,4 @@
+using MBColumn.Application.Services;
 using MBColumn.Domain.Enums;
 
 namespace MBColumn.Application.DTOs;
@@ -11,9 +12,19 @@ public sealed record LoadCaseResultDto(
     double PmmRatio,
     CapacityStatus Status,
     double Phi,
+    /// <summary>
+    /// Governing compression-normal angle θc in degrees. For display use
+    /// <see cref="GoverningMomentThetaDegrees"/>.
+    /// </summary>
     double GoverningThetaDegrees,
     double GoverningNeutralAxisDepth)
 {
+    /// <summary>
+    /// User-facing moment angle θM = θc + 90°, normalised to [0, 360).
+    /// </summary>
+    public double GoverningMomentThetaDegrees
+        => PmmAngleConvention.MomentFromCompressionNormal(GoverningThetaDegrees);
+
     public double CapacityPDisplay { get; init; }
     public double CapacityMxDisplay { get; init; }
     public double CapacityMyDisplay { get; init; }

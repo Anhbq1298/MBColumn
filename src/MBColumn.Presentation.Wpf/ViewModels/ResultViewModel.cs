@@ -63,7 +63,7 @@ public sealed record LoadCaseResultRowViewModel(
     public string PDisplay => $"{Pu:F1}";
     public string MxDisplay => $"{Mux:F1}";
     public string MyDisplay => $"{Muy:F1}";
-    public string AngleDisplay => $"{AngleDegrees:F1}\u00b0";
+    public string AngleDisplay => PmmAngleConvention.FormatMomentTheta(AngleDegrees);
     public string UtilizationDisplay => $"{Utilization:F3}";
     public string StatusDisplay => IsPass ? "PASS" : "FAIL";
     public bool IsFailing => !IsPass;
@@ -202,7 +202,7 @@ public sealed class ResultViewModel : ViewModelBase
             MM3D.Load(value);
             Shear.Load(value?.GoverningShearResult, value?.LoadCaseResults);
             RebarCompliance.Load(value?.RebarCompliance);
-            selectedSliceAngleDegrees = value?.GoverningThetaDegrees ?? 0;
+            selectedSliceAngleDegrees = value?.GoverningMomentThetaDegrees ?? 0;
             selectedAxialLoad = value?.PuDisplay ?? 0;
             // Task F fix: raise so TextBoxes reflect the newly loaded values
             Raise(nameof(SelectedSliceAngleDegrees));
@@ -215,7 +215,9 @@ public sealed class ResultViewModel : ViewModelBase
                 ? value.LoadCaseResults.Select((r, i) => new LoadCaseResultRowViewModel(
                     i + 1, r.LoadCaseId, r.LoadCaseName,
                     r.PuDisplay, r.MuxDisplay, r.MuyDisplay,
-                    DemandVectorAngle(r.MuxDisplay, r.MuyDisplay),
+                    // PMM Details uses the load-case result's moment theta, which is
+                    // the same source printed in reports for this PMM check.
+                    r.GoverningMomentThetaDegrees,
                     r.PmmRatio, r.Status == CapacityStatus.Pass,
                     r.PmmRatio == maxUtil, fUnit, mUnit,
                     string.IsNullOrWhiteSpace(r.SlendernessStatus) ? "-" : r.SlendernessStatus,
@@ -334,7 +336,7 @@ public sealed class ResultViewModel : ViewModelBase
     public double Mux => Result?.MuxDisplay ?? 0;
     public double Muy => Result?.MuyDisplay ?? 0;
     public double Phi => Result?.Phi ?? 0;
-    public double ThetaDegrees => Result?.GoverningThetaDegrees ?? 0;
+    public double ThetaDegrees => Result?.GoverningMomentThetaDegrees ?? 0;
     public double NeutralAxisDepth => Result is null ? 0 : Result.UnitSystem == UnitSystem.Imperial ? Result.GoverningNeutralAxisDepth / 25.4 : Result.GoverningNeutralAxisDepth;
     public string ForceUnitLabel => Result?.ControlPointTable?.ForceUnitLabel ?? Result?.MxMyDiagram?.PUnit ?? "";
     public string MomentUnitLabel => Result?.ControlPointTable?.MomentUnitLabel ?? Result?.MxMyDiagram?.MUnit ?? "";
@@ -473,7 +475,7 @@ public sealed class ResultViewModel : ViewModelBase
         }
         else
         {
-            SelectedSliceAngleDegrees = Result.GoverningThetaDegrees;
+            SelectedSliceAngleDegrees = Result.GoverningMomentThetaDegrees;
             SelectedAxialLoad = Result.PuDisplay;
         }
     }
@@ -505,17 +507,7 @@ public sealed class ResultViewModel : ViewModelBase
     }
 
     private static double NormalizeAngle(double angle)
-    {
-        if (double.IsNaN(angle) || double.IsInfinity(angle)) return 0;
-        var normalized = angle % 360.0;
-        return normalized < 0 ? normalized + 360.0 : normalized;
-    }
-
-    private static double DemandVectorAngle(double mx, double my)
-    {
-        if (Math.Abs(mx) < 1e-12 && Math.Abs(my) < 1e-12) return 0;
-        return NormalizeAngle(Math.Atan2(my, mx) * 180.0 / Math.PI);
-    }
+        => PmmAngleConvention.NormalizeAngle(angle);
 
     private void UpdateSharedPmBoundsFromAnglePoints(IReadOnlyList<ControlPointDto> points)
     {
@@ -555,7 +547,7 @@ public sealed class ResultViewModel : ViewModelBase
         get
         {
             if (SelectedChartPoint is null) return "-";
-            double thetaRadians = SelectedChartPoint.ThetaDegrees * Math.PI / 180.0;
+            double thetaRadians = SelectedPointMomentThetaDegrees(SelectedChartPoint) * Math.PI / 180.0;
             double mtheta = SelectedChartPoint.Mx * Math.Cos(thetaRadians) + SelectedChartPoint.My * Math.Sin(thetaRadians);
             return $"{mtheta:F2} {MomentUnitLabel}";
         }
@@ -573,7 +565,8 @@ public sealed class ResultViewModel : ViewModelBase
     }
 
     public string SelectedPointPhiDisplay => SelectedChartPoint is null ? "-" : $"{SelectedChartPoint.Phi:F3}";
-    public string SelectedPointThetaDisplay => SelectedChartPoint is null ? "-" : $"{SelectedChartPoint.ThetaDegrees:F1} deg";
+    public string SelectedPointThetaDisplay => SelectedChartPoint is null ? "-" :
+        PmmAngleConvention.FormatMomentTheta(SelectedPointMomentThetaDegrees(SelectedChartPoint));
     public string SelectedPointNeutralAxisDepthDisplay
     {
         get
@@ -584,6 +577,22 @@ public sealed class ResultViewModel : ViewModelBase
         }
     }
     public string SelectedPointDcrDisplay => SelectedChartPoint is null ? "-" : $"{(SelectedChartPoint.IsDemand && SelectedChartPoint.Utilization > 0 ? SelectedChartPoint.Utilization : PmmRatio):F3}";
+
+    private double SelectedPointMomentThetaDegrees(ControlPointDto point)
+    {
+        // Demand points in PMM Details are mapped back to their LoadCaseResultDto
+        // so the displayed theta is the same PMM-result theta used by reports.
+        if (point.IsDemand && Result?.LoadCaseResults.FirstOrDefault(lc => lc.LoadCaseId == point.SliceKey) is { } loadCase)
+        {
+            return loadCase.GoverningMomentThetaDegrees;
+        }
+
+        // Chart capacity points carry the solver compression-normal angle; convert
+        // it once at the UI boundary to the user-facing moment theta.
+        return point.IsDemand
+            ? NormalizeAngle(point.ThetaDegrees)
+            : PmmAngleConvention.MomentFromCompressionNormal(point.ThetaDegrees);
+    }
 
     public ICommand ClearSelectedChartPointCommand { get; }
     public ICommand ShowControlPointsCommand { get; }

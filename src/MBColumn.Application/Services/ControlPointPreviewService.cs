@@ -21,7 +21,7 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
         }
 
         var availableThetas = result.Surface.Points
-            .Select(p => NormalizeAngle(p.ThetaDegrees))
+            .Select(p => PmmAngleConvention.MomentFromCompressionNormal(p.ThetaDegrees))
             .Distinct()
             .OrderBy(t => t)
             .ToList();
@@ -399,13 +399,5 @@ public sealed class ControlPointPreviewService(IUnitConversionService units) : I
     }
 
     private static double NormalizeAngle(double angle)
-    {
-        if (double.IsNaN(angle) || double.IsInfinity(angle))
-        {
-            return 0.0;
-        }
-
-        double normalized = angle % 360.0;
-        return normalized < 0 ? normalized + 360.0 : normalized;
-    }
+        => PmmAngleConvention.NormalizeAngle(angle);
 }

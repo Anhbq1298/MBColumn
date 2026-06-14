@@ -461,7 +461,7 @@ public sealed class ReportTabViewModel : ViewModelBase
     {
         try
         {
-            var theta = result.GoverningThetaDegrees;
+            var theta = result.GoverningMomentThetaDegrees;
             var pmDiagram = _diagramSvc.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
             var pmDemand  = _diagramSvc.BuildPmAngleDemandPoints(result.LoadCaseResults, theta);
 
@@ -747,7 +747,7 @@ public sealed class ReportTabViewModel : ViewModelBase
         try
         {
             var diag = new DiagramDataService();
-            double theta = result.GoverningThetaDegrees;
+            double theta = result.GoverningMomentThetaDegrees;
             var pmData = diag.BuildPmAngleDiagramData(result.ControlPoints, result.UnitSystem, theta);
             var governing = result.LoadCaseResults
                 .Where(r => double.IsFinite(r.PmmRatio))
@@ -891,7 +891,7 @@ public sealed class ReportTabViewModel : ViewModelBase
             .ThenByDescending(r => Math.Sqrt(r.MuxDisplay * r.MuxDisplay + r.MuyDisplay * r.MuyDisplay))
             .FirstOrDefault();
 
-        double thetaDeg = governing?.GoverningThetaDegrees ?? _cachedResult.GoverningThetaDegrees;
+        double thetaDeg = governing?.GoverningMomentThetaDegrees ?? _cachedResult.GoverningMomentThetaDegrees;
 
         var vm = new GoverningChartPreviewViewModel
         {

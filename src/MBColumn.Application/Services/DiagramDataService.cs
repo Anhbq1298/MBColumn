@@ -275,6 +275,9 @@ public sealed class DiagramDataService
             .Select((loadCase, index) =>
             {
                 double mtheta = loadCase.MuxDisplay * cos + loadCase.MuyDisplay * sin;
+                // PM demand points are projected onto the active PM slice, so this
+                // theta is the slice angle. The load-case PMM theta remains on
+                // LoadCaseResultDto.GoverningMomentThetaDegrees.
                 return BuildDemandPoint(DiagramType.PM, mtheta, loadCase.PuDisplay, loadCase.PuDisplay, loadCase, angleDegrees, index);
             })
             .ToList();
@@ -283,13 +286,13 @@ public sealed class DiagramDataService
     public IReadOnlyList<ControlPointDto> BuildMxMyDemandPoints(IEnumerable<LoadCaseResultDto> loadCases)
         => loadCases
             .Where(IsFiniteLoadCase)
-            .Select((loadCase, index) => BuildDemandPoint(DiagramType.MM, loadCase.MuxDisplay, loadCase.MuyDisplay, loadCase.PuDisplay, loadCase, 0, index))
+            .Select((loadCase, index) => BuildDemandPoint(DiagramType.MM, loadCase.MuxDisplay, loadCase.MuyDisplay, loadCase.PuDisplay, loadCase, loadCase.GoverningMomentThetaDegrees, index))
             .ToList();
 
     public IReadOnlyList<ControlPointDto> BuildPmmDemandPoints(IEnumerable<LoadCaseResultDto> loadCases)
         => loadCases
             .Where(IsFiniteLoadCase)
-            .Select((loadCase, index) => BuildDemandPoint(DiagramType.Pm3D, loadCase.MuxDisplay, loadCase.MuyDisplay, loadCase.PuDisplay, loadCase, 0, index))
+            .Select((loadCase, index) => BuildDemandPoint(DiagramType.Pm3D, loadCase.MuxDisplay, loadCase.MuyDisplay, loadCase.PuDisplay, loadCase, loadCase.GoverningMomentThetaDegrees, index))
             .ToList();
 
     public MxMyDiagramDto BuildMxMyDiagramData(DiagramControlPointSet set, UnitSystem unitSystem)

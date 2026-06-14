@@ -234,6 +234,7 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
         double displayMx = DisplayMoment(mx, unitSystem);
         double displayMy = useMomentMagnitude ? 0 : DisplayMoment(demand.MuyNmm, unitSystem);
         double displayP = DisplayForce(demand.PuN, unitSystem);
+        double theta = DemandMomentThetaDegrees(demand);
         return new ControlPoint(
             Id:              $"Demand-{diagramType}",
             DiagramType:     diagramType,
@@ -250,7 +251,9 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             NominalDisplayP: displayP,
             NominalDisplayMx: displayMx,
             NominalDisplayMy: displayMy,
-            ThetaDegrees:    0,
+            // Demand markers carry the user-facing moment theta so downstream PMM
+            // details do not fall back to a hard-coded zero angle.
+            ThetaDegrees:    theta,
             NeutralAxisDepth: 0,
             IsDemandPoint:   true,
             IsGoverningPoint: false,
@@ -259,6 +262,16 @@ public sealed class ControlPointBuilderService(IUnitConversionService units) : I
             SortKey:         sortKey,
             GroupKey:        group,
             SliceKey:        slice);
+    }
+
+    private static double DemandMomentThetaDegrees(LoadDemand demand)
+    {
+        if (Math.Abs(demand.MuxNmm) < 1e-12 && Math.Abs(demand.MuyNmm) < 1e-12)
+        {
+            return 0.0;
+        }
+
+        return PmmAngleConvention.NormalizeAngle(Math.Atan2(demand.MuyNmm, demand.MuxNmm) * 180.0 / Math.PI);
     }
 
     private ControlPoint Reference(DiagramType diagramType, UnitSystem unitSystem, double axialN, string label, double sortKey, string group, string slice)

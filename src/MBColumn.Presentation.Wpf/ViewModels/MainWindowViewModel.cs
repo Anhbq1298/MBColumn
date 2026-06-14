@@ -584,7 +584,7 @@ public sealed class MainWindowViewModel : ViewModelBase
                 try
                 {
                     var diag = new DiagramDataService();
-                    double theta = res.GoverningThetaDegrees;
+                    double theta = res.GoverningMomentThetaDegrees;
                     var pmData = diag.BuildPmAngleDiagramData(res.ControlPoints, res.UnitSystem, theta);
                     var pmAll = pmData.Points.Concat(diag.BuildPmAngleDemandPoints(res.LoadCaseResults, theta)).Concat(pmData.SpecialCapacityPoints).ToList();
                     pmDiagramBlock = new DiagramBlock(pmAll, pmData.ReferenceLines,
