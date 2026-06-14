@@ -246,7 +246,7 @@ public sealed class InputViewModel : ViewModelBase
         GenerateIrregularRebarsCommand = new RelayCommand(GenerateIrregularRebars);
         GenerateEqualSpacingRebarsCommand = new RelayCommand(GenerateEqualSpacingRebars);
         ImportDxfCommand = new RelayCommand(ImportDxf, () => this.dxfImportDialogService is not null);
-        ExportDxfCommand = new RelayCommand(ExportDxf, () => IsIrregularSection && IrregularInput.BoundaryPoints.Count >= 3);
+        ExportDxfCommand = new RelayCommand(ExportDxf, CanExportDxfCurrentSection);
         ShowSlendernessCalculationDetailsCommand = new RelayCommand<object?>(
             ShowSlendernessCalculationDetails,
             loadCase => loadCase is LoadCaseViewModel);
@@ -1320,8 +1320,15 @@ public sealed class InputViewModel : ViewModelBase
         {
             _isUpdatingPreview = false;
         }
+        RaiseExportDxfCanExecuteChanged();
         RefreshSlendernessUiState();
     }
+
+    private bool CanExportDxfCurrentSection()
+        => IsSectionPreviewValid && PreviewBoundaryPoints.Count >= 3;
+
+    private void RaiseExportDxfCanExecuteChanged()
+        => (ExportDxfCommand as RelayCommand)?.RaiseCanExecuteChanged();
 
     private void UpdateSectionPreviewInternal()
     {
@@ -2577,30 +2584,47 @@ public sealed class InputViewModel : ViewModelBase
 
     private void ExportDxf()
     {
-        if (IrregularInput.BoundaryPoints.Count < 3) return;
+        FlushPreviewNow();
+        if (!CanExportDxfCurrentSection())
+        {
+            AppNotificationDialog.Show(
+                "The current section preview is not ready for DXF export.",
+                "Export Error",
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
 
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Export as DXF",
             Filter = "DXF Files (*.dxf)|*.dxf|All Files (*.*)|*.*",
-            FileName = "section.dxf"
+            FileName = SelectedSectionShape switch
+            {
+                SectionShapeType.Rectangular => "rectangular-section.dxf",
+                SectionShapeType.Circular => "circular-section.dxf",
+                SectionShapeType.Irregular => "irregular-section.dxf",
+                _ => "section.dxf"
+            }
         };
         if (dialog.ShowDialog() != true) return;
 
         try
         {
-            var boundary = IrregularInput.BoundaryPoints
+            var boundary = PreviewBoundaryPoints
                 .Select(p => (p.X, p.Y))
                 .ToList();
 
-            var rebars = IrregularInput.Rebars
-                .Select(r => (r.X, r.Y, r.AreaMm2 ?? 0.0))
+            var rebars = PreviewRebars
+                .Select(r => (r.X, r.Y, r.Area))
                 .ToList();
 
-            new DxfExportService().Export(dialog.FileName, boundary, rebars);
+            var result = new DxfExportService().Export(dialog.FileName, boundary, rebars);
+            var message = result.HasWarnings
+                ? $"DXF exported to:\n{dialog.FileName}\n\nSkipped invalid geometry:\n- {string.Join("\n- ", result.Warnings)}"
+                : $"DXF exported to:\n{dialog.FileName}";
 
             AppNotificationDialog.Show(
-                $"DXF exported to:\n{dialog.FileName}",
+                message,
                 "Export Complete",
                 System.Windows.MessageBoxImage.Information);
         }

@@ -386,18 +386,59 @@ public sealed class QuestPdfCalculationReportRenderer
         if (!string.IsNullOrEmpty(caption))
             col.Item().PaddingTop(6).Text(caption).FontSize(12).Italic().FontColor("#555");
 
+        float fontSize = headers.Length >= 9 ? 8.0f : 10.0f;
+        float paddingSize = headers.Length >= 9 ? 2.0f : 3.0f;
+
         col.Item().PaddingTop(2).Table(table =>
         {
             table.ColumnsDefinition(cd =>
             {
-                foreach (var _ in headers)
-                    cd.RelativeColumn();
+                if (headers.Length == 10 && headers[0] == "Load Case" && headers[5] == "NRd")
+                {
+                    cd.RelativeColumn(1.4f); // Load Case
+                    cd.RelativeColumn(1.0f); // NEd
+                    cd.RelativeColumn(1.0f); // MEd,x
+                    cd.RelativeColumn(1.0f); // MEd,y
+                    cd.RelativeColumn(1.0f); // Theta
+                    cd.RelativeColumn(1.6f); // NRd
+                    cd.RelativeColumn(1.2f); // MRd,x
+                    cd.RelativeColumn(1.2f); // MRd,y
+                    cd.RelativeColumn(1.0f); // UR
+                    cd.RelativeColumn(1.0f); // Status
+                }
+                else if (headers.Length == 9 && headers[0] == "Load Case" && headers[3] == "URx")
+                {
+                    cd.RelativeColumn(1.4f); // Load Case
+                    cd.RelativeColumn(1.0f); // VEd,x
+                    cd.RelativeColumn(1.2f); // VRd,x
+                    cd.RelativeColumn(0.8f); // URx
+                    cd.RelativeColumn(0.9f); // X Status
+                    cd.RelativeColumn(1.0f); // VEd,y
+                    cd.RelativeColumn(1.2f); // VRd,y
+                    cd.RelativeColumn(0.8f); // URy
+                    cd.RelativeColumn(0.9f); // Y Status
+                }
+                else if (headers.Length == 7 && headers[0] == "Layer")
+                {
+                    cd.RelativeColumn(1.0f); // Layer
+                    cd.RelativeColumn(1.2f); // Bar Size
+                    cd.RelativeColumn(1.2f); // Area (mm²)
+                    cd.RelativeColumn(1.0f); // x (mm)
+                    cd.RelativeColumn(1.0f); // y (mm)
+                    cd.RelativeColumn(1.2f); // Stress (MPa)
+                    cd.RelativeColumn(1.2f); // Force (kN)
+                }
+                else
+                {
+                    foreach (var _ in headers)
+                        cd.RelativeColumn();
+                }
             });
 
             // Header row
             foreach (var h in headers)
-                table.Header(hdr => hdr.Cell().Background("#1A3A5C").Padding(3)
-                    .Text(h).FontColor(Colors.White).Bold().FontSize(10));
+                table.Header(hdr => hdr.Cell().Background("#1A3A5C").Padding(paddingSize)
+                    .Text(h).FontColor(Colors.White).Bold().FontSize(fontSize));
 
             // Data rows
             bool alt = false;
@@ -405,8 +446,8 @@ public sealed class QuestPdfCalculationReportRenderer
             {
                 string bg = alt ? "#F5F7FA" : Colors.White;
                 foreach (var cell in row)
-                    table.Cell().Background(bg).BorderBottom(1).BorderColor("#DDDDDD").Padding(3)
-                        .Text(cell).FontSize(10);
+                    table.Cell().Background(bg).BorderBottom(1).BorderColor("#DDDDDD").Padding(paddingSize)
+                        .Text(cell).FontSize(fontSize);
                 alt = !alt;
             }
         });

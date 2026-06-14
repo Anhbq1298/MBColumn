@@ -751,7 +751,7 @@ public sealed class ReportTabViewModel : ViewModelBase
                 .OrderByDescending(r => r.PmmRatio)
                 .ThenByDescending(r => Math.Sqrt(r.MuxDisplay * r.MuxDisplay + r.MuyDisplay * r.MuyDisplay))
                 .FirstOrDefault();
-            var pmAll = pmData.Points
+            var pmAll = pmData.ReducedCapacityPoints
                 .Concat(diag.BuildPmAngleDemandPoints(result.LoadCaseResults, theta))
                 .Concat(pmData.SpecialCapacityPoints)
                 .ToList();
@@ -776,7 +776,10 @@ public sealed class ReportTabViewModel : ViewModelBase
                 Caption: $"Figure 8.1 – P-M interaction diagram at θ = {theta:F1}°");
 
             var mmData = diag.BuildMxMyDiagramDataAtDisplayP(result.ControlPoints, result.UnitSystem, result.PuDisplay);
-            var mmAll = mmData.Points.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
+            var mmEnvelope = mmData.Points
+                .Where(p => !p.IsNominal && !p.IsDemand && !p.IsGoverning && !p.IsReference && !p.IsSpecialPoint)
+                .ToList();
+            var mmAll = mmEnvelope.Concat(diag.BuildMxMyDemandPoints(result.LoadCaseResults)).ToList();
             var mmReferenceLines = new List<ChartReferenceLineDto>();
             if (governing is not null)
             {
@@ -795,8 +798,8 @@ public sealed class ReportTabViewModel : ViewModelBase
                 UseEqualAspect: true, WidthPct: 80,
                 Caption: "Figure 8.2 – Mx-My interaction diagram at governing axial load");
 
-            pm = pm with { SvgContent = InteractionDiagramSvgRenderer.RenderDiagram(pm, svgWidth: 960, svgHeight: 720) };
-            mm = mm with { SvgContent = InteractionDiagramSvgRenderer.RenderDiagram(mm, svgWidth: 900, svgHeight: 760) };
+            pm = pm with { SvgContent = InteractionDiagramSvgRenderer.RenderDiagram(pm, svgWidth: 920, svgHeight: 860) };
+            mm = mm with { SvgContent = InteractionDiagramSvgRenderer.RenderDiagram(mm, svgWidth: 920, svgHeight: 860) };
 
             if (!withPng)
             {

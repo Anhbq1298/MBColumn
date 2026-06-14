@@ -377,6 +377,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `record` | **DxfCircleEntity** | Represents the DxfCircleEntity record. | `DxfImportService.cs` |
 | `record` | **DxfEntity** | Represents the DxfEntity record. | `DxfImportService.cs` |
+| `record` | **DxfExportResult** | Encapsulates the result of DxfExport operations. Key properties: HasWarnings. | `DxfExportService.cs` |
 | `class` | **DxfExportService** | Provides service logic and operations for DxfExport. Key methods: Export. | `DxfExportService.cs` |
 | `record` | **DxfGenericEntity** | Represents the DxfGenericEntity record. | `DxfImportService.cs` |
 | `class` | **DxfImportService** | Provides service logic and operations for DxfImport. Key methods: GetLayerNames, ImportSection. | `DxfImportService.cs` |
@@ -384,6 +385,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `interface` | **IDxfImportService** | Provides service logic and operations for IDxfImport. | `IDxfImportService.cs` |
 | `interface` | **IIrregularSectionCsvService** | Provides service logic and operations for IIrregularSectionCsv. | `IIrregularSectionCsvService.cs` |
 | `class` | **IrregularSectionCsvService** | Provides service logic and operations for IrregularSectionCsv. Key methods: ImportBoundary, ImportRebars, ParseBoundary, ParseRebars. | `IrregularSectionCsvService.cs` |
+| `record` | **struct** | Represents the struct record. | `DxfExportService.cs` |
+| `record` | **struct** | Represents the struct record. | `DxfExportService.cs` |
 | `record` | **struct** | Represents the struct record. | `DxfImportService.cs` |
 
 ### Validators
@@ -605,6 +608,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **ApproxEqualityComparer** | Represents the ApproxEqualityComparer class. Key methods: Equals, GetHashCode. | `SectionGeometryRenderer.cs` |
+| `record` | **AxisTicks** | Represents the AxisTicks record. | `InteractionDiagramSvgRenderer.cs` |
 | `class` | **InteractionDiagramSvgRenderer** | /// Renders section geometry and interaction diagrams as inline SVG strings. /// The nested SectionGeometryRenderer is importable via /// using static MBColumn.Infrastructure.Reports.Graphics.InteractionDiagramSvgRenderer; ///. Key methods: RenderDiagram. | `InteractionDiagramSvgRenderer.cs` |
 | `class` | **SectionGeometryRenderer** | Represents the SectionGeometryRenderer class. Key methods: RenderSection. | `InteractionDiagramSvgRenderer.cs` |
 | `class` | **SectionGeometryRenderer** | /// Generates SVG diagrams for section geometry and rebar layout. /// All coordinates in mm; SVG output is scaled to fit a fixed viewport. ///. Key methods: RenderRectangularSection, RenderCircularSection, RenderIrregularSection, RenderSection. | `SectionGeometryRenderer.cs` |

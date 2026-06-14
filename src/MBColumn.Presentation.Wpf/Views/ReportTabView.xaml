@@ -40,12 +40,20 @@
                             Visibility="{Binding ShowRevealReportPreviewButton,
                                 Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                    <!-- Generating spinner text -->
-                    <TextBlock Text="Rendering report…"
-                               FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}"
-                               Margin="0,12,0,0"
-                               Visibility="{Binding IsGeneratingReport,
-                                   Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <!-- Generating status and progress bar -->
+                    <StackPanel Margin="0,12,0,0"
+                                Visibility="{Binding IsGeneratingReport,
+                                    Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="Rendering report…"
+                                   FontSize="{StaticResource FontSizeCaption}" 
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="0,0,0,4"/>
+                        <ProgressBar Height="4"
+                                     IsIndeterminate="True"
+                                     Foreground="{DynamicResource AccentBlueBrush}"
+                                     Background="{DynamicResource PanelBackgroundBrush}"
+                                     BorderThickness="0" />
+                    </StackPanel>
 
                     <!-- No-result placeholder -->
                     <TextBlock FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextMutedBrush}"

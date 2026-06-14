@@ -279,6 +279,10 @@ var tests = new List<(string Name, Action Test)>
     ("DXF rejects non-circular rebar geometry",                      TestDxfRejectsNonCircularRebar),
     ("DXF import applies irregular custom coordinates",              TestDxfImportAppliesIrregularCustomCoordinates),
     ("DXF import does not block on cover",                           TestDxfImportDoesNotBlockOnCover),
+    ("DXF export writes rectangular current section",                TestDxfExportWritesRectangularCurrentSection),
+    ("DXF export writes circular current section",                   TestDxfExportWritesCircularCurrentSection),
+    ("DXF export writes valid minimal line document",                TestDxfExportWritesValidMinimalLineDocument),
+    ("DXF export skips invalid geometry instead of corrupting file", TestDxfExportSkipsInvalidGeometry),
     ("ETABS auto grouping prefixes tier names",                      TestEtabsAutoGroupingPrefixesTierNames),
     ("ETABS import uses default target group",                       TestEtabsImportUsesDefaultTargetGroup),
     ("ETABS import creates irregular custom coordinates",            TestEtabsImportCreatesIrregularCustomCoordinates),
@@ -3759,6 +3763,152 @@ static void TestDxfImportDoesNotBlockOnCover()
     AreClose(45.0, vm.IrregularInput.Rebars[0].X, 1e-9);
 }
 
+static void TestDxfExportWritesRectangularCurrentSection()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase());
+
+    vm.SelectedSectionShape = MBColumn.Domain.Enums.SectionShapeType.Rectangular;
+    vm.Width = 500;
+    vm.Height = 700;
+    vm.Cover = 40;
+    vm.BarSize = "T25";
+    vm.BarCount = 8;
+    vm.FlushPreviewNow();
+
+    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-export-{Guid.NewGuid():N}.dxf");
+    try
+    {
+        var boundary = vm.PreviewBoundaryPoints.Select(p => (p.X, p.Y)).ToList();
+        var rebars = vm.PreviewRebars.Select(r => (r.X, r.Y, r.Area)).ToList();
+
+        var result = new MBColumn.Application.Services.ImportExport.DxfExportService().Export(path, boundary, rebars);
+
+        string text = File.ReadAllText(path);
+        AssertValidDxfDocument(path, expectedPolylineCount: 1, expectedCircleCount: vm.PreviewRebars.Count, expectedLineCount: 0);
+        IsTrue(!result.HasWarnings);
+        IsTrue(text.Contains("LWPOLYLINE", StringComparison.Ordinal));
+        IsTrue(text.Contains("BOUNDARY", StringComparison.Ordinal));
+        IsTrue(text.Contains("REBAR", StringComparison.Ordinal));
+        IsTrue(CountDxfEntity(text, "CIRCLE") == vm.PreviewRebars.Count);
+        IsTrue(text.Contains("\n90\n4\n", StringComparison.Ordinal));
+        IsTrue(text.TrimEnd().EndsWith("EOF", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfExportWritesCircularCurrentSection()
+{
+    var vm = new MBColumn.Presentation.Wpf.ViewModels.InputViewModel(
+        new MBColumn.Infrastructure.Rebar.SingaporeRebarDatabase(),
+        new MBColumn.Infrastructure.Rebar.ImperialRebarDatabase());
+
+    vm.SelectedSectionShape = MBColumn.Domain.Enums.SectionShapeType.Circular;
+    vm.Diameter = 600;
+    vm.Cover = 40;
+    vm.BarSize = "T20";
+    vm.BarCount = 10;
+    vm.FlushPreviewNow();
+
+    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-export-{Guid.NewGuid():N}.dxf");
+    try
+    {
+        var boundary = vm.PreviewBoundaryPoints.Select(p => (p.X, p.Y)).ToList();
+        var rebars = vm.PreviewRebars.Select(r => (r.X, r.Y, r.Area)).ToList();
+
+        var result = new MBColumn.Application.Services.ImportExport.DxfExportService().Export(path, boundary, rebars);
+
+        string text = File.ReadAllText(path);
+        AssertValidDxfDocument(path, expectedPolylineCount: 1, expectedCircleCount: vm.PreviewRebars.Count, expectedLineCount: 0);
+        IsTrue(!result.HasWarnings);
+        IsTrue(text.Contains("LWPOLYLINE", StringComparison.Ordinal));
+        IsTrue(text.Contains("BOUNDARY", StringComparison.Ordinal));
+        IsTrue(CountDxfEntity(text, "CIRCLE") == vm.PreviewRebars.Count);
+        IsTrue(text.Contains($"\n90\n{vm.PreviewBoundaryPoints.Count}\n", StringComparison.Ordinal));
+        IsTrue(text.TrimEnd().EndsWith("EOF", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfExportWritesValidMinimalLineDocument()
+{
+    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-line-{Guid.NewGuid():N}.dxf");
+    try
+    {
+        var boundary = new List<(double X, double Y)>
+        {
+            (0, 0),
+            (200, 0),
+            (200, 100),
+            (0, 100)
+        };
+        var result = new MBColumn.Application.Services.ImportExport.DxfExportService().Export(
+            path,
+            boundary,
+            [],
+            [ (0.0, 0.0, 200.0, 100.0, "Guide/Test") ]);
+
+        string text = File.ReadAllText(path);
+        AssertValidDxfDocument(path, expectedPolylineCount: 1, expectedCircleCount: 0, expectedLineCount: 1);
+        IsTrue(!result.HasWarnings);
+        IsTrue(text.Contains("LINE", StringComparison.Ordinal));
+        IsTrue(text.Contains("GUIDE_Test", StringComparison.Ordinal));
+        IsTrue(text.TrimEnd().EndsWith("EOF", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void TestDxfExportSkipsInvalidGeometry()
+{
+    string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-invalid-{Guid.NewGuid():N}.dxf");
+    try
+    {
+        var boundary = new List<(double X, double Y)>
+        {
+            (0, 0),
+            (100, 0),
+            (100, 0),
+            (100, 120),
+            (0, 120),
+            (0, 0)
+        };
+        var rebars = new List<(double X, double Y, double AreaMm2)>
+        {
+            (50, 60, 490.87),
+            (double.NaN, 20, 314.0),
+            (80, 80, -1.0)
+        };
+        var lines = new List<(double StartX, double StartY, double EndX, double EndY, string? LayerName)>
+        {
+            (0, 0, 0, 0, "Bad/Line"),
+            (0, 0, 100, 100, "Bad/Line")
+        };
+
+        var result = new MBColumn.Application.Services.ImportExport.DxfExportService().Export(path, boundary, rebars, lines);
+        string text = File.ReadAllText(path);
+        AssertValidDxfDocument(path, expectedPolylineCount: 1, expectedCircleCount: 1, expectedLineCount: 1);
+        IsTrue(result.HasWarnings);
+        IsTrue(result.Warnings.Count >= 4);
+        IsTrue(!text.Contains("NaN", StringComparison.OrdinalIgnoreCase));
+        IsTrue(!text.Contains("Infinity", StringComparison.OrdinalIgnoreCase));
+        IsTrue(text.Contains("Bad_Line", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
 static void TestEtabsImportCreatesIrregularCustomCoordinates()
 {
     var vm = new MBColumn.Presentation.Wpf.ViewModels.EtabsImportViewModel(
@@ -4097,6 +4247,28 @@ static string WriteTempDxf(string text)
     string path = Path.Combine(Path.GetTempPath(), $"mbcolumn-{Guid.NewGuid():N}.dxf");
     File.WriteAllText(path, text);
     return path;
+}
+
+static int CountDxfEntity(string text, string entityName)
+    => text.Split('\n').Count(line => string.Equals(line.Trim(), entityName, StringComparison.Ordinal));
+
+static void AssertValidDxfDocument(string path, int expectedPolylineCount, int expectedCircleCount, int expectedLineCount)
+{
+    string text = File.ReadAllText(path);
+    IsTrue(text.Contains("SECTION", StringComparison.Ordinal));
+    IsTrue(text.Contains("HEADER", StringComparison.Ordinal));
+    IsTrue(text.Contains("TABLES", StringComparison.Ordinal));
+    IsTrue(text.Contains("ENTITIES", StringComparison.Ordinal));
+    IsTrue(text.Contains("OBJECTS", StringComparison.Ordinal));
+    IsTrue(text.TrimEnd().EndsWith("EOF", StringComparison.Ordinal));
+
+    var doc = netDxf.DxfDocument.Load(path);
+    IsTrue(doc is not null);
+    if (doc is null) throw new InvalidOperationException("Failed to load DXF document.");
+    IsTrue(doc.DrawingVariables.InsUnits == netDxf.Units.DrawingUnits.Millimeters);
+    IsTrue(doc.Entities.Polylines2D.Count() == expectedPolylineCount);
+    IsTrue(doc.Entities.Circles.Count() == expectedCircleCount);
+    IsTrue(doc.Entities.Lines.Count() == expectedLineCount);
 }
 
 static string BuildValidDxf() => string.Join('\n',
