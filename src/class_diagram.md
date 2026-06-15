@@ -338,6 +338,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `class` | **ColumnAutoGroupingService** | Provides service logic and operations for ColumnAutoGrouping. Key methods: Build. | `ColumnAutoGroupingService.cs` |
 | `class` | **ColumnGroupingValidator** | Validation logic for ColumnGrouping. Key methods: ValidateSetup. | `ColumnGroupingValidator.cs` |
+| `class` | **ColumnIdentityGroup** | Represents the ColumnIdentityGroup class. Key methods: Add. Key properties: FallbackKey, HasCoordinates, Items, GroupXmm. | `ColumnAutoGroupingService.cs` |
 | `class` | **EtabsForceCacheIdentity** | Represents the EtabsForceCacheIdentity class. Key properties: ForceSource, ObjectType, SelectedCombos, Model. | `IEtabsForceCacheStore.cs` |
 | `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Success, Message, Preview, AuditLog. | `IEtabsForceRefreshService.cs` |
 | `class` | **EtabsForceScope** | Represents the EtabsForceScope class. Key properties: Bindings, LoadCombinations, ForceSource, ImportTop. | `IEtabsForceSelectionService.cs` |
@@ -367,7 +368,6 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **MatchedColumn** | Represents the MatchedColumn record. | `ColumnAutoGroupingService.cs` |
 | `class` | **StoryTierResolver** | Represents the StoryTierResolver class. Key methods: TryGetStoryIndex, ResolveFirstTier, IsCovered. Key properties: Ranges. | `StoryTierResolver.cs` |
 | `record` | **TierRange** | Represents the TierRange record. Key methods: Contains. | `StoryTierResolver.cs` |
-| `class` | **XyColumnGroup** | Represents the XyColumnGroup class. Key methods: Add. Key properties: Items, GroupXmm, GroupYmm. | `ColumnAutoGroupingService.cs` |
 | `record` | **struct** | Represents the struct record. Key methods: From. | `ColumnAutoGroupingService.cs` |
 
 ### Services/Geometry

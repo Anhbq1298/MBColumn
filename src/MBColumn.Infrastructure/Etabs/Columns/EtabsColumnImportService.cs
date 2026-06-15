@@ -62,11 +62,16 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
                 model.FrameObj.GetPier(names[i], ref pierName);
 
                 string point1 = "", point2 = "";
-                model.FrameObj.GetPoints(names[i], ref point1, ref point2);
+                var pointsResult = model.FrameObj.GetPoints(names[i], ref point1, ref point2);
                 double x1 = 0, y1 = 0, z1 = 0;
-                model.PointObj.GetCoordCartesian(point1, ref x1, ref y1, ref z1);
+                var point1Result = model.PointObj.GetCoordCartesian(point1, ref x1, ref y1, ref z1);
                 double x2 = 0, y2 = 0, z2 = 0;
-                model.PointObj.GetCoordCartesian(point2, ref x2, ref y2, ref z2);
+                var point2Result = model.PointObj.GetCoordCartesian(point2, ref x2, ref y2, ref z2);
+                var hasCoordinates = pointsResult == 0
+                    && point1Result == 0
+                    && point2Result == 0
+                    && !string.IsNullOrWhiteSpace(point1)
+                    && !string.IsNullOrWhiteSpace(point2);
                 double lengthMm = System.Math.Sqrt(System.Math.Pow(x1 - x2, 2) + System.Math.Pow(y1 - y2, 2) + System.Math.Pow(z1 - z2, 2)) * geoLengthFactor;
 
                 var uniqueSection = BuildUniqueSectionKey(sectionName, sec.Type, sec.Width, sec.Height, sec.Diameter);
@@ -85,7 +90,19 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
                     sec.Diameter,
                     lengthMm,
                     "",
-                    "Ready"));
+                    "Ready")
+                {
+                    HasCoordinates = hasCoordinates,
+                    BottomXmm = x1 * geoLengthFactor,
+                    BottomYmm = y1 * geoLengthFactor,
+                    BottomZmm = z1 * geoLengthFactor,
+                    TopXmm = x2 * geoLengthFactor,
+                    TopYmm = y2 * geoLengthFactor,
+                    TopZmm = z2 * geoLengthFactor,
+                    CenterXmm = (x1 + x2) * 0.5 * geoLengthFactor,
+                    CenterYmm = (y1 + y2) * 0.5 * geoLengthFactor,
+                    CenterZmm = (z1 + z2) * 0.5 * geoLengthFactor
+                });
             }
 
             return columns;

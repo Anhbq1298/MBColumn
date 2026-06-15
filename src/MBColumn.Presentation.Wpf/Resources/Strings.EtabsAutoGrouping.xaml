@@ -64,7 +64,6 @@
     <sys:String x:Key="AutoGrouping_Message_Error_TierStoriesRequired">{0} needs at least one assigned story.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_UnknownStory">{0} references a story that is not in the current ETABS import data: {1}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_NoMatchingGroups">No MB Column Sections would be created from the current tier definitions.</sys:String>
-    <sys:String x:Key="AutoGrouping_Message_Error_NoCoordinates">ETABS column coordinates are not available. Reconnect to ETABS and reload column connectivity before auto grouping.</sys:String>
 
     <sys:String x:Key="AutoGrouping_Message_Warning_EmptyTier">{0} has no matching ETABS columns.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_UngroupedStories">The following stories are not covered by any tier: {0}.</sys:String>
@@ -72,6 +71,7 @@
     <sys:String x:Key="AutoGrouping_Message_Warning_MixedMaterials">{0} / {1} contains multiple materials: {2}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_OverlappingStory">{0} is covered by multiple tiers; the first matching tier will be used: {1}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_ShiftedColumn">{0} is shifted between bottom and top endpoints by {1:0.#} mm; grouping used its centerline XY.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Warning_CoordinateFallback">Some ETABS columns do not have XY coordinates. Auto grouping used column label/object name for those columns.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_UnassignedBoardStories">Some stories remain unassigned: {0}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_BaseUnassigned">BASE is not assigned to any tier.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_NonContinuousTierStories">{0} contains non-continuous stories.</sys:String>

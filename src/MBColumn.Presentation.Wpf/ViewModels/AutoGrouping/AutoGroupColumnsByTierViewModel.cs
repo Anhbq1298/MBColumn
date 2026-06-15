@@ -215,12 +215,17 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
     {
         var result = BuildCurrentResult();
         LoadResult(result);
+        if (result.HasErrors)
+        {
+            previewResult = null;
+            CurrentStep = 1;
+            StatusText = BuildFirstErrorStatus(result);
+            return;
+        }
+
         previewResult = result;
         CurrentStep = 2;
-
-        StatusText = result.HasErrors
-            ? WpfResourceText.Get("AutoGrouping_Status_PreviewHasErrors")
-            : WpfResourceText.Format("AutoGrouping_Status_PreviewCompleteFormat", ColumnPreviewGroups.Count);
+        StatusText = WpfResourceText.Format("AutoGrouping_Status_PreviewCompleteFormat", ColumnPreviewGroups.Count);
     }
 
     private void ApplyAutoGrouping()
@@ -299,6 +304,16 @@ public sealed class AutoGroupColumnsByTierViewModel : ViewModelBase
         Raise(nameof(HasColumnPreviewGroups));
         Raise(nameof(HasValidationMessages));
         RaiseCommandStates();
+    }
+
+    private static string BuildFirstErrorStatus(AutoGroupingResult result)
+    {
+        var firstError = result.ValidationMessages.FirstOrDefault(message =>
+            message.Severity == AutoGroupingValidationSeverity.Error);
+        if (firstError is null)
+            return WpfResourceText.Get("AutoGrouping_Status_PreviewHasErrors");
+
+        return WpfResourceText.Format(firstError.MessageKey, firstError.MessageArguments);
     }
 
     private void InvalidatePreview()

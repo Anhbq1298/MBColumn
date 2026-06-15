@@ -35,8 +35,8 @@ public sealed class ColumnAutoGroupingService
         if (columns.Count > 0 && columns.Any(c => !c.HasCoordinates))
         {
             result.ValidationMessages.Add(new AutoGroupingValidationMessage(
-                AutoGroupingValidationSeverity.Error,
-                AutoGroupingResourceKeys.ErrorNoCoordinates));
+                AutoGroupingValidationSeverity.Warning,
+                AutoGroupingResourceKeys.WarningCoordinateFallback));
         }
 
         AddShiftedColumnWarnings(result, columns);
@@ -63,8 +63,8 @@ public sealed class ColumnAutoGroupingService
 
         AddCoverageMessages(result, columns, tiers, tierMatchCounts, resolver);
 
-        var xyGroups = BuildXyGroups(matchedColumns);
-        var finalGroups = BuildTierAndSectionGroups(result, xyGroups, resolver);
+        var columnGroups = BuildColumnGroups(matchedColumns);
+        var finalGroups = BuildTierAndSectionGroups(result, columnGroups, resolver);
 
         if (finalGroups.Count == 0)
         {
@@ -136,18 +136,33 @@ public sealed class ColumnAutoGroupingService
         }
     }
 
-    private static IReadOnlyList<XyColumnGroup> BuildXyGroups(IReadOnlyList<MatchedColumn> columns)
+    private static IReadOnlyList<ColumnIdentityGroup> BuildColumnGroups(IReadOnlyList<MatchedColumn> columns)
     {
-        var buckets = new Dictionary<SpatialBucket, List<XyColumnGroup>>();
-        var groups = new List<XyColumnGroup>();
+        var buckets = new Dictionary<SpatialBucket, List<ColumnIdentityGroup>>();
+        var fallbackGroups = new Dictionary<string, ColumnIdentityGroup>(StringComparer.OrdinalIgnoreCase);
+        var groups = new List<ColumnIdentityGroup>();
 
         foreach (var column in columns)
         {
+            if (!column.Column.HasCoordinates)
+            {
+                var key = BuildFallbackColumnGroupKey(column.Column);
+                if (!fallbackGroups.TryGetValue(key, out var fallbackGroup))
+                {
+                    fallbackGroup = new ColumnIdentityGroup(key, hasCoordinates: false);
+                    fallbackGroups[key] = fallbackGroup;
+                    groups.Add(fallbackGroup);
+                }
+
+                fallbackGroup.Add(column);
+                continue;
+            }
+
             var x = column.Column.CenterXmm;
             var y = column.Column.CenterYmm;
             var bucket = SpatialBucket.From(x, y, XyGroupingToleranceMm);
 
-            XyColumnGroup? matchedGroup = null;
+            ColumnIdentityGroup? matchedGroup = null;
             for (var dx = -1; dx <= 1 && matchedGroup is null; dx++)
             {
                 for (var dy = -1; dy <= 1 && matchedGroup is null; dy++)
@@ -163,7 +178,7 @@ public sealed class ColumnAutoGroupingService
 
             if (matchedGroup is null)
             {
-                matchedGroup = new XyColumnGroup();
+                matchedGroup = new ColumnIdentityGroup("", hasCoordinates: true);
                 groups.Add(matchedGroup);
 
                 if (!buckets.TryGetValue(bucket, out var bucketGroups))
@@ -179,25 +194,29 @@ public sealed class ColumnAutoGroupingService
         }
 
         return groups
-            .OrderBy(group => group.GroupXmm)
+            .OrderBy(group => group.HasCoordinates ? 0 : 1)
+            .ThenBy(group => group.HasCoordinates ? group.GroupXmm : 0)
             .ThenBy(group => group.GroupYmm)
+            .ThenBy(group => group.FallbackKey, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
     private static List<AutoGroupedColumnSection> BuildTierAndSectionGroups(
         AutoGroupingResult result,
-        IReadOnlyList<XyColumnGroup> xyGroups,
+        IReadOnlyList<ColumnIdentityGroup> columnGroups,
         StoryTierResolver resolver)
     {
         var finalGroups = new List<AutoGroupedColumnSection>();
 
-        for (var groupIndex = 0; groupIndex < xyGroups.Count; groupIndex++)
+        for (var groupIndex = 0; groupIndex < columnGroups.Count; groupIndex++)
         {
-            var xyGroup = xyGroups[groupIndex];
+            var columnGroup = columnGroups[groupIndex];
             var columnGroupId = $"CG-{groupIndex + 1:000}";
-            var columnGroupName = FormatColumnGroupName(columnGroupId, xyGroup.GroupXmm, xyGroup.GroupYmm);
+            var columnGroupName = columnGroup.HasCoordinates
+                ? FormatColumnGroupName(columnGroupId, columnGroup.GroupXmm, columnGroup.GroupYmm)
+                : FormatFallbackColumnGroupName(columnGroupId, columnGroup.FallbackKey);
 
-            foreach (var tierGroup in xyGroup.Items
+            foreach (var tierGroup in columnGroup.Items
                          .GroupBy(item => item.Tier)
                          .OrderBy(group => group.Min(item => item.TierOrder)))
             {
@@ -255,8 +274,8 @@ public sealed class ColumnAutoGroupingService
                     {
                         ColumnGroupId = columnGroupId,
                         ColumnGroupName = columnGroupName,
-                        GroupXmm = xyGroup.GroupXmm,
-                        GroupYmm = xyGroup.GroupYmm,
+                        GroupXmm = columnGroup.GroupXmm,
+                        GroupYmm = columnGroup.GroupYmm,
                         ManualTierName = tier.TierName.Trim(),
                         TierName = tierName,
                         FromStory = fromStory,
@@ -397,6 +416,23 @@ public sealed class ColumnAutoGroupingService
     private static string FormatColumnGroupName(string id, double xMm, double yMm)
         => string.Format(CultureInfo.InvariantCulture, "{0} [X={1:0.00}, Y={2:0.00}]", id, xMm / 1000.0, yMm / 1000.0);
 
+    private static string FormatFallbackColumnGroupName(string id, string fallbackKey)
+        => string.IsNullOrWhiteSpace(fallbackKey)
+            ? id
+            : $"{id} [{fallbackKey}]";
+
+    private static string BuildFallbackColumnGroupKey(EtabsColumnImportDto column)
+    {
+        if (!string.IsNullOrWhiteSpace(column.Label))
+            return column.Label.Trim();
+        if (!string.IsNullOrWhiteSpace(column.PierName))
+            return column.PierName.Trim();
+        if (!string.IsNullOrWhiteSpace(column.ObjectName))
+            return column.ObjectName.Trim();
+
+        return "(No label)";
+    }
+
     private static int StoryIndex(StoryTierResolver resolver, string storyName)
         => resolver.TryGetStoryIndex(storyName, out var index) ? index : int.MaxValue;
 
@@ -434,11 +470,19 @@ public sealed class ColumnAutoGroupingService
                 (long)Math.Floor(y / bucketSize));
     }
 
-    private sealed class XyColumnGroup
+    private sealed class ColumnIdentityGroup
     {
         private double xSum;
         private double ySum;
 
+        public ColumnIdentityGroup(string fallbackKey, bool hasCoordinates)
+        {
+            FallbackKey = fallbackKey;
+            HasCoordinates = hasCoordinates;
+        }
+
+        public string FallbackKey { get; }
+        public bool HasCoordinates { get; }
         public List<MatchedColumn> Items { get; } = [];
         public double GroupXmm => Items.Count == 0 ? 0 : xSum / Items.Count;
         public double GroupYmm => Items.Count == 0 ? 0 : ySum / Items.Count;
@@ -446,6 +490,9 @@ public sealed class ColumnAutoGroupingService
         public void Add(MatchedColumn column)
         {
             Items.Add(column);
+            if (!column.Column.HasCoordinates)
+                return;
+
             xSum += column.Column.CenterXmm;
             ySum += column.Column.CenterYmm;
         }
