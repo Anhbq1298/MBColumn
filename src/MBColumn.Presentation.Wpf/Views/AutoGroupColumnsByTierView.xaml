@@ -179,73 +179,247 @@
                 <Border Grid.Row="1"
                         Style="{StaticResource DialogPanelBorderStyle}"
                         Visibility="{Binding IsTierDefinitionsStep, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <DockPanel>
-                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                <Button Content="{StaticResource AutoGrouping_AddTierButton}"
-                                        Command="{Binding AddTierCommand}"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        MinHeight="28"
-                                        Padding="10,4" />
-                                <Button Content="{StaticResource AutoGrouping_RemoveTierButton}"
-                                        Command="{Binding RemoveTierCommand}"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        MinHeight="28"
-                                        Padding="10,4"
-                                        Margin="6,0,0,0" />
-                            </StackPanel>
-                            <TextBlock Text="{StaticResource AutoGrouping_TierDefinitionsHeader}"
-                                       Style="{StaticResource AutoGroupingSectionTitleStyle}" />
-                        </DockPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="2*" />
+                        </Grid.ColumnDefinitions>
 
-                        <DataGrid ItemsSource="{Binding Tiers}"
-                                  SelectedItem="{Binding SelectedTier, Mode=TwoWay}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  CanUserReorderColumns="False"
-                                  EnableRowVirtualization="True"
-                                  VirtualizingPanel.IsVirtualizing="True"
-                                  VirtualizingPanel.VirtualizationMode="Recycling">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_TierNameColumn}"
-                                                    Binding="{Binding TierName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="1.2*" />
-                                <DataGridTemplateColumn Header="{StaticResource AutoGrouping_FromStoryColumn}"
-                                                        Width="140">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.StoryNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                      SelectedItem="{Binding FromStory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="{StaticResource AutoGrouping_ToStoryColumn}"
-                                                        Width="140">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.StoryNames, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                      SelectedItem="{Binding ToStory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="{StaticResource AutoGrouping_LabelFilterColumn}"
-                                                    Binding="{Binding LabelFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="1.1*">
-                                    <DataGridTextColumn.ElementStyle>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource LeftAlignText}">
-                                            <Setter Property="ToolTip" Value="{StaticResource AutoGrouping_LabelFilterToolTip}" />
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <Button Content="{StaticResource AutoGrouping_AddTierButton}"
+                                            Command="{Binding AddTierCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            MinHeight="28"
+                                            Padding="10,4" />
+                                    <Button Content="{StaticResource AutoGrouping_RemoveTierButton}"
+                                            Command="{Binding RemoveTierCommand}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            MinHeight="28"
+                                            Padding="10,4"
+                                            Margin="6,0,0,0" />
+                                </StackPanel>
+                                <TextBlock Text="{StaticResource AutoGrouping_AssignedTiersHeader}"
+                                           Style="{StaticResource AutoGroupingSectionTitleStyle}" />
+                            </DockPanel>
+
+                            <ListBox Grid.Row="1"
+                                     ItemsSource="{Binding Tiers}"
+                                     SelectedItem="{Binding SelectedTier, Mode=TwoWay}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     VirtualizingStackPanel.IsVirtualizing="True"
+                                     VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,0,0,8" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="12"
+                                                CornerRadius="4"
+                                                Background="{DynamicResource PanelBackgroundBrush}"
+                                                BorderBrush="{DynamicResource BorderGreyBrush}"
+                                                BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="8" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="8" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="6" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="6" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+
+                                                <TextBox Grid.Row="0"
+                                                         Text="{Binding TierName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         FontWeight="SemiBold" />
+
+                                                <Grid Grid.Row="2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{StaticResource AutoGrouping_LabelFilterColumn}"
+                                                               FontWeight="SemiBold"
+                                                               VerticalAlignment="Center" />
+                                                    <TextBox Grid.Column="2"
+                                                             Text="{Binding LabelFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                             ToolTip="{StaticResource AutoGrouping_LabelFilterToolTip}" />
+                                                </Grid>
+
+                                                <TextBlock Grid.Row="4"
+                                                           Text="{StaticResource AutoGrouping_AssignedStoriesHeader}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource DarkNavyBrush}" />
+
+                                                <TextBlock Grid.Row="6"
+                                                           Text="{StaticResource AutoGrouping_NoAssignedStories}"
+                                                           Foreground="{DynamicResource TextMutedBrush}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding AssignedStories.Count}" Value="0">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+
+                                                <ItemsControl Grid.Row="6" ItemsSource="{Binding AssignedStories}">
+                                                    <ItemsControl.Style>
+                                                        <Style TargetType="ItemsControl">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding AssignedStories.Count}" Value="0">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ItemsControl.Style>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="0,0,0,4">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border Grid.Column="0"
+                                                                        Background="{DynamicResource LightBackgroundBrush}"
+                                                                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4"
+                                                                        Padding="8,4">
+                                                                    <TextBlock Text="{Binding StoryName}" />
+                                                                </Border>
+                                                                <Button Grid.Column="1"
+                                                                        Content="X"
+                                                                        Command="{Binding DataContext.RemoveStoryFromTierCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                                        Width="26"
+                                                                        Height="24"
+                                                                        Padding="0"
+                                                                        Margin="6,0,0,0" />
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <ItemsControl Grid.Row="8" ItemsSource="{Binding WarningMessages}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding}"
+                                                                       Foreground="{DynamicResource WarningAmberBrush}"
+                                                                       FontSize="{StaticResource FontSizeCaption}"
+                                                                       TextWrapping="Wrap"
+                                                                       Margin="0,0,0,2" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+
+                        <Border Grid.Column="2"
+                                BorderBrush="{DynamicResource BorderGreyBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="12"
+                                Background="{DynamicResource PanelBackgroundBrush}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Text="{StaticResource AutoGrouping_AvailableStoriesHeader}"
+                                           Style="{StaticResource AutoGroupingSectionTitleStyle}" />
+
+                                <TextBlock Grid.Row="2"
+                                           Text="{StaticResource AutoGrouping_NoAvailableStories}"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasAvailableStories}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
                                         </Style>
-                                    </DataGridTextColumn.ElementStyle>
-                                    <DataGridTextColumn.EditingElementStyle>
-                                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                            <Setter Property="ToolTip" Value="{StaticResource AutoGrouping_LabelFilterToolTip}" />
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <ListBox x:Name="AvailableStoriesListBox"
+                                         Grid.Row="2"
+                                         ItemsSource="{Binding AvailableStories}"
+                                         SelectionMode="Extended"
+                                         SelectionChanged="OnAvailableStoriesSelectionChanged"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         VirtualizingStackPanel.IsVirtualizing="True"
+                                         VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                    <ListBox.Style>
+                                        <Style TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasAvailableStories}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
                                         </Style>
-                                    </DataGridTextColumn.EditingElementStyle>
-                                </DataGridTextColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </DockPanel>
+                                    </ListBox.Style>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="8,5"
+                                                    BorderBrush="{DynamicResource BorderSoftBrush}"
+                                                    BorderThickness="0,0,0,1">
+                                                <TextBlock Text="{Binding StoryName}" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <Button Grid.Row="4"
+                                        Content="{StaticResource AutoGrouping_AssignToTierButton}"
+                                        Command="{Binding AssignSelectedStoriesCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        MinHeight="30"
+                                        Padding="12,5"
+                                        HorizontalAlignment="Stretch" />
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Border>
 
                 <Grid Grid.Row="1"

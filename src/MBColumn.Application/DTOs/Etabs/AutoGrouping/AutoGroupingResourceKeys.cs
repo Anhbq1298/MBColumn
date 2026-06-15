@@ -17,5 +17,8 @@ public static class AutoGroupingResourceKeys
     public const string WarningMixedMaterials = "AutoGrouping_Message_Warning_MixedMaterials";
     public const string WarningOverlappingStory = "AutoGrouping_Message_Warning_OverlappingStory";
     public const string WarningShiftedColumn = "AutoGrouping_Message_Warning_ShiftedColumn";
+    public const string WarningUnassignedBoardStories = "AutoGrouping_Message_Warning_UnassignedBoardStories";
+    public const string WarningBaseUnassigned = "AutoGrouping_Message_Warning_BaseUnassigned";
+    public const string WarningNonContinuousTierStories = "AutoGrouping_Message_Warning_NonContinuousTierStories";
     public const string InfoMixedSectionsSplit = "AutoGrouping_Message_Info_MixedSectionsSplit";
 }

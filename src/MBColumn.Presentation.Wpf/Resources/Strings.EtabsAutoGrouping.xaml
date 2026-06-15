@@ -14,10 +14,14 @@
     <sys:String x:Key="AutoGrouping_NoTierSummaryRows">Tier counts will appear after grouping is generated.</sys:String>
     <sys:String x:Key="AutoGrouping_NoPreviewRows">Preview rows will appear here after grouping is generated.</sys:String>
     <sys:String x:Key="AutoGrouping_NoValidationMessages">No warnings or errors.</sys:String>
+    <sys:String x:Key="AutoGrouping_AssignedTiersHeader">Assigned Tiers</sys:String>
+    <sys:String x:Key="AutoGrouping_AvailableStoriesHeader">Available Stories</sys:String>
+    <sys:String x:Key="AutoGrouping_AssignToTierButton">Assign to Tier</sys:String>
+    <sys:String x:Key="AutoGrouping_AssignedStoriesHeader">Assigned Stories</sys:String>
+    <sys:String x:Key="AutoGrouping_NoAssignedStories">No stories assigned.</sys:String>
+    <sys:String x:Key="AutoGrouping_NoAvailableStories">All stories are assigned.</sys:String>
 
     <sys:String x:Key="AutoGrouping_TierNameColumn">Tier Name</sys:String>
-    <sys:String x:Key="AutoGrouping_FromStoryColumn">From Story</sys:String>
-    <sys:String x:Key="AutoGrouping_ToStoryColumn">To Story</sys:String>
     <sys:String x:Key="AutoGrouping_LabelFilterColumn">Label Filter</sys:String>
     <sys:String x:Key="AutoGrouping_SummaryTierColumn">Tier</sys:String>
     <sys:String x:Key="AutoGrouping_SummaryStoryRangeColumn">Story Range</sys:String>
@@ -45,6 +49,9 @@
     <sys:String x:Key="AutoGrouping_Status_PreviewCompleteFormat">Preview generated with {0} column group(s).</sys:String>
     <sys:String x:Key="AutoGrouping_Status_PreviewHasErrors">Preview found errors that must be fixed before applying.</sys:String>
     <sys:String x:Key="AutoGrouping_Status_ApplyBlocked">Auto grouping was not applied because validation errors remain.</sys:String>
+    <sys:String x:Key="AutoGrouping_Status_SelectTierFirst">Select a target tier before assigning stories.</sys:String>
+    <sys:String x:Key="AutoGrouping_Status_SelectStoriesFirst">Select one or more available stories before assigning.</sys:String>
+    <sys:String x:Key="AutoGrouping_Status_AssignedStoriesFormat">Assigned {0} story/stories to {1}.</sys:String>
 
     <sys:String x:Key="AutoGrouping_Severity_Info">Info</sys:String>
     <sys:String x:Key="AutoGrouping_Severity_Warning">Warning</sys:String>
@@ -54,7 +61,7 @@
     <sys:String x:Key="AutoGrouping_Message_Error_NoStories">No ETABS stories are available for auto grouping.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_NoTiers">Add at least one tier before previewing.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_TierNameRequired">Tier row {0} needs a tier name.</sys:String>
-    <sys:String x:Key="AutoGrouping_Message_Error_TierStoriesRequired">{0} needs both From Story and To Story.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Error_TierStoriesRequired">{0} needs at least one assigned story.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_UnknownStory">{0} references a story that is not in the current ETABS import data: {1}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_NoMatchingGroups">No MB Column Sections would be created from the current tier definitions.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_NoCoordinates">ETABS column coordinates are not available. Reconnect to ETABS and reload column connectivity before auto grouping.</sys:String>
@@ -65,5 +72,9 @@
     <sys:String x:Key="AutoGrouping_Message_Warning_MixedMaterials">{0} / {1} contains multiple materials: {2}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_OverlappingStory">{0} is covered by multiple tiers; the first matching tier will be used: {1}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_ShiftedColumn">{0} is shifted between bottom and top endpoints by {1:0.#} mm; grouping used its centerline XY.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Warning_UnassignedBoardStories">Some stories remain unassigned: {0}.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Warning_BaseUnassigned">BASE is not assigned to any tier.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Warning_NonContinuousTierStories">{0} contains non-continuous stories.</sys:String>
+    <sys:String x:Key="AutoGrouping_Warning_NonContinuousTierStories">Assigned stories are not continuous.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Info_MixedSectionsSplit">{0} / {1} was split by ETABS section name in the preview.</sys:String>
 </ResourceDictionary>

@@ -975,10 +975,12 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AutoGroupColumnsByTierViewModel** | Represents the AutoGroupColumnsByTierViewModel class. Key properties: Tiers, StoryNames, TierSummaryRows, PreviewRows. | `AutoGroupColumnsByTierViewModel.cs` |
+| `class` | **AutoGroupColumnsByTierViewModel** | Represents the AutoGroupColumnsByTierViewModel class. Key methods: NotifyAvailableStorySelectionChanged. Key properties: Tiers, AvailableStories, StoryNames, TierSummaryRows. | `AutoGroupColumnsByTierViewModel.cs` |
 | `class` | **AutoGroupColumnsDialogInput** | Represents the AutoGroupColumnsDialogInput class. Key properties: Columns, Stories, ReservedSectionNames. | `AutoGroupColumnsDialogInput.cs` |
 | `class` | **AutoGroupingColumnPreviewGroupViewModel** | Represents the AutoGroupingColumnPreviewGroupViewModel class. Key properties: ColumnLabel, Items, SectionCount, TotalObjects. | `AutoGroupColumnsByTierViewModel.cs` |
 | `class` | **AutoGroupingValidationMessageViewModel** | Represents the AutoGroupingValidationMessageViewModel class. Key properties: Severity, SeverityDisplayText, Message. | `AutoGroupingValidationMessageViewModel.cs` |
+| `class` | **StoryAssignmentItem** | Represents the StoryAssignmentItem class. Key properties: StoryName, SortIndex, IsSelected, AssignedTierId. | `AutoGroupColumnsByTierViewModel.cs` |
+| `class` | **TierDefinitionItem** | Represents the TierDefinitionItem class. Key properties: TierId, TierName, LabelFilter, AssignedStories. | `AutoGroupColumnsByTierViewModel.cs` |
 
 ### ViewModels/AutomatedRebarDesign
 
