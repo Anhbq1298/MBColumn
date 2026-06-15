@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 namespace MBColumn.Presentation.Wpf.Controls;
 
@@ -6,7 +6,7 @@ public sealed record AxisTicks(double Min, double Max, double MajorInterval, dou
 
 public static class AxisTickService
 {
-    public static AxisTicks Generate(double min, double max, int targetMajorCount = 6, int minorDivisions = 2)
+    public static AxisTicks Generate(double min, double max, int targetMajorCount = 6, int minorDivisions = 5)
     {
         if (double.IsNaN(min) || double.IsInfinity(min) || double.IsNaN(max) || double.IsInfinity(max) || Math.Abs(max - min) < 1e-12)
         {
@@ -28,7 +28,7 @@ public static class AxisTickService
         return new AxisTicks(niceMin, niceMax, major, minor, GenerateTicks(niceMin, niceMax, major), GenerateMinorTicks(niceMin, niceMax, major, minor));
     }
 
-    public static AxisTicks GenerateFixed(double min, double max, double major, int minorDivisions = 2)
+    public static AxisTicks GenerateFixed(double min, double max, double major, int minorDivisions = 5)
     {
         if (double.IsNaN(min) || double.IsInfinity(min) || double.IsNaN(max) || double.IsInfinity(max) || Math.Abs(max - min) < 1e-12)
         {

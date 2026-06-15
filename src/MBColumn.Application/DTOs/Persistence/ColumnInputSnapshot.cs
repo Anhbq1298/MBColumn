@@ -112,4 +112,9 @@ public sealed class SnapshotLoadCase
     public bool IsActive { get; set; } = true;
     /// <summary>Per-case member clear height override in mm. Null means use the section's global MemberLengthL.</summary>
     public double? MemberLengthOverride { get; set; }
+    public bool IsEtabsImportedLoad { get; set; }
+    public string EtabsLoadCaseOrCombo { get; set; } = "";
+    public string EtabsFrameId { get; set; } = "";
+    public string EtabsForceStation { get; set; } = "";
+    public DateTime? EtabsForceImportedAt { get; set; }
 }

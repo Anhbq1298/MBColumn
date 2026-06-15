@@ -142,6 +142,65 @@ public sealed class InputViewModel : ViewModelBase
         new("12 ksi / 83 MPa", 83.0, 12.0)
     ];
 
+    public bool HasEtabsImportMetadata
+        => etabsMetadata?.IsEtabsImportedSection == true
+            || etabsMetadata is not null
+            || etabsTierMetadata is not null;
+
+    public string EtabsImportIsImportedText
+        => HasEtabsImportMetadata ? "Imported from ETABS" : "";
+
+    public string EtabsMetadataSourceModel
+        => FirstNonEmpty(
+            etabsMetadata?.EtabsSourceModelName,
+            etabsMetadata?.SourceModelName,
+            etabsTierMetadata?.SourceModelName);
+
+    public string EtabsMetadataColumnGroupId
+        => FirstNonEmpty(
+            etabsMetadata?.EtabsColumnGroupId,
+            etabsTierMetadata?.TargetGroupName);
+
+    public string EtabsMetadataTierId
+        => FirstNonEmpty(
+            etabsMetadata?.EtabsTierId,
+            etabsTierMetadata?.TierName);
+
+    public string EtabsMetadataSectionProperty
+        => FirstNonEmpty(
+            etabsMetadata?.EtabsSectionPropertyName,
+            etabsMetadata?.EtabsSectionName,
+            etabsTierMetadata?.SourceSectionName);
+
+    public string EtabsMetadataStoryRange
+        => FirstNonEmpty(
+            etabsMetadata?.EtabsStoryRangeText,
+            BuildStoryRangeText(etabsTierMetadata?.StoryFrom, etabsTierMetadata?.StoryTo),
+            etabsMetadata?.StoryName);
+
+    public string EtabsMetadataSourceStories
+        => FirstNonEmpty(
+            JoinDistinct(etabsMetadata?.EtabsSourceStories),
+            JoinDistinct(etabsTierMetadata?.SourceObjects.Select(source => source.Story)));
+
+    public string EtabsMetadataSourceFrameIds
+        => FirstNonEmpty(
+            JoinDistinct(etabsMetadata?.EtabsSourceFrameIds),
+            JoinDistinct(etabsTierMetadata?.SourceObjects.Select(source => source.ObjectName)),
+            etabsMetadata?.EtabsObjectName);
+
+    public string EtabsMetadataSourceLabels
+        => FirstNonEmpty(
+            JoinDistinct(etabsMetadata?.EtabsSourceLabels),
+            JoinDistinct(etabsTierMetadata?.SourceObjects.Select(source => source.Label)),
+            etabsMetadata?.Label);
+
+    public string EtabsMetadataImportedAt
+        => FormatImportDate(FirstNonDefaultDate(
+            etabsMetadata?.EtabsImportedAt,
+            etabsMetadata?.ImportedAt,
+            etabsTierMetadata?.ImportedAt));
+
     private static readonly IReadOnlyList<MaterialGradeOption> EuropeanConcreteGrades =
     [
         new("C20/25", 20.0),
@@ -2488,16 +2547,97 @@ public sealed class InputViewModel : ViewModelBase
         Raise(nameof(Ec2Check3Text)); Raise(nameof(Ec2Check3Pass));
         Raise(nameof(Ec2AswsXText)); Raise(nameof(Ec2AswsYText));
         Raise(nameof(Ec2AswsXLatex)); Raise(nameof(Ec2AswsYLatex));
+        RaiseEtabsMetadataProperties();
     }
 
     public void ResetToDefaults()
     {
+        designTierName = "";
+        designTierSource = "";
+        etabsTierMetadata = null;
+        etabsMetadata = null;
         SelectedDesignCode = DesignCodeType.Ec2;
         SelectedMaterialLibrary = unitSystem == UnitSystem.Metric ? MaterialLibraryType.Europe : MaterialLibraryType.America;
 
         if (unitSystem == UnitSystem.Metric) ApplyMetricDefaults(); else ApplyImperialDefaults();
 
         FlushPreviewNow();
+    }
+
+    private void RaiseEtabsMetadataProperties()
+    {
+        Raise(nameof(HasEtabsImportMetadata));
+        Raise(nameof(EtabsImportIsImportedText));
+        Raise(nameof(EtabsMetadataSourceModel));
+        Raise(nameof(EtabsMetadataColumnGroupId));
+        Raise(nameof(EtabsMetadataTierId));
+        Raise(nameof(EtabsMetadataSectionProperty));
+        Raise(nameof(EtabsMetadataStoryRange));
+        Raise(nameof(EtabsMetadataSourceStories));
+        Raise(nameof(EtabsMetadataSourceFrameIds));
+        Raise(nameof(EtabsMetadataSourceLabels));
+        Raise(nameof(EtabsMetadataImportedAt));
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+                return value.Trim();
+        }
+
+        return "-";
+    }
+
+    private static string JoinDistinct(IEnumerable<string>? values)
+    {
+        if (values is null) return "";
+
+        var distinct = values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return distinct.Count == 0 ? "" : string.Join(", ", distinct);
+    }
+
+    private static string BuildStoryRangeText(string? storyFrom, string? storyTo)
+    {
+        var from = storyFrom?.Trim() ?? "";
+        var to = storyTo?.Trim() ?? "";
+
+        if (from.Length == 0 && to.Length == 0)
+            return "";
+
+        if (from.Length == 0) return to;
+        if (to.Length == 0) return from;
+
+        if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
+            return from;
+
+        return $"{from} - {to}";
+    }
+
+    private static string FormatImportDate(DateTime? importedAt)
+    {
+        if (importedAt is not { } value || value == default)
+            return "-";
+
+        return value.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private static DateTime? FirstNonDefaultDate(params DateTime?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (value is { } date && date != default)
+                return date;
+        }
+
+        return null;
     }
 
     private IReadOnlyList<RebarCoordinateDto> BuildCustomRebarCoordinates()
@@ -3549,7 +3689,12 @@ public sealed class InputViewModel : ViewModelBase
                 Vux = lc.Vux,
                 Vuy = lc.Vuy,
                 IsActive = lc.IsActive,
-                MemberLengthOverride = lc.MemberLengthOverrideMm
+                MemberLengthOverride = lc.MemberLengthOverrideMm,
+                IsEtabsImportedLoad = lc.IsEtabsImportedLoad,
+                EtabsLoadCaseOrCombo = lc.EtabsLoadCaseOrCombo,
+                EtabsFrameId = lc.EtabsFrameId,
+                EtabsForceStation = lc.EtabsForceStation,
+                EtabsForceImportedAt = lc.EtabsForceImportedAt
             })
             .ToList()
     };
@@ -3648,7 +3793,12 @@ public sealed class InputViewModel : ViewModelBase
                 Story = lc.Story,
                 Station = lc.Station,
                 Source = string.IsNullOrWhiteSpace(lc.Source) ? "Manual" : lc.Source,
-                MemberLengthOverrideMm = lc.MemberLengthOverride is > 0 ? lc.MemberLengthOverride : null
+                MemberLengthOverrideMm = lc.MemberLengthOverride is > 0 ? lc.MemberLengthOverride : null,
+                IsEtabsImportedLoad = lc.IsEtabsImportedLoad,
+                EtabsLoadCaseOrCombo = lc.EtabsLoadCaseOrCombo,
+                EtabsFrameId = lc.EtabsFrameId,
+                EtabsForceStation = lc.EtabsForceStation,
+                EtabsForceImportedAt = lc.EtabsForceImportedAt
             });
             if (int.TryParse(lc.Label.Replace("LC", ""), out var n) && n >= nextLoadCaseIndex)
                 nextLoadCaseIndex = n + 1;

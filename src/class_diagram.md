@@ -66,7 +66,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 |---|---|---|---|
 | `enum` | **EtabsBindingHealthStatus** | Enumeration defining states/types for EtabsBindingHealthStatus. | `EtabsBindingHealthStatus.cs` |
 | `class` | **EtabsBindingValidationResult** | Encapsulates the result of EtabsBindingValidation operations. Key properties: ModelChanged, CurrentModelPath, CurrentModelName, ObjectHealthList. | `EtabsBindingValidationResult.cs` |
-| `record` | **EtabsColumnImportDto** | Data transfer object carrying EtabsColumnImport data. | `EtabsColumnImportDto.cs` |
+| `record` | **EtabsColumnImportDto** | Data transfer object carrying EtabsColumnImport data. Key properties: HasCoordinates, BottomXmm, BottomYmm, BottomZmm. | `EtabsColumnImportDto.cs` |
 | `class` | **EtabsColumnObjectKey** | Represents the EtabsColumnObjectKey class. Key properties: Story, Label, UniqueName, X. | `EtabsColumnObjectKey.cs` |
 | `record` | **EtabsConnectionResultDto** | Data transfer object carrying EtabsConnectionResult data. | `EtabsConnectionResultDto.cs` |
 | `class` | **EtabsDesignForceRecord** | Represents the EtabsDesignForceRecord class. Key properties: SourceTableKey. | `EtabsDesignForceRecord.cs` |
@@ -78,7 +78,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **EtabsForceResultDto** | /// ETABS force row after unit conversion. P is already converted to MBColumn /// compression-positive convention by the extraction service; M2/M3 and V2/V3 /// keep their ETABS local-axis names until the central convention mapper assigns /// them to MBColumn Mx/My and Vx/Vy. /// | `EtabsForceResultDto.cs` |
 | `class` | **EtabsForceRowChange** | Represents the EtabsForceRowChange class. Key properties: LoadCaseName, Location, OldP, NewP. | `EtabsForceRowChange.cs` |
 | `enum` | **EtabsForceRowChangeStatus** | Enumeration defining states/types for EtabsForceRowChangeStatus. | `EtabsForceRowChange.cs` |
-| `class` | **EtabsImportMetadataDto** | Data transfer object carrying EtabsImportMetadata data. Key properties: SourceModelPath, SourceModelName, EtabsObjectName, PierName. | `EtabsImportMetadataDto.cs` |
+| `class` | **EtabsImportMetadataDto** | Data transfer object carrying EtabsImportMetadata data. Key properties: IsEtabsImportedSection, SourceModelPath, SourceModelName, EtabsObjectName. | `EtabsImportMetadataDto.cs` |
 | `record` | **EtabsImportSummaryDto** | Data transfer object carrying EtabsImportSummary data. | `EtabsImportSummaryDto.cs` |
 | `enum` | **EtabsImportedObjectType** | Enumeration defining states/types for EtabsImportedObjectType. | `EtabsImportedObjectType.cs` |
 | `class` | **EtabsIrregularBoundaryDto** | Data transfer object carrying EtabsIrregularBoundary data. Key properties: ClockwisePolylines, OpeningPolylines, PierLabel, StoryName. | `EtabsIrregularBoundaryDto.cs` |
@@ -104,11 +104,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **AutoGroupedColumnSection** | Represents the AutoGroupedColumnSection class. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupedColumnSection.cs` |
-| `class` | **AutoGroupingPreviewRow** | Data structure representing a row for AutoGroupingPreview. Key properties: TierName, StoryRange, ColumnLabel, MbColumnSectionName. | `AutoGroupingPreviewRow.cs` |
+| `class` | **AutoGroupedColumnSection** | Represents the AutoGroupedColumnSection class. Key properties: ColumnGroupId, ColumnGroupName, GroupXmm, GroupYmm. | `AutoGroupedColumnSection.cs` |
+| `class` | **AutoGroupingPreviewRow** | Data structure representing a row for AutoGroupingPreview. Key properties: ColumnGroupId, ColumnGroupName, GroupXmm, GroupYmm. | `AutoGroupingPreviewRow.cs` |
 | `class` | **AutoGroupingResourceKeys** | Represents the AutoGroupingResourceKeys class. | `AutoGroupingResourceKeys.cs` |
 | `class` | **AutoGroupingResult** | Encapsulates the result of AutoGrouping operations. Key properties: Groups, PreviewRows, TierSummaryRows, ValidationMessages. | `AutoGroupingResult.cs` |
-| `class` | **AutoGroupingSectionMetadata** | Represents the AutoGroupingSectionMetadata class. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupingSectionMetadata.cs` |
+| `class` | **AutoGroupingSectionMetadata** | Represents the AutoGroupingSectionMetadata class. Key properties: ColumnGroupId, ColumnGroupName, GroupXmm, GroupYmm. | `AutoGroupingSectionMetadata.cs` |
 | `record` | **AutoGroupingStory** | Represents the AutoGroupingStory record. | `AutoGroupingStory.cs` |
 | `class` | **AutoGroupingTier** | Represents the AutoGroupingTier class. Key methods: Clone. Key properties: TierName, FromStory, ToStory, LabelFilter. | `AutoGroupingTier.cs` |
 | `class` | **AutoGroupingTierSummaryRow** | Data structure representing a row for AutoGroupingTierSummary. Key properties: TierName, StoryRange, ColumnSectionCount, ObjectCount. | `AutoGroupingTierSummaryRow.cs` |
@@ -361,9 +361,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `interface` | **IImportedEtabsForceCache** | Defines the contract for IImportedEtabsForceCache. | `IImportedEtabsForceCache.cs` |
 | `interface` | **IIrregularPierGeometryBuilder** | Defines the contract for IIrregularPierGeometryBuilder. | `IIrregularPierGeometryBuilder.cs` |
 | `class` | **LabelFilterMatcher** | Represents the LabelFilterMatcher class. Key methods: Matches. | `ColumnAutoGroupingService.cs` |
-| `record` | **PreliminaryGroupKey** | Represents the PreliminaryGroupKey record. | `ColumnAutoGroupingService.cs` |
+| `record` | **MatchedColumn** | Represents the MatchedColumn record. | `ColumnAutoGroupingService.cs` |
 | `class` | **StoryTierResolver** | Represents the StoryTierResolver class. Key methods: TryGetStoryIndex, ResolveFirstTier, IsCovered. Key properties: Ranges. | `StoryTierResolver.cs` |
 | `record` | **TierRange** | Represents the TierRange record. Key methods: Contains. | `StoryTierResolver.cs` |
+| `class` | **XyColumnGroup** | Represents the XyColumnGroup class. Key methods: Add. Key properties: Items, GroupXmm, GroupYmm. | `ColumnAutoGroupingService.cs` |
+| `record` | **struct** | Represents the struct record. Key methods: From. | `ColumnAutoGroupingService.cs` |
 
 ### Services/Geometry
 
@@ -498,6 +500,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
+| `class` | **ColumnIdentityIndex** | Represents the ColumnIdentityIndex class. Key methods: Build, FindDirect, FindByStory. | `EtabsBindingReconciliationService.cs` |
 | `class` | **EtabsBindingReconciliationService** | Provides service logic and operations for EtabsBindingReconciliation. Key methods: ValidateBindings, ReconcileColumnObject, ReconcilePierObject. | `EtabsBindingReconciliationService.cs` |
 
 ### Etabs/Cache
@@ -594,6 +597,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **Migration007_ForceSourceMetadata** | /// Adds force source traceability columns to DemandCase so each load case knows /// whether it came from ETABS element forces or design forces, and which combination/location. ///. Key methods: Apply. Key properties: Version. | `Migration007_ForceSourceMetadata.cs` |
 | `class` | **Migration008_EtabsModelInfo** | Represents the Migration008_EtabsModelInfo class. Key methods: Apply. Key properties: Version. | `Migration008_EtabsModelInfo.cs` |
 | `class` | **Migration009_DemandCaseMemberLength** | Represents the Migration009_DemandCaseMemberLength class. Key methods: Apply. Key properties: Version. | `Migration009_DemandCaseMemberLength.cs` |
+| `class` | **Migration010_EtabsLoadRowMetadata** | Represents the Migration010_EtabsLoadRowMetadata class. Key methods: Apply. Key properties: Version. | `Migration010_EtabsLoadRowMetadata.cs` |
 | `class` | **MigrationRunner** | Represents the MigrationRunner class. Key methods: Run. | `MigrationRunner.cs` |
 
 ### Rebar
@@ -890,6 +894,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `enum` | **EtabsDuplicateHandlingMode** | Enumeration defining states/types for EtabsDuplicateHandlingMode. | `EtabsImportViewModel.cs` |
 | `record` | **EtabsDuplicateHandlingOption** | Represents the EtabsDuplicateHandlingOption record. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsForceImportRowViewModel** | Represents the EtabsForceImportRowViewModel class. Key properties: IsSelected, ObjectName, Pier, Story. | `EtabsForceImportRowViewModel.cs` |
+| `enum` | **EtabsForceRefreshScope** | Enumeration defining states/types for EtabsForceRefreshScope. Key methods: Dispose. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
 | `class` | **EtabsForceRefreshSectionRowViewModel** | Represents the EtabsForceRefreshSectionRowViewModel class. Key properties: SectionName, StatusText, OldRows, NewRows. | `EtabsForceRefreshViewModel.cs` |
 | `class` | **EtabsForceRefreshViewModel** | Represents the EtabsForceRefreshViewModel class. Key methods: SetAvailableCombinations. Key properties: Result, ExistingBindings, LoadCombinations, SectionRows. | `EtabsForceRefreshViewModel.cs` |
 | `class` | **EtabsImportSummaryRowViewModel** | Represents the EtabsImportSummaryRowViewModel class. Key properties: SourceColumn, Mapping, NewSectionName, Pier. | `EtabsImportViewModel.cs` |
@@ -907,8 +912,8 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ExportControlPointsViewModel** | Represents the ExportControlPointsViewModel class. Key methods: RefreshPreview. Key properties: PreviewRows, RefreshPreviewCommand, ExportCsvCommand, CloseCommand. | `ExportControlPointsViewModel.cs` |
 | `class` | **GoverningChartPreviewViewModel** | Represents the GoverningChartPreviewViewModel class. Key properties: CriticalThetaDeg, UtilizationRatio, DemandP, DemandMx. | `A4ReportModels.cs` |
 | `class` | **GroupActionViewModel** | Represents the GroupActionViewModel class. Key properties: Name, Command. | `GroupActionViewModel.cs` |
-| `class` | **GroupItemViewModel** | Represents the GroupItemViewModel class. Key methods: UpdateCheckStateFromChildren. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand. | `GroupItemViewModel.cs` |
-| `class` | **InputViewModel** | Represents the InputViewModel class. Key methods: ToDto, UpdateSectionPreview, FlushPreviewNow, ResetToDefaults. Key properties: UnitSystems, GenerateIrregularRebarsCommand, GenerateEqualSpacingRebarsCommand, ImportDxfCommand. | `InputViewModel.cs` |
+| `class` | **GroupItemViewModel** | Represents the GroupItemViewModel class. Key methods: UpdateCheckStateFromChildren. Key properties: Columns, AddSectionCommand, AddExistingSectionsCommand, IsEtabsImportedGroup. | `GroupItemViewModel.cs` |
+| `class` | **InputViewModel** | Represents the InputViewModel class. Key methods: ToDto, UpdateSectionPreview, FlushPreviewNow, ResetToDefaults. Key properties: HasEtabsImportMetadata, EtabsImportIsImportedText, EtabsMetadataSourceModel, EtabsMetadataColumnGroupId. | `InputViewModel.cs` |
 | `class` | **IrregularBoundaryPointViewModel** | Represents the IrregularBoundaryPointViewModel class. Key properties: PtIndex, X, Y. | `IrregularBoundaryPointViewModel.cs` |
 | `record` | **IrregularRebarModeOption** | Represents the IrregularRebarModeOption record. | `IrregularSectionInputViewModel.cs` |
 | `class` | **IrregularRebarRowViewModel** | Represents the IrregularRebarRowViewModel class. Key properties: RebarIndex, X, Y, BarSize. | `IrregularRebarRowViewModel.cs` |
@@ -917,7 +922,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **LoadCaseViewModel** | Represents the LoadCaseViewModel class. Key methods: ToDto, ClearEc2SlendernessResults, ComputeDefaultMxUsed, ComputeDefaultMyUsed. Key properties: Id, Name, Pu, Mux. | `LoadCaseViewModel.cs` |
 | `class` | **MM3DViewModel** | Represents the MM3DViewModel class. Key methods: Load. Key properties: MmSliceContours, SurfaceMesh, DemandPoint, GoverningPoint. | `MM3DViewModel.cs` |
 | `class` | **MMDiagramViewModel** | Represents the MMDiagramViewModel class. Key methods: Load. Key properties: DiagramTitle, XAxisLabel, YAxisLabel, BoundaryPoints. | `MMDiagramViewModel.cs` |
-| `class` | **MainWindowViewModel** | Represents the MainWindowViewModel class. Key methods: Dispose. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
+| `class` | **MainWindowViewModel** | Represents the MainWindowViewModel class. | `MainWindowViewModel.cs` |
 | `record` | **MaterialGradeOption** | Represents the MaterialGradeOption record. Key methods: StressValue, ModulusValue. | `InputViewModel.cs` |
 | `record` | **MaterialLibraryOption** | Represents the MaterialLibraryOption record. | `InputViewModel.cs` |
 | `enum` | **MaterialLibraryType** | Enumeration defining states/types for MaterialLibraryType. | `InputViewModel.cs` |

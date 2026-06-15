@@ -5,7 +5,7 @@ namespace MBColumn.Infrastructure.Persistence;
 
 internal static class DatabaseSchema
 {
-    private const int CurrentVersion = 9;
+    private const int CurrentVersion = 10;
     public const string AppVersion = "1.0.0";
 
     private static readonly IReadOnlyList<IDatabaseMigration> s_migrations =
@@ -17,7 +17,8 @@ internal static class DatabaseSchema
         new Migration006_TopBottomMomentsAndShear(),
         new Migration007_ForceSourceMetadata(),
         new Migration008_EtabsModelInfo(),
-        new Migration009_DemandCaseMemberLength()
+        new Migration009_DemandCaseMemberLength(),
+        new Migration010_EtabsLoadRowMetadata()
     ];
 
     public static void EnsureCreated(SqliteConnection connection, string projectName)
@@ -165,7 +166,12 @@ internal static class DatabaseSchema
                 SourceCombination TEXT,
                 SourceLocation TEXT,
                 ImportedAt TEXT,
-                MemberLengthOverride REAL
+                MemberLengthOverride REAL,
+                IsEtabsImportedLoad INTEGER NOT NULL DEFAULT 0,
+                EtabsLoadCaseOrCombo TEXT,
+                EtabsFrameId TEXT,
+                EtabsForceStation TEXT,
+                EtabsForceImportedAt TEXT
             )
             """);
     }
@@ -179,6 +185,11 @@ internal static class DatabaseSchema
         AddColumnIfMissing(connection, "Project", "EtabsPierCount", "INTEGER");
         AddColumnIfMissing(connection, "Project", "EtabsFrameCount", "INTEGER");
         AddColumnIfMissing(connection, "DemandCase", "MemberLengthOverride", "REAL");
+        AddColumnIfMissing(connection, "DemandCase", "IsEtabsImportedLoad", "INTEGER NOT NULL DEFAULT 0");
+        AddColumnIfMissing(connection, "DemandCase", "EtabsLoadCaseOrCombo", "TEXT");
+        AddColumnIfMissing(connection, "DemandCase", "EtabsFrameId", "TEXT");
+        AddColumnIfMissing(connection, "DemandCase", "EtabsForceStation", "TEXT");
+        AddColumnIfMissing(connection, "DemandCase", "EtabsForceImportedAt", "TEXT");
     }
 
     private static void AddColumnIfMissing(SqliteConnection connection, string tableName, string columnName, string columnDefinition)

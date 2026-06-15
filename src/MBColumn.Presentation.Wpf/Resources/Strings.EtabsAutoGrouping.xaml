@@ -25,7 +25,7 @@
     <sys:String x:Key="AutoGrouping_SummaryObjectCountColumn">Objects</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewTierColumn">Tier</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewStoryRangeColumn">Story Range</sys:String>
-    <sys:String x:Key="AutoGrouping_PreviewColumnLabelColumn">Column Label</sys:String>
+    <sys:String x:Key="AutoGrouping_PreviewColumnLabelColumn">Column Group</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewMbSectionColumn">MB Section</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewCountColumn">Count</sys:String>
     <sys:String x:Key="AutoGrouping_PreviewEtabsSectionsColumn">ETABS Sections</sys:String>
@@ -57,11 +57,13 @@
     <sys:String x:Key="AutoGrouping_Message_Error_TierStoriesRequired">{0} needs both From Story and To Story.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_UnknownStory">{0} references a story that is not in the current ETABS import data: {1}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Error_NoMatchingGroups">No MB Column Sections would be created from the current tier definitions.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Error_NoCoordinates">ETABS column coordinates are not available. Reconnect to ETABS and reload column connectivity before auto grouping.</sys:String>
 
     <sys:String x:Key="AutoGrouping_Message_Warning_EmptyTier">{0} has no matching ETABS columns.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_UngroupedStories">The following stories are not covered by any tier: {0}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_MixedSections">{0} / {1} contains multiple ETABS sections: {2}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_MixedMaterials">{0} / {1} contains multiple materials: {2}.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Warning_OverlappingStory">{0} is covered by multiple tiers; the first matching tier will be used: {1}.</sys:String>
+    <sys:String x:Key="AutoGrouping_Message_Warning_ShiftedColumn">{0} is shifted between bottom and top endpoints by {1:0.#} mm; grouping used its centerline XY.</sys:String>
     <sys:String x:Key="AutoGrouping_Message_Info_MixedSectionsSplit">{0} / {1} was split by ETABS section name in the preview.</sys:String>
 </ResourceDictionary>

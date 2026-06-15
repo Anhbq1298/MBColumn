@@ -61,6 +61,11 @@ public sealed class LoadCaseViewModel : ViewModelBase
     private string station = "";
     private string source = "Manual";
     private double? memberLengthOverrideMm;
+    private bool isEtabsImportedLoad;
+    private string etabsLoadCaseOrCombo = "";
+    private string etabsFrameId = "";
+    private string etabsForceStation = "";
+    private DateTime? etabsForceImportedAt;
     private readonly double lengthDisplayScale;
     private bool _suppressSlendernessNotifications;
     private bool _pendingSlendernessRaise;
@@ -288,6 +293,11 @@ public sealed class LoadCaseViewModel : ViewModelBase
     public string Story { get => story; set => Set(ref story, value); }
     public string Station { get => station; set => Set(ref station, value); }
     public string Source { get => source; set => Set(ref source, value); }
+    public bool IsEtabsImportedLoad { get => isEtabsImportedLoad; set => Set(ref isEtabsImportedLoad, value); }
+    public string EtabsLoadCaseOrCombo { get => etabsLoadCaseOrCombo; set => Set(ref etabsLoadCaseOrCombo, value); }
+    public string EtabsFrameId { get => etabsFrameId; set => Set(ref etabsFrameId, value); }
+    public string EtabsForceStation { get => etabsForceStation; set => Set(ref etabsForceStation, value); }
+    public DateTime? EtabsForceImportedAt { get => etabsForceImportedAt; set => Set(ref etabsForceImportedAt, value); }
 
     /// <summary>Per-case member length in the user's member-length display unit (m or ft). Null = use global length.</summary>
     public double? MemberLengthOverrideDisplay

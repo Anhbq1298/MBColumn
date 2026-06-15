@@ -11,6 +11,7 @@ namespace MBColumn.Presentation.Wpf.ViewModels;
 public sealed class GroupItemViewModel : ExplorerNodeViewModel
 {
     private bool isUpdatingCheckState;
+    private bool isEtabsImportedGroup;
 
     public GroupItemViewModel(
         MBColumn.Application.Services.GroupRecord record,
@@ -36,6 +37,12 @@ public sealed class GroupItemViewModel : ExplorerNodeViewModel
 
     public ICommand AddSectionCommand { get; }
     public ICommand AddExistingSectionsCommand { get; }
+
+    public bool IsEtabsImportedGroup
+    {
+        get => isEtabsImportedGroup;
+        set => Set(ref isEtabsImportedGroup, value);
+    }
 
     protected override void OnCheckedChanged()
     {

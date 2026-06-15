@@ -852,7 +852,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         dto.LengthMm,
                         dto.LinkedSection,
                         dto.Status,
-                        targetUnitSystem)));
+                        targetUnitSystem,
+                        dto.HasCoordinates,
+                        dto.BottomXmm,
+                        dto.BottomYmm,
+                        dto.BottomZmm,
+                        dto.TopXmm,
+                        dto.TopYmm,
+                        dto.TopZmm,
+                        dto.CenterXmm,
+                        dto.CenterYmm,
+                        dto.CenterZmm)));
             }
         }
         catch (Exception ex)
@@ -1116,7 +1126,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 dto.LengthMm,
                 dto.LinkedSection,
                 dto.Status,
-                targetUnitSystem)));
+                targetUnitSystem,
+                dto.HasCoordinates,
+                dto.BottomXmm,
+                dto.BottomYmm,
+                dto.BottomZmm,
+                dto.TopXmm,
+                dto.TopYmm,
+                dto.TopZmm,
+                dto.CenterXmm,
+                dto.CenterYmm,
+                dto.CenterZmm)));
         }
 
         var combosToShow = data.SelectedLoadCombinations.Count > 0
@@ -1231,7 +1251,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                         dto.ObjectName, dto.PierName, dto.StoryName, dto.Label,
                         dto.UniqueSectionDisplayName, dto.EtabsSectionName, dto.MaterialName,
                         dto.SectionType, dto.Width, dto.Height, dto.Diameter, dto.LengthMm,
-                        dto.LinkedSection, dto.Status, targetUnitSystem)));
+                        dto.LinkedSection, dto.Status, targetUnitSystem,
+                        dto.HasCoordinates, dto.BottomXmm, dto.BottomYmm, dto.BottomZmm,
+                        dto.TopXmm, dto.TopYmm, dto.TopZmm,
+                        dto.CenterXmm, dto.CenterYmm, dto.CenterZmm)));
             }
             pierGroupsLoaded = false;
             pierBoundaryCache.Clear();
@@ -1364,7 +1387,19 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 c.Diameter,
                 c.LengthMm,
                 c.LinkedSection,
-                c.Status))
+                c.Status)
+            {
+                HasCoordinates = c.HasCoordinates,
+                BottomXmm = c.BottomXmm,
+                BottomYmm = c.BottomYmm,
+                BottomZmm = c.BottomZmm,
+                TopXmm = c.TopXmm,
+                TopYmm = c.TopYmm,
+                TopZmm = c.TopZmm,
+                CenterXmm = c.CenterXmm,
+                CenterYmm = c.CenterYmm,
+                CenterZmm = c.CenterZmm
+            })
             .ToList();
 
         var stories = columnDtos
@@ -1507,6 +1542,34 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var importEs = selectedImportRebarGrade?.ModulusValue(selectedImportUnitSystem) ?? 200000;
         var rawLengthGroup = group.Items.FirstOrDefault(i => i.LengthMm > 0)?.LengthMm ?? 0;
         var groupStoryRange = ResolveGroupStoryRange(group);
+        var importTime = DateTime.UtcNow;
+        var sourceFrameIds = group.Items
+            .Select(i => i.ObjectName)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var sourceLabels = group.Items
+            .Select(i => i.Label)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var sourceStories = group.Items
+            .Select(i => i.Story)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(StorySortIndex)
+            .ThenBy(v => v, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var groupX = group.AutoGroupingMetadata?.GroupXmm
+            ?? group.Items.Where(i => i.HasCoordinates).Select(i => (double?)i.CenterXmm).DefaultIfEmpty().Average()
+            ?? 0.0;
+        var groupY = group.AutoGroupingMetadata?.GroupYmm
+            ?? group.Items.Where(i => i.HasCoordinates).Select(i => (double?)i.CenterYmm).DefaultIfEmpty().Average()
+            ?? 0.0;
+        var tierId = group.AutoGroupingMetadata?.TierName ?? group.SectionName;
+        var storyRangeText = string.Equals(groupStoryRange.FromStory, groupStoryRange.ToStory, StringComparison.OrdinalIgnoreCase)
+            ? groupStoryRange.FromStory
+            : $"{groupStoryRange.FromStory}-{groupStoryRange.ToStory}".Trim('-');
         // MemberLengthL in the snapshot is stored in section-size unit (mm for Metric, inches for Imperial)
         var importMemberLength = rawLengthGroup > 0
             ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthGroup : rawLengthGroup / 25.4)
@@ -1563,6 +1626,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             DesignTierSource = "ETABS",
             EtabsMetadata = new EtabsImportMetadataDto
             {
+                IsEtabsImportedSection = true,
                 SourceModelPath = ModelPath,
                 SourceModelName = ModelName,
                 EtabsObjectName = sourceColumn.ObjectName,
@@ -1571,10 +1635,21 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 Label = sourceColumn.Label,
                 EtabsSectionName = sourceColumn.EtabsSectionName,
                 UniqueSectionDisplayName = sourceColumn.UniqueSection,
-                ImportedAt = DateTime.UtcNow,
+                ImportedAt = importTime,
                 ImportedUnits = PresentUnits,
                 MBColumnUnitsAtImport = TargetForceMomentUnitSummary,
                 SelectedLoadCombinations = loadCases.Select(lc => lc.OriginalLoadCaseName).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                EtabsSourceModelName = ModelName,
+                EtabsColumnGroupId = group.AutoGroupingMetadata?.ColumnGroupId ?? group.SelectedTargetGroup?.GroupName ?? "",
+                EtabsTierId = tierId,
+                EtabsSectionPropertyName = group.AutoGroupingMetadata?.EtabsSectionPropertyName ?? sourceColumn.EtabsSectionName,
+                EtabsStoryRangeText = storyRangeText,
+                EtabsGroupX = groupX,
+                EtabsGroupY = groupY,
+                EtabsSourceFrameIds = sourceFrameIds,
+                EtabsSourceLabels = sourceLabels,
+                EtabsSourceStories = sourceStories,
+                EtabsImportedAt = importTime,
                 ImportMode = importMode,
                 SourceShellNames = sourceShells,
                 SourceAreaSectionProperties = sourceSectionProps,
@@ -1592,7 +1667,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 UniqueSectionDisplayName = sourceColumn.UniqueSection,
                 TargetGroupName = group.SelectedTargetGroup?.GroupName ?? "",
                 TargetGroupId = group.SelectedTargetGroup?.GroupId,
-                TierName = group.AutoGroupingMetadata?.TierName ?? group.SectionName,
+                TierName = tierId,
                 StoryFrom = group.AutoGroupingMetadata?.FromStory ?? groupStoryRange.FromStory,
                 StoryTo = group.AutoGroupingMetadata?.ToStory ?? groupStoryRange.ToStory,
                 LabelFilter = group.AutoGroupingMetadata?.LabelFilter ?? "",
@@ -1607,10 +1682,10 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 ImportTop = true,
                 ImportBottom = true,
                 ImportMid = true,
-                ImportedAt = DateTime.UtcNow
+                ImportedAt = importTime
             },
             EtabsBinding = BuildEtabsSectionBinding(group, sourceColumn, mapping),
-            LastEtabsRefreshAt = DateTime.UtcNow,
+            LastEtabsRefreshAt = importTime,
             LastEtabsRefreshSummary = $"Initial import · {LoadCombinations.Count(c => c.IsSelected)} combos"
         };
 
@@ -1672,7 +1747,14 @@ public sealed class EtabsImportViewModel : ViewModelBase
             {
                 Story = i.Story,
                 Label = i.Label,
-                UniqueName = i.ObjectName
+                UniqueName = i.ObjectName,
+                X = i.CenterXmm,
+                Y = i.CenterYmm,
+                BottomX = i.BottomXmm,
+                BottomY = i.BottomYmm,
+                TopX = i.TopXmm,
+                TopY = i.TopYmm,
+                SectionPropertyName = i.EtabsSectionName
             }).ToList();
         }
         else
@@ -1712,7 +1794,19 @@ public sealed class EtabsImportViewModel : ViewModelBase
             var columnDtos = frameColumns.Select(c => new EtabsColumnImportDto(
                 c.ObjectName, c.Pier, c.Story, c.Label,
                 c.UniqueSection, c.EtabsSectionName, c.Material,
-                c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)).ToList();
+                c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)
+            {
+                HasCoordinates = c.HasCoordinates,
+                BottomXmm = c.BottomXmm,
+                BottomYmm = c.BottomYmm,
+                BottomZmm = c.BottomZmm,
+                TopXmm = c.TopXmm,
+                TopYmm = c.TopYmm,
+                TopZmm = c.TopZmm,
+                CenterXmm = c.CenterXmm,
+                CenterYmm = c.CenterYmm,
+                CenterZmm = c.CenterZmm
+            }).ToList();
 
             // Use the preloaded raw cache when it matches the current model — avoids a second COM call
             var rawDb      = importedForceCache?.HasValidCache(ModelPath) == true ? importedForceCache.Current : null;
@@ -2187,7 +2281,19 @@ public sealed class EtabsImportViewModel : ViewModelBase
             .Select(c => new EtabsColumnImportDto(
                 c.ObjectName, c.Pier, c.Story, c.Label,
                 c.UniqueSection, c.EtabsSectionName, c.Material,
-                c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status))
+                c.SectionType, c.Width, c.Height, c.Diameter, c.LengthMm, c.LinkedSection, c.Status)
+            {
+                HasCoordinates = c.HasCoordinates,
+                BottomXmm = c.BottomXmm,
+                BottomYmm = c.BottomYmm,
+                BottomZmm = c.BottomZmm,
+                TopXmm = c.TopXmm,
+                TopYmm = c.TopYmm,
+                TopZmm = c.TopZmm,
+                CenterXmm = c.CenterXmm,
+                CenterYmm = c.CenterYmm,
+                CenterZmm = c.CenterZmm
+            })
             .ToList();
         var pierPairs = AllAssignedItems
             .Where(c => c.IsIrregular)
@@ -2427,6 +2533,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
         var snapshotFy = selectedImportRebarGrade?.StressValue(selectedImportUnitSystem) ?? 420;
         var snapshotEs = selectedImportRebarGrade?.ModulusValue(selectedImportUnitSystem) ?? 200000;
         var rawLengthRow = row.SourceColumn.LengthMm;
+        var importTime = DateTime.UtcNow;
         var rowMemberLength = rawLengthRow > 0
             ? (selectedImportUnitSystem == UnitSystem.Metric ? rawLengthRow / 1000.0 : rawLengthRow / 12.0)
             : (double?)null;
@@ -2489,6 +2596,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             LoadCases = loadCases,
             EtabsMetadata = new EtabsImportMetadataDto
             {
+                IsEtabsImportedSection = true,
                 SourceModelPath = ModelPath,
                 SourceModelName = ModelName,
                 EtabsObjectName = row.SourceColumn.ObjectName,
@@ -2497,10 +2605,21 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 Label = row.Label,
                 EtabsSectionName = row.SourceColumn.EtabsSectionName,
                 UniqueSectionDisplayName = row.SourceColumn.UniqueSection,
-                ImportedAt = DateTime.UtcNow,
+                ImportedAt = importTime,
                 ImportedUnits = PresentUnits,
                 MBColumnUnitsAtImport = TargetForceMomentUnitSummary,
                 SelectedLoadCombinations = loadCases.Select(lc => lc.Label).ToList(),
+                EtabsSourceModelName = ModelName,
+                EtabsColumnGroupId = row.Pier,
+                EtabsTierId = row.NewSectionName,
+                EtabsSectionPropertyName = row.SourceColumn.EtabsSectionName,
+                EtabsStoryRangeText = row.Story,
+                EtabsGroupX = row.SourceColumn.CenterXmm,
+                EtabsGroupY = row.SourceColumn.CenterYmm,
+                EtabsSourceFrameIds = string.IsNullOrWhiteSpace(row.SourceColumn.ObjectName) ? [] : [row.SourceColumn.ObjectName],
+                EtabsSourceLabels = string.IsNullOrWhiteSpace(row.Label) ? [] : [row.Label],
+                EtabsSourceStories = string.IsNullOrWhiteSpace(row.SourceColumn.Story) ? [] : [row.SourceColumn.Story],
+                EtabsImportedAt = importTime,
                 ImportMode = importMode,
                 SourceShellNames = sourceShells,
                 SourceAreaSectionProperties = sourceSectionProps,
@@ -2523,6 +2642,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             .GroupBy(c => c.ObjectName, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().LengthMm, StringComparer.OrdinalIgnoreCase);
         var loadCases = BuildSnapshotLoadCases(selectedForces, tierLengthByNameMm.Count > 0 ? tierLengthByNameMm : null);
+        var importTime = DateTime.UtcNow;
 
         var primaryForce = loadCases.FirstOrDefault();
         snapshot.Pu = primaryForce?.Pu ?? 0;
@@ -2563,7 +2683,7 @@ public sealed class EtabsImportViewModel : ViewModelBase
             ImportTop = true,
             ImportBottom = true,
             ImportMid = true,
-            ImportedAt = DateTime.UtcNow
+            ImportedAt = importTime
         };
 
         if (snapshot.EtabsMetadata is not null)
@@ -2572,6 +2692,27 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 .Select(lc => lc.OriginalLoadCaseName)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            snapshot.EtabsMetadata.EtabsColumnGroupId = targetGroup.GroupName;
+            snapshot.EtabsMetadata.EtabsTierId = row.NewSectionName;
+            snapshot.EtabsMetadata.EtabsStoryRangeText = $"{StoryFrom}-{StoryTo}".Trim('-');
+            snapshot.EtabsMetadata.EtabsSourceFrameIds = selectedColumns
+                .Select(c => c.ObjectName)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            snapshot.EtabsMetadata.EtabsSourceLabels = selectedColumns
+                .Select(c => c.Label)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            snapshot.EtabsMetadata.EtabsSourceStories = selectedColumns
+                .Select(c => c.Story)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(StorySortIndex)
+                .ThenBy(v => v, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            snapshot.EtabsMetadata.EtabsImportedAt = importTime;
         }
 
         return snapshot;
@@ -3273,6 +3414,8 @@ public sealed class EtabsImportViewModel : ViewModelBase
             }
 
             var sourceLabel = ForceSourceLabel(anyRow);
+            var stationText = BuildForceStationText(topRow, bottomRow);
+            var importedAt = DateTime.UtcNow;
             result.Add(new SnapshotLoadCase
             {
                 Id                   = $"etabs_{++index}",
@@ -3295,7 +3438,12 @@ public sealed class EtabsImportViewModel : ViewModelBase
                 MxUsed   = mxUsed,
                 MyUsed   = myUsed,
                 IsActive = true,
-                MemberLengthOverride = lengthOverrideMm
+                MemberLengthOverride = lengthOverrideMm,
+                IsEtabsImportedLoad = true,
+                EtabsLoadCaseOrCombo = anyRow.LoadCombination,
+                EtabsFrameId = anyRow.ObjectName,
+                EtabsForceStation = stationText,
+                EtabsForceImportedAt = importedAt
             });
         }
 
@@ -3361,6 +3509,17 @@ public sealed class EtabsImportViewModel : ViewModelBase
 
     private static string BuildEndMomentKey(EtabsForceImportRowViewModel force)
         => $"{force.ObjectName.Trim()}|{force.Story.Trim()}|{ForceSourceLabel(force)}|{force.LoadCombination.Trim()}";
+
+    private static string BuildForceStationText(EtabsForceImportRowViewModel topRow, EtabsForceImportRowViewModel bottomRow)
+    {
+        var topStation = NormalizeDemandStation(topRow.Station, topRow.Status);
+        var bottomStation = NormalizeDemandStation(bottomRow.Station, bottomRow.Status);
+
+        if (string.Equals(topStation, bottomStation, StringComparison.OrdinalIgnoreCase))
+            return topStation;
+
+        return $"{bottomStation}/{topStation}".Trim('/');
+    }
 
     private static string BuildStoryLabelKey(EtabsColumnImportRowViewModel item)
         => BuildStoryLabelKey(item.Story, string.IsNullOrWhiteSpace(item.Label) ? item.Pier : item.Label);

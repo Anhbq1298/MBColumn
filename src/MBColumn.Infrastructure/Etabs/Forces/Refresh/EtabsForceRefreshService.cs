@@ -64,15 +64,28 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
 
         var modelInfo = connectionResult.ModelInfo!;
         var currentCombos = columnImportService.GetLoadCombinations();
-        var currentColumns = forceImportService.GetDesignForces([], [], unitSystem);
+        var currentColumns = columnImportService.GetCandidateColumns(unitSystem)
+            .Select(column => new EtabsColumnObjectKey
+            {
+                Story = column.StoryName,
+                Label = column.Label,
+                UniqueName = column.ObjectName,
+                X = column.CenterXmm,
+                Y = column.CenterYmm,
+                BottomX = column.BottomXmm,
+                BottomY = column.BottomYmm,
+                TopX = column.TopXmm,
+                TopY = column.TopYmm,
+                SectionPropertyName = column.EtabsSectionName
+            })
+            .ToList();
 
         // Validate bindings against current model state
         var validation = reconciliationService.ValidateBindings(
             request.Bindings,
             modelInfo.ModelPath,
             modelInfo.ModelName,
-            [],
-            [],
+            currentColumns,
             [],
             currentCombos);
 
@@ -182,8 +195,24 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         if (binding.ObjectType == EtabsImportedObjectType.Column && binding.ColumnObjects.Count > 0)
         {
             var columnDtos = binding.ColumnObjects.Select(col => new EtabsColumnImportDto(
-                col.Key, "", col.Story, col.Label, col.Key, col.Label,
-                "", Domain.Enums.SectionShapeType.Rectangular, 0, 0, 0, 0, "", "Ready")).ToList();
+                col.UniqueName,
+                "",
+                col.Story,
+                col.Label,
+                col.Key,
+                col.SectionPropertyName,
+                "",
+                Domain.Enums.SectionShapeType.Rectangular,
+                0, 0, 0, 0, "", "Ready")
+            {
+                HasCoordinates = col.X != 0 || col.Y != 0 || col.BottomX != 0 || col.BottomY != 0 || col.TopX != 0 || col.TopY != 0,
+                BottomXmm = col.BottomX,
+                BottomYmm = col.BottomY,
+                TopXmm = col.TopX,
+                TopYmm = col.TopY,
+                CenterXmm = col.X,
+                CenterYmm = col.Y
+            }).ToList();
 
             IReadOnlyList<EtabsForceResultDto> forces;
             if (request.ForceSource == MbColumnForceSourceMode.ElementForces)

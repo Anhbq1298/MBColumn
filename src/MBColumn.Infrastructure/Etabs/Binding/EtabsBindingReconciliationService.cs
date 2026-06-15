@@ -10,8 +10,7 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
         IReadOnlyList<EtabsSectionBinding> bindings,
         string currentModelPath,
         string currentModelName,
-        IReadOnlyList<string> currentStories,
-        IReadOnlyList<string> currentColumnLabels,
+        IReadOnlyList<EtabsColumnObjectKey> currentColumns,
         IReadOnlyList<string> currentPierLabels,
         IReadOnlyList<string> currentLoadCombinations)
     {
@@ -21,7 +20,6 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
             CurrentModelName = currentModelName
         };
 
-        // Check model identity
         var anyBinding = bindings.FirstOrDefault();
         if (anyBinding?.SourceModel is not null)
         {
@@ -33,39 +31,26 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
         }
 
         var currentComboSet = currentLoadCombinations.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var columnIndex = ColumnIdentityIndex.Build(currentColumns);
 
         foreach (var binding in bindings)
         {
-            // Check missing combinations
             foreach (var combo in binding.LoadCombinations)
             {
                 if (!currentComboSet.Contains(combo) && !result.MissingCombinations.Contains(combo))
                     result.MissingCombinations.Add(combo);
             }
 
-            // Check column objects
             if (binding.ObjectType == EtabsImportedObjectType.Column)
             {
-                var currentCols = currentColumnLabels
-                    .Select(label => new EtabsColumnObjectKey { Story = "", Label = label })
-                    .ToList();
-
                 foreach (var col in binding.ColumnObjects)
                 {
-                    // Simple label check — XY reconciliation requires live ETABS data
-                    bool directMatch = currentColumnLabels.Contains(col.Label, StringComparer.OrdinalIgnoreCase)
-                        || currentStories.Contains(col.Story, StringComparer.OrdinalIgnoreCase);
-
-                    result.ObjectHealthList.Add(new EtabsObjectBindingHealth
-                    {
-                        SectionName = binding.MbColumnSectionName,
-                        ObjectKey = col.Key,
-                        Status = directMatch ? EtabsBindingHealthStatus.Ok : EtabsBindingHealthStatus.MissingObject
-                    });
+                    var health = ReconcileColumnObject(col, columnIndex);
+                    health.SectionName = binding.MbColumnSectionName;
+                    result.ObjectHealthList.Add(health);
                 }
             }
 
-            // Check pier objects
             if (binding.ObjectType == EtabsImportedObjectType.Pier)
             {
                 foreach (var pier in binding.PierObjects)
@@ -88,19 +73,22 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
         EtabsColumnObjectKey savedKey,
         IReadOnlyList<EtabsColumnObjectKey> availableColumns,
         double xyToleranceMm = 25.0)
-    {
-        // Direct match: same story + label
-        var direct = availableColumns.FirstOrDefault(c =>
-            string.Equals(c.Story, savedKey.Story, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(c.Label, savedKey.Label, StringComparison.OrdinalIgnoreCase));
+        => ReconcileColumnObject(savedKey, ColumnIdentityIndex.Build(availableColumns), xyToleranceMm);
 
+    private static EtabsObjectBindingHealth ReconcileColumnObject(
+        EtabsColumnObjectKey savedKey,
+        ColumnIdentityIndex availableColumns,
+        double xyToleranceMm = 25.0)
+    {
+        var direct = availableColumns.FindDirect(savedKey);
         if (direct is not null)
             return new EtabsObjectBindingHealth { ObjectKey = savedKey.Key, Status = EtabsBindingHealthStatus.Ok };
 
-        // Fallback: same story, XY proximity
-        var nearby = availableColumns
-            .Where(c => string.Equals(c.Story, savedKey.Story, StringComparison.OrdinalIgnoreCase))
+        var nearby = availableColumns.FindByStory(savedKey.Story)
             .Where(c => Distance(c.X, c.Y, savedKey.X, savedKey.Y) <= xyToleranceMm)
+            .Where(c => string.IsNullOrWhiteSpace(savedKey.SectionPropertyName)
+                || string.IsNullOrWhiteSpace(c.SectionPropertyName)
+                || string.Equals(c.SectionPropertyName, savedKey.SectionPropertyName, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         return nearby.Count switch
@@ -116,7 +104,7 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
                 ObjectKey = savedKey.Key,
                 Status = EtabsBindingHealthStatus.PossibleRemap,
                 SuggestedRemapKey = nearby[0].Key,
-                Message = $"Label changed? {savedKey.Label} → {nearby[0].Label}"
+                Message = $"Label changed? {savedKey.Label} -> {nearby[0].Label}"
             },
             _ => new EtabsObjectBindingHealth
             {
@@ -135,7 +123,6 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
         double angleTolerance = 2.0,
         double lengthTolerance = 25.0)
     {
-        // Direct match
         var direct = availablePiers.FirstOrDefault(p =>
             string.Equals(p.Story, savedKey.Story, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(p.PierName, savedKey.PierName, StringComparison.OrdinalIgnoreCase));
@@ -143,7 +130,6 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
         if (direct is not null)
             return new EtabsObjectBindingHealth { ObjectKey = savedKey.Key, Status = EtabsBindingHealthStatus.Ok };
 
-        // Fallback: centerline match
         var nearby = availablePiers
             .Where(p => string.Equals(p.Story, savedKey.Story, StringComparison.OrdinalIgnoreCase))
             .Where(p => Distance(p.CenterX, p.CenterY, savedKey.CenterX, savedKey.CenterY) <= centerToleranceMm)
@@ -164,7 +150,7 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
                 ObjectKey = savedKey.Key,
                 Status = EtabsBindingHealthStatus.PossibleRemap,
                 SuggestedRemapKey = nearby[0].Key,
-                Message = $"Pier renamed? {savedKey.PierName} → {nearby[0].PierName}"
+                Message = $"Pier renamed? {savedKey.PierName} -> {nearby[0].PierName}"
             },
             _ => new EtabsObjectBindingHealth
             {
@@ -182,5 +168,72 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
     {
         double diff = Abs(a - b) % 180.0;
         return diff > 90.0 ? 180.0 - diff : diff;
+    }
+
+    private sealed class ColumnIdentityIndex
+    {
+        private readonly Dictionary<string, EtabsColumnObjectKey> byUniqueName;
+        private readonly Dictionary<string, EtabsColumnObjectKey> byStoryLabel;
+        private readonly Dictionary<string, List<EtabsColumnObjectKey>> byStory;
+
+        private ColumnIdentityIndex(
+            Dictionary<string, EtabsColumnObjectKey> byUniqueName,
+            Dictionary<string, EtabsColumnObjectKey> byStoryLabel,
+            Dictionary<string, List<EtabsColumnObjectKey>> byStory)
+        {
+            this.byUniqueName = byUniqueName;
+            this.byStoryLabel = byStoryLabel;
+            this.byStory = byStory;
+        }
+
+        public static ColumnIdentityIndex Build(IReadOnlyList<EtabsColumnObjectKey> columns)
+        {
+            var byUniqueName = new Dictionary<string, EtabsColumnObjectKey>(StringComparer.OrdinalIgnoreCase);
+            var byStoryLabel = new Dictionary<string, EtabsColumnObjectKey>(StringComparer.OrdinalIgnoreCase);
+            var byStory = new Dictionary<string, List<EtabsColumnObjectKey>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var column in columns)
+            {
+                if (!string.IsNullOrWhiteSpace(column.UniqueName))
+                    byUniqueName.TryAdd(column.UniqueName, column);
+
+                var storyLabelKey = BuildStoryLabelKey(column.Story, column.Label);
+                if (!string.IsNullOrWhiteSpace(storyLabelKey))
+                    byStoryLabel.TryAdd(storyLabelKey, column);
+
+                if (!byStory.TryGetValue(column.Story, out var storyColumns))
+                {
+                    storyColumns = [];
+                    byStory[column.Story] = storyColumns;
+                }
+
+                storyColumns.Add(column);
+            }
+
+            return new ColumnIdentityIndex(byUniqueName, byStoryLabel, byStory);
+        }
+
+        public EtabsColumnObjectKey? FindDirect(EtabsColumnObjectKey savedKey)
+        {
+            if (!string.IsNullOrWhiteSpace(savedKey.UniqueName)
+                && byUniqueName.TryGetValue(savedKey.UniqueName, out var uniqueMatch))
+            {
+                return uniqueMatch;
+            }
+
+            var storyLabelKey = BuildStoryLabelKey(savedKey.Story, savedKey.Label);
+            return !string.IsNullOrWhiteSpace(storyLabelKey)
+                && byStoryLabel.TryGetValue(storyLabelKey, out var storyLabelMatch)
+                ? storyLabelMatch
+                : null;
+        }
+
+        public IReadOnlyList<EtabsColumnObjectKey> FindByStory(string story)
+            => byStory.TryGetValue(story, out var columns) ? columns : [];
+
+        private static string BuildStoryLabelKey(string story, string label)
+            => string.IsNullOrWhiteSpace(story) || string.IsNullOrWhiteSpace(label)
+                ? ""
+                : $"{story.Trim()}|{label.Trim()}";
     }
 }

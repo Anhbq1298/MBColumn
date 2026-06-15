@@ -337,7 +337,17 @@
                                         <StackPanel Orientation="Horizontal" Margin="0,2" Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                                             <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsThreeState="True" VerticalAlignment="Center" Margin="0,0,6,0" />
                                             <TextBlock Text="📁 " VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsEtabsImportedGroup}" Value="True">
+                                                                <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                         </StackPanel>
                                         <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
                                                  Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisibilityConverter}}"

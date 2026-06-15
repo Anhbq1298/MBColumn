@@ -39,6 +39,7 @@ public static class EtabsToMbColumnForceMapper
             throw new ArgumentException("At least one ETABS station force row is required.");
         }
 
+        var ref_ = bottom ?? top!;
         double nedBot = ImportedResultPToNEd(bottom?.P ?? top!.P);
         double nedTop = ImportedResultPToNEd(top?.P ?? bottom!.P);
 
@@ -64,6 +65,8 @@ public static class EtabsToMbColumnForceMapper
             ObjectType = objectType,
             Story = story,
             Label = label,
+            SourceObjectName = string.IsNullOrWhiteSpace(ref_.ObjectName) ? label : ref_.ObjectName,
+            ForceStation = BuildStationText(bottom, top),
             NEd = SMath.Min(nedBot, nedTop),
             Vx = vx,
             Vy = vy,
@@ -76,6 +79,19 @@ public static class EtabsToMbColumnForceMapper
         };
 
         return round ? Round(row) : row;
+    }
+
+    private static string BuildStationText(EtabsForceResultDto? bottom, EtabsForceResultDto? top)
+    {
+        var bottomStation = bottom?.Station?.Trim() ?? "";
+        var topStation = top?.Station?.Trim() ?? "";
+
+        if (bottom is not null && top is not null)
+            return string.Equals(bottomStation, topStation, StringComparison.OrdinalIgnoreCase)
+                ? bottomStation
+                : $"{bottomStation}/{topStation}".Trim('/');
+
+        return string.IsNullOrWhiteSpace(bottomStation) ? topStation : bottomStation;
     }
 
     public static MbColumnForceRecord MapRawEtabsRecord(

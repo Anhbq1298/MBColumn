@@ -26,6 +26,7 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
 
     public IReadOnlyList<SnapshotLoadCase> ToLoadCases(IReadOnlyList<MbColumnMappedForceRow> rows)
     {
+        var importedAt = DateTime.UtcNow;
         return rows.Select((r, i) =>
         {
             // Sign-preserving max-abs: keep the end moment whose magnitude is larger
@@ -37,10 +38,10 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
                 Id                   = $"etabs_{i + 1}",
                 Label                = $"{r.CaseName}-{r.Label}-{r.Story}",
                 OriginalLoadCaseName = r.CaseName,
-                SourceObjectName     = r.Label,
+                SourceObjectName     = string.IsNullOrWhiteSpace(r.SourceObjectName) ? r.Label : r.SourceObjectName,
                 SourceObjectLabel    = r.Label,
                 Story                = r.Story,
-                Station              = string.Empty,
+                Station              = r.ForceStation,
                 Source               = "ETABS",
                 Pu                   = r.NEd,
                 Mux                  = mxUsed,
@@ -53,7 +54,12 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
                 MyBottom             = r.MyBottom,
                 MxUsed               = mxUsed,
                 MyUsed               = myUsed,
-                IsActive             = true
+                IsActive             = true,
+                IsEtabsImportedLoad  = true,
+                EtabsLoadCaseOrCombo = r.CaseName,
+                EtabsFrameId         = string.IsNullOrWhiteSpace(r.SourceObjectName) ? r.Label : r.SourceObjectName,
+                EtabsForceStation    = r.ForceStation,
+                EtabsForceImportedAt = importedAt
             };
         }).ToList();
     }

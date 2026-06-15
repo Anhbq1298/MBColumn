@@ -25,6 +25,13 @@ public sealed class MainWindowViewModel : ViewModelBase
     private const int InputTabIndex = 0;
     private const int ResultsTabIndex = 1;
 
+    private enum EtabsForceRefreshScope
+    {
+        CurrentSection,
+        CurrentFolder,
+        AllImportedSections
+    }
+
     private readonly ColumnCalculationService calculationService;
     private readonly IProjectService projectService;
     private readonly IMessageService messageService;
@@ -104,10 +111,21 @@ public sealed class MainWindowViewModel : ViewModelBase
             () => etabsForceRefreshDialogService is not null);
         ImportDesignForcesCommand = new AsyncRelayCommand(ImportDesignForcesAsync,
             () => etabsForceRefreshDialogService is not null);
-        RefreshElementForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
-            () => etabsForceRefreshDialogService is not null);
-        RefreshDesignForcesCommand = new AsyncRelayCommand(RefreshEtabsForcesAsync,
-            () => etabsForceRefreshDialogService is not null);
+        RefreshElementForcesCommand = new AsyncRelayCommand(
+            () => RefreshEtabsForcesAsync(EtabsForceRefreshScope.AllImportedSections),
+            () => CanRefreshEtabsForces(EtabsForceRefreshScope.AllImportedSections));
+        RefreshDesignForcesCommand = new AsyncRelayCommand(
+            () => RefreshEtabsForcesAsync(EtabsForceRefreshScope.AllImportedSections),
+            () => CanRefreshEtabsForces(EtabsForceRefreshScope.AllImportedSections));
+        RefreshEtabsForcesForCurrentSectionCommand = new AsyncRelayCommand(
+            () => RefreshEtabsForcesAsync(EtabsForceRefreshScope.CurrentSection),
+            () => CanRefreshEtabsForces(EtabsForceRefreshScope.CurrentSection));
+        RefreshEtabsForcesForCurrentFolderCommand = new AsyncRelayCommand(
+            () => RefreshEtabsForcesAsync(EtabsForceRefreshScope.CurrentFolder),
+            () => CanRefreshEtabsForces(EtabsForceRefreshScope.CurrentFolder));
+        RefreshEtabsForcesForAllImportedSectionsCommand = new AsyncRelayCommand(
+            () => RefreshEtabsForcesAsync(EtabsForceRefreshScope.AllImportedSections),
+            () => CanRefreshEtabsForces(EtabsForceRefreshScope.AllImportedSections));
 
         // Legacy wrappers kept for existing XAML bindings
         ImportFromEtabsCommand = ImportSectionsFromEtabsCommand;
@@ -167,6 +185,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand ImportDesignForcesCommand { get; }
     public ICommand RefreshElementForcesCommand { get; }
     public ICommand RefreshDesignForcesCommand { get; }
+    public ICommand RefreshEtabsForcesForCurrentSectionCommand { get; }
+    public ICommand RefreshEtabsForcesForCurrentFolderCommand { get; }
+    public ICommand RefreshEtabsForcesForAllImportedSectionsCommand { get; }
 
     // Legacy — kept so existing XAML bindings continue to work
     public ICommand ImportFromEtabsCommand { get; }
@@ -283,7 +304,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public bool IsResultsTabAvailable => true;
+    public bool IsResultsTabAvailable => !IsCalculationOutdated;
 
     private async Task CalculateCurrentColumnAsync()
         => await RunWithProgressAsync("Calculating this section...", async () =>
@@ -1021,7 +1042,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
         // Route through the existing refresh dialog for now.
         // A dedicated element-force import dialog will replace this in a later phase.
-        await RefreshEtabsForcesAsync();
+        await RefreshEtabsForcesAsync(EtabsForceRefreshScope.AllImportedSections);
     }
 
     private async Task ImportDesignForcesAsync()
@@ -1036,7 +1057,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
         // Route through the existing refresh dialog for now.
         // A dedicated design-force import dialog will replace this in a later phase.
-        await RefreshEtabsForcesAsync();
+        await RefreshEtabsForcesAsync(EtabsForceRefreshScope.AllImportedSections);
     }
 
     private IReadOnlyList<Application.DTOs.Etabs.EtabsSectionBinding> GetEtabsBindings()
@@ -1051,7 +1072,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         return bindings;
     }
 
-    private async Task RefreshEtabsForcesAsync()
+    private async Task RefreshEtabsForcesAsync(EtabsForceRefreshScope scope = EtabsForceRefreshScope.AllImportedSections)
     {
         if (etabsForceRefreshDialogService is null) return;
         await Task.Yield();
@@ -1059,23 +1080,22 @@ public sealed class MainWindowViewModel : ViewModelBase
         SaveCurrentColumnInput();
 
         var allColumns = projectService.GetColumns();
+        var scopedColumns = GetEtabsForceRefreshColumns(scope, allColumns);
         var bindings = new List<Application.DTOs.Etabs.EtabsSectionBinding>();
         var existingLoadCases = new Dictionary<string, IReadOnlyList<SnapshotLoadCase>>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var col in allColumns)
+        foreach (var col in scopedColumns)
         {
             var snapshot = projectService.LoadColumnInput(col.Id);
             if (snapshot?.EtabsBinding is null) continue;
 
             bindings.Add(snapshot.EtabsBinding);
-            existingLoadCases[col.Name] = snapshot.LoadCases;
+            existingLoadCases[col.Name] = snapshot.LoadCases.Where(IsEtabsLoadCase).ToList();
         }
 
         if (bindings.Count == 0)
         {
-            messageService.ShowInformation(
-                "No ETABS-linked sections found.\nImport from ETABS first to create a section binding.",
-                "Refresh Forces from ETABS");
+            messageService.ShowInformation(BuildNoEtabsBindingMessage(scope), "Refresh Forces from ETABS");
             return;
         }
 
@@ -1088,7 +1108,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         if (result is null || !result.Success || result.UpdatedLoadCasesBySection.Count == 0)
             return;
 
-        var columnByName = allColumns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        var columnByName = scopedColumns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
         int updated = 0;
         foreach (var kvp in result.UpdatedLoadCasesBySection)
@@ -1098,21 +1118,88 @@ public sealed class MainWindowViewModel : ViewModelBase
             var snapshot = projectService.LoadColumnInput(colRecord.Id);
             if (snapshot is null) continue;
 
-            snapshot.LoadCases = kvp.Value.ToList();
+            var manualLoadCases = snapshot.LoadCases.Where(lc => !IsEtabsLoadCase(lc));
+            snapshot.LoadCases = manualLoadCases.Concat(kvp.Value).ToList();
             snapshot.LastEtabsRefreshAt = DateTime.UtcNow;
             snapshot.LastEtabsRefreshSummary = result.Message;
 
             projectService.SaveColumnInput(colRecord.Id, snapshot);
             projectSession.ClearColumnResult(colRecord.Id);
             Explorer.SetSectionStatus(colRecord.Id, SectionStatus.NotCalculated);
+
+            if (currentColumn?.Id == colRecord.Id)
+            {
+                suppressModified = true;
+                try
+                {
+                    Input.LoadFromSnapshot(snapshot);
+                    CaptureCurrentInputSnapshotBaseline(isPersisted: true);
+                }
+                finally
+                {
+                    suppressModified = false;
+                }
+
+                Result.Result = null;
+                IsCalculationOutdated = true;
+                SelectedMainTabIndex = InputTabIndex;
+                Report.MarkOutdated();
+                RefreshReportFromCurrentWorkspace();
+            }
+
             updated++;
         }
 
         RaiseStatusProperties();
+        RaiseCommandStates();
 
         if (updated > 0)
             messageService.ShowInformation(result.Message, "Forces Refreshed");
     }
+
+    private bool CanRefreshEtabsForces(EtabsForceRefreshScope scope)
+    {
+        if (etabsForceRefreshDialogService is null) return false;
+        return GetEtabsForceRefreshColumns(scope, projectService.GetColumns())
+            .Any(column => projectService.LoadColumnInput(column.Id)?.EtabsBinding is not null);
+    }
+
+    private IReadOnlyList<ColumnRecord> GetEtabsForceRefreshColumns(
+        EtabsForceRefreshScope scope,
+        IReadOnlyList<ColumnRecord> allColumns)
+    {
+        return scope switch
+        {
+            EtabsForceRefreshScope.CurrentSection => currentColumn is null
+                ? []
+                : allColumns.Where(column => column.Id == currentColumn.Id).ToList(),
+            EtabsForceRefreshScope.CurrentFolder => ResolveCurrentFolderId() is int folderId
+                ? allColumns.Where(column => column.GroupId == folderId).ToList()
+                : [],
+            _ => allColumns.ToList()
+        };
+    }
+
+    private int? ResolveCurrentFolderId()
+        => Explorer.SelectedNode is GroupItemViewModel selectedGroup
+            ? selectedGroup.Id
+            : currentColumn?.GroupId;
+
+    private static bool IsEtabsLoadCase(SnapshotLoadCase loadCase)
+        => loadCase.IsEtabsImportedLoad
+            || string.Equals(loadCase.Source, "ETABS", StringComparison.OrdinalIgnoreCase)
+            || loadCase.Id.StartsWith("etabs_", StringComparison.OrdinalIgnoreCase);
+
+    private static string BuildNoEtabsBindingMessage(EtabsForceRefreshScope scope)
+        => scope switch
+        {
+            EtabsForceRefreshScope.CurrentSection =>
+                "The current section is not linked to ETABS.\nImport it from ETABS first, then refresh forces.",
+            EtabsForceRefreshScope.CurrentFolder =>
+                "No ETABS-linked sections were found in the current folder.\nImport sections from ETABS first, then refresh forces.",
+            _ =>
+                "No ETABS-linked sections found.\nImport from ETABS first to create a section binding."
+        };
 
     private async Task SaveProjectAsync()
     {
@@ -1416,6 +1503,10 @@ public sealed class MainWindowViewModel : ViewModelBase
         "DemandInputModeText", "SlendernessSettingsVisibility",
         "SelectedLoadCase", "IsSlendernessCalculationDetailsOpen", "SlendernessCalculationLoadCase",
         "SectionPreviewLabel", "RebarPreviewLabel", "CoverPreviewLabel", "IsSectionPreviewValid",
+        "HasEtabsImportMetadata", "EtabsImportIsImportedText", "EtabsMetadataSourceModel",
+        "EtabsMetadataColumnGroupId", "EtabsMetadataTierId", "EtabsMetadataSectionProperty",
+        "EtabsMetadataStoryRange", "EtabsMetadataSourceStories", "EtabsMetadataSourceFrameIds",
+        "EtabsMetadataSourceLabels", "EtabsMetadataImportedAt",
         // Section geometry alias/derived properties — underlying properties (Width, Height, etc.) still trigger correctly
         "SectionWidth", "SectionHeight", "NumberOfBars", "SelectedRebarSize", "SelectedRebarLayout",
         "CircularHoopCentrelineDiameter", "CircularHoopCentrelineDiameterText",
@@ -1492,6 +1583,12 @@ public sealed class MainWindowViewModel : ViewModelBase
             refreshElem.RaiseCanExecuteChanged();
         if (RefreshDesignForcesCommand is AsyncRelayCommand refreshDes)
             refreshDes.RaiseCanExecuteChanged();
+        if (RefreshEtabsForcesForCurrentSectionCommand is AsyncRelayCommand refreshCurrentSection)
+            refreshCurrentSection.RaiseCanExecuteChanged();
+        if (RefreshEtabsForcesForCurrentFolderCommand is AsyncRelayCommand refreshCurrentFolder)
+            refreshCurrentFolder.RaiseCanExecuteChanged();
+        if (RefreshEtabsForcesForAllImportedSectionsCommand is AsyncRelayCommand refreshAllImported)
+            refreshAllImported.RaiseCanExecuteChanged();
     }
 
     private void RaiseStatusProperties()

@@ -26,7 +26,17 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
         double lengthMm,
         string linkedSection,
         string status,
-        UnitSystem unitSystem)
+        UnitSystem unitSystem,
+        bool hasCoordinates = false,
+        double bottomXmm = 0,
+        double bottomYmm = 0,
+        double bottomZmm = 0,
+        double topXmm = 0,
+        double topYmm = 0,
+        double topZmm = 0,
+        double centerXmm = 0,
+        double centerYmm = 0,
+        double centerZmm = 0)
     {
         this.selectionChanged = selectionChanged;
         unitProfile = UnitProfile.For(unitSystem);
@@ -44,6 +54,16 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
         LengthMm = lengthMm;
         LinkedSection = linkedSection;
         Status = status;
+        HasCoordinates = hasCoordinates;
+        BottomXmm = bottomXmm;
+        BottomYmm = bottomYmm;
+        BottomZmm = bottomZmm;
+        TopXmm = topXmm;
+        TopYmm = topYmm;
+        TopZmm = topZmm;
+        CenterXmm = centerXmm;
+        CenterYmm = centerYmm;
+        CenterZmm = centerZmm;
     }
 
     public bool IsSelected
@@ -70,9 +90,22 @@ public sealed class EtabsColumnImportRowViewModel : ViewModelBase
     public double Height { get; }
     public double Diameter { get; }
     public double LengthMm { get; }
+    public bool HasCoordinates { get; }
+    public double BottomXmm { get; }
+    public double BottomYmm { get; }
+    public double BottomZmm { get; }
+    public double TopXmm { get; }
+    public double TopYmm { get; }
+    public double TopZmm { get; }
+    public double CenterXmm { get; }
+    public double CenterYmm { get; }
+    public double CenterZmm { get; }
     public string LengthDisplay => unitProfile.UnitSystem == UnitSystem.Metric
         ? $"{LengthMm:N0} {unitProfile.SectionSizeLabel}"
         : $"{LengthMm / 25.4:N2} {unitProfile.SectionSizeLabel}";
+    public string CoordinateDisplay => HasCoordinates
+        ? $"X={CenterXmm / 1000.0:N2} m, Y={CenterYmm / 1000.0:N2} m"
+        : "-";
     public string LinkedSection { get; }
     public string Status { get; }
     public bool IsRectangular => SectionType == SectionShapeType.Rectangular;

@@ -341,6 +341,11 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
             if (columnGroups.TryGetValue(groupVm.Id, out var children))
             {
                 groupVm.Columns.AddRange(children);
+                groupVm.IsEtabsImportedGroup = children.Any(child => IsEtabsImportedSection(child.Id));
+            }
+            else
+            {
+                groupVm.IsEtabsImportedGroup = false;
             }
         }
 
@@ -441,6 +446,14 @@ public sealed class ProjectExplorerViewModel : ViewModelBase
         };
 
         return item;
+    }
+
+    private bool IsEtabsImportedSection(int columnId)
+    {
+        var snapshot = projectService.LoadColumnInput(columnId);
+        return snapshot?.EtabsMetadata?.IsEtabsImportedSection == true
+            || snapshot?.EtabsBinding is not null
+            || snapshot?.EtabsTierMetadata is not null;
     }
 
     private string NextDuplicateName(string sourceName)

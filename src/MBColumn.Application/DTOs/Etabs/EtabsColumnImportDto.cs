@@ -16,4 +16,16 @@ public sealed record EtabsColumnImportDto(
     double Diameter,
     double LengthMm,
     string LinkedSection,
-    string Status);
+    string Status)
+{
+    public bool HasCoordinates { get; init; }
+    public double BottomXmm { get; init; }
+    public double BottomYmm { get; init; }
+    public double BottomZmm { get; init; }
+    public double TopXmm { get; init; }
+    public double TopYmm { get; init; }
+    public double TopZmm { get; init; }
+    public double CenterXmm { get; init; }
+    public double CenterYmm { get; init; }
+    public double CenterZmm { get; init; }
+}

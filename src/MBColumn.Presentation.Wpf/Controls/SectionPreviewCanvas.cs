@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using MBColumn.Application.Services.Geometry;
@@ -44,20 +46,59 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     public int InnerLegsX { get => (int)GetValue(InnerLegsXProperty); set => SetValue(InnerLegsXProperty, value); }
     public int InnerLegsY { get => (int)GetValue(InnerLegsYProperty); set => SetValue(InnerLegsYProperty, value); }
 
-    private static readonly SolidColorBrush NavyBrush = new(Color.FromRgb(0, 75, 133));
-    private static readonly SolidColorBrush DarkNavyBrush = new(Color.FromRgb(0, 58, 102));
-    private static readonly SolidColorBrush GreyBrush = new(Color.FromRgb(123, 135, 148));
-    private static readonly SolidColorBrush TextBrush = new(Color.FromRgb(31, 41, 51));
-    private static readonly SolidColorBrush RedBrush = new(Color.FromRgb(227, 27, 35));
-    private static readonly SolidColorBrush FillBrush = new(Color.FromRgb(244, 247, 250));
-    private static readonly SolidColorBrush GridBrush = new(Color.FromArgb(80, 180, 190, 200));
-    private static readonly Pen GridPen = new(new SolidColorBrush(Color.FromArgb(70, 170, 180, 195)), 0.4);
-    private static readonly Pen BoundaryPen = new(NavyBrush, 1.0);
-    private static readonly Pen CoverDashPen = new(GreyBrush, 0.7) { DashStyle = DashStyles.Dash };
-    private static readonly Pen StirrupPen = new(new SolidColorBrush(Color.FromRgb(220, 30, 30)), 1.1);
-    private static readonly Pen AxisXPen = new(RedBrush, 0.8);
-    private static readonly Pen AxisYPen = new(NavyBrush, 0.8);
-    private static readonly Pen CrossPen = new(TextBrush, 0.8);
+    private struct RenderedRebar
+    {
+        public Point Center;
+        public double Radius;
+        public string Label;
+    }
+
+    private readonly List<RenderedRebar> _renderedRebars = new();
+    private RenderedRebar? _hoveredRebar;
+
+    private static readonly SolidColorBrush NavyBrush = GetFrozenBrush(Color.FromRgb(0, 75, 133));
+    private static readonly SolidColorBrush DarkNavyBrush = GetFrozenBrush(Color.FromRgb(0, 58, 102));
+    private static readonly SolidColorBrush GreyBrush = GetFrozenBrush(Color.FromRgb(123, 135, 148));
+    private static readonly SolidColorBrush TextBrush = GetFrozenBrush(Color.FromRgb(31, 41, 51));
+    private static readonly SolidColorBrush RedBrush = GetFrozenBrush(Color.FromRgb(227, 27, 35));
+
+    private static readonly SolidColorBrush FillBrush = GetFrozenBrush(Color.FromArgb(30, 0, 75, 133));
+    private static readonly Pen BoundaryPen = GetFrozenPen(NavyBrush, 1.5);
+    private static readonly Pen CoverDashPen = GetFrozenPen(GreyBrush, 0.75, DashStyles.Dash);
+
+    private static readonly SolidColorBrush MajorGridBrush = GetFrozenBrush(Color.FromArgb(0xD0, 203, 213, 225));
+    private static readonly SolidColorBrush MinorGridBrush = GetFrozenBrush(Color.FromArgb(0xB0, 241, 245, 249));
+    private static readonly Pen MajorGridPen = GetFrozenPen(MajorGridBrush, 0.6);
+    private static readonly Pen MinorGridPen = GetFrozenPen(MinorGridBrush, 0.35);
+
+    private static readonly SolidColorBrush AxisBrush = GetFrozenBrush(Colors.Black);
+    private static readonly Pen AxisPen = GetFrozenPen(AxisBrush, 1.0);
+
+    private static readonly SolidColorBrush RebarBrush = GetFrozenBrush(Color.FromRgb(220, 38, 38));
+
+    private static readonly SolidColorBrush CentroidBrush = GetFrozenBrush(Color.FromRgb(220, 38, 38));
+    private static readonly Pen CentroidPen = GetFrozenPen(Brushes.White, 0.8);
+
+    private static readonly SolidColorBrush DimBrush = GetFrozenBrush(Color.FromRgb(100, 116, 139));
+    private static readonly Pen DimPen = GetFrozenPen(DimBrush, 0.8);
+
+    private static SolidColorBrush GetFrozenBrush(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+
+    private static Pen GetFrozenPen(Brush brush, double thickness, DashStyle? dashStyle = null)
+    {
+        var pen = new Pen(brush, thickness);
+        if (dashStyle != null)
+        {
+            pen.DashStyle = dashStyle;
+        }
+        pen.Freeze();
+        return pen;
+    }
 
     private static void OnPreviewCollectionPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -72,12 +113,19 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
+
+        // Compute centered square frame bounds
+        double size = Math.Min(ActualWidth, ActualHeight);
+        double leftOffset = (ActualWidth - size) / 2.0;
+        double topOffset = (ActualHeight - size) / 2.0;
+        var frameRect = new Rect(leftOffset, topOffset, size, size);
+
         var borderPen = new Pen(new SolidColorBrush(IsValid ? Color.FromRgb(214, 222, 230) : Color.FromRgb(245, 158, 11)), IsValid ? 1 : 2);
-        dc.DrawRoundedRectangle(Brushes.White, borderPen, new Rect(0, 0, ActualWidth, ActualHeight), 5, 5);
+        dc.DrawRoundedRectangle(Brushes.White, borderPen, frameRect, 5, 5);
 
         if (!IsValid)
         {
-            DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(18, ActualHeight / 2 - 10), FontWeights.SemiBold);
+            DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(frameRect.Left + 18, frameRect.Top + frameRect.Height / 2 - 10), FontWeights.SemiBold);
             return;
         }
 
@@ -89,7 +137,7 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 
         if (SectionWidth <= 0 || SectionHeight <= 0)
         {
-            DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(18, ActualHeight / 2 - 10), FontWeights.SemiBold);
+            DrawText(dc, string.IsNullOrWhiteSpace(ErrorMessage) ? "Invalid section input" : ErrorMessage, 14, Brushes.DarkOrange, new Point(frameRect.Left + 18, frameRect.Top + frameRect.Height / 2 - 10), FontWeights.SemiBold);
             return;
         }
 
@@ -97,25 +145,31 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         double w = SectionWidth * factor;
         double h = SectionHeight * factor;
         double c = Cover * factor;
-        double topText = 46, leftDim = 48, bottomDim = 38, rightPad = 20;
-        double scale = Math.Min((ActualWidth - leftDim - rightPad) / w, (ActualHeight - topText - bottomDim) / h);
+        double scale = 1.25 * Math.Min((frameRect.Width - 68) / w, (frameRect.Height - 84) / h);
         if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0) return;
 
         double sw = w * scale;
         double sh = h * scale;
-        double x0 = leftDim + (ActualWidth - leftDim - rightPad - sw) / 2.0;
-        double y0 = topText + (ActualHeight - topText - bottomDim - sh) / 2.0;
+        double x0 = frameRect.Left + (frameRect.Width - sw) / 2.0;
+        double y0 = frameRect.Top + (frameRect.Height - sh) / 2.0;
         var section = new Rect(x0, y0, sw, sh);
         var center = new Point(section.Left + section.Width / 2.0, section.Top + section.Height / 2.0);
 
-        // Coordinate transform: screenX = center.X + worldX * scale, screenY = center.Y - worldY * scale
-        // World range for standard sections: worldX in [-w/2, w/2], worldY in [-h/2, h/2] (mm)
-        DrawGridLines(dc, center.X, center.Y, scale, -w / 2, w / 2, -h / 2, h / 2,
-            x0, y0, x0 + sw, y0 + sh);
+        // 1. Gridlines
+        double clipL = frameRect.Left + 1;
+        double clipT = frameRect.Top + 1;
+        double clipR = frameRect.Right - 1;
+        double clipB = frameRect.Bottom - 1;
 
-        DrawText(dc, SectionLabel, 12, TextBrush, new Point(12, 8), FontWeights.SemiBold);
-        DrawText(dc, RebarLabel, 11, DarkNavyBrush, new Point(12, 24), FontWeights.Normal);
+        double wMinX = (clipL - center.X) / scale;
+        double wMaxX = (clipR - center.X) / scale;
+        double wMinY = (center.Y - clipB) / scale;
+        double wMaxY = (center.Y - clipT) / scale;
 
+        DrawGridLines(dc, center.X, center.Y, scale, wMinX, wMaxX, wMinY, wMaxY,
+            clipL, clipT, clipR, clipB);
+
+        // 4. Concrete boundary & fill (including Cover and Stirrup lines)
         if (SectionShape == SectionShapeType.Circular)
         {
             double rx = section.Width / 2.0;
@@ -190,29 +244,32 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             }
         }
 
-        DrawAxes(dc, center, Math.Min(32, sw / 4), Math.Min(32, sh / 4));
+        // 5. Local axes / centroid
+        DrawAxes(dc, center, frameRect);
 
+        // 6. Rebars
+        _renderedRebars.Clear();
         if (Rebars != null)
         {
             foreach (var item in Rebars)
             {
                 double cx = 0, cy = 0, dia = 0;
-                if (item is PreviewRebarPoint pr) { cx = pr.X; cy = pr.Y; dia = pr.Diameter; }
-                else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc) { cx = rc.X; cy = rc.Y; dia = rc.Diameter; }
+                string label = "";
+                if (item is PreviewRebarPoint pr) { cx = pr.X; cy = pr.Y; dia = pr.Diameter; label = pr.Label; }
+                else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc) { cx = rc.X; cy = rc.Y; dia = rc.Diameter; label = rc.BarSizeLabel; }
                 else continue;
 
                 var pt = new Point(center.X + cx * scale, center.Y - cy * scale);
-                double r = Math.Max(2.5, dia * scale / 2.0);
-                dc.DrawEllipse(DarkNavyBrush, new Pen(Brushes.White, 0.6), pt, r, r);
+                double r = Math.Max(3.5, dia * scale / 2.0);
+                dc.DrawEllipse(RebarBrush, new Pen(Brushes.White, 0.6), pt, r, r);
+                _renderedRebars.Add(new RenderedRebar { Center = pt, Radius = r, Label = label });
             }
         }
 
-        if (SectionShape == SectionShapeType.Circular)
-            DrawDimension(dc, new Point(section.Left, section.Bottom + 14), new Point(section.Right, section.Bottom + 14), $"D = {SectionWidth:0.###} {UnitText}", TextBrush);
-        else
+        // 7. Hover tooltip
+        if (_hoveredRebar != null)
         {
-            DrawDimension(dc, new Point(section.Left, section.Bottom + 14), new Point(section.Right, section.Bottom + 14), $"b = {SectionWidth:0.###} {UnitText}", TextBrush);
-            DrawDimension(dc, new Point(section.Left - 16, section.Bottom), new Point(section.Left - 16, section.Top), $"h = {SectionHeight:0.###} {UnitText}", TextBrush, vertical: true);
+            DrawHoverTooltip(dc, _hoveredRebar.Value);
         }
     }
 
@@ -229,17 +286,22 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         }
         if (bpts.Count < 3) return;
 
-        var rebars = new List<(double X, double Y, double Diameter)>();
+        var rebars = new List<(double X, double Y, double Diameter, string Label)>();
         if (Rebars != null)
         {
             foreach (var item in Rebars)
             {
-                if (item is PreviewRebarPoint pr) rebars.Add((pr.X, pr.Y, pr.Diameter));
-                else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc) rebars.Add((rc.X, rc.Y, rc.Diameter));
+                if (item is PreviewRebarPoint pr) rebars.Add((pr.X, pr.Y, pr.Diameter, pr.Label));
+                else if (item is MBColumn.Application.DTOs.RebarCoordinateDto rc) rebars.Add((rc.X, rc.Y, rc.Diameter, rc.BarSizeLabel));
             }
         }
 
-        double topText = 46, leftDim = 48, bottomDim = 38, rightPad = 20;
+        // Define centered square frame
+        double size = Math.Min(ActualWidth, ActualHeight);
+        double leftOffset = (ActualWidth - size) / 2.0;
+        double topOffset = (ActualHeight - size) / 2.0;
+        var frameRect = new Rect(leftOffset, topOffset, size, size);
+
         double minX = Math.Min(0.0, bpts.Min(p => p.X));
         double maxX = Math.Max(0.0, bpts.Max(p => p.X));
         double minY = Math.Min(0.0, bpts.Min(p => p.Y));
@@ -256,12 +318,12 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         double bboxW = maxX - minX, bboxH = maxY - minY;
         if (bboxW <= 0 || bboxH <= 0) return;
 
-        double scale = Math.Min((ActualWidth - leftDim - rightPad) / bboxW, (ActualHeight - topText - bottomDim) / bboxH);
+        double scale = 1.25 * Math.Min((frameRect.Width - 68) / bboxW, (frameRect.Height - 84) / bboxH);
         if (double.IsNaN(scale) || double.IsInfinity(scale) || scale <= 0) return;
 
         double sw = bboxW * scale, sh = bboxH * scale;
-        double x0 = leftDim + (ActualWidth - leftDim - rightPad - sw) / 2.0;
-        double y0 = topText + (ActualHeight - topText - bottomDim - sh) / 2.0;
+        double x0 = frameRect.Left + (frameRect.Width - sw) / 2.0;
+        double y0 = frameRect.Top + (frameRect.Height - sh) / 2.0;
 
         // ox, oy such that screenX = ox + worldX * scale, screenY = oy - worldY * scale
         double ox = x0 - minX * scale;
@@ -270,11 +332,21 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         double ToScreenX(double x) => ox + x * scale;
         double ToScreenY(double y) => oy - y * scale;
 
-        DrawGridLines(dc, ox, oy, scale, minX, maxX, minY, maxY, x0, y0, x0 + sw, y0 + sh);
+        // 1. Gridlines
+        double clipL = frameRect.Left + 1;
+        double clipT = frameRect.Top + 1;
+        double clipR = frameRect.Right - 1;
+        double clipB = frameRect.Bottom - 1;
 
-        DrawText(dc, SectionLabel, 12, TextBrush, new Point(12, 8), FontWeights.SemiBold);
-        DrawText(dc, RebarLabel, 11, DarkNavyBrush, new Point(12, 24), FontWeights.Normal);
+        double wMinX = (clipL - ox) / scale;
+        double wMaxX = (clipR - ox) / scale;
+        double wMinY = (oy - clipB) / scale;
+        double wMaxY = (oy - clipT) / scale;
 
+        DrawGridLines(dc, ox, oy, scale, wMinX, wMaxX, wMinY, wMaxY,
+            clipL, clipT, clipR, clipB);
+
+        // 4. Concrete boundary & fill
         var geo = new StreamGeometry();
         using (var ctx = geo.Open())
         {
@@ -308,14 +380,59 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             catch { }
         }
 
+        // 5. Local axes / centroid
         var origin = new Point(ToScreenX(0.0), ToScreenY(0.0));
-        DrawAxes(dc, origin, Math.Min(32, sw / 4), Math.Min(32, sh / 4));
+        DrawAxes(dc, origin, frameRect);
 
+        // 6. Rebars
+        _renderedRebars.Clear();
         foreach (var item in rebars)
         {
             var pt = new Point(ToScreenX(item.X), ToScreenY(item.Y));
-            double r = Math.Max(2.5, item.Diameter * scale / 2.0);
-            dc.DrawEllipse(DarkNavyBrush, new Pen(Brushes.White, 0.6), pt, r, r);
+            double r = Math.Max(3.5, item.Diameter * scale / 2.0);
+            dc.DrawEllipse(RebarBrush, new Pen(Brushes.White, 0.6), pt, r, r);
+            _renderedRebars.Add(new RenderedRebar { Center = pt, Radius = r, Label = item.Label });
+        }
+
+        // 7. Hover tooltip
+        if (_hoveredRebar != null)
+        {
+            DrawHoverTooltip(dc, _hoveredRebar.Value);
+        }
+    }
+
+    protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        var mousePos = e.GetPosition(this);
+        RenderedRebar? newHovered = null;
+
+        foreach (var rebar in _renderedRebars)
+        {
+            double distSq = (mousePos.X - rebar.Center.X) * (mousePos.X - rebar.Center.X) +
+                            (mousePos.Y - rebar.Center.Y) * (mousePos.Y - rebar.Center.Y);
+            double hitRadius = Math.Max(6.0, rebar.Radius + 3.0);
+            if (distSq <= hitRadius * hitRadius)
+            {
+                newHovered = rebar;
+                break;
+            }
+        }
+
+        if (newHovered?.Center != _hoveredRebar?.Center)
+        {
+            _hoveredRebar = newHovered;
+            InvalidateVisual();
+        }
+    }
+
+    protected override void OnMouseLeave(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        if (_hoveredRebar != null)
+        {
+            _hoveredRebar = null;
+            InvalidateVisual();
         }
     }
 
@@ -330,22 +447,52 @@ public sealed class SectionPreviewCanvas : FrameworkElement
 
         double spacing = NiceGridSpacing(Math.Max(rangeX, rangeY));
 
-        // Vertical lines
-        double startX = Math.Floor(wMinX / spacing) * spacing;
+        double raw = Math.Max(rangeX, rangeY) / 5.0;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(raw)));
+        double normalized = raw / magnitude;
+        double nice = normalized < 1.5 ? 1 : normalized < 3.5 ? 2 : normalized < 7.5 ? 5 : 10;
+        
+        double minorSpacing = spacing / 5.0;
+        if (Math.Abs(nice - 2) < 0.1) minorSpacing = spacing / 4.0;
+
+        // Draw minor gridlines
+        double startX = Math.Floor(wMinX / minorSpacing) * minorSpacing;
+        for (double wx = startX; wx <= wMaxX + minorSpacing * 0.5; wx += minorSpacing)
+        {
+            double nearestMajor = Math.Round(wx / spacing) * spacing;
+            if (Math.Abs(wx - nearestMajor) < minorSpacing * 0.1) continue;
+
+            double sx = ox + wx * scale;
+            if (sx < clipL - 1 || sx > clipR + 1) continue;
+            dc.DrawLine(MinorGridPen, new Point(sx, clipT), new Point(sx, clipB));
+        }
+
+        double startY = Math.Floor(wMinY / minorSpacing) * minorSpacing;
+        for (double wy = startY; wy <= wMaxY + minorSpacing * 0.5; wy += minorSpacing)
+        {
+            double nearestMajor = Math.Round(wy / spacing) * spacing;
+            if (Math.Abs(wy - nearestMajor) < minorSpacing * 0.1) continue;
+
+            double sy = oy - wy * scale;
+            if (sy < clipT - 1 || sy > clipB + 1) continue;
+            dc.DrawLine(MinorGridPen, new Point(clipL, sy), new Point(clipR, sy));
+        }
+
+        // Draw major gridlines
+        startX = Math.Floor(wMinX / spacing) * spacing;
         for (double wx = startX; wx <= wMaxX + spacing * 0.5; wx += spacing)
         {
             double sx = ox + wx * scale;
             if (sx < clipL - 1 || sx > clipR + 1) continue;
-            dc.DrawLine(GridPen, new Point(sx, clipT), new Point(sx, clipB));
+            dc.DrawLine(MajorGridPen, new Point(sx, clipT), new Point(sx, clipB));
         }
 
-        // Horizontal lines
-        double startY = Math.Floor(wMinY / spacing) * spacing;
+        startY = Math.Floor(wMinY / spacing) * spacing;
         for (double wy = startY; wy <= wMaxY + spacing * 0.5; wy += spacing)
         {
             double sy = oy - wy * scale;
             if (sy < clipT - 1 || sy > clipB + 1) continue;
-            dc.DrawLine(GridPen, new Point(clipL, sy), new Point(clipR, sy));
+            dc.DrawLine(MajorGridPen, new Point(clipL, sy), new Point(clipR, sy));
         }
     }
 
@@ -359,38 +506,66 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         return nice * magnitude;
     }
 
-    private static void DrawAxes(DrawingContext dc, Point origin, double halfW, double halfH)
+    private void DrawAxes(DrawingContext dc, Point origin, Rect frameRect)
     {
-        // X axis (red)
-        dc.DrawLine(AxisXPen, origin, new Point(origin.X + halfW, origin.Y));
-        DrawArrow(dc, new Point(origin.X + halfW, origin.Y), 0, RedBrush);
-        DrawText(dc, "x", 9, RedBrush, new Point(origin.X + halfW + 2, origin.Y - 8), FontWeights.SemiBold);
+        double xLeft = frameRect.Left + 4;
+        double xRight = frameRect.Right - 4;
+        double yBottom = frameRect.Bottom - 4;
+        double yTop = frameRect.Top + 4;
 
-        // Y axis (navy)
-        dc.DrawLine(AxisYPen, origin, new Point(origin.X, origin.Y - halfH));
-        DrawArrow(dc, new Point(origin.X, origin.Y - halfH), -Math.PI / 2, NavyBrush);
-        DrawText(dc, "y", 9, NavyBrush, new Point(origin.X + 3, origin.Y - halfH - 12), FontWeights.SemiBold);
+        if (xLeft >= xRight || yTop >= yBottom) return;
 
-        // Origin cross
-        dc.DrawLine(CrossPen, new Point(origin.X - 5, origin.Y), new Point(origin.X + 5, origin.Y));
-        dc.DrawLine(CrossPen, new Point(origin.X, origin.Y - 5), new Point(origin.X, origin.Y + 5));
+        // X axis (horizontal crossing)
+        dc.DrawLine(AxisPen, new Point(xLeft, origin.Y), new Point(xRight, origin.Y));
+        // Right arrow & label (positive X)
+        DrawArrow(dc, new Point(xRight, origin.Y), 0, AxisBrush);
+        DrawText(dc, "X", 13, AxisBrush, new Point(xRight - 14, origin.Y - 16), FontWeights.SemiBold);
+        // Left arrow & label (negative X)
+        DrawArrow(dc, new Point(xLeft, origin.Y), Math.PI, AxisBrush);
+        DrawText(dc, "-X", 13, AxisBrush, new Point(xLeft + 6, origin.Y - 16), FontWeights.SemiBold);
+
+        // Y axis (vertical crossing)
+        dc.DrawLine(AxisPen, new Point(origin.X, yBottom), new Point(origin.X, yTop));
+        // Top arrow & label (positive Y)
+        DrawArrow(dc, new Point(origin.X, yTop), -Math.PI / 2, AxisBrush);
+        DrawText(dc, "Y", 13, AxisBrush, new Point(origin.X + 6, yTop + 2), FontWeights.SemiBold);
+        // Bottom arrow & label (negative Y)
+        DrawArrow(dc, new Point(origin.X, yBottom), Math.PI / 2, AxisBrush);
+        DrawText(dc, "-Y", 13, AxisBrush, new Point(origin.X + 6, yBottom - 16), FontWeights.SemiBold);
+
+        // Centroid: red circle with white border
+        dc.DrawEllipse(CentroidBrush, CentroidPen, origin, 3.5, 3.5);
     }
 
     private string UnitText => UnitSystem == UnitSystem.Metric ? "mm" : "in";
 
     private static void DrawDimension(DrawingContext dc, Point a, Point b, string label, Brush brush, bool vertical = false)
     {
-        var pen = new Pen(brush, 0.8);
-        dc.DrawLine(pen, a, b);
+        dc.DrawLine(DimPen, a, b);
         DrawArrow(dc, a, vertical ? Math.PI / 2 : Math.PI, brush);
         DrawArrow(dc, b, vertical ? -Math.PI / 2 : 0, brush);
-        var labelPoint = vertical ? new Point(a.X - 40, (a.Y + b.Y) / 2 - 8) : new Point((a.X + b.X) / 2 - 34, a.Y + 4);
-        DrawText(dc, label, 9.5, brush, labelPoint, FontWeights.Normal);
+
+        if (vertical)
+        {
+            var centerPoint = new Point(a.X - 12, (a.Y + b.Y) / 2.0);
+            var ft = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                new Typeface(new FontFamily("Inter, Arial, Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+                11, brush, 1.25);
+
+            dc.PushTransform(new RotateTransform(-90, centerPoint.X, centerPoint.Y));
+            dc.DrawText(ft, new Point(centerPoint.X - ft.Width / 2.0, centerPoint.Y - ft.Height / 2.0));
+            dc.Pop();
+        }
+        else
+        {
+            var labelPoint = new Point((a.X + b.X) / 2 - 34, a.Y + 4);
+            DrawText(dc, label, 11, brush, labelPoint, FontWeights.Normal);
+        }
     }
 
     private static void DrawArrow(DrawingContext dc, Point tip, double angle, Brush brush)
     {
-        double s = 4.5;
+        double s = 5.5;
         var p1 = new Point(tip.X - Math.Cos(angle - 0.45) * s, tip.Y - Math.Sin(angle - 0.45) * s);
         var p2 = new Point(tip.X - Math.Cos(angle + 0.45) * s, tip.Y - Math.Sin(angle + 0.45) * s);
         var geo = new StreamGeometry();
@@ -405,9 +580,39 @@ public sealed class SectionPreviewCanvas : FrameworkElement
     {
         if (string.IsNullOrEmpty(value)) return;
         var ft = new FormattedText(value, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-            new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal),
+            new Typeface(new FontFamily("Inter, Arial, Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal),
             size, brush, 1.25);
         dc.DrawText(ft, point);
+    }
+
+    private void DrawHoverTooltip(DrawingContext dc, RenderedRebar rebar)
+    {
+        string label = rebar.Label;
+        if (string.IsNullOrEmpty(label)) return;
+
+        var ft = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+            new Typeface(new FontFamily("Inter, Arial, Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+            11, Brushes.White, 1.25);
+
+        double paddingX = 8;
+        double paddingY = 4;
+        double width = ft.Width + paddingX * 2;
+        double height = ft.Height + paddingY * 2;
+
+        double tx = rebar.Center.X - width / 2.0;
+        double ty = rebar.Center.Y - rebar.Radius - height - 6;
+
+        if (tx < 4) tx = 4;
+        if (tx + width > ActualWidth - 4) tx = ActualWidth - width - 4;
+        if (ty < 4) ty = rebar.Center.Y + rebar.Radius + 6;
+
+        var rect = new Rect(tx, ty, width, height);
+
+        var tooltipBg = GetFrozenBrush(Color.FromRgb(30, 41, 59));
+        var tooltipBorder = GetFrozenPen(GetFrozenBrush(Color.FromRgb(71, 85, 105)), 0.8);
+        dc.DrawRoundedRectangle(tooltipBg, tooltipBorder, rect, 4, 4);
+
+        dc.DrawText(ft, new Point(tx + paddingX, ty + paddingY));
     }
 
     private Pen? _cachedStirrupPen;
@@ -425,9 +630,6 @@ public sealed class SectionPreviewCanvas : FrameworkElement
         return _cachedStirrupPen;
     }
 
-    // Returns (screenPos, barRadiusMm) for nCount inner legs.
-    // isX=true: vertical legs snapped to top-face intermediate bar X screen coords.
-    // isX=false: horizontal legs snapped to left-face intermediate bar Y screen coords.
     private static List<(double Pos, double BarR)> GetInnerLegPositions(
         List<(double X, double Y, double R)> bars,
         int count,
@@ -462,7 +664,6 @@ public sealed class SectionPreviewCanvas : FrameworkElement
             if (faceBars.Count > 2)
                 return PickEvenly(faceBars.Skip(1).Take(faceBars.Count - 2).ToList(), count);
         }
-        // Fallback: equal spacing within stirrup bounds, no bar offset
         double extent = isX ? stirrupW : stirrupH;
         double start = isX ? sLeft : sTop;
         return Enumerable.Range(1, count)

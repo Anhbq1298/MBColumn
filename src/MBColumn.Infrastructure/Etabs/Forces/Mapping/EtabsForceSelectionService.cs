@@ -10,15 +10,24 @@ public sealed class EtabsForceSelectionService : IEtabsForceSelectionService
         return scope.Bindings
             .Where(b => b.ObjectType == EtabsImportedObjectType.Column)
             .SelectMany(b => b.ColumnObjects.Select(col => new EtabsColumnImportDto(
-                col.Key,
+                col.UniqueName,
                 "",
                 col.Story,
                 col.Label,
                 col.Key,
-                col.Label,
+                col.SectionPropertyName,
                 "",
                 Domain.Enums.SectionShapeType.Rectangular,
-                0, 0, 0, 0, "", "Ready")))
+                0, 0, 0, 0, "", "Ready")
+            {
+                HasCoordinates = col.X != 0 || col.Y != 0 || col.BottomX != 0 || col.BottomY != 0 || col.TopX != 0 || col.TopY != 0,
+                BottomXmm = col.BottomX,
+                BottomYmm = col.BottomY,
+                TopXmm = col.TopX,
+                TopYmm = col.TopY,
+                CenterXmm = col.X,
+                CenterYmm = col.Y
+            }))
             .ToList();
     }
 

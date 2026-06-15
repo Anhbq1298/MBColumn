@@ -45,13 +45,7 @@
                             <StackPanel>
                                 <TextBlock Text="Section Preview"
                                            Style="{StaticResource SectionTitleTextStyle}"
-                                           Margin="0,0,0,6" />
-                                <TextBlock Text="SECTION PREVIEW"
-                                           Style="{StaticResource OverlineTextStyle}"
-                                           Margin="0,0,0,2" />
-                                <TextBlock Text="2D VIEW &#x00B7; GRID"
-                                           Style="{StaticResource CaptionTextStyle}"
-                                           Margin="0,0,0,4" />
+                                           Margin="0,0,0,8" />
                                 <controls:SectionPreviewCanvas Height="240"
                                                                MinHeight="160"
                                                                HorizontalAlignment="Stretch"

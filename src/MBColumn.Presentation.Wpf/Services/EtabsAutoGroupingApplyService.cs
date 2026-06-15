@@ -47,7 +47,7 @@ public sealed class EtabsAutoGroupingApplyService
                 ownedGroup.Key.RemoveItems(ownedGroup.Select(entry => entry.Item));
             }
 
-            var targetGroup = FindOrCreateTargetGroup(targetGroups, group.TierName);
+            var targetGroup = FindOrCreateTargetGroup(targetGroups, group.ColumnGroupName);
             var section = new MbColumnSectionViewModel(
                 group.MbColumnSectionName,
                 onSectionChanged,
@@ -58,11 +58,17 @@ public sealed class EtabsAutoGroupingApplyService
                 SelectedTargetGroup = targetGroup,
                 AutoGroupingMetadata = new AutoGroupingSectionMetadata
                 {
+                    ColumnGroupId = group.ColumnGroupId,
+                    ColumnGroupName = group.ColumnGroupName,
+                    GroupXmm = group.GroupXmm,
+                    GroupYmm = group.GroupYmm,
+                    ManualTierName = group.ManualTierName,
                     TierName = group.TierName,
                     FromStory = group.FromStory,
                     ToStory = group.ToStory,
                     LabelFilter = group.LabelFilter,
-                    ColumnLabel = group.ColumnLabel
+                    ColumnLabel = group.ColumnLabel,
+                    EtabsSectionPropertyName = group.SplitEtabsSectionName
                 }
             };
 
@@ -76,14 +82,14 @@ public sealed class EtabsAutoGroupingApplyService
 
     private static ProjectGroupOptionViewModel FindOrCreateTargetGroup(
         ObservableCollection<ProjectGroupOptionViewModel> targetGroups,
-        string tierName)
+        string groupName)
     {
         var existing = targetGroups.FirstOrDefault(group =>
-            string.Equals(group.GroupName, tierName, StringComparison.OrdinalIgnoreCase));
+            string.Equals(group.GroupName, groupName, StringComparison.OrdinalIgnoreCase));
         if (existing is not null)
             return existing;
 
-        var created = new ProjectGroupOptionViewModel(null, tierName, createGroup: true);
+        var created = new ProjectGroupOptionViewModel(null, groupName, createGroup: true);
         targetGroups.Add(created);
         return created;
     }

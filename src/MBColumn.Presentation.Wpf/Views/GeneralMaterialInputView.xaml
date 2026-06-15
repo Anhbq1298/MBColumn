@@ -78,6 +78,53 @@
                                          Text="{Binding MemberLengthDisplay, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" />
                             </Grid>
                         </GroupBox>
+                        <GroupBox Header="ETABS Import Metadata"
+                                  Background="White"
+                                  Foreground="{DynamicResource DarkNavyBrush}"
+                                  BorderBrush="{DynamicResource BorderGreyBrush}"
+                                  Padding="14"
+                                  Margin="0,0,0,14"
+                                  Visibility="{Binding HasEtabsImportMetadata, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="112" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Status" Style="{StaticResource FieldLabelTextStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EtabsImportIsImportedText}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Model" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EtabsMetadataSourceModel}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Column group" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EtabsMetadataColumnGroupId}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Tier" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding EtabsMetadataTierId}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="ETABS section" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding EtabsMetadataSectionProperty}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Stories" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding EtabsMetadataStoryRange}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Source stories" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding EtabsMetadataSourceStories}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="Frame IDs" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding EtabsMetadataSourceFrameIds}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="Labels" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding EtabsMetadataSourceLabels}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="9" Grid.Column="0" Text="Imported" Style="{StaticResource FieldLabelTextStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding EtabsMetadataImportedAt}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            </Grid>
+                        </GroupBox>
                         <GroupBox Header="Material"
                                   Background="White"
                                   Foreground="{DynamicResource DarkNavyBrush}"

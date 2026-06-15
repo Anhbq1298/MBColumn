@@ -44,8 +44,8 @@ public static class InteractionDiagramSvgRenderer
         double ScaleX(double v) => plotX + (v - domain.XMin) / domain.XRange * plotW;
         double ScaleY(double v) => plotY + plotH - (v - domain.YMin) / domain.YRange * plotH;
 
-        var xTicks = GenerateTicks(domain.XMin, domain.XMax, 6, 2);
-        var yTicks = GenerateTicks(domain.YMin, domain.YMax, 6, 2);
+        var xTicks = GenerateTicks(domain.XMin, domain.XMax, 6, 5);
+        var yTicks = GenerateTicks(domain.YMin, domain.YMax, 6, 5);
         double axisX = ScaleX(0);
         double axisY = ScaleY(0);
         double screenCenterX = plotX + plotW / 2.0;

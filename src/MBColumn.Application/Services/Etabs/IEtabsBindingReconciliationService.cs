@@ -8,8 +8,7 @@ public interface IEtabsBindingReconciliationService
         IReadOnlyList<EtabsSectionBinding> bindings,
         string currentModelPath,
         string currentModelName,
-        IReadOnlyList<string> currentStories,
-        IReadOnlyList<string> currentColumnLabels,
+        IReadOnlyList<EtabsColumnObjectKey> currentColumns,
         IReadOnlyList<string> currentPierLabels,
         IReadOnlyList<string> currentLoadCombinations);
 

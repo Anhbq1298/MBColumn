@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using MBColumn.Application.DTOs.Etabs;
 using MBColumn.Application.DTOs.Etabs.AutoGrouping;
@@ -7,6 +8,8 @@ namespace MBColumn.Application.Services.Etabs;
 
 public sealed class ColumnAutoGroupingService
 {
+    private const double XyGroupingToleranceMm = 10.0;
+    private const double ShiftedColumnWarningToleranceMm = 10.0;
     private readonly ColumnGroupingValidator validator;
 
     public ColumnAutoGroupingService(ColumnGroupingValidator? validator = null)
@@ -19,7 +22,6 @@ public sealed class ColumnAutoGroupingService
         var columns = request.Columns
             .Where(c => c.SectionType != SectionShapeType.Irregular)
             .Where(c => !string.IsNullOrWhiteSpace(c.StoryName))
-            .Where(c => !string.IsNullOrWhiteSpace(c.Label))
             .ToList();
 
         var tiers = request.Tiers
@@ -30,11 +32,20 @@ public sealed class ColumnAutoGroupingService
         var result = new AutoGroupingResult();
         result.ValidationMessages.AddRange(validator.ValidateSetup(columns, request.Stories, tiers, resolver));
 
+        if (columns.Count > 0 && columns.Any(c => !c.HasCoordinates))
+        {
+            result.ValidationMessages.Add(new AutoGroupingValidationMessage(
+                AutoGroupingValidationSeverity.Error,
+                AutoGroupingResourceKeys.ErrorNoCoordinates));
+        }
+
+        AddShiftedColumnWarnings(result, columns);
+
         if (result.HasErrors)
             return result;
 
-        var preliminaryGroups = new Dictionary<PreliminaryGroupKey, List<EtabsColumnImportDto>>();
         var tierMatchCounts = tiers.ToDictionary(t => t, _ => 0);
+        var matchedColumns = new List<MatchedColumn>();
 
         foreach (var column in columns)
         {
@@ -47,18 +58,13 @@ public sealed class ColumnAutoGroupingService
                 continue;
 
             tierMatchCounts[tier]++;
-            var key = new PreliminaryGroupKey(tier, range.TierOrder, column.Label.Trim());
-            if (!preliminaryGroups.TryGetValue(key, out var groupItems))
-            {
-                groupItems = [];
-                preliminaryGroups[key] = groupItems;
-            }
-
-            groupItems.Add(column);
+            matchedColumns.Add(new MatchedColumn(column, tier, range.TierOrder));
         }
 
         AddCoverageMessages(result, columns, tiers, tierMatchCounts, resolver);
-        var finalGroups = SplitMixedSectionGroups(result, preliminaryGroups);
+
+        var xyGroups = BuildXyGroups(matchedColumns);
+        var finalGroups = BuildTierAndSectionGroups(result, xyGroups, resolver);
 
         if (finalGroups.Count == 0)
         {
@@ -73,6 +79,27 @@ public sealed class ColumnAutoGroupingService
         result.PreviewRows = BuildPreviewRows(finalGroups);
         result.TierSummaryRows = BuildTierSummaryRows(finalGroups);
         return result;
+    }
+
+    private static void AddShiftedColumnWarnings(
+        AutoGroupingResult result,
+        IReadOnlyList<EtabsColumnImportDto> columns)
+    {
+        foreach (var column in columns)
+        {
+            if (!column.HasCoordinates)
+                continue;
+
+            var shift = Distance(column.BottomXmm, column.BottomYmm, column.TopXmm, column.TopYmm);
+            if (shift <= ShiftedColumnWarningToleranceMm)
+                continue;
+
+            result.ValidationMessages.Add(new AutoGroupingValidationMessage(
+                AutoGroupingValidationSeverity.Warning,
+                AutoGroupingResourceKeys.WarningShiftedColumn,
+                string.IsNullOrWhiteSpace(column.ObjectName) ? column.Label : column.ObjectName,
+                shift));
+        }
     }
 
     private static void AddCoverageMessages(
@@ -109,66 +136,164 @@ public sealed class ColumnAutoGroupingService
         }
     }
 
-    private static List<AutoGroupedColumnSection> SplitMixedSectionGroups(
+    private static IReadOnlyList<XyColumnGroup> BuildXyGroups(IReadOnlyList<MatchedColumn> columns)
+    {
+        var buckets = new Dictionary<SpatialBucket, List<XyColumnGroup>>();
+        var groups = new List<XyColumnGroup>();
+
+        foreach (var column in columns)
+        {
+            var x = column.Column.CenterXmm;
+            var y = column.Column.CenterYmm;
+            var bucket = SpatialBucket.From(x, y, XyGroupingToleranceMm);
+
+            XyColumnGroup? matchedGroup = null;
+            for (var dx = -1; dx <= 1 && matchedGroup is null; dx++)
+            {
+                for (var dy = -1; dy <= 1 && matchedGroup is null; dy++)
+                {
+                    var candidateBucket = new SpatialBucket(bucket.X + dx, bucket.Y + dy);
+                    if (!buckets.TryGetValue(candidateBucket, out var candidates))
+                        continue;
+
+                    matchedGroup = candidates.FirstOrDefault(group =>
+                        Distance(group.GroupXmm, group.GroupYmm, x, y) <= XyGroupingToleranceMm);
+                }
+            }
+
+            if (matchedGroup is null)
+            {
+                matchedGroup = new XyColumnGroup();
+                groups.Add(matchedGroup);
+
+                if (!buckets.TryGetValue(bucket, out var bucketGroups))
+                {
+                    bucketGroups = [];
+                    buckets[bucket] = bucketGroups;
+                }
+
+                bucketGroups.Add(matchedGroup);
+            }
+
+            matchedGroup.Add(column);
+        }
+
+        return groups
+            .OrderBy(group => group.GroupXmm)
+            .ThenBy(group => group.GroupYmm)
+            .ToList();
+    }
+
+    private static List<AutoGroupedColumnSection> BuildTierAndSectionGroups(
         AutoGroupingResult result,
-        IReadOnlyDictionary<PreliminaryGroupKey, List<EtabsColumnImportDto>> preliminaryGroups)
+        IReadOnlyList<XyColumnGroup> xyGroups,
+        StoryTierResolver resolver)
     {
         var finalGroups = new List<AutoGroupedColumnSection>();
 
-        foreach (var group in preliminaryGroups.OrderBy(g => g.Key.TierOrder).ThenBy(g => g.Key.Label, StringComparer.OrdinalIgnoreCase))
+        for (var groupIndex = 0; groupIndex < xyGroups.Count; groupIndex++)
         {
-            var tier = group.Key.Tier;
-            var sectionNames = DistinctDisplayValues(group.Value.Select(i => i.EtabsSectionName));
-            var materialNames = DistinctDisplayValues(group.Value.Select(i => i.MaterialName));
-            var splitBySection = sectionNames.Count > 1;
+            var xyGroup = xyGroups[groupIndex];
+            var columnGroupId = $"CG-{groupIndex + 1:000}";
+            var columnGroupName = FormatColumnGroupName(columnGroupId, xyGroup.GroupXmm, xyGroup.GroupYmm);
 
-            if (splitBySection)
+            foreach (var tierGroup in xyGroup.Items
+                         .GroupBy(item => item.Tier)
+                         .OrderBy(group => group.Min(item => item.TierOrder)))
             {
-                result.ValidationMessages.Add(new AutoGroupingValidationMessage(
-                    AutoGroupingValidationSeverity.Warning,
-                    AutoGroupingResourceKeys.WarningMixedSections,
-                    tier.TierName,
-                    group.Key.Label,
-                    string.Join(", ", sectionNames)));
+                var tier = tierGroup.Key;
+                var orderedItems = tierGroup
+                    .OrderBy(item => StoryIndex(resolver, item.Column.StoryName))
+                    .ThenBy(item => item.Column.StoryName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(item => item.Column.ObjectName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
-                result.ValidationMessages.Add(new AutoGroupingValidationMessage(
-                    AutoGroupingValidationSeverity.Info,
-                    AutoGroupingResourceKeys.InfoMixedSectionsSplit,
-                    tier.TierName,
-                    group.Key.Label));
-            }
+                var sectionNames = DistinctDisplayValues(orderedItems.Select(item => item.Column.EtabsSectionName));
+                var materialNames = DistinctDisplayValues(orderedItems.Select(item => item.Column.MaterialName));
+                var splitRuns = SplitBySectionChange(orderedItems);
+                var splitBySection = splitRuns.Count > 1;
 
-            if (materialNames.Count > 1)
-            {
-                result.ValidationMessages.Add(new AutoGroupingValidationMessage(
-                    AutoGroupingValidationSeverity.Warning,
-                    AutoGroupingResourceKeys.WarningMixedMaterials,
-                    tier.TierName,
-                    group.Key.Label,
-                    string.Join(", ", materialNames)));
-            }
-
-            var splitGroups = splitBySection
-                ? group.Value.GroupBy(i => i.EtabsSectionName, StringComparer.OrdinalIgnoreCase)
-                : [group.Value.GroupBy(_ => string.Empty).First()];
-
-            foreach (var split in splitGroups.OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
-            {
-                finalGroups.Add(new AutoGroupedColumnSection
+                if (sectionNames.Count > 1)
                 {
-                    TierName = tier.TierName.Trim(),
-                    FromStory = tier.FromStory.Trim(),
-                    ToStory = tier.ToStory.Trim(),
-                    LabelFilter = tier.LabelFilter.Trim(),
-                    ColumnLabel = group.Key.Label,
-                    SplitEtabsSectionName = split.Key,
-                    WasSplitByEtabsSection = splitBySection,
-                    SourceEtabsItems = split.ToList()
-                });
+                    result.ValidationMessages.Add(new AutoGroupingValidationMessage(
+                        AutoGroupingValidationSeverity.Warning,
+                        AutoGroupingResourceKeys.WarningMixedSections,
+                        tier.TierName,
+                        columnGroupName,
+                        string.Join(", ", sectionNames)));
+
+                    result.ValidationMessages.Add(new AutoGroupingValidationMessage(
+                        AutoGroupingValidationSeverity.Info,
+                        AutoGroupingResourceKeys.InfoMixedSectionsSplit,
+                        tier.TierName,
+                        columnGroupName));
+                }
+
+                if (materialNames.Count > 1)
+                {
+                    result.ValidationMessages.Add(new AutoGroupingValidationMessage(
+                        AutoGroupingValidationSeverity.Warning,
+                        AutoGroupingResourceKeys.WarningMixedMaterials,
+                        tier.TierName,
+                        columnGroupName,
+                        string.Join(", ", materialNames)));
+                }
+
+                for (var runIndex = 0; runIndex < splitRuns.Count; runIndex++)
+                {
+                    var run = splitRuns[runIndex];
+                    if (run.Count == 0)
+                        continue;
+
+                    var fromStory = run[0].Column.StoryName.Trim();
+                    var toStory = run[^1].Column.StoryName.Trim();
+                    var tierName = splitBySection
+                        ? $"{tier.TierName.Trim()}{BuildAlphaSuffix(runIndex)}"
+                        : tier.TierName.Trim();
+
+                    finalGroups.Add(new AutoGroupedColumnSection
+                    {
+                        ColumnGroupId = columnGroupId,
+                        ColumnGroupName = columnGroupName,
+                        GroupXmm = xyGroup.GroupXmm,
+                        GroupYmm = xyGroup.GroupYmm,
+                        ManualTierName = tier.TierName.Trim(),
+                        TierName = tierName,
+                        FromStory = fromStory,
+                        ToStory = toStory,
+                        LabelFilter = tier.LabelFilter.Trim(),
+                        ColumnLabel = columnGroupName,
+                        SplitEtabsSectionName = DistinctDisplayValues(run.Select(item => item.Column.EtabsSectionName)).FirstOrDefault() ?? "",
+                        WasSplitByEtabsSection = splitBySection,
+                        SourceEtabsItems = run.Select(item => item.Column).ToList()
+                    });
+                }
             }
         }
 
         return finalGroups;
+    }
+
+    private static List<List<MatchedColumn>> SplitBySectionChange(IReadOnlyList<MatchedColumn> orderedItems)
+    {
+        var runs = new List<List<MatchedColumn>>();
+        List<MatchedColumn>? current = null;
+        string? currentSection = null;
+
+        foreach (var item in orderedItems)
+        {
+            var section = NormalizeSectionName(item.Column.EtabsSectionName);
+            if (current is null || !string.Equals(currentSection, section, StringComparison.OrdinalIgnoreCase))
+            {
+                current = [];
+                runs.Add(current);
+                currentSection = section;
+            }
+
+            current.Add(item);
+        }
+
+        return runs;
     }
 
     private static List<AutoGroupingPreviewRow> BuildPreviewRows(IEnumerable<AutoGroupedColumnSection> groups)
@@ -179,9 +304,13 @@ public sealed class ColumnAutoGroupingService
                 var materialNames = DistinctDisplayValues(group.SourceEtabsItems.Select(i => i.MaterialName));
                 return new AutoGroupingPreviewRow
                 {
+                    ColumnGroupId = group.ColumnGroupId,
+                    ColumnGroupName = group.ColumnGroupName,
+                    GroupXmm = group.GroupXmm,
+                    GroupYmm = group.GroupYmm,
                     TierName = group.TierName,
                     StoryRange = group.StoryRange,
-                    ColumnLabel = group.ColumnLabel,
+                    ColumnLabel = group.ColumnGroupName,
                     MbColumnSectionName = group.MbColumnSectionName,
                     Count = group.SourceEtabsItems.Count,
                     EtabsSectionsDisplayText = string.Join(", ", sectionNames),
@@ -196,13 +325,13 @@ public sealed class ColumnAutoGroupingService
         => groups
             .GroupBy(group => new
             {
-                group.TierName,
+                group.ManualTierName,
                 group.FromStory,
                 group.ToStory
             })
             .Select(group => new AutoGroupingTierSummaryRow
             {
-                TierName = group.Key.TierName,
+                TierName = group.Key.ManualTierName,
                 StoryRange = string.Equals(group.Key.FromStory, group.Key.ToStory, StringComparison.OrdinalIgnoreCase)
                     ? group.Key.FromStory
                     : $"{group.Key.FromStory}-{group.Key.ToStory}",
@@ -218,14 +347,13 @@ public sealed class ColumnAutoGroupingService
         var reserved = new HashSet<string>(reservedSectionNames, StringComparer.OrdinalIgnoreCase);
         foreach (var group in groups)
         {
-            var rawName = $"{group.TierName}_{group.ColumnLabel}";
-
-            if (group.WasSplitByEtabsSection)
-                rawName = $"{rawName}_{group.SplitEtabsSectionName}";
-
-            var sectionName = NextAvailableName(SanitizeName(rawName), reserved);
-            group.MbColumnSectionName = sectionName;
-            reserved.Add(sectionName);
+            var sectionName = string.IsNullOrWhiteSpace(group.SplitEtabsSectionName)
+                ? "Section"
+                : group.SplitEtabsSectionName;
+            var rawName = $"{group.ColumnGroupId}_{group.TierName}_{group.StoryRange}_{sectionName}";
+            var mbSectionName = NextAvailableName(SanitizeName(rawName), reserved);
+            group.MbColumnSectionName = mbSectionName;
+            reserved.Add(mbSectionName);
         }
     }
 
@@ -266,7 +394,62 @@ public sealed class ColumnAutoGroupingService
         return string.IsNullOrWhiteSpace(result) ? "ETABS_Section" : result.Trim('_');
     }
 
-    private sealed record PreliminaryGroupKey(AutoGroupingTier Tier, int TierOrder, string Label);
+    private static string FormatColumnGroupName(string id, double xMm, double yMm)
+        => string.Format(CultureInfo.InvariantCulture, "{0} [X={1:0.00}, Y={2:0.00}]", id, xMm / 1000.0, yMm / 1000.0);
+
+    private static int StoryIndex(StoryTierResolver resolver, string storyName)
+        => resolver.TryGetStoryIndex(storyName, out var index) ? index : int.MaxValue;
+
+    private static string NormalizeSectionName(string sectionName)
+        => string.IsNullOrWhiteSpace(sectionName) ? "(none)" : sectionName.Trim();
+
+    private static string BuildAlphaSuffix(int index)
+    {
+        var value = index;
+        var chars = new Stack<char>();
+        do
+        {
+            chars.Push((char)('A' + value % 26));
+            value = value / 26 - 1;
+        }
+        while (value >= 0);
+
+        return new string(chars.ToArray());
+    }
+
+    private static double Distance(double x1, double y1, double x2, double y2)
+    {
+        var dx = x1 - x2;
+        var dy = y1 - y2;
+        return Math.Sqrt(dx * dx + dy * dy);
+    }
+
+    private sealed record MatchedColumn(EtabsColumnImportDto Column, AutoGroupingTier Tier, int TierOrder);
+
+    private readonly record struct SpatialBucket(long X, long Y)
+    {
+        public static SpatialBucket From(double x, double y, double bucketSize)
+            => new(
+                (long)Math.Floor(x / bucketSize),
+                (long)Math.Floor(y / bucketSize));
+    }
+
+    private sealed class XyColumnGroup
+    {
+        private double xSum;
+        private double ySum;
+
+        public List<MatchedColumn> Items { get; } = [];
+        public double GroupXmm => Items.Count == 0 ? 0 : xSum / Items.Count;
+        public double GroupYmm => Items.Count == 0 ? 0 : ySum / Items.Count;
+
+        public void Add(MatchedColumn column)
+        {
+            Items.Add(column);
+            xSum += column.Column.CenterXmm;
+            ySum += column.Column.CenterYmm;
+        }
+    }
 
     private static class LabelFilterMatcher
     {
@@ -299,10 +482,11 @@ public sealed class ColumnAutoGroupingService
         }
 
         private static bool IsExclude(string token)
-            => token.StartsWith("!", StringComparison.Ordinal) || token.StartsWith("-", StringComparison.Ordinal);
+            => token.StartsWith('!') || token.StartsWith('-');
 
         private static bool MatchesToken(string label, string token)
         {
+            label ??= "";
             if (token.Contains('*', StringComparison.Ordinal) || token.Contains('?', StringComparison.Ordinal))
             {
                 var pattern = "^" + Regex.Escape(token).Replace("\\*", ".*", StringComparison.Ordinal)

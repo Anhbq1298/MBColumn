@@ -16,6 +16,8 @@ public sealed class MbColumnMappedForceRow
     public EtabsImportedObjectType ObjectType { get; set; }
     public string Story { get; set; } = string.Empty;
     public string Label { get; set; } = string.Empty;
+    public string SourceObjectName { get; set; } = string.Empty;
+    public string ForceStation { get; set; } = string.Empty;
 
     /// <summary>Positive = compression, negative = tension.</summary>
     public double NEd { get; set; }
