@@ -1127,6 +1127,11 @@ public sealed class MainWindowViewModel : ViewModelBase
             snapshot.LoadCases = preservedLoadCases.Concat(kvp.Value).ToList();
             snapshot.LastEtabsRefreshAt = DateTime.UtcNow;
             snapshot.LastEtabsRefreshSummary = result.Message;
+            if (result.AuditLog is not null)
+            {
+                snapshot.EtabsMetadata ??= new Application.DTOs.Etabs.EtabsImportMetadataDto();
+                snapshot.EtabsMetadata.ForceReimportAuditLogs.Add(result.AuditLog);
+            }
 
             projectService.SaveColumnInput(colRecord.Id, snapshot);
             projectSession.ClearColumnResult(colRecord.Id);
@@ -1177,7 +1182,12 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         if (etabsForceRefreshDialogService is null) return false;
         return GetEtabsForceRefreshColumns(scope, projectService.GetColumns())
-            .Any(column => projectService.LoadColumnInput(column.Id)?.EtabsBinding is not null);
+            .Any(column =>
+            {
+                var snapshot = projectService.LoadColumnInput(column.Id);
+                return snapshot?.EtabsBinding is not null
+                    || snapshot?.EtabsMetadata?.IsEtabsImportedSection == true;
+            });
     }
 
     private IReadOnlyList<ColumnRecord> GetEtabsForceRefreshColumns(

@@ -14,6 +14,10 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
     private readonly IEtabsForceMapper forceMapper;
     private readonly IEtabsForceChangeDetector changeDetector;
     private readonly IEtabsResultStateService resultStateService;
+    private readonly object candidateColumnCacheLock = new();
+    private UnitSystem? cachedCandidateColumnUnitSystem;
+    private DateTime cachedCandidateColumnReadAtUtc;
+    private IReadOnlyList<EtabsColumnImportDto>? cachedCandidateColumns;
 
     public EtabsForceRefreshService(
         IEtabsConnectionService connectionService,
@@ -53,6 +57,41 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         // Would call SapModel.DesignConcrete.StartDesign() through the connection service.
     }
 
+    public EtabsBindingValidationResult ValidateEtabsSourceObjectMapping(
+        EtabsForceRefreshRequest request,
+        UnitSystem unitSystem)
+        => ValidateEtabsSourceObjectMapping(request, unitSystem, out _);
+
+    public EtabsBindingValidationResult ValidateEtabsSourceObjectMapping(
+        EtabsForceRefreshRequest request,
+        UnitSystem unitSystem,
+        out EtabsModelInfoDto? connectedModelInfo)
+    {
+        var connectionResult = connectionService.ConnectToRunningEtabs();
+        if (!connectionResult.IsConnected)
+            throw new InvalidOperationException("Cannot connect to ETABS: " + connectionResult.Message);
+
+        var modelInfo = connectionResult.ModelInfo!;
+        connectedModelInfo = modelInfo;
+        var currentCombos = columnImportService.GetLoadCombinations();
+        var candidateColumns = GetCandidateColumnsCached(unitSystem);
+        var currentColumns = GetCurrentColumnKeys(candidateColumns);
+        var currentPierLabels = GetCurrentPierLabels(candidateColumns);
+
+        var validation = reconciliationService.ValidateBindings(
+            request.Bindings,
+            modelInfo.ModelPath,
+            modelInfo.ModelName,
+            currentColumns,
+            currentPierLabels,
+            currentCombos);
+
+        if (request.AllowSourceModelMismatch && request.SourceModelMismatchConfirmed)
+            validation.ModelChanged = false;
+
+        return validation;
+    }
+
     public EtabsForceRefreshPreview BuildPreview(
         EtabsForceRefreshRequest request,
         IReadOnlyDictionary<string, IReadOnlyList<SnapshotLoadCase>> existingLoadCasesBySection,
@@ -64,30 +103,22 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
 
         var modelInfo = connectionResult.ModelInfo!;
         var currentCombos = columnImportService.GetLoadCombinations();
-        var currentColumns = columnImportService.GetCandidateColumns(unitSystem)
-            .Select(column => new EtabsColumnObjectKey
-            {
-                Story = column.StoryName,
-                Label = column.Label,
-                UniqueName = column.ObjectName,
-                X = column.CenterXmm,
-                Y = column.CenterYmm,
-                BottomX = column.BottomXmm,
-                BottomY = column.BottomYmm,
-                TopX = column.TopXmm,
-                TopY = column.TopYmm,
-                SectionPropertyName = column.EtabsSectionName
-            })
-            .ToList();
+        var candidateColumns = GetCandidateColumnsCached(unitSystem);
+        var currentColumns = GetCurrentColumnKeys(candidateColumns);
+        var currentPierLabels = GetCurrentPierLabels(candidateColumns);
+        var targetBindings = ResolveTargetBindings(request);
 
         // Validate bindings against current model state
         var validation = reconciliationService.ValidateBindings(
-            request.Bindings,
+            targetBindings,
             modelInfo.ModelPath,
             modelInfo.ModelName,
             currentColumns,
-            [],
+            currentPierLabels,
             currentCombos);
+
+        if (request.AllowSourceModelMismatch && request.SourceModelMismatchConfirmed)
+            validation.ModelChanged = false;
 
         // Select ETABS output only for requested combos
         SelectOutputCombinations(request.SelectedLoadCombinations);
@@ -101,7 +132,7 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         int totalMissing = 0;
         int remapNeeded = 0;
 
-        foreach (var binding in request.Bindings)
+        foreach (var binding in targetBindings)
         {
             var sectionName = binding.MbColumnSectionName;
             existingLoadCasesBySection.TryGetValue(sectionName, out var existingCases);
@@ -180,9 +211,32 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
             Success = true,
             Message = appliedCount == 0
                 ? "No sections were updated."
-                : $"Forces refreshed. {appliedCount} section(s) updated.",
+                : $"Forces refreshed. {appliedCount} section(s) updated. Changes made, recalculation required.",
             Preview = preview,
-            UpdatedLoadCasesBySection = updatedBySection
+            UpdatedLoadCasesBySection = updatedBySection,
+            AuditLog = BuildAuditLog(preview, updatedBySection.Values.Sum(rows => rows.Count))
+        };
+    }
+
+    private static EtabsForceReimportAuditLogDto BuildAuditLog(
+        EtabsForceRefreshPreview preview,
+        int demandCasesImported)
+    {
+        var request = preview.Request;
+        return new EtabsForceReimportAuditLogDto
+        {
+            ImportedAt = DateTime.UtcNow,
+            ModelNameOrPathDiffered = request?.AllowSourceModelMismatch == true,
+            SourceModelConfirmedByUser = request?.SourceModelMismatchConfirmed == true,
+            ResolutionMethod = request?.SourceResolutionMethod ?? "",
+            ResolvedEtabsObjectUniqueNames = request?.ResolvedEtabsObjectUniqueNames.ToList() ?? [],
+            StoryCheckResult = preview.ValidationResult?.ObjectHealthList.All(h => h.Status == EtabsBindingHealthStatus.Ok) == true ? "Passed" : "Failed",
+            XyCheckResult = preview.ValidationResult?.ObjectHealthList.All(h => h.Status == EtabsBindingHealthStatus.Ok) == true ? "Passed" : "Failed",
+            SelectedLoadCombinations = request?.SelectedLoadCombinations.ToList() ?? [],
+            SelectedLoadCases = request?.SelectedLoadCases.ToList() ?? [],
+            ForceExtractionMode = request?.ExtractionMode == EtabsForceExtractionMode.Envelope ? "Envelope Forces" : "Top + Bottom Forces",
+            ImportBehavior = request?.AppendAsNewLoads == true ? "Append as new loads" : "Replace existing ETABS loads",
+            DemandCasesImported = demandCasesImported
         };
     }
 
@@ -191,6 +245,53 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         double dx = x1 - x2;
         double dy = y1 - y2;
         return System.Math.Sqrt(dx * dx + dy * dy);
+    }
+
+    private static List<EtabsColumnObjectKey> GetCurrentColumnKeys(IReadOnlyList<EtabsColumnImportDto> candidateColumns)
+        => candidateColumns.Select(column => new EtabsColumnObjectKey
+            {
+                Story = column.StoryName,
+                Label = column.Label,
+                UniqueName = column.ObjectName,
+                X = column.CenterXmm,
+                Y = column.CenterYmm,
+                BottomX = column.BottomXmm,
+                BottomY = column.BottomYmm,
+                TopX = column.TopXmm,
+                TopY = column.TopYmm,
+                SectionPropertyName = column.EtabsSectionName
+            })
+            .ToList();
+
+    private static List<string> GetCurrentPierLabels(IReadOnlyList<EtabsColumnImportDto> candidateColumns)
+        => candidateColumns
+            .Select(column => column.PierName)
+            .Where(pier => !string.IsNullOrWhiteSpace(pier))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private IReadOnlyList<EtabsColumnImportDto> GetCandidateColumnsCached(UnitSystem unitSystem)
+    {
+        lock (candidateColumnCacheLock)
+        {
+            if (cachedCandidateColumns is not null
+                && cachedCandidateColumnUnitSystem == unitSystem
+                && DateTime.UtcNow - cachedCandidateColumnReadAtUtc < TimeSpan.FromSeconds(10))
+            {
+                return cachedCandidateColumns;
+            }
+        }
+
+        var candidateColumns = columnImportService.GetCandidateColumns(unitSystem);
+
+        lock (candidateColumnCacheLock)
+        {
+            cachedCandidateColumns = candidateColumns;
+            cachedCandidateColumnUnitSystem = unitSystem;
+            cachedCandidateColumnReadAtUtc = DateTime.UtcNow;
+        }
+
+        return candidateColumns;
     }
 
     private IReadOnlyList<MbColumnMappedForceRow> PullForcesForBinding(
@@ -276,33 +377,38 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         return rows;
     }
 
+    private static IReadOnlyList<EtabsSectionBinding> ResolveTargetBindings(EtabsForceRefreshRequest request)
+    {
+        if (request.RefreshAllSections || request.TargetMode != EtabsForceRefreshTargetMode.CurrentSectionOnly)
+            return request.Bindings;
+
+        if (request.SelectedSectionNames.Count == 0)
+            return request.Bindings.Take(1).ToList();
+
+        var sectionNames = request.SelectedSectionNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return request.Bindings
+            .Where(binding => sectionNames.Contains(binding.MbColumnSectionName)
+                || sectionNames.Contains(binding.MbColumnSectionId))
+            .ToList();
+    }
+
     private static IReadOnlyList<EtabsForceResultDto> FilterByLocation(
         IReadOnlyList<EtabsForceResultDto> forces,
         EtabsForceRefreshRequest request)
     {
-        if (request.ImportEnvelope)
+        return request.ExtractionMode switch
         {
-            return forces; // Envelope combos produce Max and Min rows, which are already marked and kept
-        }
-
-        if (request.ImportTop && request.ImportBottom)
-        {
-            return forces.Where(f =>
-            {
-                var station = f.Station.Trim();
-                return string.Equals(station, "Top", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(station, "Bot", StringComparison.OrdinalIgnoreCase);
-            }).ToList();
-        }
-
-        return forces.Where(f =>
-        {
-            var station = f.Station.Trim();
-            if (request.ImportTop && (station.Equals("Top", StringComparison.OrdinalIgnoreCase))) return true;
-            if (request.ImportBottom && (station.Equals("Bottom", StringComparison.OrdinalIgnoreCase) || station.Equals("Bot", StringComparison.OrdinalIgnoreCase))) return true;
-            return false;
-        }).ToList();
+            EtabsForceExtractionMode.Envelope => forces,
+            EtabsForceExtractionMode.TopBottom => forces.Where(f =>
+                {
+                    var station = f.Station.Trim();
+                    return string.Equals(station, "Top", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(station, "Bot", StringComparison.OrdinalIgnoreCase);
+                })
+                .ToList(),
+            _ => []
+        };
     }
 
     private void SelectOutputCombinations(IReadOnlyList<string> combos)

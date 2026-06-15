@@ -10,6 +10,7 @@ public sealed class EtabsForceRefreshResult
     public string Message { get; set; } = "";
     public EtabsForceRefreshPreview? Preview { get; set; }
     public Dictionary<string, IReadOnlyList<SnapshotLoadCase>> UpdatedLoadCasesBySection { get; set; } = [];
+    public EtabsForceReimportAuditLogDto? AuditLog { get; set; }
 }
 
 public interface IEtabsForceRefreshService
@@ -18,6 +19,15 @@ public interface IEtabsForceRefreshService
 
     void RunEtabsAnalysis();
     void RunEtabsDesign();
+
+    EtabsBindingValidationResult ValidateEtabsSourceObjectMapping(
+        EtabsForceRefreshRequest request,
+        UnitSystem unitSystem);
+
+    EtabsBindingValidationResult ValidateEtabsSourceObjectMapping(
+        EtabsForceRefreshRequest request,
+        UnitSystem unitSystem,
+        out EtabsModelInfoDto? connectedModelInfo);
 
     EtabsForceRefreshPreview BuildPreview(
         EtabsForceRefreshRequest request,

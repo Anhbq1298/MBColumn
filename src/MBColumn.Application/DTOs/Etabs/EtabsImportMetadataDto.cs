@@ -35,4 +35,6 @@ public sealed class EtabsImportMetadataDto
     public List<string> SourceAreaSectionProperties { get; set; } = [];
     public string? IrregularBoundaryWarning { get; set; }
     public int OpeningCount { get; set; }
+
+    public List<EtabsForceReimportAuditLogDto> ForceReimportAuditLogs { get; set; } = [];
 }

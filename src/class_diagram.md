@@ -73,8 +73,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsDesignForceTable** | Represents the EtabsDesignForceTable class. Key properties: TableKey, TableVersion, FieldKeys, Records. | `EtabsDesignForceTable.cs` |
 | `record` | **EtabsForceCacheBuildResult** | Encapsulates the result of EtabsForceCacheBuild operations. | `EtabsForceCacheBuildResult.cs` |
 | `record` | **EtabsForceCacheQuery** | Represents the EtabsForceCacheQuery record. | `EtabsForceCacheQuery.cs` |
+| `enum` | **EtabsForceExtractionMode** | Enumeration defining states/types for EtabsForceExtractionMode. | `EtabsForceRefreshRequest.cs` |
 | `class` | **EtabsForceRefreshPreview** | Represents the EtabsForceRefreshPreview class. Key properties: SectionsAffected, LoadCombinationsSelected, ExistingLoadRows, NewLoadRows. | `EtabsForceRefreshPreview.cs` |
 | `class` | **EtabsForceRefreshRequest** | Represents the EtabsForceRefreshRequest class. Key properties: Bindings, SelectedLoadCombinations, SelectedLoadCases, ForceSource. | `EtabsForceRefreshRequest.cs` |
+| `enum` | **EtabsForceRefreshTargetMode** | Enumeration defining states/types for EtabsForceRefreshTargetMode. | `EtabsForceRefreshRequest.cs` |
+| `class` | **EtabsForceReimportAuditLogDto** | Data transfer object carrying EtabsForceReimportAuditLog data. Key properties: ImportedAt, ModelNameOrPathDiffered, SourceModelConfirmedByUser, ResolutionMethod. | `EtabsForceReimportAuditLogDto.cs` |
 | `record` | **EtabsForceResultDto** | /// ETABS force row after unit conversion. P is already converted to MBColumn /// compression-positive convention by the extraction service; M2/M3 and V2/V3 /// keep their ETABS local-axis names until the central convention mapper assigns /// them to MBColumn Mx/My and Vx/Vy. /// | `EtabsForceResultDto.cs` |
 | `class` | **EtabsForceRowChange** | Represents the EtabsForceRowChange class. Key properties: LoadCaseName, Location, OldP, NewP. | `EtabsForceRowChange.cs` |
 | `enum` | **EtabsForceRowChangeStatus** | Enumeration defining states/types for EtabsForceRowChangeStatus. | `EtabsForceRowChange.cs` |
@@ -336,7 +339,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ColumnAutoGroupingService** | Provides service logic and operations for ColumnAutoGrouping. Key methods: Build. | `ColumnAutoGroupingService.cs` |
 | `class` | **ColumnGroupingValidator** | Validation logic for ColumnGrouping. Key methods: ValidateSetup. | `ColumnGroupingValidator.cs` |
 | `class` | **EtabsForceCacheIdentity** | Represents the EtabsForceCacheIdentity class. Key properties: ForceSource, ObjectType, SelectedCombos, Model. | `IEtabsForceCacheStore.cs` |
-| `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Success, Message, Preview. | `IEtabsForceRefreshService.cs` |
+| `class` | **EtabsForceRefreshResult** | Encapsulates the result of EtabsForceRefresh operations. Key properties: Success, Message, Preview, AuditLog. | `IEtabsForceRefreshService.cs` |
 | `class` | **EtabsForceScope** | Represents the EtabsForceScope class. Key properties: Bindings, LoadCombinations, ForceSource, ImportTop. | `IEtabsForceSelectionService.cs` |
 | `class` | **EtabsSectionForceFilterService** | Provides service logic and operations for EtabsSectionForceFilter. Key methods: FilterForcesForSection, FindMissingItems. | `EtabsSectionForceFilterService.cs` |
 | `class` | **EtabsToMbColumnForceMapper** | /// Single ETABS-to-MBColumn force convention mapper. /// MBColumn X is ETABS local 2, and MBColumn Y is ETABS local 3. /// Therefore Mx = ETABS M2 and My = ETABS M3. This is axis-based; /// shear-flexure design pairs remain Vx/V2 with My/M3 and Vy/V3 with Mx/M2. ///. Key methods: RawEtabsPToNEd, RawEtabsV2ToVx, RawEtabsV3ToVy, RawEtabsM2ToMx. | `EtabsToMbColumnForceMapper.cs` |
@@ -551,7 +554,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 
 | Type | Name | Description | File |
 |---|---|---|---|
-| `class` | **EtabsForceRefreshService** | Provides service logic and operations for EtabsForceRefresh. Key methods: CheckResultState, RunEtabsAnalysis, RunEtabsDesign, BuildPreview. | `EtabsForceRefreshService.cs` |
+| `class` | **EtabsForceRefreshService** | Provides service logic and operations for EtabsForceRefresh. Key methods: CheckResultState, RunEtabsAnalysis, RunEtabsDesign, ValidateEtabsSourceObjectMapping. | `EtabsForceRefreshService.cs` |
 | `class` | **EtabsResultStateService** | Provides service logic and operations for EtabsResultState. Key methods: CheckElementForceAvailability, CheckDesignForceAvailability. | `EtabsResultStateService.cs` |
 
 ### Etabs/Piers
@@ -893,10 +896,11 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsColumnImportRowViewModel** | Represents the EtabsColumnImportRowViewModel class. Key properties: IsSelected, ObjectName, Pier, Story. | `EtabsColumnImportRowViewModel.cs` |
 | `enum` | **EtabsDuplicateHandlingMode** | Enumeration defining states/types for EtabsDuplicateHandlingMode. | `EtabsImportViewModel.cs` |
 | `record` | **EtabsDuplicateHandlingOption** | Represents the EtabsDuplicateHandlingOption record. | `EtabsImportViewModel.cs` |
+| `class` | **EtabsFallbackCandidateViewModel** | Represents the EtabsFallbackCandidateViewModel class. Key properties: Source, UniqueName, Label, Story. | `EtabsForceRefreshViewModel.cs` |
 | `class` | **EtabsForceImportRowViewModel** | Represents the EtabsForceImportRowViewModel class. Key properties: IsSelected, ObjectName, Pier, Story. | `EtabsForceImportRowViewModel.cs` |
 | `enum` | **EtabsForceRefreshScope** | Enumeration defining states/types for EtabsForceRefreshScope. Key methods: Dispose. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
 | `class` | **EtabsForceRefreshSectionRowViewModel** | Represents the EtabsForceRefreshSectionRowViewModel class. Key properties: SectionName, StatusText, OldRows, NewRows. | `EtabsForceRefreshViewModel.cs` |
-| `class` | **EtabsForceRefreshViewModel** | Represents the EtabsForceRefreshViewModel class. Key properties: Result, LoadCombinations, SectionRows, ConnectCommand. | `EtabsForceRefreshViewModel.cs` |
+| `class` | **EtabsForceRefreshViewModel** | Represents the EtabsForceRefreshViewModel class. Key properties: Result, LoadCombinations, SectionRows, FallbackCandidates. | `EtabsForceRefreshViewModel.cs` |
 | `class` | **EtabsImportSummaryRowViewModel** | Represents the EtabsImportSummaryRowViewModel class. Key properties: SourceColumn, Mapping, NewSectionName, Pier. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsImportViewModel** | Represents the EtabsImportViewModel class. Key methods: ApplyPreloadData, AssignSelectedItemsToSection, RemoveItemFromSection, DeleteMbColumnSection. Key properties: ImportResult, Columns, FilteredColumns, TierObjectCandidatesView. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsLoadCombinationViewModel** | Represents the EtabsLoadCombinationViewModel class. Key methods: SetSelectedSilently. Key properties: Name, IsSelected. | `EtabsImportViewModel.cs` |
@@ -960,6 +964,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **ShearResultViewModel** | /// Display ViewModel for the governing shear check result (Results tab sidebar). /// Force values arrive in display units; length/stress intermediates arrive in base units and are formatted through UnitProfile. ///. Key methods: Load. Key properties: HasResult, EnvelopeSummaryRows, HasEnvelopeSummary, HasDemand. | `ShearResultViewModel.cs` |
 | `enum` | **SnapKind** | Enumeration defining states/types for SnapKind. | `SnapResult.cs` |
 | `class` | **SnapResult** | Encapsulates the result of Snap operations. Key properties: X, Y, Kind, HasSnap. | `SnapResult.cs` |
+| `enum` | **SourceObjectResolutionStatus** | Enumeration defining states/types for SourceObjectResolutionStatus. | `EtabsForceRefreshViewModel.cs` |
 | `record` | **UnitSystemOption** | Represents the UnitSystemOption record. | `InputViewModel.cs` |
 | `class` | **ViewModelBase** | Represents the ViewModelBase class. Key methods: Dispose. | `ViewModelBase.cs` |
 | `class` | **ViewportOptionViewModel** | Represents the ViewportOptionViewModel class. Key properties: Type, DisplayName, IsSelected. | `ViewportOptionViewModel.cs` |

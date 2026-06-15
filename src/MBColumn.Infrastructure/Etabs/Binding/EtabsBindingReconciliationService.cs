@@ -23,10 +23,16 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
         var anyBinding = bindings.FirstOrDefault();
         if (anyBinding?.SourceModel is not null)
         {
-            bool pathChanged = !string.Equals(
-                anyBinding.SourceModel.ModelFilePath, currentModelPath, StringComparison.OrdinalIgnoreCase);
-            bool nameChanged = !string.Equals(
-                anyBinding.SourceModel.ModelFileName, currentModelName, StringComparison.OrdinalIgnoreCase);
+            bool pathChanged = !string.IsNullOrWhiteSpace(anyBinding.SourceModel.ModelFilePath)
+                && !string.Equals(
+                    anyBinding.SourceModel.ModelFilePath,
+                    currentModelPath,
+                    StringComparison.OrdinalIgnoreCase);
+            bool nameChanged = !string.IsNullOrWhiteSpace(anyBinding.SourceModel.ModelFileName)
+                && !string.Equals(
+                    anyBinding.SourceModel.ModelFileName,
+                    currentModelName,
+                    StringComparison.OrdinalIgnoreCase);
             result.ModelChanged = pathChanged || nameChanged;
         }
 
@@ -82,7 +88,31 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
     {
         var direct = availableColumns.FindDirect(savedKey);
         if (direct is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(savedKey.Story)
+                && !string.Equals(direct.Story, savedKey.Story, StringComparison.OrdinalIgnoreCase))
+            {
+                return new EtabsObjectBindingHealth
+                {
+                    ObjectKey = savedKey.Key,
+                    Status = EtabsBindingHealthStatus.StoryMismatch,
+                    Message = "The ETABS object was found, but its story does not match the section metadata. Please check the source mapping before importing."
+                };
+            }
+
+            if (HasStoredCoordinate(savedKey)
+                && Distance(direct.X, direct.Y, savedKey.X, savedKey.Y) > xyToleranceMm)
+            {
+                return new EtabsObjectBindingHealth
+                {
+                    ObjectKey = savedKey.Key,
+                    Status = EtabsBindingHealthStatus.XyMismatch,
+                    Message = "The ETABS object was found, but its XY location does not match the section metadata within tolerance. Please check the source mapping before importing."
+                };
+            }
+
             return new EtabsObjectBindingHealth { ObjectKey = savedKey.Key, Status = EtabsBindingHealthStatus.Ok };
+        }
 
         var nearby = availableColumns.FindByStory(savedKey.Story)
             .Where(c => Distance(c.X, c.Y, savedKey.X, savedKey.Y) <= xyToleranceMm)
@@ -104,6 +134,7 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
                 ObjectKey = savedKey.Key,
                 Status = EtabsBindingHealthStatus.PossibleRemap,
                 SuggestedRemapKey = nearby[0].Key,
+                RemapCandidateObjects = [nearby[0]],
                 Message = $"Label changed? {savedKey.Label} -> {nearby[0].Label}"
             },
             _ => new EtabsObjectBindingHealth
@@ -111,6 +142,7 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
                 ObjectKey = savedKey.Key,
                 Status = EtabsBindingHealthStatus.MultipleRemapCandidates,
                 RemapCandidates = nearby.Select(c => c.Key).ToList(),
+                RemapCandidateObjects = nearby.ToList(),
                 Message = $"{nearby.Count} candidates near {savedKey.Key}"
             }
         };
@@ -163,6 +195,11 @@ public sealed class EtabsBindingReconciliationService : IEtabsBindingReconciliat
 
     private static double Distance(double x1, double y1, double x2, double y2)
         => Sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+
+    private static bool HasStoredCoordinate(EtabsColumnObjectKey savedKey)
+        => savedKey.X != 0 || savedKey.Y != 0
+            || savedKey.BottomX != 0 || savedKey.BottomY != 0
+            || savedKey.TopX != 0 || savedKey.TopY != 0;
 
     private static double AngleDiff(double a, double b)
     {

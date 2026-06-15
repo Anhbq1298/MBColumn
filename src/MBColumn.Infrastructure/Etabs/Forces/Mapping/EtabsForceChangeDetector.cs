@@ -91,6 +91,8 @@ public sealed class EtabsForceChangeDetector : IEtabsForceChangeDetector
             EtabsBindingHealthStatus.MultipleRemapCandidates    => EtabsSectionRefreshAction.NeedsRemap,
             EtabsBindingHealthStatus.MissingObject              => EtabsSectionRefreshAction.KeepOld,
             EtabsBindingHealthStatus.ModelChanged               => EtabsSectionRefreshAction.KeepOld,
+            EtabsBindingHealthStatus.StoryMismatch              => EtabsSectionRefreshAction.KeepOld,
+            EtabsBindingHealthStatus.XyMismatch                 => EtabsSectionRefreshAction.KeepOld,
             _                                                   => EtabsSectionRefreshAction.KeepOld
         };
 

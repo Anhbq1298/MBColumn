@@ -30,6 +30,29 @@ public sealed class EtabsForceRefreshSectionRowViewModel : ViewModelBase
     public List<EtabsForceRowChange> RowChanges { get; set; } = [];
 }
 
+public sealed class EtabsFallbackCandidateViewModel : ViewModelBase
+{
+    public EtabsFallbackCandidateViewModel(EtabsColumnObjectKey source)
+    {
+        Source = source;
+    }
+
+    public EtabsColumnObjectKey Source { get; }
+    public string UniqueName => Source.UniqueName;
+    public string Label => Source.Label;
+    public string Story => Source.Story;
+    public string Coordinates => $"I/J: ({Source.BottomX:N1}, {Source.BottomY:N1}) / ({Source.TopX:N1}, {Source.TopY:N1})";
+    public string SectionProperty => Source.SectionPropertyName;
+    public string DisplayText => $"{UniqueName} | {Label} | {Story} | {Coordinates} | {SectionProperty}";
+}
+
+internal enum SourceObjectResolutionStatus
+{
+    Resolved,
+    RequiresSelection,
+    Failed
+}
+
 public sealed class EtabsForceRefreshViewModel : ViewModelBase
 {
     private readonly IEtabsConnectionService connectionService;
@@ -60,13 +83,25 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
     // Source mapping
     private string importedFromEtabs = "No";
     private string storyRange = "-";
+    private string sourceStory = "-";
     private string columnLabel = "-";
     private string etabsObjectIds = "-";
+    private string etabsObjectIdsToolTip = "-";
+    private string sourceMappingMessage = "";
+    private string xyCheckStatus = "Pending";
+    private string storyCheckStatus = "Pending";
+    private bool isSourceModelConfirmationRequired;
+    private bool isSourceModelConfirmed;
+    private bool modelNameOrPathDiffered;
+    private bool hasMultipleFallbackCandidates;
+    private EtabsFallbackCandidateViewModel? selectedFallbackCandidate;
+    private string pendingResolutionObjectKey = "";
+    private bool pendingMultipleCandidateResolution;
 
     private string statusMessage = "";
     private bool isBusy;
     private string busyText = "";
-    private bool useDesignForces = true;
+    private bool useDesignForces = false;
 
     // Load source selection
     private bool loadCombinationsSelected = true;
@@ -108,6 +143,7 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
         LoadCombinations = [];
         SectionRows = [];
+        FallbackCandidates = [];
 
         // Load metadata and populate panels
         if (currentColumnId.HasValue)
@@ -126,24 +162,29 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
                 if (meta != null && meta.IsEtabsImportedSection)
                 {
                     ImportedFromEtabs = "Yes";
-                    StoryRange = meta.EtabsStoryRangeText;
-                    if (string.IsNullOrWhiteSpace(StoryRange)) StoryRange = meta.StoryName;
-                    
-                    ColumnLabel = string.Join(", ", meta.EtabsSourceLabels ?? []);
-                    if (string.IsNullOrWhiteSpace(ColumnLabel)) ColumnLabel = meta.Label;
-                    if (string.IsNullOrWhiteSpace(ColumnLabel) && !string.IsNullOrWhiteSpace(meta.PierName)) ColumnLabel = meta.PierName;
-                    
-                    EtabsObjectIds = string.Join(", ", meta.EtabsSourceFrameIds ?? []);
-                    if (string.IsNullOrWhiteSpace(EtabsObjectIds)) EtabsObjectIds = meta.EtabsObjectName;
-                    
+                    StoryRange = FirstNonEmpty(meta.EtabsStoryRangeText, meta.StoryName);
+                    SourceStory = FormatListOrFallback(meta.EtabsSourceStories, meta.StoryName);
+
+                    ColumnLabel = FormatColumnLabel(meta);
+
+                    var objectNames = ResolveStoredObjectNames(currentSnapshot);
+                    EtabsObjectIds = FormatObjectNamesForDisplay(objectNames);
+                    EtabsObjectIdsToolTip = objectNames.Count == 0 ? EtabsObjectIds : string.Join(", ", objectNames);
+                    SourceMappingMessage = BuildSourceMappingMessage(meta, objectNames);
+
                     MetadataId = meta.EtabsColumnGroupId;
                 }
                 else
                 {
                     ImportedFromEtabs = "No";
                     StoryRange = "-";
+                    SourceStory = "-";
                     ColumnLabel = "-";
                     EtabsObjectIds = "-";
+                    EtabsObjectIdsToolTip = "-";
+                    SourceMappingMessage = "";
+                    XyCheckStatus = "Pending";
+                    StoryCheckStatus = "Pending";
                     MetadataId = "-";
 
                     HasMetadataError = true;
@@ -155,7 +196,12 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         connectCommand = new AsyncRelayCommand(InitializeAsync, () => !IsBusy && !HasMetadataError);
         cancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         importCommand = new AsyncRelayCommand(ImportAsync,
-            () => IsConnected && LoadCombinations.Any(c => c.IsSelected) && !IsBusy && !HasMetadataError);
+            () => IsConnected
+                && LoadCombinations.Any(c => c.IsSelected)
+                && !IsBusy
+                && !HasMetadataError
+                && (!IsSourceModelConfirmationRequired || IsSourceModelConfirmed)
+                && (!HasMultipleFallbackCandidates || SelectedFallbackCandidate is not null));
         selectAllCombosCommand = new RelayCommand(() => SetAllCombos(true), () => LoadCombinations.Count > 0);
         clearAllCombosCommand = new RelayCommand(() => SetAllCombos(false), () => LoadCombinations.Count > 0);
 
@@ -168,6 +214,7 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
     public ObservableCollection<EtabsLoadCombinationViewModel> LoadCombinations { get; }
     public ObservableCollection<EtabsForceRefreshSectionRowViewModel> SectionRows { get; }
+    public ObservableCollection<EtabsFallbackCandidateViewModel> FallbackCandidates { get; }
 
     public ICommand ConnectCommand => connectCommand;
     public ICommand CancelCommand => cancelCommand;
@@ -199,8 +246,27 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
     public string ImportedFromEtabs { get => importedFromEtabs; private set => Set(ref importedFromEtabs, value); }
     public string StoryRange { get => storyRange; private set => Set(ref storyRange, value); }
+    public string SourceStory { get => sourceStory; private set => Set(ref sourceStory, value); }
     public string ColumnLabel { get => columnLabel; private set => Set(ref columnLabel, value); }
     public string EtabsObjectIds { get => etabsObjectIds; private set => Set(ref etabsObjectIds, value); }
+    public string EtabsObjectIdsToolTip { get => etabsObjectIdsToolTip; private set => Set(ref etabsObjectIdsToolTip, value); }
+    public string SourceMappingMessage { get => sourceMappingMessage; private set { Set(ref sourceMappingMessage, value); Raise(nameof(HasSourceMappingMessage)); } }
+    public bool HasSourceMappingMessage => !string.IsNullOrWhiteSpace(SourceMappingMessage);
+    public string XyCheckStatus { get => xyCheckStatus; private set => Set(ref xyCheckStatus, value); }
+    public string StoryCheckStatus { get => storyCheckStatus; private set => Set(ref storyCheckStatus, value); }
+    public bool IsSourceModelConfirmationRequired { get => isSourceModelConfirmationRequired; private set { Set(ref isSourceModelConfirmationRequired, value); RaiseCommands(); } }
+    public bool IsSourceModelConfirmed { get => isSourceModelConfirmed; set { if (Set(ref isSourceModelConfirmed, value)) RaiseCommands(); } }
+    public bool ModelNameOrPathDiffered { get => modelNameOrPathDiffered; private set => Set(ref modelNameOrPathDiffered, value); }
+    public bool HasMultipleFallbackCandidates { get => hasMultipleFallbackCandidates; private set { Set(ref hasMultipleFallbackCandidates, value); RaiseCommands(); } }
+    public EtabsFallbackCandidateViewModel? SelectedFallbackCandidate
+    {
+        get => selectedFallbackCandidate;
+        set
+        {
+            if (Set(ref selectedFallbackCandidate, value))
+                RaiseCommands();
+        }
+    }
 
     public string StatusMessage { get => statusMessage; set => Set(ref statusMessage, value); }
     public bool IsBusy { get => isBusy; private set { Set(ref isBusy, value); RaiseCommands(); } }
@@ -279,6 +345,11 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         }
     }
 
+    public EtabsForceExtractionMode SelectedExtractionMode
+        => ForceExtractionEnvelope
+            ? EtabsForceExtractionMode.Envelope
+            : EtabsForceExtractionMode.TopBottom;
+
     // Behavior Properties
     public bool BehaviorReplace
     {
@@ -350,8 +421,11 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
             foreach (var col in scopedColumns)
             {
                 var snapshot = projectService.LoadColumnInput(col.Id);
-                if (snapshot?.EtabsBinding is not null)
-                    bindings.Add(snapshot.EtabsBinding);
+                if (snapshot is null) continue;
+
+                var binding = BuildBindingFromSnapshot(snapshot, col.Name);
+                if (binding is not null)
+                    bindings.Add(binding);
             }
             return bindings;
         }
@@ -396,17 +470,23 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
                     // Check model mismatch
                     var snapshot = projectService.LoadColumnInput(currentColumnId ?? 0);
-                    var expectedModel = snapshot?.EtabsMetadata?.EtabsSourceModelName;
-                    if (string.IsNullOrWhiteSpace(expectedModel)) expectedModel = snapshot?.EtabsMetadata?.SourceModelName;
+                    var expectedModelName = FirstNonEmpty(
+                        snapshot?.EtabsMetadata?.EtabsSourceModelName,
+                        snapshot?.EtabsMetadata?.SourceModelName);
+                    var expectedModelPath = FirstNonEmpty(snapshot?.EtabsMetadata?.SourceModelPath);
 
-                    if (!string.IsNullOrWhiteSpace(expectedModel) && 
-                        !string.Equals(System.IO.Path.GetFileName(info.ModelName), System.IO.Path.GetFileName(expectedModel), StringComparison.OrdinalIgnoreCase))
+                    if (IsConnectedModelDifferent(info.ModelName, info.ModelPath, expectedModelName, expectedModelPath))
                     {
-                        ModelMismatchWarning = "The connected ETABS model may not match the original source model for this section. Please confirm before importing.";
+                        ModelMismatchWarning = "The connected ETABS model name/path is different from the original source stored in this MB Column Section metadata. Please confirm that the currently connected ETABS model is the intended source before re-importing forces.";
+                        ModelNameOrPathDiffered = true;
+                        IsSourceModelConfirmationRequired = true;
                     }
                     else
                     {
                         ModelMismatchWarning = "";
+                        ModelNameOrPathDiffered = false;
+                        IsSourceModelConfirmationRequired = false;
+                        IsSourceModelConfirmed = false;
                     }
 
                     allCombinations = combos.ToList();
@@ -503,7 +583,7 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         var bindings = ExistingBindings;
         if (bindings.Count == 0)
         {
-            StatusMessage = "No matching ETABS column object was found from this section metadata. Please check the source mapping.";
+            StatusMessage = "No matching ETABS column object was found. The app checked stored Unique Name first, then fallback search by XY coordinate and story range.";
             return;
         }
 
@@ -513,24 +593,69 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
             return;
         }
 
+        if (IsSourceModelConfirmationRequired && !IsSourceModelConfirmed)
+        {
+            StatusMessage = "Please confirm this is the intended ETABS source model for this section before importing.";
+            return;
+        }
+
         IsBusy = true;
         BusyText = "Importing forces...";
         StatusMessage = "";
 
         try
         {
+            XyCheckStatus = "Pending";
+            StoryCheckStatus = "Pending";
+
             var request = new EtabsForceRefreshRequest
             {
                 Bindings = bindings,
                 SelectedLoadCombinations = LoadCombinationsSelected ? LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).Intersect(allCombinations, StringComparer.OrdinalIgnoreCase).ToList() : [],
                 SelectedLoadCases = LoadCasesSelected ? LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).Intersect(allCases, StringComparer.OrdinalIgnoreCase).ToList() : [],
                 ForceSource = UseDesignForces ? MbColumnForceSourceMode.DesignForces : MbColumnForceSourceMode.ElementForces,
-                ImportTop = ForceExtractionTopBottom,
-                ImportBottom = ForceExtractionTopBottom,
-                ImportEnvelope = ForceExtractionEnvelope,
+                ExtractionMode = SelectedExtractionMode,
+                ImportTop = SelectedExtractionMode == EtabsForceExtractionMode.TopBottom,
+                ImportBottom = SelectedExtractionMode == EtabsForceExtractionMode.TopBottom,
+                ImportEnvelope = SelectedExtractionMode == EtabsForceExtractionMode.Envelope,
                 AppendAsNewLoads = BehaviorAppend,
-                RefreshAllSections = true
+                RefreshAllSections = false,
+                TargetMode = EtabsForceRefreshTargetMode.CurrentSectionOnly,
+                TargetSectionId = currentColumnId,
+                TargetMetadataId = MetadataId,
+                SelectedSectionNames = [CurrentSectionName],
+                AllowSourceModelMismatch = IsSourceModelConfirmationRequired,
+                SourceModelMismatchConfirmed = IsSourceModelConfirmed
             };
+
+            var mappingValidation = await Task.Run(() =>
+                refreshService.ValidateEtabsSourceObjectMapping(request, unitSystem));
+
+            var resolution = ResolveSourceObjects(request, mappingValidation);
+            if (resolution == SourceObjectResolutionStatus.RequiresSelection)
+            {
+                ApplyValidationStatus(mappingValidation);
+                StatusMessage = "Multiple ETABS objects match the stored XY location and story range. Please select the intended source object.";
+                IsBusy = false;
+                return;
+            }
+
+            if (resolution == SourceObjectResolutionStatus.Failed || !IsMappingValidationPassed(mappingValidation))
+            {
+                ApplyValidationStatus(mappingValidation);
+                StatusMessage = BuildMappingValidationMessage(mappingValidation);
+                IsBusy = false;
+                return;
+            }
+
+            XyCheckStatus = "Passed";
+            StoryCheckStatus = "Passed";
+            request.ResolvedEtabsObjectUniqueNames = request.Bindings
+                .SelectMany(binding => binding.ColumnObjects)
+                .Select(column => column.UniqueName)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             var state = await Task.Run(() => refreshService.CheckResultState(request));
 
@@ -546,7 +671,7 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
             if (builtPreview.SectionsAffected == 0 || builtPreview.NewLoadRows == 0)
             {
-                StatusMessage = "No matching ETABS column object was found from this section metadata. Please check the source mapping.";
+                StatusMessage = "No matching ETABS column object was found. The app checked stored Unique Name first, then fallback search by XY coordinate and story range.";
                 IsBusy = false;
                 return;
             }
@@ -579,6 +704,383 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
             }
         }
         return existingLoadCasesBySection;
+    }
+
+    private SourceObjectResolutionStatus ResolveSourceObjects(
+        EtabsForceRefreshRequest request,
+        EtabsBindingValidationResult validation)
+    {
+        if (pendingMultipleCandidateResolution && SelectedFallbackCandidate is not null)
+        {
+            ReplaceColumnObject(request.Bindings, pendingResolutionObjectKey, SelectedFallbackCandidate.Source);
+            request.SourceResolutionMethod = "Manual selection from multiple matches";
+            MarkHealthResolved(validation, pendingResolutionObjectKey);
+            ClearFallbackCandidates();
+            return SourceObjectResolutionStatus.Resolved;
+        }
+
+        var unresolved = validation.ObjectHealthList
+            .Where(health => health.Status != EtabsBindingHealthStatus.Ok)
+            .ToList();
+
+        if (unresolved.Count == 0)
+        {
+            request.SourceResolutionMethod = "Stored Unique Name";
+            ClearFallbackCandidates();
+            return SourceObjectResolutionStatus.Resolved;
+        }
+
+        var multiple = unresolved.FirstOrDefault(health =>
+            health.Status == EtabsBindingHealthStatus.MultipleRemapCandidates
+            && health.RemapCandidateObjects.Count > 1);
+        if (multiple is not null)
+        {
+            FallbackCandidates.Clear();
+            foreach (var candidate in multiple.RemapCandidateObjects)
+                FallbackCandidates.Add(new EtabsFallbackCandidateViewModel(candidate));
+
+            pendingResolutionObjectKey = multiple.ObjectKey;
+            pendingMultipleCandidateResolution = true;
+            SelectedFallbackCandidate = null;
+            HasMultipleFallbackCandidates = true;
+            return SourceObjectResolutionStatus.RequiresSelection;
+        }
+
+        var singleFallbacks = unresolved
+            .Where(health => health.Status == EtabsBindingHealthStatus.PossibleRemap
+                && health.RemapCandidateObjects.Count == 1)
+            .ToList();
+
+        if (singleFallbacks.Count == unresolved.Count)
+        {
+            foreach (var health in singleFallbacks)
+            {
+                ReplaceColumnObject(request.Bindings, health.ObjectKey, health.RemapCandidateObjects[0]);
+                health.Status = EtabsBindingHealthStatus.Ok;
+            }
+
+            request.SourceResolutionMethod = "Fallback XY + story range";
+            ClearFallbackCandidates();
+            return SourceObjectResolutionStatus.Resolved;
+        }
+
+        return SourceObjectResolutionStatus.Failed;
+    }
+
+    private void ClearFallbackCandidates()
+    {
+        FallbackCandidates.Clear();
+        SelectedFallbackCandidate = null;
+        HasMultipleFallbackCandidates = false;
+        pendingResolutionObjectKey = "";
+        pendingMultipleCandidateResolution = false;
+    }
+
+    private static void MarkHealthResolved(EtabsBindingValidationResult validation, string objectKey)
+    {
+        var health = validation.ObjectHealthList.FirstOrDefault(item =>
+            string.Equals(item.ObjectKey, objectKey, StringComparison.OrdinalIgnoreCase));
+        if (health is not null)
+            health.Status = EtabsBindingHealthStatus.Ok;
+    }
+
+    private static void ReplaceColumnObject(
+        IReadOnlyList<EtabsSectionBinding> bindings,
+        string objectKey,
+        EtabsColumnObjectKey replacement)
+    {
+        foreach (var binding in bindings.Where(binding => binding.ObjectType == EtabsImportedObjectType.Column))
+        {
+            for (var i = 0; i < binding.ColumnObjects.Count; i++)
+            {
+                if (string.Equals(binding.ColumnObjects[i].Key, objectKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    binding.ColumnObjects[i] = replacement;
+                    return;
+                }
+            }
+        }
+    }
+
+    private static EtabsSectionBinding? BuildBindingFromSnapshot(ColumnInputSnapshot snapshot, string sectionName)
+    {
+        var binding = snapshot.EtabsBinding;
+        var meta = snapshot.EtabsMetadata;
+
+        if (binding is not null)
+        {
+            if (string.IsNullOrWhiteSpace(binding.MbColumnSectionName))
+                binding.MbColumnSectionName = sectionName;
+            if (binding.SourceModel is null)
+                binding.SourceModel = BuildSourceModel(meta);
+
+            if (binding.ObjectType == EtabsImportedObjectType.Column && binding.ColumnObjects.Count == 0)
+            {
+                var metadataObjects = BuildColumnObjectsFromMetadata(meta);
+                if (metadataObjects.Count > 0)
+                    binding.ColumnObjects = metadataObjects;
+            }
+
+            return binding;
+        }
+
+        if (meta?.IsEtabsImportedSection != true)
+            return null;
+
+        var columnObjects = BuildColumnObjectsFromMetadata(meta);
+        if (columnObjects.Count == 0)
+            return null;
+
+        return new EtabsSectionBinding
+        {
+            MbColumnSectionId = FirstNonEmpty(meta.EtabsTierId, sectionName),
+            MbColumnSectionName = sectionName,
+            ObjectType = EtabsImportedObjectType.Column,
+            ForceSource = MbColumnForceSourceMode.DesignForces,
+            ColumnObjects = columnObjects,
+            LoadCombinations = meta.SelectedLoadCombinations
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            Locations = ["Top", "Bottom"],
+            SourceModel = BuildSourceModel(meta)
+        };
+    }
+
+    private static List<EtabsColumnObjectKey> BuildColumnObjectsFromMetadata(EtabsImportMetadataDto? meta)
+    {
+        if (meta is null)
+            return [];
+
+        var objectNames = ResolveMetadataObjectNames(meta);
+        var stories = ResolveMetadataStories(meta);
+        var labels = ResolveMetadataLabels(meta);
+        var hasCountOnlyObjectMetadata = IsCountOnlyObjectMetadata(meta, objectNames);
+        if (hasCountOnlyObjectMetadata)
+            objectNames = [];
+
+        if (objectNames.Count == 0
+            && stories.Count == 0
+            && labels.Count == 0
+            && meta.EtabsGroupX == 0
+            && meta.EtabsGroupY == 0)
+        {
+            return [];
+        }
+
+        var count = Math.Max(1, objectNames.Count);
+        var objects = new List<EtabsColumnObjectKey>(count);
+        for (var i = 0; i < count; i++)
+        {
+            objects.Add(new EtabsColumnObjectKey
+            {
+                UniqueName = objectNames.ElementAtOrDefault(i) ?? "",
+                Story = stories.ElementAtOrDefault(i) ?? stories.FirstOrDefault() ?? meta.StoryName,
+                Label = labels.ElementAtOrDefault(i) ?? labels.FirstOrDefault() ?? FirstNonEmpty(meta.Label, meta.PierName),
+                X = meta.EtabsGroupX,
+                Y = meta.EtabsGroupY,
+                SectionPropertyName = FirstNonEmpty(meta.EtabsSectionPropertyName, meta.EtabsSectionName)
+            });
+        }
+
+        return objects;
+    }
+
+    private static EtabsModelFingerprint BuildSourceModel(EtabsImportMetadataDto? meta)
+        => new()
+        {
+            ModelFilePath = FirstNonEmpty(meta?.SourceModelPath),
+            ModelFileName = FirstNonEmpty(meta?.EtabsSourceModelName, meta?.SourceModelName),
+            ImportedAt = meta?.EtabsImportedAt == default
+                ? meta?.ImportedAt ?? DateTime.MinValue
+                : meta?.EtabsImportedAt ?? DateTime.MinValue
+        };
+
+    private static List<string> ResolveMetadataObjectNames(EtabsImportMetadataDto meta)
+    {
+        var values = new List<string>();
+        if (meta.EtabsSourceFrameIds is { Count: > 0 })
+            values.AddRange(meta.EtabsSourceFrameIds);
+        if (!string.IsNullOrWhiteSpace(meta.EtabsObjectName))
+            values.Add(meta.EtabsObjectName);
+
+        return values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool IsCountOnlyObjectMetadata(EtabsImportMetadataDto meta, IReadOnlyList<string> objectNames)
+        => objectNames.Count == 1
+            && int.TryParse(objectNames[0], out _)
+            && string.IsNullOrWhiteSpace(meta.EtabsObjectName);
+
+    private static List<string> ResolveMetadataStories(EtabsImportMetadataDto meta)
+    {
+        var values = new List<string>();
+        if (meta.EtabsSourceStories is { Count: > 0 })
+            values.AddRange(meta.EtabsSourceStories);
+        if (!string.IsNullOrWhiteSpace(meta.StoryName))
+            values.Add(meta.StoryName);
+
+        return values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static List<string> ResolveMetadataLabels(EtabsImportMetadataDto meta)
+    {
+        var values = new List<string>();
+        if (meta.EtabsSourceLabels is { Count: > 0 })
+            values.AddRange(meta.EtabsSourceLabels);
+        if (!string.IsNullOrWhiteSpace(meta.Label))
+            values.Add(meta.Label);
+        if (!string.IsNullOrWhiteSpace(meta.PierName))
+            values.Add(meta.PierName);
+
+        return values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IReadOnlyList<string> ResolveStoredObjectNames(ColumnInputSnapshot snapshot)
+    {
+        var values = new List<string>();
+
+        if (snapshot.EtabsMetadata?.EtabsSourceFrameIds is { Count: > 0 })
+            values.AddRange(snapshot.EtabsMetadata.EtabsSourceFrameIds);
+
+        if (!string.IsNullOrWhiteSpace(snapshot.EtabsMetadata?.EtabsObjectName))
+            values.Add(snapshot.EtabsMetadata.EtabsObjectName);
+
+        if (snapshot.EtabsBinding?.ColumnObjects is { Count: > 0 })
+            values.AddRange(snapshot.EtabsBinding.ColumnObjects.Select(c => c.UniqueName));
+
+        return values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string FormatObjectNamesForDisplay(IReadOnlyList<string> objectNames)
+    {
+        if (objectNames.Count == 0)
+            return "Not stored";
+
+        if (objectNames.Count == 1 && int.TryParse(objectNames[0], out var countOnly))
+            return $"{countOnly} objects stored";
+
+        const int maxVisible = 4;
+        var visible = objectNames.Take(maxVisible).ToList();
+        var suffix = objectNames.Count > maxVisible ? $", +{objectNames.Count - maxVisible} more" : "";
+        return string.Join(", ", visible) + suffix;
+    }
+
+    private static string FormatColumnLabel(EtabsImportMetadataDto meta)
+    {
+        var value = FormatListOrFallback(meta.EtabsSourceLabels, FirstNonEmpty(meta.Label, meta.PierName));
+        return string.IsNullOrWhiteSpace(value) || value == "-"
+            ? "Not stored"
+            : value;
+    }
+
+    private static string FormatListOrFallback(IEnumerable<string>? values, string? fallback)
+    {
+        var joined = string.Join(", ", (values ?? [])
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase));
+        return string.IsNullOrWhiteSpace(joined) ? FirstNonEmpty(fallback, "-") : joined;
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? "";
+
+    private static bool IsConnectedModelDifferent(
+        string connectedModelName,
+        string connectedModelPath,
+        string expectedModelName,
+        string expectedModelPath)
+    {
+        var hasExpectedName = !string.IsNullOrWhiteSpace(expectedModelName);
+        var hasExpectedPath = !string.IsNullOrWhiteSpace(expectedModelPath);
+        if (!hasExpectedName && !hasExpectedPath)
+            return false;
+
+        if (hasExpectedName
+            && !string.Equals(
+                System.IO.Path.GetFileName(connectedModelName),
+                System.IO.Path.GetFileName(expectedModelName),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return hasExpectedPath
+            && !string.IsNullOrWhiteSpace(connectedModelPath)
+            && !string.Equals(
+                System.IO.Path.GetFullPath(connectedModelPath),
+                System.IO.Path.GetFullPath(expectedModelPath),
+                StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildSourceMappingMessage(EtabsImportMetadataDto meta, IReadOnlyList<string> objectNames)
+    {
+        var hasLabels = (meta.EtabsSourceLabels?.Any(label => !string.IsNullOrWhiteSpace(label)) == true)
+            || !string.IsNullOrWhiteSpace(meta.Label)
+            || !string.IsNullOrWhiteSpace(meta.PierName);
+        var hasCountOnlyObjectMetadata = objectNames.Count == 1
+            && int.TryParse(objectNames[0], out _)
+            && string.IsNullOrWhiteSpace(meta.EtabsObjectName);
+
+        if (objectNames.Count == 0 || hasCountOnlyObjectMetadata)
+            return "ETABS object unique names are missing from this section metadata. The app will try to resolve the source object using story, XY location, and label.";
+
+        if (!hasLabels)
+            return "Column/Pier label is not stored. Re-import will use stored ETABS object unique names.";
+
+        return "";
+    }
+
+    private static bool IsMappingValidationPassed(EtabsBindingValidationResult validation)
+        => !validation.ModelChanged
+            && validation.ObjectHealthList.Count > 0
+            && validation.ObjectHealthList.All(h => h.Status == EtabsBindingHealthStatus.Ok);
+
+    private void ApplyValidationStatus(EtabsBindingValidationResult validation)
+    {
+        var statuses = validation.ObjectHealthList.Select(h => h.Status).ToList();
+        StoryCheckStatus = statuses.Contains(EtabsBindingHealthStatus.StoryMismatch)
+            || statuses.Contains(EtabsBindingHealthStatus.MissingObject)
+            ? "Failed"
+            : "Passed";
+        XyCheckStatus = statuses.Contains(EtabsBindingHealthStatus.XyMismatch)
+            || statuses.Contains(EtabsBindingHealthStatus.MissingObject)
+            ? "Failed"
+            : "Passed";
+    }
+
+    private static string BuildMappingValidationMessage(EtabsBindingValidationResult validation)
+    {
+        var firstIssue = validation.ObjectHealthList.FirstOrDefault(h => h.Status != EtabsBindingHealthStatus.Ok);
+        if (validation.ModelChanged)
+            return "The connected ETABS model name/path is different from the original source stored in this MB Column Section metadata. Please confirm that the currently connected ETABS model is the intended source before re-importing forces.";
+        if (firstIssue?.Status == EtabsBindingHealthStatus.MultipleRemapCandidates)
+            return "Multiple ETABS objects match the stored XY location and story range. Please select the intended source object.";
+        if (firstIssue?.Status == EtabsBindingHealthStatus.StoryMismatch)
+            return "The ETABS object was found, but its story does not match the section metadata. Please check the source mapping before importing.";
+        if (firstIssue?.Status == EtabsBindingHealthStatus.XyMismatch)
+            return "The ETABS object was found, but its XY location does not match the section metadata within tolerance. Please check the source mapping before importing.";
+        if (!string.IsNullOrWhiteSpace(firstIssue?.Message))
+            return firstIssue.Message!;
+
+        return "No matching ETABS column object was found. The app checked stored Unique Name first, then fallback search by XY coordinate and story range.";
     }
 
     private static bool IsEtabsLoadCase(SnapshotLoadCase loadCase)

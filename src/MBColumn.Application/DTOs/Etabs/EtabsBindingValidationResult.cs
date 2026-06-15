@@ -7,6 +7,7 @@ public sealed class EtabsObjectBindingHealth
     public EtabsBindingHealthStatus Status { get; set; }
     public string? SuggestedRemapKey { get; set; }
     public List<string> RemapCandidates { get; set; } = [];
+    public List<EtabsColumnObjectKey> RemapCandidateObjects { get; set; } = [];
     public string? Message { get; set; }
 }
 

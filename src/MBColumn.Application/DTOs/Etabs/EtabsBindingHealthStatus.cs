@@ -4,6 +4,8 @@ public enum EtabsBindingHealthStatus
 {
     Ok,
     ModelChanged,
+    StoryMismatch,
+    XyMismatch,
     MissingObject,
     MissingCombo,
     PossibleRemap,
