@@ -127,24 +127,12 @@
                                 <TextBlock Text="{Binding DemandInputModeText}"
                                            Style="{StaticResource HelperTextStyle}"
                                            Margin="0,2,16,6" />
-                                <Button Content="Refresh ETABS section"
-                                        Command="{Binding DataContext.RefreshEtabsForcesForCurrentSectionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4"
-                                        FontSize="{StaticResource FontSizeBody}"
-                                        Margin="0,0,8,6" />
-                                <Button Content="Refresh ETABS folder"
-                                        Command="{Binding DataContext.RefreshEtabsForcesForCurrentFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4"
-                                        FontSize="{StaticResource FontSizeBody}"
-                                        Margin="0,0,8,6" />
-                                <Button Content="Refresh all ETABS"
-                                        Command="{Binding DataContext.RefreshEtabsForcesForAllImportedSectionsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Style="{StaticResource SecondaryButtonStyle}"
-                                        Padding="10,4"
-                                        FontSize="{StaticResource FontSizeBody}"
-                                        Margin="0,0,0,6" />
+                                 <Button Content="Re-import Forces"
+                                         Command="{Binding DataContext.ReimportForcesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                         Style="{StaticResource PrimaryButtonStyle}"
+                                         Padding="12,4"
+                                         FontSize="{StaticResource FontSizeBody}"
+                                         Margin="0,0,0,6" />
                              </WrapPanel>
 
                             <Border Grid.Row="1"

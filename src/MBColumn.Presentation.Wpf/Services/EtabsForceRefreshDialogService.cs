@@ -1,10 +1,9 @@
-using MBColumn.Application.DTOs.Etabs;
-using MBColumn.Application.DTOs.Persistence;
 using MBColumn.Application.Services;
 using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.ViewModels;
 using MBColumn.Presentation.Wpf.Views;
+using System.Collections.Generic;
 
 namespace MBColumn.Presentation.Wpf.Services;
 
@@ -29,29 +28,20 @@ public sealed class EtabsForceRefreshDialogService : IEtabsForceRefreshDialogSer
 
     public EtabsForceRefreshResult? ShowDialog(
         System.Windows.Window? owner,
-        IReadOnlyList<EtabsSectionBinding> existingBindings,
-        IReadOnlyDictionary<string, IReadOnlyList<SnapshotLoadCase>> existingLoadCasesBySection,
+        IReadOnlyList<ColumnRecord> allColumns,
+        int? currentColumnId,
+        int? currentFolderId,
         UnitSystem unitSystem)
     {
         var vm = new EtabsForceRefreshViewModel(
             connectionService,
             refreshService,
+            columnImportService,
             projectService,
-            existingBindings,
-            existingLoadCasesBySection,
+            allColumns,
+            currentColumnId,
+            currentFolderId,
             unitSystem);
-
-        // Connect and load combinations eagerly so the user sees the combo list immediately
-        var connectionResult = connectionService.ConnectToRunningEtabs();
-        if (connectionResult.IsConnected)
-        {
-            try
-            {
-                var combos = columnImportService.GetLoadCombinations();
-                vm.SetAvailableCombinations(combos);
-            }
-            catch { /* let user see connected state and retry */ }
-        }
 
         var window = new EtabsForceRefreshWindow(vm) { Owner = owner };
         return window.ShowDialog() == true ? vm.Result : null;

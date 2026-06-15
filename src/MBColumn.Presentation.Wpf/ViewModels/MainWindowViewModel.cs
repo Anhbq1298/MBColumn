@@ -126,6 +126,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         RefreshEtabsForcesForAllImportedSectionsCommand = new AsyncRelayCommand(
             () => RefreshEtabsForcesAsync(EtabsForceRefreshScope.AllImportedSections),
             () => CanRefreshEtabsForces(EtabsForceRefreshScope.AllImportedSections));
+        ReimportForcesCommand = new AsyncRelayCommand(ReimportForcesAsync, CanReimportForces);
 
         // Legacy wrappers kept for existing XAML bindings
         ImportFromEtabsCommand = ImportSectionsFromEtabsCommand;
@@ -188,6 +189,7 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ICommand RefreshEtabsForcesForCurrentSectionCommand { get; }
     public ICommand RefreshEtabsForcesForCurrentFolderCommand { get; }
     public ICommand RefreshEtabsForcesForAllImportedSectionsCommand { get; }
+    public ICommand ReimportForcesCommand { get; }
 
     // Legacy — kept so existing XAML bindings continue to work
     public ICommand ImportFromEtabsCommand { get; }
@@ -1080,35 +1082,29 @@ public sealed class MainWindowViewModel : ViewModelBase
         SaveCurrentColumnInput();
 
         var allColumns = projectService.GetColumns();
-        var scopedColumns = GetEtabsForceRefreshColumns(scope, allColumns);
-        var bindings = new List<Application.DTOs.Etabs.EtabsSectionBinding>();
-        var existingLoadCases = new Dictionary<string, IReadOnlyList<SnapshotLoadCase>>(StringComparer.OrdinalIgnoreCase);
+        int? columnId = null;
+        int? folderId = null;
 
-        foreach (var col in scopedColumns)
+        if (scope == EtabsForceRefreshScope.CurrentSection)
         {
-            var snapshot = projectService.LoadColumnInput(col.Id);
-            if (snapshot?.EtabsBinding is null) continue;
-
-            bindings.Add(snapshot.EtabsBinding);
-            existingLoadCases[col.Name] = snapshot.LoadCases.Where(IsEtabsLoadCase).ToList();
+            columnId = currentColumn?.Id;
         }
-
-        if (bindings.Count == 0)
+        else if (scope == EtabsForceRefreshScope.CurrentFolder)
         {
-            messageService.ShowInformation(BuildNoEtabsBindingMessage(scope), "Refresh Forces from ETABS");
-            return;
+            folderId = ResolveCurrentFolderId();
         }
 
         var result = etabsForceRefreshDialogService.ShowDialog(
             System.Windows.Application.Current?.MainWindow,
-            bindings,
-            existingLoadCases,
+            allColumns,
+            columnId,
+            folderId,
             Input.UnitSystem);
 
         if (result is null || !result.Success || result.UpdatedLoadCasesBySection.Count == 0)
             return;
 
-        var columnByName = scopedColumns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        var columnByName = allColumns.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
 
         int updated = 0;
         foreach (var kvp in result.UpdatedLoadCasesBySection)
@@ -1118,8 +1114,17 @@ public sealed class MainWindowViewModel : ViewModelBase
             var snapshot = projectService.LoadColumnInput(colRecord.Id);
             if (snapshot is null) continue;
 
-            var manualLoadCases = snapshot.LoadCases.Where(lc => !IsEtabsLoadCase(lc));
-            snapshot.LoadCases = manualLoadCases.Concat(kvp.Value).ToList();
+            IEnumerable<SnapshotLoadCase> preservedLoadCases;
+            if (result.Preview?.Request?.AppendAsNewLoads == true)
+            {
+                preservedLoadCases = snapshot.LoadCases;
+            }
+            else
+            {
+                preservedLoadCases = snapshot.LoadCases.Where(lc => !IsEtabsLoadCase(lc));
+            }
+
+            snapshot.LoadCases = preservedLoadCases.Concat(kvp.Value).ToList();
             snapshot.LastEtabsRefreshAt = DateTime.UtcNow;
             snapshot.LastEtabsRefreshSummary = result.Message;
 
@@ -1155,6 +1160,17 @@ public sealed class MainWindowViewModel : ViewModelBase
 
         if (updated > 0)
             messageService.ShowInformation(result.Message, "Forces Refreshed");
+    }
+
+    private bool CanReimportForces()
+    {
+        return etabsForceRefreshDialogService is not null;
+    }
+
+    private async Task ReimportForcesAsync()
+    {
+        // Reimport forces using the current section as the initial scope
+        await RefreshEtabsForcesAsync(EtabsForceRefreshScope.CurrentSection);
     }
 
     private bool CanRefreshEtabsForces(EtabsForceRefreshScope scope)
@@ -1589,6 +1605,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             refreshCurrentFolder.RaiseCanExecuteChanged();
         if (RefreshEtabsForcesForAllImportedSectionsCommand is AsyncRelayCommand refreshAllImported)
             refreshAllImported.RaiseCanExecuteChanged();
+        if (ReimportForcesCommand is AsyncRelayCommand reimportForces)
+            reimportForces.RaiseCanExecuteChanged();
     }
 
     private void RaiseStatusProperties()

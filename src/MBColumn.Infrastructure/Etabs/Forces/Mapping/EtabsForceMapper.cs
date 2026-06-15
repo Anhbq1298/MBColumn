@@ -35,7 +35,7 @@ public sealed class EtabsForceMapper : IEtabsForceMapper
 
             return new SnapshotLoadCase
             {
-                Id                   = $"etabs_{i + 1}",
+                Id                   = $"etabs_{Guid.NewGuid().ToString("N")[..8]}_{i + 1}",
                 Label                = $"{r.CaseName}-{r.Label}-{r.Story}",
                 OriginalLoadCaseName = r.CaseName,
                 SourceObjectName     = string.IsNullOrWhiteSpace(r.SourceObjectName) ? r.Label : r.SourceObjectName,

@@ -3,12 +3,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:MBColumn.Presentation.Wpf.ViewModels"
-        Title="Refresh Forces from ETABS"
-        Width="900"
-        Height="700"
-        MinWidth="760"
-        MinHeight="560"
-        WindowStartupLocation="CenterOwner">
+        Title="Re-import ETABS Forces"
+        Width="820"
+        Height="620"
+        MinWidth="720"
+        MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource DialogWindowStyle}">
     <Window.Resources>
         <Style x:Key="PanelBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
@@ -16,23 +17,13 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
             <Setter Property="Margin" Value="0,0,0,6" />
-        </Style>
-        <Style x:Key="LabelStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="ValueStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
     </Window.Resources>
 
@@ -44,260 +35,262 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0"
-                Style="{StaticResource DialogHeaderBorderStyle}">
+        <Border Grid.Row="0" Style="{StaticResource DialogHeaderBorderStyle}">
             <StackPanel>
-                <TextBlock Text="Refresh Forces from ETABS"
-                           Style="{StaticResource DialogHeaderTitleTextStyle}" />
-                <TextBlock Text="Pull latest forces from ETABS into MBColumn. ETABS model geometry and loads are never modified."
-                           Style="{StaticResource DialogHeaderSubtitleTextStyle}"
-                           TextWrapping="Wrap" />
+                <TextBlock Text="Re-import ETABS Forces" Style="{StaticResource DialogHeaderTitleTextStyle}" />
+                <TextBlock Text="Pull latest analytical forces from ETABS into the current MB Column Section." 
+                           Style="{StaticResource DialogHeaderSubtitleTextStyle}" />
             </StackPanel>
         </Border>
 
-        <!-- Main content with step panels -->
-        <Grid Grid.Row="1" Margin="12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <!-- Content Area -->
+        <Grid Grid.Row="1" Margin="14" Grid.IsSharedSizeScope="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- ETABS Connection Panel -->
+                <RowDefinition Height="Auto" /> <!-- Source Mapping Panel -->
+                <RowDefinition Height="*" />    <!-- Split settings / selection list -->
+            </Grid.RowDefinitions>
 
-            <!-- Left sidebar: steps + connection + settings -->
-            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+            <!-- ETABS Connection Panel -->
+            <Border Grid.Row="0" Style="{StaticResource PanelBorderStyle}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="ETABS Connection" Style="{StaticResource SectionHeaderStyle}" Grid.Column="0" />
+                        <Button Content="Reconnect ETABS" Command="{Binding ConnectCommand}" 
+                                Grid.Column="1" 
+                                Padding="8,2" 
+                                FontSize="11" 
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    </Grid>
 
-                <!-- Connection status -->
-                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,8">
-                    <StackPanel>
-                        <TextBlock Text="ETABS Connection" Style="{StaticResource SectionHeaderStyle}" />
-                        <TextBlock Text="{Binding ConnectionStatus}"
-                                   FontSize="{StaticResource FontSizeBody}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   Margin="0,0,0,6" />
-                        <Button Content="Connect to ETABS"
-                                Command="{Binding ConnectCommand}"
-                                Margin="0,4,0,0" />
-                    </StackPanel>
-                </Border>
+                    <!-- Connected Layout -->
+                    <Grid Margin="0,4,0,0" Visibility="{Binding IsConnected, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="ConnLabel" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="ConnLabel2" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                <!-- Linked sections summary -->
-                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,8">
-                    <StackPanel>
-                        <TextBlock Text="ETABS-Linked Sections" Style="{StaticResource SectionHeaderStyle}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="{Binding LinkedSectionCount}" Style="{StaticResource ValueStyle}" />
-                            <TextBlock Text=" sections" Style="{StaticResource LabelStyle}" Margin="4,0,0,0" />
+                        <TextBlock Text="Status:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="#4CAF50" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Connected" FontWeight="SemiBold" Foreground="#4CAF50" VerticalAlignment="Center" />
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding SelectedComboCount}" Style="{StaticResource ValueStyle}" />
-                            <TextBlock Text=" combos selected" Style="{StaticResource LabelStyle}" Margin="4,0,0,0" />
+
+                        <TextBlock Text="Model:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ModelName}" TextTrimming="CharacterEllipsis" Grid.Row="0" Grid.Column="5" VerticalAlignment="Center" ToolTip="{Binding ModelPath}" />
+
+                        <TextBlock Text="Units:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding PresentUnits}" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" />
+
+                        <TextBlock Text="Current MB Section:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding CurrentSectionName}" Grid.Row="2" Grid.Column="5" VerticalAlignment="Center" />
+
+                        <TextBlock Text="Source Metadata ID:" FontWeight="SemiBold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding MetadataId}" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="4" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- Model Mismatch Warning -->
+                    <Border Background="#FFFDF0" BorderBrush="#FEEFB3" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,8,0,0"
+                            Visibility="{Binding HasModelMismatchWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="⚠️" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding ModelMismatchWarning}" Foreground="#9F6000" FontSize="11" TextWrapping="Wrap" Grid.Column="1" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Disconnected Layout -->
+                    <Grid Margin="0,4,0,0" Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Orientation="Horizontal" Grid.Row="0">
+                            <TextBlock Text="Status:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0" />
+                            <Ellipse Width="8" Height="8" Fill="#F44336" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding ConnectionStatusText}" FontWeight="SemiBold" Foreground="#F44336" VerticalAlignment="Center" />
                         </StackPanel>
-                    </StackPanel>
-                </Border>
 
-                <!-- Force source -->
-                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,8">
-                    <StackPanel>
-                        <TextBlock Text="Force Source" Style="{StaticResource SectionHeaderStyle}" />
-                        <RadioButton Content="Design Forces"
-                                     IsChecked="{Binding UseDesignForces}"
-                                     Margin="0,0,0,4" />
-                        <RadioButton Content="Element Forces"
-                                     IsChecked="{Binding UseElementForces}" />
-                        <TextBlock Text="Design Forces are ETABS design table forces. Element Forces are analysis output forces."
-                                   FontSize="{StaticResource FontSizeCaption}"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,6,0,0" />
-                    </StackPanel>
-                </Border>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Please connect to the original ETABS model before re-importing forces." 
+                                       Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
+                            <Button Content="Connect / Reconnect ETABS" Command="{Binding ConnectCommand}" 
+                                    Style="{StaticResource PrimaryButtonStyle}" Padding="10,4" Grid.Column="1" VerticalAlignment="Center" />
+                        </Grid>
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-                <!-- Locations -->
-                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,8">
-                    <StackPanel>
-                        <TextBlock Text="Locations" Style="{StaticResource SectionHeaderStyle}" />
-                        <CheckBox Content="Top" IsChecked="{Binding ImportTop}" Margin="0,0,0,4" />
-                        <CheckBox Content="Bottom" IsChecked="{Binding ImportBottom}" />
-                    </StackPanel>
-                </Border>
+            <!-- Source Mapping Panel -->
+            <Border Grid.Row="1" Style="{StaticResource PanelBorderStyle}">
+                <StackPanel>
+                    <TextBlock Text="Source Mapping" Style="{StaticResource SectionHeaderStyle}" />
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="MapLabel" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="MapLabel2" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="4" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                <!-- Scope -->
-                <Border Style="{StaticResource PanelBorderStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Scope" Style="{StaticResource SectionHeaderStyle}" />
-                        <RadioButton Content="All linked sections"
-                                     IsChecked="{Binding RefreshAllSections}"
-                                     Margin="0,0,0,4" />
-                        <RadioButton Content="Selected sections only"
-                                     IsChecked="{Binding RefreshSelectedSectionsOnly}" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                        <TextBlock Text="Imported from ETABS:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ImportedFromEtabs}" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" />
 
-            <!-- Right main area -->
-            <Grid Grid.Column="1">
-                <!-- Step 2: Combination selection (visible when not in preview step) -->
-                <Grid Visibility="{Binding IsStep3, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                        <TextBlock Text="Story range:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding StoryRange}" Grid.Row="0" Grid.Column="5" VerticalAlignment="Center" />
 
-                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
-                        <TextBlock Text="Select Load Combinations" Style="{StaticResource SectionHeaderStyle}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <Button Content="Select All"
-                                    Command="{Binding SelectAllCombosCommand}"
-                                    Padding="8,3" Margin="0,0,6,0" />
-                            <Button Content="Clear All"
-                                    Command="{Binding ClearAllCombosCommand}"
-                                    Padding="8,3" />
-                        </StackPanel>
-                        <TextBox Text="{Binding LoadComboFilterText, UpdateSourceTrigger=PropertyChanged}"
-                                 Tag="Search combinations..."
-                                 Margin="0,0,0,4" />
-                    </StackPanel>
+                        <TextBlock Text="Column/Pier label:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ColumnLabel}" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" />
 
-                    <ListBox Grid.Row="1"
-                             ItemsSource="{Binding LoadCombinations}"
-                             SelectionMode="Extended"
-                             Name="ComboListBox"
-                             SelectionChanged="OnComboListBoxSelectionChanged">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <CheckBox Content="{Binding Name}"
-                                          IsChecked="{Binding IsSelected}"
-                                          Margin="2" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                        <TextBlock Text="ETABS object IDs:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding EtabsObjectIds}" Grid.Row="2" Grid.Column="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding EtabsObjectIds}" />
 
-                    <TextBlock Grid.Row="2"
-                               Text="{Binding StatusMessage}"
-                               FontSize="{StaticResource FontSizeBody}"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               Margin="0,6,0,0"
-                               Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToCollapsedConverter}}" />
-                </Grid>
+                        <TextBlock Text="Filter mode:" FontWeight="SemiBold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" />
+                        <TextBlock Text="Metadata-based" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="4" VerticalAlignment="Center" />
+                    </Grid>
+                </StackPanel>
+            </Border>
 
-                <!-- Step 3: Preview -->
-                <Grid Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+            <!-- Split settings / selection list -->
+            <Grid Grid.Row="2" Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                    <!-- Summary cards -->
-                    <Border Grid.Row="0"
-                            Style="{StaticResource PanelBorderStyle}"
-                            Margin="0,0,0,8">
+                <!-- Left Settings Column -->
+                <StackPanel Grid.Column="0">
+                    <!-- Force Extraction -->
+                    <Border Style="{StaticResource PanelBorderStyle}">
                         <StackPanel>
-                            <TextBlock Text="Force Refresh Preview" Style="{StaticResource SectionHeaderStyle}" />
-                            <UniformGrid Columns="4" Margin="0,6,0,0">
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding PreviewSectionsAffected}" Style="{StaticResource ValueStyle}" />
-                                    <TextBlock Text="Sections affected" Style="{StaticResource LabelStyle}" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding PreviewNewRows}" Style="{StaticResource ValueStyle}" />
-                                    <TextBlock Text="New load rows" Style="{StaticResource LabelStyle}" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding PreviewChangedRows}" Style="{StaticResource ValueStyle}" />
-                                    <TextBlock Text="Changed rows" Style="{StaticResource LabelStyle}" />
-                                </StackPanel>
-                                <StackPanel>
-                                    <TextBlock Text="{Binding PreviewAddedRows}" Style="{StaticResource ValueStyle}" />
-                                    <TextBlock Text="Added rows" Style="{StaticResource LabelStyle}" />
-                                </StackPanel>
-                            </UniformGrid>
+                            <TextBlock Text="Force Extraction" Style="{StaticResource SectionHeaderStyle}" />
+                            <RadioButton Content="Top + Bottom Forces" IsChecked="{Binding ForceExtractionTopBottom}" Margin="0,4" />
+                            <RadioButton Content="Envelope Forces" IsChecked="{Binding ForceExtractionEnvelope}" Margin="0,4" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Warning banner -->
-                    <Border Grid.Row="1"
-                            Background="#FFF8E1"
-                            BorderBrush="#FFC107"
-                            BorderThickness="1"
-                            CornerRadius="3"
-                            Padding="10,6"
-                            Margin="0,0,0,8"
-                            Visibility="{Binding PreviewHasWarnings, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="{StaticResource FontSizeBody}"
-                                   TextWrapping="Wrap"
-                                   Foreground="#7B5800" />
+                    <!-- Import Behavior -->
+                    <Border Style="{StaticResource PanelBorderStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Import Behavior" Style="{StaticResource SectionHeaderStyle}" />
+                            <RadioButton Content="Replace existing ETABS loads" IsChecked="{Binding BehaviorReplace}" Margin="0,4" />
+                            <RadioButton Content="Append as new loads" IsChecked="{Binding BehaviorAppend}" Margin="0,4" />
+                        </StackPanel>
                     </Border>
+                </StackPanel>
 
-                    <!-- Per-section table -->
-                    <DataGrid Grid.Row="2"
-                              ItemsSource="{Binding SectionRows}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              HeadersVisibility="Column"
-                              GridLinesVisibility="Horizontal"
-                              RowHeaderWidth="0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Section" Binding="{Binding SectionName}" Width="160" />
-                            <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="120" />
-                            <DataGridTextColumn Header="Old Rows" Binding="{Binding OldRows}" Width="70" />
-                            <DataGridTextColumn Header="New Rows" Binding="{Binding NewRows}" Width="70" />
-                            <DataGridTextColumn Header="Changed" Binding="{Binding ChangedRows}" Width="70" />
-                            <DataGridTextColumn Header="Added" Binding="{Binding AddedRows}" Width="60" />
-                            <DataGridTextColumn Header="Removed" Binding="{Binding RemovedRows}" Width="70" />
-                            <DataGridTextColumn Header="Action" Binding="{Binding ActionText}" Width="80" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                <!-- Right Selection List Column -->
+                <Grid Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                        <TextBlock Text="Load Selection" Style="{StaticResource SectionHeaderStyle}" />
+                        
+                        <!-- Load Source selection directly in Load Selection panel -->
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
+                            <CheckBox Content="Load Combinations" IsChecked="{Binding LoadCombinationsSelected}" Margin="0,0,16,0" VerticalAlignment="Center" />
+                            <CheckBox Content="Load Cases" IsChecked="{Binding LoadCasesSelected}" VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <Grid Margin="0,2,0,4">
+                            <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding LoadComboFilterText, UpdateSourceTrigger=PropertyChanged}" 
+                                     Tag="Search combinations and cases..." Grid.Column="0" Height="26" />
+                            <StackPanel Orientation="Horizontal" Grid.Column="1" Margin="8,0,0,0">
+                                <Button Content="Select All" Command="{Binding SelectAllCombosCommand}" Padding="8,3" Margin="0,0,4,0" Style="{StaticResource SecondaryButtonStyle}" />
+                                <Button Content="Clear All" Command="{Binding ClearAllCombosCommand}" Padding="8,3" Style="{StaticResource SecondaryButtonStyle}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Virtualizing ListBox for combinations/cases -->
+                    <Border Grid.Row="1" BorderThickness="1" BorderBrush="{DynamicResource BorderGreyBrush}" CornerRadius="4">
+                        <ListBox ItemsSource="{Binding LoadCombinations}"
+                                 SelectionMode="Extended"
+                                 VirtualizingStackPanel.IsVirtualizing="True"
+                                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                 ScrollViewer.CanContentScroll="True"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 Background="White">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Margin="2" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
                 </Grid>
             </Grid>
         </Grid>
 
-        <!-- Footer buttons -->
-        <Border Grid.Row="2"
-                Style="{StaticResource DialogFooterBarStyle}">
+        <!-- Footer -->
+        <Border Grid.Row="2" Style="{StaticResource DialogFooterBarStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Busy indicator -->
-                <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <TextBlock Text="{Binding BusyText}"
-                               FontSize="{StaticResource FontSizeBody}"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               VerticalAlignment="Center" />
+                <!-- Status / Progress -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="120"
+                                 Height="8"
+                                 Margin="0,0,12,0"
+                                 Foreground="{DynamicResource AccentBlueBrush}"
+                                 Background="{DynamicResource PanelBackgroundBrush}"
+                                 BorderThickness="0"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock Text="{Binding BusyText}" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}" Foreground="{DynamicResource TextMutedBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding StatusMessage}" Visibility="{Binding IsBusy, Converter={StaticResource InverseBoolToVisibilityConverter}}" Foreground="{DynamicResource AccentRedBrush}" TextWrapping="Wrap" MaxWidth="400" VerticalAlignment="Center" />
                 </StackPanel>
 
-                <!-- Action buttons -->
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-                    <Button Content="Preview Refresh"
-                            Command="{Binding BuildPreviewCommand}"
-                            Padding="14,6"
-                            Margin="0,0,8,0"
-                            Visibility="{Binding IsStep3, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
-                    <Button Content="Apply Refresh"
-                            Command="{Binding ApplyCommand}"
-                            Padding="14,6"
-                            Margin="0,0,8,0"
-                            Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <Button Content="Back"
-                            Padding="10,6"
-                            Margin="0,0,8,0"
-                            Visibility="{Binding IsStep3, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Click="OnBackClick" />
-                    <Button Content="Cancel"
-                            Command="{Binding CancelCommand}"
-                            Padding="10,6" />
+                <!-- Actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Import" Command="{Binding ImportCommand}" Style="{StaticResource PrimaryButtonStyle}" Padding="16,6" Margin="0,0,8,0" />
+                    <Button Content="Cancel" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButtonStyle}" Padding="16,6" />
                 </StackPanel>
             </Grid>
         </Border>

@@ -1,7 +1,7 @@
-using MBColumn.Application.DTOs.Etabs;
-using MBColumn.Application.DTOs.Persistence;
+using MBColumn.Application.Services;
 using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Enums;
+using System.Collections.Generic;
 
 namespace MBColumn.Presentation.Wpf.Services;
 
@@ -9,7 +9,8 @@ public interface IEtabsForceRefreshDialogService
 {
     EtabsForceRefreshResult? ShowDialog(
         System.Windows.Window? owner,
-        IReadOnlyList<EtabsSectionBinding> existingBindings,
-        IReadOnlyDictionary<string, IReadOnlyList<SnapshotLoadCase>> existingLoadCasesBySection,
+        IReadOnlyList<ColumnRecord> allColumns,
+        int? currentColumnId,
+        int? currentFolderId,
         UnitSystem unitSystem);
 }

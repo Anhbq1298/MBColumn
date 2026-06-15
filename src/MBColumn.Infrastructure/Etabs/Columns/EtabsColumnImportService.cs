@@ -107,6 +107,17 @@ public sealed class EtabsColumnImportService : IEtabsColumnImportService
         return names ?? [];
     }
 
+    public IReadOnlyList<string> GetLoadCases()
+    {
+        var model = connection.Model
+            ?? throw new InvalidOperationException("Not connected to ETABS.");
+
+        int count = 0;
+        string[] names = [];
+        model.LoadCases.GetNameList(ref count, ref names);
+        return names ?? [];
+    }
+
     public IReadOnlyList<(string Name, double Elevation)> GetStoryElevations()
     {
         var model = connection.Model

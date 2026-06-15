@@ -74,7 +74,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `record` | **EtabsForceCacheBuildResult** | Encapsulates the result of EtabsForceCacheBuild operations. | `EtabsForceCacheBuildResult.cs` |
 | `record` | **EtabsForceCacheQuery** | Represents the EtabsForceCacheQuery record. | `EtabsForceCacheQuery.cs` |
 | `class` | **EtabsForceRefreshPreview** | Represents the EtabsForceRefreshPreview class. Key properties: SectionsAffected, LoadCombinationsSelected, ExistingLoadRows, NewLoadRows. | `EtabsForceRefreshPreview.cs` |
-| `class` | **EtabsForceRefreshRequest** | Represents the EtabsForceRefreshRequest class. Key properties: Bindings, SelectedLoadCombinations, ForceSource, ImportTop. | `EtabsForceRefreshRequest.cs` |
+| `class` | **EtabsForceRefreshRequest** | Represents the EtabsForceRefreshRequest class. Key properties: Bindings, SelectedLoadCombinations, SelectedLoadCases, ForceSource. | `EtabsForceRefreshRequest.cs` |
 | `record` | **EtabsForceResultDto** | /// ETABS force row after unit conversion. P is already converted to MBColumn /// compression-positive convention by the extraction service; M2/M3 and V2/V3 /// keep their ETABS local-axis names until the central convention mapper assigns /// them to MBColumn Mx/My and Vx/Vy. /// | `EtabsForceResultDto.cs` |
 | `class` | **EtabsForceRowChange** | Represents the EtabsForceRowChange class. Key properties: LoadCaseName, Location, OldP, NewP. | `EtabsForceRowChange.cs` |
 | `enum` | **EtabsForceRowChangeStatus** | Enumeration defining states/types for EtabsForceRowChangeStatus. | `EtabsForceRowChange.cs` |
@@ -516,7 +516,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | Type | Name | Description | File |
 |---|---|---|---|
 | `class` | **EtabsColumnIdentityService** | /// Builds and matches geometry-based identities for ETABS column objects. /// /// The permanent identity is a deterministic GUID derived from normalized endpoint /// coordinates (XBot/YBot/ZBot/XTop/YTop/ZTop), so it survives ETABS renames, /// re-meshes, and model transfers. /// /// XY + ZBot + ZTop is used instead of XY-only because columns from different /// stories share the same XY footprint. ///. Key methods: GetCurrentGeometryRecords, BuildIdentity, BuildGeometrySignature, BuildGuidFromSignature. | `EtabsColumnIdentityService.cs` |
-| `class` | **EtabsColumnImportService** | Provides service logic and operations for EtabsColumnImport. Key methods: GetCandidateColumns, GetLoadCombinations. | `EtabsColumnImportService.cs` |
+| `class` | **EtabsColumnImportService** | Provides service logic and operations for EtabsColumnImport. Key methods: GetCandidateColumns, GetLoadCombinations, GetLoadCases. | `EtabsColumnImportService.cs` |
 | `record` | **struct** | Represents the struct record. | `EtabsColumnImportService.cs` |
 
 ### Etabs/Connection
@@ -896,7 +896,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsForceImportRowViewModel** | Represents the EtabsForceImportRowViewModel class. Key properties: IsSelected, ObjectName, Pier, Story. | `EtabsForceImportRowViewModel.cs` |
 | `enum` | **EtabsForceRefreshScope** | Enumeration defining states/types for EtabsForceRefreshScope. Key methods: Dispose. Key properties: Input, Result, Report, Explorer. | `MainWindowViewModel.cs` |
 | `class` | **EtabsForceRefreshSectionRowViewModel** | Represents the EtabsForceRefreshSectionRowViewModel class. Key properties: SectionName, StatusText, OldRows, NewRows. | `EtabsForceRefreshViewModel.cs` |
-| `class` | **EtabsForceRefreshViewModel** | Represents the EtabsForceRefreshViewModel class. Key methods: SetAvailableCombinations. Key properties: Result, ExistingBindings, LoadCombinations, SectionRows. | `EtabsForceRefreshViewModel.cs` |
+| `class` | **EtabsForceRefreshViewModel** | Represents the EtabsForceRefreshViewModel class. Key properties: Result, LoadCombinations, SectionRows, ConnectCommand. | `EtabsForceRefreshViewModel.cs` |
 | `class` | **EtabsImportSummaryRowViewModel** | Represents the EtabsImportSummaryRowViewModel class. Key properties: SourceColumn, Mapping, NewSectionName, Pier. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsImportViewModel** | Represents the EtabsImportViewModel class. Key methods: ApplyPreloadData, AssignSelectedItemsToSection, RemoveItemFromSection, DeleteMbColumnSection. Key properties: ImportResult, Columns, FilteredColumns, TierObjectCandidatesView. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsLoadCombinationViewModel** | Represents the EtabsLoadCombinationViewModel class. Key methods: SetSelectedSilently. Key properties: Name, IsSelected. | `EtabsImportViewModel.cs` |

@@ -130,12 +130,15 @@ public sealed class EtabsForceImportService : IEtabsForceImportService
     {
         model.Results.Setup.DeselectAllCasesAndCombosForOutput();
         foreach (var combo in loadCombinations)
+        {
             model.Results.Setup.SetComboSelectedForOutput(combo, true);
+            model.Results.Setup.SetCaseSelectedForOutput(combo, true);
+        }
         model.Results.Setup.SetOptionMultiValuedCombo(0);
 
-        // DatabaseTables API — limits rows returned by GetTableForEditingArray to selected combos only
         var comboArray = loadCombinations.ToArray();
         model.DatabaseTables.SetLoadCombinationsSelectedForDisplay(ref comboArray);
+        model.DatabaseTables.SetLoadCasesSelectedForDisplay(ref comboArray);
     }
 
     private static List<EtabsForceResultDto> QueryDesignForcesTable(

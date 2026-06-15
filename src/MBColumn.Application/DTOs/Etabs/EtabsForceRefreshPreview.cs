@@ -15,4 +15,5 @@ public sealed class EtabsForceRefreshPreview
     public bool HasWarnings => MissingObjects > 0 || MissingCombos > 0 || RemapRequired > 0;
     public List<EtabsSectionRefreshSummary> SectionSummaries { get; set; } = [];
     public EtabsBindingValidationResult? ValidationResult { get; set; }
+    public EtabsForceRefreshRequest? Request { get; set; }
 }

@@ -4,7 +4,11 @@ using MBColumn.Application.Services;
 using MBColumn.Application.Services.Etabs;
 using MBColumn.Domain.Enums;
 using MBColumn.Presentation.Wpf.Commands;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace MBColumn.Presentation.Wpf.ViewModels;
@@ -30,92 +34,146 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 {
     private readonly IEtabsConnectionService connectionService;
     private readonly IEtabsForceRefreshService refreshService;
+    private readonly IEtabsColumnImportService columnImportService;
     private readonly IProjectService projectService;
+    private readonly IReadOnlyList<ColumnRecord> allColumns;
+    private readonly int? currentColumnId;
+    private readonly int? currentFolderId;
     private readonly UnitSystem unitSystem;
 
-    private readonly RelayCommand connectCommand;
+    private readonly AsyncRelayCommand connectCommand;
     private readonly RelayCommand cancelCommand;
-    private readonly AsyncRelayCommand buildPreviewCommand;
-    private readonly RelayCommand applyCommand;
+    private readonly AsyncRelayCommand importCommand;
     private readonly RelayCommand selectAllCombosCommand;
     private readonly RelayCommand clearAllCombosCommand;
 
-    private int currentStep = 1;
     private bool isConnected;
-    private string connectionStatus = "Not connected";
+    private string connectionStatusText = "Not connected";
     private string modelName = "-";
     private string modelPath = "-";
+    private string presentUnits = "-";
+    private string currentSectionName = "-";
+    private string metadataId = "-";
+    private string modelMismatchWarning = "";
+    private bool hasMetadataError;
+
+    // Source mapping
+    private string importedFromEtabs = "No";
+    private string storyRange = "-";
+    private string columnLabel = "-";
+    private string etabsObjectIds = "-";
+
     private string statusMessage = "";
     private bool isBusy;
     private string busyText = "";
     private bool useDesignForces = true;
-    private bool importTop = true;
-    private bool importBottom = true;
-    private bool refreshAllSections = true;
+
+    // Load source selection
+    private bool loadCombinationsSelected = true;
+    private bool loadCasesSelected = false;
+
+    // Force extraction selection
+    private bool forceExtractionTopBottom = true;
+    private bool forceExtractionEnvelope = false;
+
+    // Behavior selection
+    private bool behaviorReplace = true;
+    private bool behaviorAppend = false;
+
     private string loadComboFilterText = "";
     private EtabsForceRefreshPreview? preview;
     private EtabsForceRefreshResult? applyResult;
 
+    private List<string> allCombinations = [];
+    private List<string> allCases = [];
+
     public EtabsForceRefreshViewModel(
         IEtabsConnectionService connectionService,
         IEtabsForceRefreshService refreshService,
+        IEtabsColumnImportService columnImportService,
         IProjectService projectService,
-        IReadOnlyList<EtabsSectionBinding> existingBindings,
-        IReadOnlyDictionary<string, IReadOnlyList<SnapshotLoadCase>> existingLoadCasesBySection,
+        IReadOnlyList<ColumnRecord> allColumns,
+        int? currentColumnId,
+        int? currentFolderId,
         UnitSystem unitSystem)
     {
         this.connectionService = connectionService;
         this.refreshService = refreshService;
+        this.columnImportService = columnImportService;
         this.projectService = projectService;
+        this.allColumns = allColumns;
+        this.currentColumnId = currentColumnId;
+        this.currentFolderId = currentFolderId;
         this.unitSystem = unitSystem;
-
-        ExistingBindings = existingBindings.ToList();
-        ExistingLoadCasesBySection = existingLoadCasesBySection;
 
         LoadCombinations = [];
         SectionRows = [];
 
-        connectCommand = new RelayCommand(Connect, () => !IsConnected);
+        // Load metadata and populate panels
+        if (currentColumnId.HasValue)
+        {
+            var currentSnapshot = projectService.LoadColumnInput(currentColumnId.Value);
+            if (currentSnapshot != null)
+            {
+                CurrentSectionName = currentSnapshot.DesignTierName;
+                if (string.IsNullOrWhiteSpace(CurrentSectionName))
+                {
+                    var colRecord = allColumns.FirstOrDefault(c => c.Id == currentColumnId.Value);
+                    CurrentSectionName = colRecord?.Name ?? "-";
+                }
+
+                var meta = currentSnapshot.EtabsMetadata;
+                if (meta != null && meta.IsEtabsImportedSection)
+                {
+                    ImportedFromEtabs = "Yes";
+                    StoryRange = meta.EtabsStoryRangeText;
+                    if (string.IsNullOrWhiteSpace(StoryRange)) StoryRange = meta.StoryName;
+                    
+                    ColumnLabel = string.Join(", ", meta.EtabsSourceLabels ?? []);
+                    if (string.IsNullOrWhiteSpace(ColumnLabel)) ColumnLabel = meta.Label;
+                    if (string.IsNullOrWhiteSpace(ColumnLabel) && !string.IsNullOrWhiteSpace(meta.PierName)) ColumnLabel = meta.PierName;
+                    
+                    EtabsObjectIds = string.Join(", ", meta.EtabsSourceFrameIds ?? []);
+                    if (string.IsNullOrWhiteSpace(EtabsObjectIds)) EtabsObjectIds = meta.EtabsObjectName;
+                    
+                    MetadataId = meta.EtabsColumnGroupId;
+                }
+                else
+                {
+                    ImportedFromEtabs = "No";
+                    StoryRange = "-";
+                    ColumnLabel = "-";
+                    EtabsObjectIds = "-";
+                    MetadataId = "-";
+
+                    HasMetadataError = true;
+                    StatusMessage = "This section does not contain ETABS source metadata. Re-import is only available for sections originally imported from ETABS.";
+                }
+            }
+        }
+
+        connectCommand = new AsyncRelayCommand(InitializeAsync, () => !IsBusy && !HasMetadataError);
         cancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
-        buildPreviewCommand = new AsyncRelayCommand(BuildPreviewAsync,
-            () => IsConnected && LoadCombinations.Any(c => c.IsSelected) && !IsBusy);
-        applyCommand = new RelayCommand(Apply,
-            () => Preview is not null && !IsBusy);
+        importCommand = new AsyncRelayCommand(ImportAsync,
+            () => IsConnected && LoadCombinations.Any(c => c.IsSelected) && !IsBusy && !HasMetadataError);
         selectAllCombosCommand = new RelayCommand(() => SetAllCombos(true), () => LoadCombinations.Count > 0);
         clearAllCombosCommand = new RelayCommand(() => SetAllCombos(false), () => LoadCombinations.Count > 0);
+
+        ResetPreview();
+        _ = InitializeAsync();
     }
 
     public event EventHandler<bool>? RequestClose;
     public EtabsForceRefreshResult? Result => applyResult;
 
-    public List<EtabsSectionBinding> ExistingBindings { get; }
-    public IReadOnlyDictionary<string, IReadOnlyList<SnapshotLoadCase>> ExistingLoadCasesBySection { get; }
     public ObservableCollection<EtabsLoadCombinationViewModel> LoadCombinations { get; }
     public ObservableCollection<EtabsForceRefreshSectionRowViewModel> SectionRows { get; }
 
     public ICommand ConnectCommand => connectCommand;
     public ICommand CancelCommand => cancelCommand;
-    public ICommand BuildPreviewCommand => buildPreviewCommand;
-    public ICommand ApplyCommand => applyCommand;
+    public ICommand ImportCommand => importCommand;
     public ICommand SelectAllCombosCommand => selectAllCombosCommand;
     public ICommand ClearAllCombosCommand => clearAllCombosCommand;
-
-    public int CurrentStep
-    {
-        get => currentStep;
-        private set
-        {
-            if (currentStep == value) return;
-            currentStep = value;
-            Raise();
-            Raise(nameof(IsStep1));
-            Raise(nameof(IsStep2));
-            Raise(nameof(IsStep3));
-        }
-    }
-    public bool IsStep1 => currentStep == 1;
-    public bool IsStep2 => currentStep == 2;
-    public bool IsStep3 => currentStep == 3;
 
     public bool IsConnected
     {
@@ -129,9 +187,21 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         }
     }
 
-    public string ConnectionStatus { get => connectionStatus; private set => Set(ref connectionStatus, value); }
+    public string ConnectionStatusText { get => connectionStatusText; private set => Set(ref connectionStatusText, value); }
     public string ModelName { get => modelName; private set => Set(ref modelName, value); }
     public string ModelPath { get => modelPath; private set => Set(ref modelPath, value); }
+    public string PresentUnits { get => presentUnits; private set => Set(ref presentUnits, value); }
+    public string CurrentSectionName { get => currentSectionName; private set => Set(ref currentSectionName, value); }
+    public string MetadataId { get => metadataId; private set => Set(ref metadataId, value); }
+    public string ModelMismatchWarning { get => modelMismatchWarning; private set { Set(ref modelMismatchWarning, value); Raise(nameof(HasModelMismatchWarning)); } }
+    public bool HasModelMismatchWarning => !string.IsNullOrEmpty(ModelMismatchWarning);
+    public bool HasMetadataError { get => hasMetadataError; private set => Set(ref hasMetadataError, value); }
+
+    public string ImportedFromEtabs { get => importedFromEtabs; private set => Set(ref importedFromEtabs, value); }
+    public string StoryRange { get => storyRange; private set => Set(ref storyRange, value); }
+    public string ColumnLabel { get => columnLabel; private set => Set(ref columnLabel, value); }
+    public string EtabsObjectIds { get => etabsObjectIds; private set => Set(ref etabsObjectIds, value); }
+
     public string StatusMessage { get => statusMessage; set => Set(ref statusMessage, value); }
     public bool IsBusy { get => isBusy; private set { Set(ref isBusy, value); RaiseCommands(); } }
     public string BusyText { get => busyText; private set => Set(ref busyText, value); }
@@ -155,34 +225,91 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         set { if (value) UseDesignForces = false; }
     }
 
-    public bool ImportTop
+    // Load Source Selection Properties
+    public bool LoadCombinationsSelected
     {
-        get => importTop;
-        set { Set(ref importTop, value); ResetPreview(); }
+        get => loadCombinationsSelected;
+        set
+        {
+            if (Set(ref loadCombinationsSelected, value))
+            {
+                RefreshSelectionList();
+                ResetPreview();
+            }
+        }
     }
 
-    public bool ImportBottom
+    public bool LoadCasesSelected
     {
-        get => importBottom;
-        set { Set(ref importBottom, value); ResetPreview(); }
+        get => loadCasesSelected;
+        set
+        {
+            if (Set(ref loadCasesSelected, value))
+            {
+                RefreshSelectionList();
+                ResetPreview();
+            }
+        }
     }
 
-    public bool RefreshAllSections
+    // Force Extraction Properties
+    public bool ForceExtractionTopBottom
     {
-        get => refreshAllSections;
-        set { Set(ref refreshAllSections, value); Raise(nameof(RefreshSelectedSectionsOnly)); ResetPreview(); }
+        get => forceExtractionTopBottom;
+        set
+        {
+            if (Set(ref forceExtractionTopBottom, value) && value)
+            {
+                ForceExtractionEnvelope = false;
+                ResetPreview();
+            }
+        }
     }
 
-    public bool RefreshSelectedSectionsOnly
+    public bool ForceExtractionEnvelope
     {
-        get => !refreshAllSections;
-        set { if (value) RefreshAllSections = false; }
+        get => forceExtractionEnvelope;
+        set
+        {
+            if (Set(ref forceExtractionEnvelope, value) && value)
+            {
+                ForceExtractionTopBottom = false;
+                ResetPreview();
+            }
+        }
+    }
+
+    // Behavior Properties
+    public bool BehaviorReplace
+    {
+        get => behaviorReplace;
+        set
+        {
+            if (Set(ref behaviorReplace, value) && value)
+            {
+                BehaviorAppend = false;
+                ResetPreview();
+            }
+        }
+    }
+
+    public bool BehaviorAppend
+    {
+        get => behaviorAppend;
+        set
+        {
+            if (Set(ref behaviorAppend, value) && value)
+            {
+                BehaviorReplace = false;
+                ResetPreview();
+            }
+        }
     }
 
     public string LoadComboFilterText
     {
         get => loadComboFilterText;
-        set { Set(ref loadComboFilterText, value); RefreshFilteredCombos(); }
+        set { Set(ref loadComboFilterText, value); RefreshSelectionList(); }
     }
 
     public EtabsForceRefreshPreview? Preview
@@ -214,87 +341,197 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
     public int PreviewRemovedRows => preview?.RemovedRows ?? 0;
     public bool PreviewHasWarnings => preview?.HasWarnings ?? false;
 
-    public int LinkedSectionCount => ExistingBindings.Count;
+    public List<EtabsSectionBinding> ExistingBindings
+    {
+        get
+        {
+            var scopedColumns = GetScopedColumns();
+            var bindings = new List<EtabsSectionBinding>();
+            foreach (var col in scopedColumns)
+            {
+                var snapshot = projectService.LoadColumnInput(col.Id);
+                if (snapshot?.EtabsBinding is not null)
+                    bindings.Add(snapshot.EtabsBinding);
+            }
+            return bindings;
+        }
+    }
+
     public int SelectedComboCount => LoadCombinations.Count(c => c.IsSelected);
     public string ForceSourceLabel => UseDesignForces ? "Design Forces" : "Element Forces";
 
-    private void Connect()
+    private async Task InitializeAsync()
     {
-        ConnectionStatus = "Connecting...";
-        var result = connectionService.ConnectToRunningEtabs();
+        if (IsBusy || HasMetadataError) return;
 
-        if (!result.IsConnected)
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
-            ConnectionStatus = result.Message;
-            IsConnected = false;
-            return;
-        }
+            IsBusy = true;
+            BusyText = "Connecting to ETABS...";
+            ConnectionStatusText = "Connecting...";
+            StatusMessage = "Connecting to ETABS, please wait...";
+            ResetPreview();
+        });
 
-        var info = result.ModelInfo!;
-        ModelName = info.ModelName;
-        ModelPath = info.ModelPath;
-        IsConnected = true;
-        ConnectionStatus = result.Message;
-
-        LoadCombinations.Clear();
         try
         {
-            // Load combination names only — no force rows yet
-            // We get combos from model info or a separate call
+            // Connect in a background thread so we don't freeze the UI
+            var result = await Task.Run(() => connectionService.ConnectToRunningEtabs(unitSystem));
+
+            if (result.IsConnected)
+            {
+                var info = result.ModelInfo!;
+                
+                // Load combinations and cases in the background while still connected
+                var combos = await Task.Run(() => columnImportService.GetLoadCombinations());
+                var cases = await Task.Run(() => columnImportService.GetLoadCases());
+
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    ModelName = info.ModelName;
+                    ModelPath = info.ModelPath;
+                    PresentUnits = info.PresentUnits;
+                    IsConnected = true;
+                    ConnectionStatusText = "Connected";
+
+                    // Check model mismatch
+                    var snapshot = projectService.LoadColumnInput(currentColumnId ?? 0);
+                    var expectedModel = snapshot?.EtabsMetadata?.EtabsSourceModelName;
+                    if (string.IsNullOrWhiteSpace(expectedModel)) expectedModel = snapshot?.EtabsMetadata?.SourceModelName;
+
+                    if (!string.IsNullOrWhiteSpace(expectedModel) && 
+                        !string.Equals(System.IO.Path.GetFileName(info.ModelName), System.IO.Path.GetFileName(expectedModel), StringComparison.OrdinalIgnoreCase))
+                    {
+                        ModelMismatchWarning = "The connected ETABS model may not match the original source model for this section. Please confirm before importing.";
+                    }
+                    else
+                    {
+                        ModelMismatchWarning = "";
+                    }
+
+                    allCombinations = combos.ToList();
+                    allCases = cases.ToList();
+                    RefreshSelectionList();
+                    StatusMessage = "";
+                });
+            }
+            else
+            {
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    ConnectionStatusText = "Not connected";
+                    IsConnected = false;
+                    StatusMessage = "ETABS is not connected. Please reconnect to the source model before re-importing forces.";
+                });
+            }
         }
         catch (Exception ex)
         {
-            ConnectionStatus = $"Connected but could not load combinations: {ex.Message}";
+            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            {
+                ConnectionStatusText = "Error connecting";
+                StatusMessage = $"Error: {ex.Message}";
+                IsConnected = false;
+            });
         }
-
-        StatusMessage = $"Connected to {info.ModelName}. Select load combinations and click 'Preview Refresh'.";
-        CurrentStep = 2;
+        finally
+        {
+            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+            {
+                IsBusy = false;
+                BusyText = "";
+                RaiseCommands();
+            });
+        }
     }
 
-    public void SetAvailableCombinations(IReadOnlyList<string> combos)
+    private void RefreshSelectionList()
     {
+        var selectedNames = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        
         LoadCombinations.Clear();
-        foreach (var name in combos)
-            LoadCombinations.Add(new EtabsLoadCombinationViewModel(name, _ => OnComboSelectionChanged()));
 
-        // Pre-select combos that were used in the last import
-        var lastCombos = ExistingBindings
-            .SelectMany(b => b.LoadCombinations)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var combo in LoadCombinations)
+        if (LoadCombinationsSelected)
         {
-            if (lastCombos.Contains(combo.Name))
-                combo.IsSelected = true;
+            foreach (var name in allCombinations)
+            {
+                if (string.IsNullOrWhiteSpace(LoadComboFilterText) || name.Contains(LoadComboFilterText, StringComparison.OrdinalIgnoreCase))
+                {
+                    LoadCombinations.Add(new EtabsLoadCombinationViewModel(name, _ => OnComboSelectionChanged(), selectedNames.Contains(name)));
+                }
+            }
         }
 
-        RaiseCommands();
+        if (LoadCasesSelected)
+        {
+            foreach (var name in allCases)
+            {
+                if (string.IsNullOrWhiteSpace(LoadComboFilterText) || name.Contains(LoadComboFilterText, StringComparison.OrdinalIgnoreCase))
+                {
+                    LoadCombinations.Add(new EtabsLoadCombinationViewModel(name, _ => OnComboSelectionChanged(), selectedNames.Contains(name)));
+                }
+            }
+        }
+
         Raise(nameof(SelectedComboCount));
+        RaiseCommands();
     }
 
-    private async Task BuildPreviewAsync()
+    private IReadOnlyList<ColumnRecord> GetScopedColumns()
     {
-        if (ExistingBindings.Count == 0)
+        if (currentColumnId.HasValue)
         {
-            StatusMessage = "No ETABS-linked sections found. Import from ETABS first.";
+            return allColumns.Where(c => c.Id == currentColumnId.Value).ToList();
+        }
+        return [];
+    }
+
+    private async Task ImportAsync()
+    {
+        if (HasMetadataError)
+        {
+            StatusMessage = "This section does not contain ETABS source metadata. Re-import is only available for sections originally imported from ETABS.";
+            return;
+        }
+
+        if (!IsConnected)
+        {
+            StatusMessage = "ETABS is not connected. Please reconnect to the source model before re-importing forces.";
+            return;
+        }
+
+        var bindings = ExistingBindings;
+        if (bindings.Count == 0)
+        {
+            StatusMessage = "No matching ETABS column object was found from this section metadata. Please check the source mapping.";
             return;
         }
 
         if (!LoadCombinations.Any(c => c.IsSelected))
         {
-            StatusMessage = "Select at least one load combination.";
+            StatusMessage = "Please select at least one load case or load combination.";
             return;
         }
 
         IsBusy = true;
-        BusyText = "Checking ETABS results...";
+        BusyText = "Importing forces...";
         StatusMessage = "";
 
         try
         {
-            var request = BuildRefreshRequest();
+            var request = new EtabsForceRefreshRequest
+            {
+                Bindings = bindings,
+                SelectedLoadCombinations = LoadCombinationsSelected ? LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).Intersect(allCombinations, StringComparer.OrdinalIgnoreCase).ToList() : [],
+                SelectedLoadCases = LoadCasesSelected ? LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).Intersect(allCases, StringComparer.OrdinalIgnoreCase).ToList() : [],
+                ForceSource = UseDesignForces ? MbColumnForceSourceMode.DesignForces : MbColumnForceSourceMode.ElementForces,
+                ImportTop = ForceExtractionTopBottom,
+                ImportBottom = ForceExtractionTopBottom,
+                ImportEnvelope = ForceExtractionEnvelope,
+                AppendAsNewLoads = BehaviorAppend,
+                RefreshAllSections = true
+            };
 
-            // Check result state
             var state = await Task.Run(() => refreshService.CheckResultState(request));
 
             if (state != EtabsResultState.Ready)
@@ -304,49 +541,23 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
                 return;
             }
 
-            BusyText = "Pulling selected forces...";
-
             var builtPreview = await Task.Run(() =>
-                refreshService.BuildPreview(request, ExistingLoadCasesBySection, unitSystem));
+                refreshService.BuildPreview(request, GetExistingLoadCasesBySection(), unitSystem));
 
-            Preview = builtPreview;
-            SectionRows.Clear();
-            foreach (var section in builtPreview.SectionSummaries)
-                SectionRows.Add(MapSectionSummary(section));
+            if (builtPreview.SectionsAffected == 0 || builtPreview.NewLoadRows == 0)
+            {
+                StatusMessage = "No matching ETABS column object was found from this section metadata. Please check the source mapping.";
+                IsBusy = false;
+                return;
+            }
 
-            CurrentStep = 3;
-            StatusMessage = builtPreview.HasWarnings
-                ? $"Preview ready with warnings. {builtPreview.RemapRequired} section(s) need remap."
-                : "Preview ready. Review changes and click Apply.";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Preview failed: {ex.Message}";
-        }
-        finally
-        {
-            IsBusy = false;
-            BusyText = "";
-        }
-    }
-
-    private void Apply()
-    {
-        if (Preview is null) return;
-
-        IsBusy = true;
-        BusyText = "Applying forces...";
-
-        try
-        {
-            applyResult = refreshService.Apply(Preview);
+            applyResult = refreshService.Apply(builtPreview);
             StatusMessage = applyResult.Message;
             RequestClose?.Invoke(this, true);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Apply failed: {ex.Message}";
-            applyResult = null;
+            StatusMessage = $"Import failed: {ex.Message}";
         }
         finally
         {
@@ -355,51 +566,25 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         }
     }
 
-    private EtabsForceRefreshRequest BuildRefreshRequest()
+    private IReadOnlyDictionary<string, IReadOnlyList<SnapshotLoadCase>> GetExistingLoadCasesBySection()
     {
-        return new EtabsForceRefreshRequest
+        var existingLoadCasesBySection = new Dictionary<string, IReadOnlyList<SnapshotLoadCase>>(StringComparer.OrdinalIgnoreCase);
+        var scopedColumns = GetScopedColumns();
+        foreach (var col in scopedColumns)
         {
-            Bindings = ExistingBindings,
-            SelectedLoadCombinations = LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).ToList(),
-            ForceSource = UseDesignForces ? MbColumnForceSourceMode.DesignForces : MbColumnForceSourceMode.ElementForces,
-            ImportTop = ImportTop,
-            ImportBottom = ImportBottom,
-            RefreshAllSections = RefreshAllSections
-        };
-    }
-
-    private static EtabsForceRefreshSectionRowViewModel MapSectionSummary(EtabsSectionRefreshSummary s)
-    {
-        var color = s.Status switch
-        {
-            EtabsBindingHealthStatus.Ok => "Green",
-            EtabsBindingHealthStatus.PossibleRemap or EtabsBindingHealthStatus.MultipleRemapCandidates => "Orange",
-            EtabsBindingHealthStatus.MissingObject or EtabsBindingHealthStatus.ModelChanged => "Red",
-            _ => "Gray"
-        };
-
-        return new EtabsForceRefreshSectionRowViewModel
-        {
-            SectionName = s.SectionName,
-            StatusText = s.Status.ToString(),
-            OldRows = s.OldRowCount,
-            NewRows = s.NewRowCount,
-            ChangedRows = s.ChangedRows,
-            AddedRows = s.AddedRows,
-            RemovedRows = s.RemovedRows,
-            MissingObjects = s.MissingObjects,
-            ActionText = s.RecommendedAction switch
+            var snapshot = projectService.LoadColumnInput(col.Id);
+            if (snapshot is not null)
             {
-                EtabsSectionRefreshAction.Update => "Update",
-                EtabsSectionRefreshAction.KeepOld => "Keep old",
-                EtabsSectionRefreshAction.NeedsRemap => "Review",
-                EtabsSectionRefreshAction.Skip => "Skip",
-                _ => "-"
-            },
-            SeverityColor = color,
-            RowChanges = s.RowChanges
-        };
+                existingLoadCasesBySection[col.Name] = snapshot.LoadCases.Where(IsEtabsLoadCase).ToList();
+            }
+        }
+        return existingLoadCasesBySection;
     }
+
+    private static bool IsEtabsLoadCase(SnapshotLoadCase loadCase)
+        => loadCase.IsEtabsImportedLoad
+            || string.Equals(loadCase.Source, "ETABS", StringComparison.OrdinalIgnoreCase)
+            || loadCase.Id.StartsWith("etabs_", StringComparison.OrdinalIgnoreCase);
 
     private static string BuildResultStateMessage(EtabsResultState state)
         => state switch
@@ -428,23 +613,15 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         ResetPreview();
     }
 
-    private void RefreshFilteredCombos()
-    {
-        // In a real implementation this would update a filtered collection view
-    }
-
     private void ResetPreview()
     {
         Preview = null;
         SectionRows.Clear();
-        if (currentStep == 3)
-            CurrentStep = 2;
     }
 
     private void RaiseCommands()
     {
-        buildPreviewCommand.RaiseCanExecuteChanged();
-        applyCommand.RaiseCanExecuteChanged();
+        importCommand.RaiseCanExecuteChanged();
         connectCommand.RaiseCanExecuteChanged();
         selectAllCombosCommand.RaiseCanExecuteChanged();
         clearAllCombosCommand.RaiseCanExecuteChanged();

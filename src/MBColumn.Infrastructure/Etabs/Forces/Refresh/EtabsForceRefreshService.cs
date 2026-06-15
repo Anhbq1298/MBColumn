@@ -122,11 +122,12 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
             IReadOnlyList<MbColumnMappedForceRow> newRows;
             if (worstStatus is EtabsBindingHealthStatus.MissingObject or EtabsBindingHealthStatus.ModelChanged)
             {
-                newRows = [];
+                // Try coordinate fallback mapping even if direct IDs failed!
+                newRows = PullForcesForBinding(binding, request, currentColumns, unitSystem);
             }
             else
             {
-                newRows = PullForcesForBinding(binding, request, unitSystem);
+                newRows = PullForcesForBinding(binding, request, currentColumns, unitSystem);
             }
 
             var summary = changeDetector.CompareSectionForces(sectionName, existingCases, newRows, worstStatus);
@@ -146,7 +147,7 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         return new EtabsForceRefreshPreview
         {
             SectionsAffected = sectionSummaries.Count,
-            LoadCombinationsSelected = request.SelectedLoadCombinations.Count,
+            LoadCombinationsSelected = request.SelectedLoadCombinations.Count + request.SelectedLoadCases.Count,
             ExistingLoadRows = totalOldRows,
             NewLoadRows = totalNewRows,
             ChangedRows = totalChanged,
@@ -156,7 +157,8 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
             MissingCombos = validation.MissingCombinations.Count,
             RemapRequired = remapNeeded,
             SectionSummaries = sectionSummaries,
-            ValidationResult = validation
+            ValidationResult = validation,
+            Request = request
         };
     }
 
@@ -184,17 +186,51 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         };
     }
 
+    private static double Distance(double x1, double y1, double x2, double y2)
+    {
+        double dx = x1 - x2;
+        double dy = y1 - y2;
+        return System.Math.Sqrt(dx * dx + dy * dy);
+    }
+
     private IReadOnlyList<MbColumnMappedForceRow> PullForcesForBinding(
         EtabsSectionBinding binding,
         EtabsForceRefreshRequest request,
+        IReadOnlyList<EtabsColumnObjectKey> currentColumns,
         UnitSystem unitSystem)
     {
-        var combos = request.SelectedLoadCombinations;
+        var combos = request.SelectedLoadCombinations.Concat(request.SelectedLoadCases ?? []).ToList();
         var rows = new List<MbColumnMappedForceRow>();
 
         if (binding.ObjectType == EtabsImportedObjectType.Column && binding.ColumnObjects.Count > 0)
         {
-            var columnDtos = binding.ColumnObjects.Select(col => new EtabsColumnImportDto(
+            var resolvedColumnObjects = new List<EtabsColumnObjectKey>();
+            foreach (var col in binding.ColumnObjects)
+            {
+                // 1. Try direct match by UniqueName (frame ID)
+                var match = currentColumns.FirstOrDefault(c => !string.IsNullOrEmpty(col.UniqueName) && string.Equals(c.UniqueName, col.UniqueName, StringComparison.OrdinalIgnoreCase));
+                
+                // 2. Validate story range & section property (implicit or check next)
+                if (match is not null)
+                {
+                    resolvedColumnObjects.Add(match);
+                }
+                else
+                {
+                    // 3. Fallback to XY + story range remap ONLY if IDs fail
+                    var fallbackMatch = currentColumns
+                        .Where(c => string.Equals(c.Story, col.Story, StringComparison.OrdinalIgnoreCase))
+                        .Where(c => Distance(c.X, c.Y, col.X, col.Y) <= 50.0) // 50mm tolerance
+                        .FirstOrDefault();
+                    
+                    if (fallbackMatch is not null)
+                        resolvedColumnObjects.Add(fallbackMatch);
+                    else
+                        resolvedColumnObjects.Add(col); // Fallback to original
+                }
+            }
+
+            var columnDtos = resolvedColumnObjects.Select(col => new EtabsColumnImportDto(
                 col.UniqueName,
                 "",
                 col.Story,
@@ -244,8 +280,21 @@ public sealed class EtabsForceRefreshService : IEtabsForceRefreshService
         IReadOnlyList<EtabsForceResultDto> forces,
         EtabsForceRefreshRequest request)
     {
+        if (request.ImportEnvelope)
+        {
+            return forces; // Envelope combos produce Max and Min rows, which are already marked and kept
+        }
+
         if (request.ImportTop && request.ImportBottom)
-            return forces;
+        {
+            return forces.Where(f =>
+            {
+                var station = f.Station.Trim();
+                return string.Equals(station, "Top", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(station, "Bottom", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(station, "Bot", StringComparison.OrdinalIgnoreCase);
+            }).ToList();
+        }
 
         return forces.Where(f =>
         {
