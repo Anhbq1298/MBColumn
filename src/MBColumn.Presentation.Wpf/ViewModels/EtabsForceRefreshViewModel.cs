@@ -53,6 +53,8 @@ internal enum SourceObjectResolutionStatus
     Failed
 }
 
+internal sealed record EtabsStoredObjectRef(string Story, string UniqueName);
+
 public sealed class EtabsForceRefreshViewModel : ViewModelBase
 {
     private readonly IEtabsConnectionService connectionService;
@@ -88,8 +90,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
     private string etabsObjectIds = "-";
     private string etabsObjectIdsToolTip = "-";
     private string sourceMappingMessage = "";
-    private string xyCheckStatus = "Pending";
-    private string storyCheckStatus = "Pending";
     private bool isSourceModelConfirmationRequired;
     private bool isSourceModelConfirmed;
     private bool modelNameOrPathDiffered;
@@ -106,10 +106,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
     // Load source selection
     private bool loadCombinationsSelected = true;
     private bool loadCasesSelected = false;
-
-    // Force extraction selection
-    private bool forceExtractionTopBottom = true;
-    private bool forceExtractionEnvelope = false;
 
     // Behavior selection
     private bool behaviorReplace = true;
@@ -167,10 +163,10 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
                     ColumnLabel = FormatColumnLabel(meta);
 
-                    var objectNames = ResolveStoredObjectNames(currentSnapshot);
-                    EtabsObjectIds = FormatObjectNamesForDisplay(objectNames);
-                    EtabsObjectIdsToolTip = objectNames.Count == 0 ? EtabsObjectIds : string.Join(", ", objectNames);
-                    SourceMappingMessage = BuildSourceMappingMessage(meta, objectNames);
+                    var objectRefs = ResolveStoredObjectRefs(currentSnapshot);
+                    EtabsObjectIds = FormatObjectNamesForDisplay(objectRefs);
+                    EtabsObjectIdsToolTip = FormatObjectNamesForToolTip(objectRefs);
+                    SourceMappingMessage = BuildSourceMappingMessage(meta, objectRefs);
 
                     MetadataId = meta.EtabsColumnGroupId;
                 }
@@ -183,8 +179,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
                     EtabsObjectIds = "-";
                     EtabsObjectIdsToolTip = "-";
                     SourceMappingMessage = "";
-                    XyCheckStatus = "Pending";
-                    StoryCheckStatus = "Pending";
                     MetadataId = "-";
 
                     HasMetadataError = true;
@@ -252,8 +246,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
     public string EtabsObjectIdsToolTip { get => etabsObjectIdsToolTip; private set => Set(ref etabsObjectIdsToolTip, value); }
     public string SourceMappingMessage { get => sourceMappingMessage; private set { Set(ref sourceMappingMessage, value); Raise(nameof(HasSourceMappingMessage)); } }
     public bool HasSourceMappingMessage => !string.IsNullOrWhiteSpace(SourceMappingMessage);
-    public string XyCheckStatus { get => xyCheckStatus; private set => Set(ref xyCheckStatus, value); }
-    public string StoryCheckStatus { get => storyCheckStatus; private set => Set(ref storyCheckStatus, value); }
     public bool IsSourceModelConfirmationRequired { get => isSourceModelConfirmationRequired; private set { Set(ref isSourceModelConfirmationRequired, value); RaiseCommands(); } }
     public bool IsSourceModelConfirmed { get => isSourceModelConfirmed; set { if (Set(ref isSourceModelConfirmed, value)) RaiseCommands(); } }
     public bool ModelNameOrPathDiffered { get => modelNameOrPathDiffered; private set => Set(ref modelNameOrPathDiffered, value); }
@@ -317,38 +309,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
             }
         }
     }
-
-    // Force Extraction Properties
-    public bool ForceExtractionTopBottom
-    {
-        get => forceExtractionTopBottom;
-        set
-        {
-            if (Set(ref forceExtractionTopBottom, value) && value)
-            {
-                ForceExtractionEnvelope = false;
-                ResetPreview();
-            }
-        }
-    }
-
-    public bool ForceExtractionEnvelope
-    {
-        get => forceExtractionEnvelope;
-        set
-        {
-            if (Set(ref forceExtractionEnvelope, value) && value)
-            {
-                ForceExtractionTopBottom = false;
-                ResetPreview();
-            }
-        }
-    }
-
-    public EtabsForceExtractionMode SelectedExtractionMode
-        => ForceExtractionEnvelope
-            ? EtabsForceExtractionMode.Envelope
-            : EtabsForceExtractionMode.TopBottom;
 
     // Behavior Properties
     public bool BehaviorReplace
@@ -605,8 +565,7 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
         try
         {
-            XyCheckStatus = "Pending";
-            StoryCheckStatus = "Pending";
+            var extractionMode = ResolveExtractionModeFromCurrentSection();
 
             var request = new EtabsForceRefreshRequest
             {
@@ -614,10 +573,10 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
                 SelectedLoadCombinations = LoadCombinationsSelected ? LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).Intersect(allCombinations, StringComparer.OrdinalIgnoreCase).ToList() : [],
                 SelectedLoadCases = LoadCasesSelected ? LoadCombinations.Where(c => c.IsSelected).Select(c => c.Name).Intersect(allCases, StringComparer.OrdinalIgnoreCase).ToList() : [],
                 ForceSource = UseDesignForces ? MbColumnForceSourceMode.DesignForces : MbColumnForceSourceMode.ElementForces,
-                ExtractionMode = SelectedExtractionMode,
-                ImportTop = SelectedExtractionMode == EtabsForceExtractionMode.TopBottom,
-                ImportBottom = SelectedExtractionMode == EtabsForceExtractionMode.TopBottom,
-                ImportEnvelope = SelectedExtractionMode == EtabsForceExtractionMode.Envelope,
+                ExtractionMode = extractionMode,
+                ImportTop = extractionMode == EtabsForceExtractionMode.TopBottom,
+                ImportBottom = extractionMode == EtabsForceExtractionMode.TopBottom,
+                ImportEnvelope = extractionMode == EtabsForceExtractionMode.Envelope,
                 AppendAsNewLoads = BehaviorAppend,
                 RefreshAllSections = false,
                 TargetMode = EtabsForceRefreshTargetMode.CurrentSectionOnly,
@@ -634,7 +593,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
             var resolution = ResolveSourceObjects(request, mappingValidation);
             if (resolution == SourceObjectResolutionStatus.RequiresSelection)
             {
-                ApplyValidationStatus(mappingValidation);
                 StatusMessage = "Multiple ETABS objects match the stored XY location and story range. Please select the intended source object.";
                 IsBusy = false;
                 return;
@@ -642,14 +600,11 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
 
             if (resolution == SourceObjectResolutionStatus.Failed || !IsMappingValidationPassed(mappingValidation))
             {
-                ApplyValidationStatus(mappingValidation);
                 StatusMessage = BuildMappingValidationMessage(mappingValidation);
                 IsBusy = false;
                 return;
             }
 
-            XyCheckStatus = "Passed";
-            StoryCheckStatus = "Passed";
             request.ResolvedEtabsObjectUniqueNames = request.Bindings
                 .SelectMany(binding => binding.ColumnObjects)
                 .Select(column => column.UniqueName)
@@ -948,38 +903,86 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
             .ToList();
     }
 
-    private static IReadOnlyList<string> ResolveStoredObjectNames(ColumnInputSnapshot snapshot)
+    private EtabsForceExtractionMode ResolveExtractionModeFromCurrentSection()
     {
-        var values = new List<string>();
+        var snapshot = currentColumnId.HasValue
+            ? projectService.LoadColumnInput(currentColumnId.Value)
+            : null;
+
+        return ResolveExtractionModeFromOriginalImport(snapshot);
+    }
+
+    private static EtabsForceExtractionMode ResolveExtractionModeFromOriginalImport(ColumnInputSnapshot? snapshot)
+    {
+        var tier = snapshot?.EtabsTierMetadata;
+        if (tier is not null && tier.ImportTop && tier.ImportBottom)
+            return EtabsForceExtractionMode.TopBottom;
+
+        return ExistingImportEtabsDefaultExtractionMode();
+    }
+
+    private static EtabsForceExtractionMode ExistingImportEtabsDefaultExtractionMode()
+        => EtabsForceExtractionMode.TopBottom;
+
+    private static IReadOnlyList<EtabsStoredObjectRef> ResolveStoredObjectRefs(ColumnInputSnapshot snapshot)
+    {
+        var values = new List<EtabsStoredObjectRef>();
 
         if (snapshot.EtabsMetadata?.EtabsSourceFrameIds is { Count: > 0 })
-            values.AddRange(snapshot.EtabsMetadata.EtabsSourceFrameIds);
+        {
+            var stories = snapshot.EtabsMetadata.EtabsSourceStories ?? [];
+            for (var i = 0; i < snapshot.EtabsMetadata.EtabsSourceFrameIds.Count; i++)
+            {
+                var name = snapshot.EtabsMetadata.EtabsSourceFrameIds[i];
+                var story = i < stories.Count ? stories[i] : snapshot.EtabsMetadata.StoryName;
+                values.Add(new EtabsStoredObjectRef(story, name));
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(snapshot.EtabsMetadata?.EtabsObjectName))
-            values.Add(snapshot.EtabsMetadata.EtabsObjectName);
+            values.Add(new EtabsStoredObjectRef(snapshot.EtabsMetadata.StoryName, snapshot.EtabsMetadata.EtabsObjectName));
 
         if (snapshot.EtabsBinding?.ColumnObjects is { Count: > 0 })
-            values.AddRange(snapshot.EtabsBinding.ColumnObjects.Select(c => c.UniqueName));
+            values.AddRange(snapshot.EtabsBinding.ColumnObjects.Select(c => new EtabsStoredObjectRef(c.Story, c.UniqueName)));
+
+        if (snapshot.EtabsTierMetadata?.SourceObjects is { Count: > 0 })
+            values.AddRange(snapshot.EtabsTierMetadata.SourceObjects.Select(source => new EtabsStoredObjectRef(source.Story, source.ObjectName)));
 
         return values
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Select(value => value.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(value => !string.IsNullOrWhiteSpace(value.UniqueName))
+            .Select(value => new EtabsStoredObjectRef(value.Story?.Trim() ?? "", value.UniqueName.Trim()))
+            .Where(value => !IsCountOnlyObjectName(value.UniqueName))
+            .GroupBy(value => $"{value.Story}|{value.UniqueName}", StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
             .ToList();
     }
 
-    private static string FormatObjectNamesForDisplay(IReadOnlyList<string> objectNames)
+    private static string FormatObjectNamesForDisplay(IReadOnlyList<EtabsStoredObjectRef> objectRefs)
     {
-        if (objectNames.Count == 0)
+        if (objectRefs.Count == 0)
             return "Not stored";
 
-        if (objectNames.Count == 1 && int.TryParse(objectNames[0], out var countOnly))
-            return $"{countOnly} objects stored";
+        const int maxVisible = 5;
+        var visible = objectRefs.Take(maxVisible).ToList();
+        var suffix = objectRefs.Count > maxVisible ? $" +{objectRefs.Count - maxVisible} more" : "";
 
-        const int maxVisible = 4;
-        var visible = objectNames.Take(maxVisible).ToList();
-        var suffix = objectNames.Count > maxVisible ? $", +{objectNames.Count - maxVisible} more" : "";
-        return string.Join(", ", visible) + suffix;
+        var grouped = visible
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.Story) ? "Story not stored" : item.Story, StringComparer.OrdinalIgnoreCase)
+            .Select(group => $"{group.Key}: {string.Join(", ", group.Select(item => item.UniqueName))}");
+
+        return string.Join("; ", grouped) + suffix;
+    }
+
+    private static string FormatObjectNamesForToolTip(IReadOnlyList<EtabsStoredObjectRef> objectRefs)
+    {
+        if (objectRefs.Count == 0)
+            return "Not stored";
+
+        var grouped = objectRefs
+            .GroupBy(item => string.IsNullOrWhiteSpace(item.Story) ? "Story not stored" : item.Story, StringComparer.OrdinalIgnoreCase)
+            .Select(group => $"{group.Key}: {string.Join(", ", group.Select(item => item.UniqueName))}");
+
+        return string.Join(Environment.NewLine, grouped);
     }
 
     private static string FormatColumnLabel(EtabsImportMetadataDto meta)
@@ -1030,16 +1033,16 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
                 StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildSourceMappingMessage(EtabsImportMetadataDto meta, IReadOnlyList<string> objectNames)
+    private static bool IsCountOnlyObjectName(string value)
+        => int.TryParse(value, out _);
+
+    private static string BuildSourceMappingMessage(EtabsImportMetadataDto meta, IReadOnlyList<EtabsStoredObjectRef> objectRefs)
     {
         var hasLabels = (meta.EtabsSourceLabels?.Any(label => !string.IsNullOrWhiteSpace(label)) == true)
             || !string.IsNullOrWhiteSpace(meta.Label)
             || !string.IsNullOrWhiteSpace(meta.PierName);
-        var hasCountOnlyObjectMetadata = objectNames.Count == 1
-            && int.TryParse(objectNames[0], out _)
-            && string.IsNullOrWhiteSpace(meta.EtabsObjectName);
 
-        if (objectNames.Count == 0 || hasCountOnlyObjectMetadata)
+        if (objectRefs.Count == 0)
             return "ETABS object unique names are missing from this section metadata. The app will try to resolve the source object using story, XY location, and label.";
 
         if (!hasLabels)
@@ -1052,19 +1055,6 @@ public sealed class EtabsForceRefreshViewModel : ViewModelBase
         => !validation.ModelChanged
             && validation.ObjectHealthList.Count > 0
             && validation.ObjectHealthList.All(h => h.Status == EtabsBindingHealthStatus.Ok);
-
-    private void ApplyValidationStatus(EtabsBindingValidationResult validation)
-    {
-        var statuses = validation.ObjectHealthList.Select(h => h.Status).ToList();
-        StoryCheckStatus = statuses.Contains(EtabsBindingHealthStatus.StoryMismatch)
-            || statuses.Contains(EtabsBindingHealthStatus.MissingObject)
-            ? "Failed"
-            : "Passed";
-        XyCheckStatus = statuses.Contains(EtabsBindingHealthStatus.XyMismatch)
-            || statuses.Contains(EtabsBindingHealthStatus.MissingObject)
-            ? "Failed"
-            : "Passed";
-    }
 
     private static string BuildMappingValidationMessage(EtabsBindingValidationResult validation)
     {

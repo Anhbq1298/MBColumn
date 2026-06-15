@@ -908,6 +908,7 @@ This document provides an overview of the classes, interfaces, records, and enum
 | `class` | **EtabsPreloadStep** | Represents the EtabsPreloadStep class. Key methods: SetRunning, SetDone, SetError, UpdateDetail. Key properties: Label, IsSubStep, Status, Detail. | `EtabsPreloadStep.cs` |
 | `class` | **EtabsPreloadViewModel** | Represents the EtabsPreloadViewModel class. Key methods: StartAsync, Cancel. Key properties: Steps, CompletedCount, CompletedStepsText, Result. | `EtabsPreloadViewModel.cs` |
 | `class` | **EtabsSectionMappingViewModel** | Represents the EtabsSectionMappingViewModel class. Key properties: SectionTypes, EtabsSectionName, UniqueSection, SectionType. | `EtabsSectionMappingViewModel.cs` |
+| `record` | **EtabsStoredObjectRef** | Represents the EtabsStoredObjectRef record. | `EtabsForceRefreshViewModel.cs` |
 | `class` | **EtabsStoryOptionViewModel** | Represents the EtabsStoryOptionViewModel class. Key properties: StoryName, Elevation, SortIndex, DisplayName. | `EtabsImportViewModel.cs` |
 | `class` | **EtabsUniqueSectionOptionViewModel** | Represents the EtabsUniqueSectionOptionViewModel class. Key properties: SectionName, SourceSectionName, ShapeType, ObjectCount. | `EtabsImportViewModel.cs` |
 | `record` | **EurocodeConcreteStrainProfileOption** | Represents the EurocodeConcreteStrainProfileOption record. | `InputViewModel.cs` |

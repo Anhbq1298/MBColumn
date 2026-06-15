@@ -25,6 +25,14 @@
             <Setter Property="Foreground" Value="{DynamicResource PrimaryNavyBrush}" />
             <Setter Property="Margin" Value="0,0,0,6" />
         </Style>
+        <Style x:Key="WarningPanelStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource WarningAmberSoftBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource WarningAmberBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="Margin" Value="0,8,0,0" />
+        </Style>
     </Window.Resources>
 
     <Grid Style="{StaticResource DialogRootGridStyle}">
@@ -44,7 +52,8 @@
         </Border>
 
         <!-- Content Area -->
-        <Grid Grid.Row="1" Margin="14" Grid.IsSharedSizeScope="True">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="14" Grid.IsSharedSizeScope="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" /> <!-- ETABS Connection Panel -->
                 <RowDefinition Height="Auto" /> <!-- Source Mapping Panel -->
@@ -89,8 +98,8 @@
 
                         <TextBlock Text="Status:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center">
-                            <Ellipse Width="8" Height="8" Fill="#4CAF50" VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="Connected" FontWeight="SemiBold" Foreground="#4CAF50" VerticalAlignment="Center" />
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource SuccessGreenBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Connected" FontWeight="SemiBold" Foreground="{DynamicResource SuccessGreenBrush}" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <TextBlock Text="Model:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
@@ -106,7 +115,7 @@
                         <TextBlock Text="{Binding MetadataId}" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="4" VerticalAlignment="Center" />
                     </Grid>
                     <!-- Model Mismatch Warning -->
-                    <Border Background="#FFFDF0" BorderBrush="#FEEFB3" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,8,0,0"
+                    <Border Style="{StaticResource WarningPanelStyle}"
                             Visibility="{Binding HasModelMismatchWarning, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel>
                             <Grid>
@@ -114,13 +123,13 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="!" FontSize="14" FontWeight="Bold" Foreground="#9F6000" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBlock Text="{Binding ModelMismatchWarning}" Foreground="#9F6000" FontSize="11" TextWrapping="Wrap" Grid.Column="1" VerticalAlignment="Center" />
+                                <TextBlock Text="!" FontSize="{StaticResource FontSizeBody}" FontWeight="Bold" Foreground="{DynamicResource WarningAmberBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding ModelMismatchWarning}" Foreground="{DynamicResource WarningAmberBrush}" FontSize="{StaticResource FontSizeCaption}" TextWrapping="Wrap" Grid.Column="1" VerticalAlignment="Center" />
                             </Grid>
                             <CheckBox Content="I confirm this is the intended ETABS source model for this section."
                                       IsChecked="{Binding IsSourceModelConfirmed}"
                                       Margin="22,6,0,0"
-                                      FontSize="11" />
+                                      FontSize="{StaticResource FontSizeCaption}" />
                         </StackPanel>
                     </Border>
 
@@ -134,8 +143,8 @@
 
                         <StackPanel Orientation="Horizontal" Grid.Row="0">
                             <TextBlock Text="Status:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0" />
-                            <Ellipse Width="8" Height="8" Fill="#F44336" VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <TextBlock Text="{Binding ConnectionStatusText}" FontWeight="SemiBold" Foreground="#F44336" VerticalAlignment="Center" />
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource AccentRedBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding ConnectionStatusText}" FontWeight="SemiBold" Foreground="{DynamicResource AccentRedBrush}" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <Grid Grid.Row="2">
@@ -173,56 +182,46 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="4" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="4" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="4" />
+                            <RowDefinition Height="6" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Text="Imported from ETABS:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
                         <TextBlock Text="{Binding ImportedFromEtabs}" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" />
 
-                        <TextBlock Text="Story range:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding StoryRange}" Grid.Row="0" Grid.Column="5" VerticalAlignment="Center" />
+                        <TextBlock Text="Metadata ID:" FontWeight="SemiBold" Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding MetadataId}" Grid.Row="0" Grid.Column="5" VerticalAlignment="Center" />
 
                         <TextBlock Text="Column/Pier label:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
                         <TextBlock Text="{Binding ColumnLabel}" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" />
 
-                        <TextBlock Text="Source story:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding SourceStory}" Grid.Row="2" Grid.Column="5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding SourceStory}" />
+                        <TextBlock Text="Story range:" FontWeight="SemiBold" Grid.Row="2" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding StoryRange}" Grid.Row="2" Grid.Column="5" VerticalAlignment="Center" />
 
-                        <TextBlock Text="ETABS Object Unique Names:" FontWeight="SemiBold" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding EtabsObjectIds}" Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="4" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding EtabsObjectIdsToolTip}" />
+                        <TextBlock Text="Source story:" FontWeight="SemiBold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding SourceStory}" Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding SourceStory}" />
 
-                        <TextBlock Text="Filter mode:" FontWeight="SemiBold" Grid.Row="6" Grid.Column="0" VerticalAlignment="Center" />
-                        <TextBlock Text="Metadata-based" Grid.Row="6" Grid.Column="2" VerticalAlignment="Center" />
+                        <TextBlock Text="Filter mode:" FontWeight="SemiBold" Grid.Row="4" Grid.Column="3" VerticalAlignment="Center" />
+                        <TextBlock Text="Metadata-based" Grid.Row="4" Grid.Column="5" VerticalAlignment="Center" />
 
-                        <TextBlock Text="Story check:" FontWeight="SemiBold" Grid.Row="6" Grid.Column="3" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding StoryCheckStatus}" Grid.Row="6" Grid.Column="5" VerticalAlignment="Center" />
-
-                        <TextBlock Text="XY check:" FontWeight="SemiBold" Grid.Row="8" Grid.Column="0" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding XyCheckStatus}" Grid.Row="8" Grid.Column="2" VerticalAlignment="Center" />
+                        <TextBlock Text="ETABS Object Unique Names:" FontWeight="SemiBold" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding EtabsObjectIds}" Grid.Row="6" Grid.Column="2" Grid.ColumnSpan="4" VerticalAlignment="Center" TextWrapping="Wrap" ToolTip="{Binding EtabsObjectIdsToolTip}" />
 
                         <TextBlock Text="{Binding SourceMappingMessage}"
-                                   Grid.Row="10"
+                                   Grid.Row="8"
                                    Grid.Column="0"
                                    Grid.ColumnSpan="6"
                                    Foreground="{DynamicResource TextMutedBrush}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource FontSizeCaption}"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasSourceMappingMessage, Converter={StaticResource BoolToVisibilityConverter}}" />
                     </Grid>
-                    <Border Background="#FFFDF0"
-                            BorderBrush="#FEEFB3"
-                            BorderThickness="1"
-                            CornerRadius="4"
-                            Padding="8"
-                            Margin="0,8,0,0"
+                    <Border Style="{StaticResource WarningPanelStyle}"
                             Visibility="{Binding HasMultipleFallbackCandidates, Converter={StaticResource BoolToVisibilityConverter}}">
                         <StackPanel>
                             <TextBlock Text="Multiple ETABS objects match the stored XY location and story range. Please select the intended source object."
-                                       Foreground="#9F6000"
-                                       FontSize="11"
+                                       Foreground="{DynamicResource WarningAmberBrush}"
+                                       FontSize="{StaticResource FontSizeCaption}"
                                        TextWrapping="Wrap"
                                        Margin="0,0,0,6" />
                             <ComboBox ItemsSource="{Binding FallbackCandidates}"
@@ -252,16 +251,6 @@
                             <RadioButton Content="Use Element Forces" IsChecked="{Binding UseElementForces}" Margin="0,4" />
                         </StackPanel>
                     </Border>
-
-                    <!-- Force Extraction -->
-                    <Border Style="{StaticResource PanelBorderStyle}">
-                        <StackPanel>
-                            <TextBlock Text="Force Extraction" Style="{StaticResource SectionHeaderStyle}" />
-                            <RadioButton Content="Top + Bottom Forces" IsChecked="{Binding ForceExtractionTopBottom}" Margin="0,4" />
-                            <RadioButton Content="Envelope Forces" IsChecked="{Binding ForceExtractionEnvelope}" Margin="0,4" />
-                        </StackPanel>
-                    </Border>
-
                     <!-- Import Behavior -->
                     <Border Style="{StaticResource PanelBorderStyle}">
                         <StackPanel>
@@ -310,7 +299,7 @@
                                  VirtualizingStackPanel.VirtualizationMode="Recycling"
                                  ScrollViewer.CanContentScroll="True"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 Background="White">
+                                 Background="{DynamicResource PanelBackgroundBrush}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected}" Margin="2" />
@@ -321,6 +310,7 @@
                 </Grid>
             </Grid>
         </Grid>
+        </ScrollViewer>
 
         <!-- Footer -->
         <Border Grid.Row="2" Style="{StaticResource DialogFooterBarStyle}">
